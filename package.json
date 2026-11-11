@@ -1,0 +1,31 @@
+{
+  "name": "pbl4-web",
+  "private": true,
+  "version": "0.1.0",
+  "description": "PBL4_Web - Healthcare & Neuroscience social networking platform",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"db,api,ui\" -c \"blue,green,magenta\" \"npm run db:start\" \"npm run dev:server\" \"npm run dev:client\"",
+    "db:start": "npm run db:start -w server",
+    "db:seed": "npm run db:seed -w server",
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "build": "npm run build -w server && npm run build -w client",
+    "test": "npm run test -w server",
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w client"
+  },
+  "allowScripts": {
+    "prisma@6.19.3": true,
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.28.2": true,
+    "@embedded-postgres/windows-x64@16.14.0-beta.17": true
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "playwright": "^1.64.1"
+  }
+}

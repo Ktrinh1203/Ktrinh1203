@@ -1,0 +1,774 @@
+================================================================================
+NEUROLINK PLATFORM USER HANDBOOK
+Official Operational Guide for Healthcare Professionals and Researchers
+Release Version: 1.0 (Production Release)
+System Codename: PBL4_Web
+================================================================================
+
+FOREWORD: OUR COMMUNITY PHILOSOPHY
+
+    In modern clinical medicine and cognitive neuroscience, a persistent gap
+    often separates bench research from bedside clinical practice. Clinicians
+    routinely encounter unique case variations and real-world treatment
+    trajectories, while computational neuroscientists and biomedical engineers
+    work in parallel on signal processing models, functional imaging, and brain-
+    computer interfaces (BCI). Without an open, structured, and credible medium
+    for collaboration, valuable medical insights remain scattered across
+    isolated notes and informal discussions.
+
+    NeuroLink was designed to solve this challenge. Inspired by the pioneering
+    work of health communities like PatientsLikeMe, NeuroLink approaches shared
+    medical and scientific discussions as real-world evidence. We believe that
+    when licensed physicians and scientific researchers can readily discover each
+    other's work, engage in peer consultation, and receive tangible credit for
+    high-quality educational contributions, the entire scientific community
+    advances.
+
+    This handbook serves as your complete guide to the platform. Whether you are
+    a neurologist seeking inter-hospital case discussions, a researcher sharing
+    computational neural decoding findings, or a healthcare worker exploring the
+    latest literature, this document explains not only how each tool functions,
+    but why it was built and how to use it safely and effectively.
+
+
+TABLE OF CONTENTS
+
+    Chapter 1:  Introduction to NeuroLink and System Boundaries
+    Chapter 2:  Getting Started and Account Registration
+    Chapter 3:  Understanding the User Interface and Daily Navigation
+    Chapter 4:  Managing Your Personal and Professional Profile
+    Chapter 5:  Exploring the Community and Finding Colleagues
+    Chapter 6:  Creating Clinical Posts and Scholarly Interactions
+    Chapter 7:  Direct Messaging, Peer Consultations, and Notifications
+    Chapter 8:  Professional Verification for Clinicians and Scientists
+    Chapter 9:  Healthcare and Scientific Community Guidelines
+    Chapter 10: Privacy, Security, and Responsible Data Handling
+    Chapter 11: The Knowledge Contribution and Peer Review Workflow
+    Chapter 12: Credit Wallet, Immutable Ledger, and Professional Benefits
+    Chapter 13: Administrator Governance, Review Queues, and System Moderation
+    Chapter 14: Troubleshooting, Frequently Asked Questions, and Glossary
+
+
+================================================================================
+CHAPTER 1: INTRODUCTION TO NEUROLINK AND SYSTEM BOUNDARIES
+================================================================================
+
+1.1 Mission and Vision
+
+    NeuroLink is a dedicated social knowledge network tailored for healthcare
+    and neuroscience professionals. It provides a collaborative environment
+    where medical doctors, university researchers, clinical fellows, and
+    biomedical engineers can share clinical observations, debate published
+    literature, and build multidisciplinary research connections.
+
+    Unlike generic consumer social networks, interactions on NeuroLink are
+    structured around professional integrity. Clinical opinions carry context
+    through verified professional badges, and meaningful contributions are
+    recognized through an objective, peer-evaluated credit system.
+
+
+1.2 Supported User Groups
+
+    The platform explicitly recognizes four primary participant categories,
+    each with tailored roles and capabilities:
+
+    1. General Community Members
+       This group includes patients, caregivers, undergraduate biology students,
+       and members of the public interested in brain health. General members can
+       read public educational posts, participate in constructive discussions,
+       and follow verified specialists. They do not undergo professional
+       credential verification and do not submit posts for reward credits.
+
+    2. Physicians and Healthcare Professionals
+       Licensed medical doctors, clinical neurologists, neuroradiologists, and
+       rehabilitation physicians. Members in this tier verify their practicing
+       licenses, share clinical perspectives, participate in inter-hospital case
+       consultations, and earn credits redeemable for continuing medical
+       education (CME) resources.
+
+    3. Researchers and Academic Scientists
+       Principal investigators, postdoctoral fellows, neural engineers, and
+       graduate research students working on brain-computer interfaces, electro-
+       encephalography (EEG) analysis, and cognitive science. They verify their
+       institutional affiliations and ORCID records, share summaries of recent
+       findings, and redeem credits for scientific conference attendance.
+
+    4. Platform Administrators and Clinical Reviewers
+       Board members and appointed clinical reviewers responsible for vetting
+       practicing licenses, scoring scientific contributions across five rigorous
+       criteria, auditing the credit ledger, and maintaining community safety.
+
+
+1.3 Important Scope Restrictions and System Boundaries
+
+    To prevent confusion regarding the scope of NeuroLink, users must keep the
+    following architectural boundaries in mind:
+
+    - Independence from External EEG Repositories:
+      NeuroLink operates as a standalone social knowledge platform. It does not
+      access, copy, migrate, or integrate with any external EEG website dataset
+      or external patient database.
+
+    - No Automated Medical Diagnostic AI:
+      The platform does not perform automated clinical EEG signal diagnosis or
+      prescribe patient treatments. All discussions, case summaries, and shared
+      imaging studies represent educational knowledge exchanges among peers and
+      must never replace the clinical judgment of an attending physician.
+
+
+================================================================================
+CHAPTER 2: GETTING STARTED AND ACCOUNT REGISTRATION
+================================================================================
+
+2.1 Creating Your Account
+
+    Joining NeuroLink takes less than two minutes. Open your web browser and go
+    to the registration screen at http://localhost:5173/register or click the
+    "Tham gia ngay" button on the home page.
+
+    The registration form asks for four basic details:
+    1. Display Name: Your full professional name, such as "Dr. Tran Van Minh".
+    2. Username: A unique handle (lowercase letters, numbers, and underscores),
+       such as "dr_minh", which appears in your profile URL and mentions.
+    3. Email Address: An active email address used for account security.
+    4. Password: A secure passphrase of at least 8 characters.
+
+    When you submit the form, the backend hashes your password using the bcrypt
+    cryptographic algorithm, stores your account securely in PostgreSQL, and
+    issues a secure, HttpOnly session cookie to your browser. You are immediately
+    logged in and redirected to the main feed.
+
+
+2.2 Logging In and Session Security
+
+    To sign in on subsequent visits, navigate to http://localhost:5173/login. You
+    can enter either your username or your email address along with your
+    password.
+
+    NeuroLink employs strict security safeguards to protect your account:
+    - Session tokens are stored in an encrypted database table and tied to your
+      browser session using HttpOnly cookies with Lax SameSite protection.
+      This prevents malicious scripts from stealing your login credentials.
+    - Rate limiters actively monitor login attempts from each network address,
+      temporarily blocking rapid-fire attempts to guess passwords.
+    - Cross-Site Request Forgery (CSRF) tokens are validated on all sensitive
+      requests, ensuring commands originate only from your authenticated browser
+      session.
+
+
+2.3 Development and Sandbox Demo Accounts
+
+    If you are exploring the platform in a local test environment, the database
+    comes pre-loaded with representative accounts across all key roles:
+
+    +-------------------+----------------------------+-------------+
+    | Role              | Username / Email           | Password    |
+    +-------------------+----------------------------+-------------+
+    | Administrator     | admin                      | Password123 |
+    |                   | admin@neurolink.test       |             |
+    | Neurologist       | dr_minh                    | Password123 |
+    |                   | minh.tran@hospital.vn      |             |
+    | BCI Researcher    | prof_lan                   | Password123 |
+    |                   | lan.nguyen@neurotech.edu.vn|             |
+    +-------------------+----------------------------+-------------+
+
+    On the login screen, you will find convenient quick-fill buttons that allow
+    you to switch between these test accounts with a single click.
+
+
+================================================================================
+CHAPTER 3: UNDERSTANDING THE USER INTERFACE AND DAILY NAVIGATION
+================================================================================
+
+3.1 The Three-Column Desktop Workspace
+
+    Once logged in, the application presents a balanced, three-column layout
+    designed to minimize clutter and keep your focus on professional exchanges:
+
+    - Left Navigation Sidebar:
+      Displays your personal avatar and quick profile summary. Below your card,
+      you will find dedicated navigation links to the Main Feed, Specialist
+      Directory, Private Messages, Notifications, Contributions Center, and
+      Credits & Rewards. The bottom of the sidebar lists active clinical
+      hashtags such as #LamSangThanKinh and #BCI_Neurotech for one-click topic
+      filtering.
+
+    - Central Content Stream:
+      Houses the clinical post composer at the top, followed by a feed mode
+      toggle ("All Posts" versus "Following"), and an infinite-scrolling timeline
+      of scholarly posts.
+
+    - Right Recommendation Rail:
+      Surfaces recommended neurologists, fellows, and neurotechnology
+      researchers who share your clinical or computational interests, complete
+      with one-click "Follow" shortcuts.
+
+
+3.2 Top Navigation Bar and Mobile Responsiveness
+
+    Across the top of every screen, the global header provides:
+    - The NeuroLink brand icon, returning you to the main feed from anywhere.
+    - A global search input for finding colleagues, conditions, and papers.
+    - Quick-access icons for unread messages and notifications, complete with
+      real-time badge counters that refresh automatically.
+    - Your user avatar menu, containing direct links to your profile, account
+      settings, system administration (if you hold the Admin role), and log out.
+
+    When accessing NeuroLink on tablets or mobile phones, the desktop sidebars
+    tuck away cleanly, and a persistent bottom navigation bar appears, giving you
+    one-tap access to the feed, search, messages, notifications, and profile.
+
+
+================================================================================
+CHAPTER 4: MANAGING YOUR PERSONAL AND PROFESSIONAL PROFILE
+================================================================================
+
+4.1 Public Profile Elements
+
+    Your profile serves as your academic and clinical curriculum vitae on
+    NeuroLink. Anyone viewing your profile at http://localhost:5173/u/your_username
+    sees your full display name, professional bio, avatar, follower count, and
+    a reverse-chronological timeline of your published articles.
+
+    If you are a verified professional, your profile prominently displays a
+    specialist badge:
+    - Doctors and Clinicians receive an emerald medical badge indicating their
+      clinical specialty, hospital affiliation, and years of practice.
+    - Researchers and Scientists receive a purple academic badge detailing their
+      research institute, laboratory focus, and direct link to their ORCID profile.
+
+
+4.2 Updating Profile Information
+
+    To update your details, open the user menu in the top right header and select
+    "Cai dat tai khoan" (Settings). Under the "Thong tin ca nhan" tab, you can:
+    - Change your display name and upload a new profile picture.
+    - Revise your biographical statement to reflect recent fellowships or
+      ongoing grant projects.
+    - Review your contact email address.
+
+    After editing your information, click "Luu thay doi" (Save Changes). The
+    changes reflect immediately across the entire platform.
+
+
+4.3 Changing Your Password
+
+    Also located in the Settings area is the "Bao mat" (Security) panel. To
+    update your password, enter your current password once, followed by your new
+    password and its confirmation.
+
+    When you confirm the password change, the backend updates your password hash
+    and revokes all other active sessions across any other computers or browsers
+    you might have logged into previously, safeguarding your account if a device
+    was left unattended.
+
+
+================================================================================
+CHAPTER 5: EXPLORING THE COMMUNITY AND FINDING COLLEAGUES
+================================================================================
+
+5.1 Using the Global Search Engine
+
+    The Search Center at http://localhost:5173/search offers three complementary
+    ways to explore the community:
+
+    1. Keyword Search:
+       Type any clinical condition (e.g., "dot quy", "dong kinh", "Parkinson")
+       or technical phrase (e.g., "fMRI", "giai ma tin hieu", "P300"). The engine
+       searches across author names, post body text, and specialist profiles.
+
+    2. Category Filter Tabs:
+       Filter results into "Tat ca" (All), "Chuyen gia Y te & Nghien cuu"
+       (Professionals only), or "Bai viet khoa hoc" (Articles only).
+
+    3. Clinical Hashtags:
+       Clicking any hashtag in a post or on the left sidebar immediately scopes
+       your search to that precise topic.
+
+
+5.2 The Specialist Directory
+
+    To locate peers across hospitals or universities, visit the Specialist
+    Directory at http://localhost:5173/search?category=professionals.
+
+    This directory groups verified doctors and researchers, highlighting their
+    department, hospital or institute, and credential status. It allows an
+    attending physician in a provincial hospital to quickly find a stroke
+    intervention specialist at a central university hospital, or enables an AI
+    engineer to reach out to an electrophysiology lab for collaboration.
+
+
+================================================================================
+CHAPTER 6: CREATING CLINICAL POSTS AND SCHOLARLY INTERACTIONS
+================================================================================
+
+6.1 Publishing a Clinical or Research Post
+
+    At the top of the main feed, you will find the post composer card. Creating
+    a high-quality post involves:
+
+    1. Composing the Text:
+       Write your clinical case summary, research update, or discussion prompt.
+       You are encouraged to provide context, cite peer-reviewed literature,
+       and include relevant hashtags to help interested colleagues find it.
+
+    2. Attaching Diagnostic Imaging:
+       Click the image attachment button to upload up to four clinical images
+       (such as MRI slices, CT scans, EEG spectral plots, or flowchart diagrams).
+       Each image must be in a supported format (JPEG, PNG, WebP) and cannot
+       exceed 5 megabytes.
+
+    3. Publishing:
+       Click "Dang bai" (Publish). The post appears at the top of the community
+       feed immediately.
+
+
+6.2 Mandatory Patient Privacy and De-Identification Rule
+
+    Following the core ethical principles of healthcare networks like
+    PatientsLikeMe, patient privacy is non-negotiable:
+
+    Before uploading any clinical photograph, MRI, CT, or EEG recording, you
+    MUST crop, blur, or completely remove any identifiable patient information,
+    including patient full names, medical record numbers (MRN), dates of birth,
+    admission timestamps, and identifiable facial features. Failure to de-
+    identify patient data violates platform regulations and will lead to
+    immediate content removal and potential account suspension.
+
+
+6.3 Engaging with Scholarly Content
+
+    - Liking Posts:
+      Click the heart icon on any post. The platform enforces a database-level
+      unique constraint so likes cannot be artificially duplicated.
+
+    - Academic Comments:
+      Click the comment button on a post card to expand the discussion thread.
+      Use this area to share alternative differential diagnoses, request
+      methodology clarifications, or link relevant clinical trials. Authors can
+      edit or delete their own comments at any time.
+
+    - Following Peers:
+      Clicking "Follow" on a colleague's profile or post card adds their future
+      articles to your dedicated "Dang theo doi" (Following) feed tab, allowing
+      you to curate your own specialized medical feed.
+
+
+================================================================================
+CHAPTER 7: DIRECT MESSAGING, PEER CONSULTATIONS, AND NOTIFICATIONS
+================================================================================
+
+7.1 Private One-on-One Consultations
+
+    While open feed discussions benefit the broader community, certain clinical
+    consultations, research grant proposals, or sensitive inquiries require
+    privacy. NeuroLink provides a dedicated messaging center at
+    http://localhost:5173/messages.
+
+    To start a conversation:
+    1. Navigate to the profile of the specialist you wish to consult.
+    2. Click the "Nhan tin" (Send Message) button.
+    3. The messaging screen opens with that conversation selected. Type your
+       message in the input box at the bottom and press Enter or click the send
+       arrow.
+
+    Security Guarantee:
+    Conversations on NeuroLink are strictly isolated. The backend server verifies
+    membership on every message fetch and send attempt. A third party attempting
+    to inspect or send messages into a conversation they do not belong to is
+    immediately rejected with an HTTP 403 Forbidden status code.
+
+
+7.2 The Multi-Channel Notification Hub
+
+    The notification center at http://localhost:5173/notifications consolidates
+    all events requiring your attention:
+    - Post Likes and Comments: Notifies you when a colleague engages with your
+      work.
+    - New Followers: Informs you when a peer begins following your timeline.
+    - Direct Messages: Alerts you to incoming private consultations.
+    - Review Decisions: Informs you the moment a reviewer scores your contribution
+      or requests revisions.
+    - Reward Redemptions: Delivers fulfillment codes or workshop links when your
+      credit redemption is approved.
+
+    A convenient "Danh dau da doc tat ca" (Mark All as Read) button at the top
+    lets you clear your unread badge counters in one step.
+
+
+================================================================================
+CHAPTER 8: PROFESSIONAL VERIFICATION FOR CLINICIANS AND SCIENTISTS
+================================================================================
+
+8.1 Purpose and Eligibility
+
+    Professional verification is the cornerstone of trust on NeuroLink. Ordinary
+    members of the general public participate without verification. Verification
+    is reserved exclusively for qualified professionals in three distinct tracks:
+
+    Track A: Physicians and Healthcare Providers
+      Eligible: Medical doctors, clinical specialists, resident physicians, and
+      registered healthcare practitioners holding a valid practicing license
+      (Chung chi hanh nghe - CCHN) issued by the Ministry of Health or Provincial
+      Department of Health.
+
+    Track B: Neuroscience Researchers and Graduate Fellows
+      Eligible: Academic researchers, postdoctoral fellows, and graduate
+      research students affiliated with universities or specialized neuroscience
+      institutes, holding a verifiable ORCID iD or university research credential.
+
+    Track C: Scientific Workers and Biomedical Engineers
+      Eligible: Hospital clinical engineers, neural decoding specialists, and
+      biomedical device developers holding institutional staff credentials.
+
+
+8.2 Submitting Your Credentials Step by Step
+
+    1. Open Settings (http://localhost:5173/settings) and locate the "Xac minh
+       danh tinh chuyen mon" (Professional Verification) section.
+    2. Select your track (Physician or Researcher).
+    3. Enter your professional title, affiliated hospital or institute, and your
+       official license number or ORCID identifier.
+    4. Attach your supporting document in PDF or high-resolution image format
+       (e.g., photo of your practicing license, staff badge, or doctoral diploma).
+    5. Click "Gui ho so xac minh" (Submit Verification Request).
+
+
+8.3 How the Platform Vets Documents
+
+    Once submitted, your request enters the administrative verification queue:
+    - An automated Optical Character Recognition (OCR) pipeline scans the
+      document, extracting your name, license number, and issuing authority.
+    - A cryptographic SHA-256 checksum is recorded, locking the file so any
+      subsequent modification or tampering is immediately detectable.
+    - An authorized administrator reviews the extracted text against official
+      medical registries, confirms your identity, and grants your specialist
+      badge.
+    - Once approved, your profile receives the verified badge, and you gain full
+      access to the Contribution & Rewards module.
+
+
+================================================================================
+CHAPTER 9: HEALTHCARE AND SCIENTIFIC COMMUNITY GUIDELINES
+================================================================================
+
+9.1 The Spirit of Collaborative Inquiry
+
+    NeuroLink thrives when discussions remain respectful, intellectually honest,
+    and grounded in clinical evidence. We encourage active debate on treatment
+    protocols and experimental methodologies, provided disagreements focus on
+    data and scientific rationale rather than personal attacks.
+
+
+9.2 Educational Discussion Versus Medical Advice
+
+    A critical boundary must be respected at all times:
+    NeuroLink is a platform for professional peer exchange and medical education.
+    It is NOT an online telemedicine clinic. Clinicians must not establish formal
+    doctor-patient relationships, issue binding diagnoses, or prescribe
+    controlled medications to users through community posts or direct messages.
+    General community members reading case discussions must always consult their
+    personal healthcare provider for individual medical care.
+
+
+9.3 Reporting Violations
+
+    If you encounter content that compromises patient confidentiality, spreads
+    dangerous medical misinformation, or violates scientific ethics, click the
+    flag icon on the post to submit a moderation report. You can categorize the
+    concern (e.g., Misinformation, Harassment, Privacy Violation) and provide a
+    brief explanation. The administrative team reviews every report in an
+    isolated moderation queue.
+
+
+================================================================================
+CHAPTER 10: PRIVACY, SECURITY, AND RESPONSIBLE DATA HANDLING
+================================================================================
+
+10.1 Storage and Isolation of Sensitive Files
+
+    Credential files uploaded during professional verification are never stored
+    in public website folders. They reside in a secured, private server partition
+    accessible exclusively through an authenticated admin API endpoint that logs
+    every file inspection to an immutable audit trail.
+
+
+10.2 Session Lifetime and Token Management
+
+    Your active login session expires automatically after periods of inactivity,
+    requiring re-authentication to prevent unauthorized access on shared hospital
+    workstations. When logging off from a shared computer, always use the
+    explicit "Dang xuat" (Log Out) option in your avatar menu to clear your
+    session cookies immediately.
+
+
+10.3 Research Data Governance
+
+    When discussing clinical trials or patient-derived neuroimaging datasets,
+    researchers must ensure their studies complied with their local Institutional
+    Review Board (IRB) or Ethics Committee requirements and that proper patient
+    consent was secured before sharing aggregate findings.
+
+
+================================================================================
+CHAPTER 11: THE KNOWLEDGE CONTRIBUTION AND PEER REVIEW WORKFLOW
+================================================================================
+
+11.1 Purpose of the Contribution Module
+
+    Healthcare specialists and researchers spend hours synthesizing clinical
+    findings and educational guides. NeuroLink rewards this dedication through an
+    official Contribution & Rewards program.
+
+    Crucially, you DO NOT need to write duplicate articles. You can select any
+    existing, high-quality post you have already published on your timeline and
+    submit it for reward evaluation.
+
+
+11.2 Five Eligible Contribution Categories
+
+    When submitting a post, you assign it to one of five academic categories:
+
+    1. HEALTHCARE_EDUCATION
+       Educational explanations of neurological diseases, treatment guidelines,
+       stroke rehabilitation protocols, and public health awareness.
+
+    2. RESEARCH_CONTRIBUTION
+       Summaries of clinical trials, preclinical BCI experiments, neural decoding
+       algorithms, and peer-reviewed publication syntheses.
+
+    3. EXPERT_QA
+       Detailed, authoritative answers to complex clinical questions posed by
+       colleagues or community members.
+
+    4. RESEARCH_DISCUSSION
+       In-depth critical appraisals and constructive critiques of published
+       methodologies or surgical intervention techniques.
+
+    5. EDUCATIONAL_RESOURCE
+       High-value medical infographics, anatomical diagrams, annotated EEG
+       reading guides, or procedural video demonstrations.
+
+
+11.3 Submitting a Post Step by Step
+
+    1. Navigate to the Contribution Center at http://localhost:5173/contributions.
+    2. If your account is verified, click "Nop bai dong gop moi" (Submit New).
+    3. Choose one of your existing posts from the dropdown selector.
+    4. Choose the appropriate contribution category.
+    5. Write a concise rationale explaining the post's scientific or educational
+       value.
+    6. Click "Xac nhan nop ho so" (Confirm Submission).
+
+
+11.4 The Five Evaluation Criteria
+
+    Appointed clinical reviewers evaluate submissions across five criteria on a
+    scale of 1 to 5 stars:
+    - Scientific Accuracy (ACCURACY): Reliability of medical claims and evidence.
+    - Relevance (RELEVANCE): Direct value to neurology, healthcare, and BCI.
+    - Practical Usefulness (USEFULNESS): Actionable utility for clinicians or
+      learners.
+    - Originality (ORIGINALITY): Novel insight, original synthesis, or firsthand
+      clinical observation.
+    - Community Impact (COMMUNITY_IMPACT): Fostering constructive engagement and
+      scholarly discourse.
+
+
+11.5 State Machine Transitions and the Anti-Self-Review Rule
+
+    Submissions progress through a strict state machine:
+    - DRAFT -> SUBMITTED -> UNDER_REVIEW -> APPROVED (credits awarded)
+    - Or: NEEDS_REVISION (author may revise and resubmit)
+    - Or: REJECTED (with reviewer feedback)
+    - Authors can withdraw a pending submission at any time (WITHDRAWN).
+
+    The Anti-Self-Review Guard:
+    A contributor can never review, score, or approve their own submission. The
+    backend actively blocks self-review attempts with an HTTP 403 Forbidden
+    response, ensuring total independence and credibility.
+
+
+================================================================================
+CHAPTER 12: CREDIT WALLET, IMMUTABLE LEDGER, AND PROFESSIONAL BENEFITS
+================================================================================
+
+12.1 The Immutable Append-Only Ledger
+
+    NeuroLink manages credits using dual-entry financial accounting principles:
+    - The Transaction Ledger (CreditTransaction table) is the authoritative,
+      single source of truth. Every credit awarded, spent, refunded, or adjusted
+      is permanently recorded with a timestamp, transaction type, reference ID,
+      and idempotency key.
+    - The Wallet Balance (CreditWallet) is a cached derived balance. The wallet
+      balance is NEVER updated without a corresponding atomic ledger transaction
+      inside a database transaction (prisma.$transaction).
+    - Historical ledger entries are never edited or deleted.
+
+
+12.2 Ledger Transaction Types
+
+    - CONTRIBUTION_REWARD (+): Credits awarded for an approved contribution.
+    - REWARD_REDEMPTION (-): Credits deducted when requesting a catalog benefit.
+    - REFUND (+): Credits automatically refunded if a redemption is cancelled or
+      rejected.
+    - ADMIN_ADJUSTMENT (+/-): Manual adjustments performed by administrators
+      with a mandatory audit justification note.
+
+
+12.3 Professional Benefits Catalog
+
+    Credits can be redeemed at http://localhost:5173/rewards for career-enhancing
+    benefits configured by the administration:
+    - Certified CME Online Courses and Training Programs.
+    - Full-Access Passes to National and International Neuroscience Conferences.
+    - Subscriptions to Academic Research Databases and Medical Libraries.
+    - One-on-One Mentoring and Grant Review Sessions with Senior Faculty.
+    - Professional Society Event Registrations.
+
+
+12.4 Strict Anti-Cash-Drain Monetary Guard
+
+    To preserve the educational, non-profit character of the platform and
+    prevent financial fraud, monetary cash payouts are DISABLED BY DEFAULT
+    (payoutEnabled = false).
+    - The platform strictly rejects any payout attempt unless an approved,
+      legally vetted platform reward policy is formally enacted by leadership.
+    - NeuroLink does NOT support cryptocurrency, blockchain tokens, or peer-to-
+      peer credit transfers between users.
+    - Credits represent professional recognition within the NeuroLink academic
+      ecosystem.
+
+
+12.5 Redemption Process and Automatic Refunds
+
+    1. Browse available benefits on the Rewards page and click "Doi thuong ngay".
+    2. The system checks your available balance, deducts the required credits,
+       records a ledger transaction, and creates a redemption request in the
+       REQUESTED state.
+    3. An administrator reviews the request and fulfills it (e.g., providing a
+       CME enrollment voucher code or conference registration confirmation).
+    4. If the item is out of stock, or if you cancel your pending request, the
+       system issues an automated REFUND transaction, returning 100% of your
+       credits to your wallet instantly.
+
+
+================================================================================
+CHAPTER 13: ADMINISTRATOR GOVERNANCE, REVIEW QUEUES, AND SYSTEM MODERATION
+================================================================================
+
+13.1 Overview of the Admin Dashboard
+
+    Authorized administrators access the unified control center at
+    http://localhost:5173/admin. The dashboard is organized into five operational
+    tabs:
+
+    Tab 1: Tham dinh Bac si/ORCID (Credential Verification Queue)
+      Displays pending verification dossiers. Admins inspect the applicant's
+      hospital affiliation, review automated OCR extractions, check file SHA-256
+      hashes, and approve or reject the credential claim.
+
+    Tab 2: Xet duyet Dong gop (Contribution Review Queue)
+      Reviewers claim pending contributions, review the linked post, score the
+      five evaluation criteria from 1 to 5 stars, record constructive review
+      notes, set the credit award amount, and submit the decision (Approve,
+      Reject, or Request Revision).
+
+    Tab 3: Phan thuong & Doi qua (Rewards Catalog & Redemption Fulfillment)
+      Admins manage the reward catalog (adding new CME courses, adjusting credit
+      costs, toggling active status) and fulfill pending member redemption
+      requests by issuing access codes or workshop tickets.
+
+    Tab 4: Quan ly Vi Tin chi (Wallet Audit and Adjustments)
+      Provides an administrative overview of total credits in circulation. Admins
+      can search for any member wallet, view full ledger transaction histories,
+      and perform manual adjustments with mandatory audit reasons.
+
+    Tab 5: Bao cao Vi pham (Moderation Reports Queue)
+      Surfaces community-flagged posts and comments. Admins review reported
+      violations, resolve or dismiss reports, and hide or remove offending
+      content.
+
+
+================================================================================
+CHAPTER 14: TROUBLESHOOTING, FREQUENTLY ASKED QUESTIONS, AND GLOSSARY
+================================================================================
+
+14.1 Frequently Asked Questions (FAQ)
+
+    Q: Can ordinary users without a medical degree join NeuroLink?
+    A: Yes. General users can register, read public posts, follow doctors, and
+       participate in general discussions. Only clinical and research badges
+       require professional verification.
+
+    Q: Why was my post submission for rewards rejected?
+    A: Submissions are evaluated against scientific accuracy, clinical relevance,
+       usefulness, originality, and impact. If a post lacks scientific evidence
+       or does not fit the selected contribution category, reviewers provide
+       feedback in the review history. You can address the feedback and resubmit
+       if revisions were requested.
+
+    Q: Can I transfer my earned credits to a colleague's account?
+    A: No. Peer-to-peer credit transfers are prohibited to prevent secondary
+       markets and maintain the integrity of professional recognition.
+
+    Q: What happens if an approved post is later discovered to be plagiarized?
+    A: Administrators can revoke the contribution's approved status and execute
+       a ledger reversal adjustment, deducting the awarded credits.
+
+
+14.2 Troubleshooting Common Issues
+
+    - Unable to upload image in post composer:
+      Check that your file is in JPEG, PNG, or WebP format and that its size is
+      under 5 MB. Large high-resolution scan files should be exported at a
+      standard web resolution before uploading.
+
+    - "Thao tac bi tu choi (403)" when reviewing a contribution:
+      You are likely attempting to review a contribution you authored. The Anti-
+      Self-Review policy prevents authors from scoring their own submissions.
+      Have another administrator evaluate the post.
+
+    - "Rut tien mat hien chua duoc kich hoat" error:
+      Monetary payouts are disabled by default under our Anti-Cash-Drain
+      monetary guard. Redeem your credits for professional benefits such as CME
+      courses or conference passes instead.
+
+
+14.3 Platform and Healthcare Glossary
+
+    - BCI (Brain-Computer Interface):
+      Direct communication pathways between an enhanced or wired brain and an
+      external computational device.
+
+    - CCHN (Chung chi hanh nghe):
+      Official healthcare practicing license issued by the Ministry of Health or
+      authorized state medical boards.
+
+    - CME (Continuing Medical Education):
+      Educational activities designed to maintain, develop, or increase the
+      knowledge, skills, and professional performance of healthcare providers.
+
+    - De-identification:
+      The process of removing personal identifiers from clinical records and
+      imaging studies to protect patient confidentiality.
+
+    - EEG (Electroencephalography):
+      An electrophysiological monitoring method used to record electrical
+      activity of the brain.
+
+    - fMRI (Functional Magnetic Resonance Imaging):
+      Neuroimaging technique measuring brain activity by detecting changes
+      associated with blood flow.
+
+    - Immutable Ledger:
+      An append-only database record of transactions that cannot be edited or
+      deleted once written, guaranteeing financial auditability.
+
+    - ORCID (Open Researcher and Contributor ID):
+      A persistent digital identifier that distinguishes individual researchers
+      and links them to their scientific contributions.
+
+================================================================================
+END OF NEUROLINK USER HANDBOOK (ENGLISH EDITION)
+================================================================================

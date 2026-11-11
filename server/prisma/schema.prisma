@@ -1,0 +1,615 @@
+// PBL4_Web database schema
+// Social networking platform for healthcare & neuroscience communities.
+// NOTE: This schema intentionally contains NO EEG / dataset / diagnosis entities.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+/// System-level permission role. Professional capabilities live in ProfessionalProfile.
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum ProfessionalType {
+  HEALTHCARE_PROFESSIONAL
+  RESEARCHER
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum VerificationRequestStatus {
+  PENDING_REVIEW
+  IN_REVIEW
+  ADDITIONAL_INFO_REQUIRED
+  VERIFIED
+  REJECTED
+  REVOKED
+}
+
+enum CredentialDocumentType {
+  MEDICAL_LICENSE
+  HOSPITAL_STAFF_CARD
+  ACADEMIC_DEGREE
+  INSTITUTION_AFFILIATION
+  ORCID_RECORD
+  OTHER
+}
+
+enum ContentStatus {
+  PUBLISHED
+  HIDDEN
+}
+
+enum NotificationType {
+  POST_LIKED
+  POST_COMMENTED
+  NEW_FOLLOWER
+  NEW_MESSAGE
+  VERIFICATION_UPDATE
+  CONTRIBUTION_UPDATE
+  REWARD_UPDATE
+}
+
+enum ContributionCategory {
+  HEALTHCARE_EDUCATION
+  RESEARCH_CONTRIBUTION
+  EXPERT_QA
+  RESEARCH_DISCUSSION
+  EDUCATIONAL_RESOURCE
+}
+
+enum ContributionStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  NEEDS_REVISION
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum CreditTransactionType {
+  CONTRIBUTION_REWARD
+  REWARD_REDEMPTION
+  ADMIN_ADJUSTMENT
+  REWARD_REVERSAL
+  REFUND
+}
+
+enum RewardCategory {
+  MONETARY_REWARD
+  PROFESSIONAL_COURSE
+  CONFERENCE_ACCESS
+  ACADEMIC_RESOURCE
+  MENTORING
+  PROFESSIONAL_EVENT
+  OTHER_BENEFIT
+}
+
+enum RedemptionStatus {
+  REQUESTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  PROCESSING
+  FULFILLED
+  CANCELLED
+  REFUNDED
+}
+
+enum ReportTargetType {
+  POST
+  COMMENT
+  USER
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  MISINFORMATION
+  INAPPROPRIATE
+  IMPERSONATION
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+// ---------------------------------------------------------------------------
+// Accounts
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String        @id @default(uuid()) @db.Uuid
+  /// Stored lower-cased; uniqueness is therefore case-insensitive.
+  email        String        @unique @db.VarChar(254)
+  /// Stored lower-cased; [a-z0-9_], 3-30 chars (validated in app layer).
+  username     String        @unique @db.VarChar(30)
+  passwordHash String
+  displayName  String        @db.VarChar(80)
+  bio          String?       @db.VarChar(1000)
+  avatarUrl    String?       @db.VarChar(500)
+  role         Role          @default(USER)
+  status       AccountStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  sessions              Session[]
+  professionalProfiles  ProfessionalProfile[]       @relation("ProfileOwner")
+  verifiedProfiles      ProfessionalProfile[]       @relation("ProfileVerifier")
+  posts                 Post[]
+  comments              Comment[]
+  likes                 PostLike[]
+  following             Follow[]                    @relation("Follower")
+  followers             Follow[]                    @relation("Following")
+  conversationLinks     ConversationParticipant[]
+  messages              Message[]
+  notifications         Notification[]              @relation("NotificationRecipient")
+  triggeredNotifications Notification[]             @relation("NotificationActor")
+  reportsFiled          Report[]                    @relation("Reporter")
+  reportsAgainst        Report[]                    @relation("ReportedUser")
+  reportsResolved       Report[]                    @relation("ReportResolver")
+  verificationRequestsSubmitted VerificationRequest[] @relation("VerificationApplicant")
+  verificationRequestsReviewed  VerificationRequest[] @relation("VerificationReviewer")
+  verificationAuditLogs         VerificationAuditLog[] @relation("VerificationAuditActor")
+  contributionsSubmitted        Contribution[]        @relation("UserContributions")
+  contributionsReviewed         Contribution[]        @relation("ReviewerContributions")
+  contributionReviews           ContributionReview[]  @relation("UserReviews")
+  creditWallet                  CreditWallet?         @relation("UserWallet")
+  transactionsActed             CreditTransaction[]   @relation("TransactionActor")
+  rewardRedemptions             RewardRedemption[]    @relation("UserRedemptions")
+  redemptionsReviewed           RewardRedemption[]    @relation("RedemptionReviewer")
+
+  @@index([displayName])
+}
+
+/// Server-side session. Only a SHA-256 hash of the cookie token is stored.
+model Session {
+  id         String   @id @default(uuid()) @db.Uuid
+  tokenHash  String   @unique @db.Char(64)
+  csrfToken  String   @db.VarChar(64)
+  userId     String   @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent  String?  @db.VarChar(300)
+  ipAddress  String?  @db.VarChar(64)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// A professional capability attached to a user. A user may hold at most one
+/// profile per type (e.g. both HEALTHCARE_PROFESSIONAL and RESEARCHER).
+/// verificationStatus can only be changed by an administrator.
+model ProfessionalProfile {
+  id                   String                @id @default(uuid()) @db.Uuid
+  userId               String                @db.Uuid
+  user                 User                  @relation("ProfileOwner", fields: [userId], references: [id], onDelete: Cascade)
+  type                 ProfessionalType
+  title                String                @db.VarChar(120)
+  /// Medical specialty (healthcare) or research field (researcher).
+  specialty            String                @db.VarChar(120)
+  institution          String?               @db.VarChar(160)
+  licenseOrOrcidNumber String?               @db.VarChar(100)
+  researchInterests    String[]              @default([])
+  verificationStatus   VerificationStatus    @default(UNVERIFIED)
+  verificationNote     String?               @db.VarChar(500)
+  verifiedAt           DateTime?
+  verifiedById         String?               @db.Uuid
+  verifiedBy           User?                 @relation("ProfileVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  verificationRequests VerificationRequest[]
+
+  @@unique([userId, type])
+  @@index([type, verificationStatus])
+  @@index([specialty])
+}
+
+model VerificationRequest {
+  id                   String                    @id @default(uuid()) @db.Uuid
+  profileId            String                    @db.Uuid
+  profile              ProfessionalProfile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId               String                    @db.Uuid
+  user                 User                      @relation("VerificationApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  status               VerificationRequestStatus @default(PENDING_REVIEW)
+  claimedTitle         String                    @db.VarChar(120)
+  claimedSpecialty     String                    @db.VarChar(120)
+  claimedInstitution   String?                   @db.VarChar(160)
+  licenseOrOrcidNumber String?                   @db.VarChar(100)
+  submissionNotes      String?                   @db.VarChar(1000)
+  reviewNotes          String?                   @db.VarChar(1000)
+  rejectionReason      String?                   @db.VarChar(500)
+  reviewerId           String?                   @db.Uuid
+  reviewer             User?                     @relation("VerificationReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewedAt           DateTime?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+
+  documents            VerificationDocument[]
+  auditLogs            VerificationAuditLog[]
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([userId])
+  @@index([profileId])
+}
+
+model VerificationDocument {
+  id           String                 @id @default(uuid()) @db.Uuid
+  requestId    String                 @db.Uuid
+  request      VerificationRequest    @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  documentType CredentialDocumentType
+  storagePath  String                 @db.VarChar(500)
+  fileName     String                 @db.VarChar(255)
+  mimeType     String                 @db.VarChar(100)
+  sizeBytes    Int
+  sha256Hash   String                 @db.Char(64)
+  ocrData      Json?
+  uploadedAt   DateTime               @default(now())
+
+  @@index([requestId])
+}
+
+model VerificationAuditLog {
+  id            String                     @id @default(uuid()) @db.Uuid
+  requestId     String                     @db.Uuid
+  request       VerificationRequest        @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  actorId       String                     @db.Uuid
+  actor         User                       @relation("VerificationAuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  action        String                     @db.VarChar(80)
+  previousState VerificationRequestStatus?
+  newState      VerificationRequestStatus?
+  reason        String?                    @db.VarChar(1000)
+  ipAddress     String?                    @db.VarChar(64)
+  userAgent     String?                    @db.VarChar(300)
+  timestamp     DateTime                   @default(now())
+
+  @@index([requestId, timestamp(sort: Desc)])
+}
+
+// ---------------------------------------------------------------------------
+// Social content
+// ---------------------------------------------------------------------------
+
+model Post {
+  id        String        @id @default(uuid()) @db.Uuid
+  authorId  String        @db.Uuid
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String        @db.VarChar(5000)
+  status    ContentStatus @default(PUBLISHED)
+  hiddenReason String?    @db.VarChar(500)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  media         PostMedia[]
+  comments      Comment[]
+  likes         PostLike[]
+  notifications Notification[]
+  reports       Report[]
+  contributions Contribution[] @relation("PostContributions")
+
+  @@index([createdAt(sort: Desc), id])
+  @@index([authorId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+}
+
+model PostMedia {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @db.Uuid
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  /// Relative public path, e.g. /uploads/<random>.webp
+  url       String   @db.VarChar(500)
+  mimeType  String   @db.VarChar(50)
+  sizeBytes Int
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([postId, position])
+}
+
+model Comment {
+  id        String        @id @default(uuid()) @db.Uuid
+  postId    String        @db.Uuid
+  post      Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String        @db.Uuid
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String        @db.VarChar(2000)
+  status    ContentStatus @default(PUBLISHED)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  notifications Notification[]
+  reports       Report[]
+
+  @@index([postId, createdAt])
+  @@index([authorId])
+}
+
+/// Composite primary key prevents duplicate likes.
+model PostLike {
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String   @db.Uuid
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
+  @@index([postId])
+}
+
+/// Composite primary key prevents duplicate follows.
+/// A CHECK constraint (in migration SQL) prevents self-follow.
+model Follow {
+  followerId  String   @db.Uuid
+  follower    User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String   @db.Uuid
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
+  @@index([followingId])
+}
+
+// ---------------------------------------------------------------------------
+// Direct messaging
+// ---------------------------------------------------------------------------
+
+/// One-to-one conversation. directKey = "<smallerUserId>:<largerUserId>"
+/// guarantees at most one direct conversation per pair of users.
+model Conversation {
+  id            String    @id @default(uuid()) @db.Uuid
+  directKey     String    @unique @db.VarChar(80)
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  participants  ConversationParticipant[]
+  messages      Message[]
+  notifications Notification[]
+
+  @@index([lastMessageAt(sort: Desc)])
+}
+
+model ConversationParticipant {
+  conversationId String       @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String       @db.Uuid
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime     @default(now())
+  lastReadAt     DateTime?
+
+  @@id([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String       @id @default(uuid()) @db.Uuid
+  conversationId String       @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String       @db.Uuid
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content        String       @db.VarChar(4000)
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt(sort: Desc), id])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+/// dedupeKey is unique so that repeating the same event (e.g. like -> unlike -> like)
+/// updates the existing notification instead of creating duplicates.
+model Notification {
+  id             String           @id @default(uuid()) @db.Uuid
+  recipientId    String           @db.Uuid
+  recipient      User             @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actorId        String           @db.Uuid
+  actor          User             @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  type           NotificationType
+  postId         String?          @db.Uuid
+  post           Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId      String?          @db.Uuid
+  comment        Comment?         @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  conversationId String?          @db.Uuid
+  conversation   Conversation?    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  dedupeKey      String           @unique @db.VarChar(200)
+  readAt         DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([recipientId, updatedAt(sort: Desc)])
+  @@index([recipientId, readAt])
+}
+
+// ---------------------------------------------------------------------------
+// Moderation
+// ---------------------------------------------------------------------------
+
+model Report {
+  id           String           @id @default(uuid()) @db.Uuid
+  reporterId   String           @db.Uuid
+  reporter     User             @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetType   ReportTargetType
+  postId       String?          @db.Uuid
+  post         Post?            @relation(fields: [postId], references: [id], onDelete: SetNull)
+  commentId    String?          @db.Uuid
+  comment      Comment?         @relation(fields: [commentId], references: [id], onDelete: SetNull)
+  targetUserId String?          @db.Uuid
+  targetUser   User?            @relation("ReportedUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+  reason       ReportReason
+  details      String?          @db.VarChar(1000)
+  status       ReportStatus     @default(OPEN)
+  resolutionNote String?        @db.VarChar(500)
+  resolvedById String?          @db.Uuid
+  resolvedBy   User?            @relation("ReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  resolvedAt   DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([reporterId])
+}
+
+// ---------------------------------------------------------------------------
+// Contribution & Rewards Module
+// ---------------------------------------------------------------------------
+
+model Contribution {
+  id                String               @id @default(uuid()) @db.Uuid
+  userId            String               @db.Uuid
+  user              User                 @relation("UserContributions", fields: [userId], references: [id], onDelete: Cascade)
+  postId            String               @db.Uuid
+  post              Post                 @relation("PostContributions", fields: [postId], references: [id], onDelete: Cascade)
+  category          ContributionCategory
+  status            ContributionStatus   @default(SUBMITTED)
+  summary           String               @db.VarChar(1000)
+  awardCredits      Int?                 @default(0)
+  currentReviewerId String?              @db.Uuid
+  currentReviewer   User?                @relation("ReviewerContributions", fields: [currentReviewerId], references: [id], onDelete: SetNull)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  reviews           ContributionReview[]
+  transactions      CreditTransaction[]  @relation("ContributionTransactions")
+
+  @@index([userId, status])
+  @@index([postId])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([category])
+}
+
+model ContributionReview {
+  id                 String             @id @default(uuid()) @db.Uuid
+  contributionId     String             @db.Uuid
+  contribution       Contribution       @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  reviewerId         String             @db.Uuid
+  reviewer           User               @relation("UserReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  // 5 Criteria (Scale 1 to 5)
+  scoreAccuracy      Int                @default(1)
+  scoreRelevance     Int                @default(1)
+  scoreUsefulness    Int                @default(1)
+  scoreOriginality   Int                @default(1)
+  scoreImpact        Int                @default(1)
+  scoreOverall       Decimal            @db.Decimal(3, 2)
+
+  awardedCredits     Int                @default(0)
+  decision           ContributionStatus
+  feedback           String             @db.VarChar(1500)
+  supportingEvidence String?            @db.VarChar(1000)
+  createdAt          DateTime           @default(now())
+
+  @@index([contributionId, createdAt(sort: Desc)])
+  @@index([reviewerId])
+}
+
+model CreditWallet {
+  id           String              @id @default(uuid()) @db.Uuid
+  userId       String              @unique @db.Uuid
+  user         User                @relation("UserWallet", fields: [userId], references: [id], onDelete: Cascade)
+  balance      Int                 @default(0)
+  totalEarned  Int                 @default(0)
+  totalSpent   Int                 @default(0)
+  updatedAt    DateTime            @updatedAt
+  createdAt    DateTime            @default(now())
+
+  transactions CreditTransaction[]
+
+  @@index([userId])
+}
+
+model CreditTransaction {
+  id             String                @id @default(uuid()) @db.Uuid
+  walletId       String                @db.Uuid
+  wallet         CreditWallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  amount         Int                   // Positive (credit added) or Negative (credit spent)
+  type           CreditTransactionType
+  referenceId    String?               @db.VarChar(100)
+  idempotencyKey String?               @unique @db.VarChar(120)
+  description    String                @db.VarChar(500)
+  actorId        String?               @db.Uuid
+  actor          User?                 @relation("TransactionActor", fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt      DateTime              @default(now())
+
+  contributionId String?               @db.Uuid
+  contribution   Contribution?         @relation("ContributionTransactions", fields: [contributionId], references: [id], onDelete: SetNull)
+  redemptionId   String?               @db.Uuid
+  redemption     RewardRedemption?     @relation("RedemptionTransactions", fields: [redemptionId], references: [id], onDelete: SetNull)
+
+  @@index([walletId, createdAt(sort: Desc)])
+  @@index([type])
+}
+
+model RewardCatalog {
+  id             String             @id @default(uuid()) @db.Uuid
+  name           String             @db.VarChar(160)
+  description    String             @db.VarChar(2000)
+  category       RewardCategory
+  creditCost     Int
+  isActive       Boolean            @default(true)
+  stockQuantity  Int?               // null = unlimited inventory
+  redeemedCount  Int                @default(0)
+  eligibilityReq String?            @db.VarChar(500)
+  terms          String?            @db.VarChar(2000)
+  imageUrl       String?            @db.VarChar(500)
+  isMonetary     Boolean            @default(false)
+  payoutEnabled  Boolean            @default(false) // Strict safety guard: always false by default
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  redemptions    RewardRedemption[]
+
+  @@index([category, isActive])
+}
+
+model RewardRedemption {
+  id              String              @id @default(uuid()) @db.Uuid
+  rewardId        String              @db.Uuid
+  reward          RewardCatalog       @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  userId          String              @db.Uuid
+  user            User                @relation("UserRedemptions", fields: [userId], references: [id], onDelete: Cascade)
+  creditCost      Int
+  status          RedemptionStatus    @default(REQUESTED)
+  userNote        String?             @db.VarChar(1000)
+  adminNote       String?             @db.VarChar(1000)
+  fulfillmentInfo String?             @db.VarChar(1500)
+  reviewerId      String?             @db.Uuid
+  reviewer        User?               @relation("RedemptionReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewedAt      DateTime?
+  fulfilledAt     DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  transactions    CreditTransaction[] @relation("RedemptionTransactions")
+
+  @@index([userId, status])
+  @@index([status, createdAt(sort: Desc)])
+}

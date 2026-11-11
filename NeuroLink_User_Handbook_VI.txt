@@ -1,0 +1,766 @@
+================================================================================
+SỔ TAY HƯỚNG DẪN SỬ DỤNG HỆ THỐNG NEUROLINK
+Cẩm Nang Vận Hành Dành Cho Thầy Thuốc Và Nhà Nghiên Cứu Khoa Học Não Bộ
+Phiên bản phát hành: 1.0 (Bản chính thức)
+Mã dự án: PBL4_Web
+================================================================================
+
+LỜI NÓI ĐẦU: TRIẾT LÝ CỘNG ĐỒNG CỦA CHÚNG TÔI
+
+    Trong y học thực chứng và khoa học thần kinh hiện đại, khoảng cách giữa các
+    nghiên cứu tại phòng thí nghiệm và thực tiễn điều trị bên giường bệnh luôn là
+    một thách thức dai dẳng. Người thầy thuốc lâm sàng đối mặt hàng ngày với các
+    biến chuyển bệnh lý phức tạp trên từng người bệnh cụ thể, trong khi các nhà
+    nghiên cứu tính toán và kỹ sư y sinh tập trung hoàn thiện các thuật toán giải
+    mã tín hiệu điện não đồ (EEG) và giao diện não - máy tính (BCI). Nếu thiếu đi
+    một không gian trao đổi bình đẳng, tin cậy và có tổ chức, nguồn tri thức y học
+    đời thực quý giá này sẽ tiếp tục bị phân mảnh trong các tài liệu rời rạc.
+
+    NeuroLink được xây dựng nhằm giải quyết bài toán cốt lõi đó. Lấy cảm hứng từ
+    thành công của các mạng lưới y tế cộng đồng tiên phong như PatientsLikeMe,
+    NeuroLink tiếp cận các cuộc trao đổi lâm sàng và dữ liệu học thuật như những
+    bằng chứng đời thực (Real-World Evidence). Chúng tôi tin tưởng rằng khi các bác
+    sĩ được cấp phép và các nhà khoa học có thể dễ dàng tìm thấy nhau, tiến hành
+    hội chẩn chuyên môn và nhận được sự tôn vinh xứng đáng cho những đóng góp tri
+    thức chất lượng, toàn bộ cộng đồng khoa học sẽ cùng tiến bước.
+
+    Cuốn sổ tay này được thiết kế để đồng hành cùng quý đồng nghiệp. Dù quý vị là
+    một bác sĩ chuyên khoa nội thần kinh đang tìm kiếm ý kiến hội chẩn liên viện,
+    một nghiên cứu sinh đang công bố phương pháp xử lý tín hiệu mới, hay một nhân
+    viên y tế muốn cập nhật các tiến bộ lâm sàng, tài liệu này sẽ giải thích cặn
+    kẽ mục đích ra đời, cách thức vận hành và phương pháp khai thác an toàn từng
+    chức năng trên nền tảng.
+
+
+MỤC LỤC TỔNG THỂ
+
+    Chương 1:  Tổng Quan Về NeuroLink Và Ranh Giới Vận Hành Hệ Thống
+    Chương 2:  Khởi Đầu Và Đăng Ký Tài Khoản Thành Viên
+    Chương 3:  Tìm Hiểu Giao Diện Người Dùng Và Điều Hướng Thường Nhật
+    Chương 4:  Quản Lý Hồ Sơ Cá Nhân Và Thông Tin Chuyên Môn
+    Chương 5:  Khám Phá Cộng Đồng Và Kết Nối Mạng Lưới Đồng Nghiệp
+    Chương 6:  Tạo Lập Bài Viết Lâm Sàng Và Tương Tác Học Thuật
+    Chương 7:  Nhắn Tin Riêng Tư, Hội Chẩn 1-1 Và Hệ Thống Thông Báo
+    Chương 8:  Xác Minh Chứng Chỉ Chuyên Môn (Bác Sĩ, Nhà Nghiên Cứu, Kỹ Sư)
+    Chương 9:  Chuẩn Mực Đạo Đức Cộng Đồng Y Tế Và Khoa Học
+    Chương 10: Quyền Riêng Tư, An Toàn Thông Tin Và Quản Trị Dữ Liệu
+    Chương 11: Quy Trình Đóng Góp Tri Thức Và Thẩm Định Năm Tiêu Chí
+    Chương 12: Ví Tín Chỉ Chuyên Môn, Sổ Cái Bất Biến Và Danh Mục Quyền Lợi
+    Chương 13: Cổng Quản Trị Hệ Thống, Hàng Đợi Thẩm Định Và Kiểm Duyệt
+    Chương 14: Xử Lý Sự Cố Thường Gặp, Câu Hỏi Thường Gặp (FAQ) Và Thuật Ngữ
+
+
+================================================================================
+CHƯƠNG 1: TỔNG QUAN VỀ NEUROLINK VÀ RANH GIỚI VẬN HÀNH HỆ THỐNG
+================================================================================
+
+1.1 Sứ mệnh và Tôn chỉ hoạt động
+
+    NeuroLink là nền tảng mạng xã hội chuyên ngành được xây dựng chuyên biệt cho
+    lĩnh vực Y tế, Thần kinh học và Khoa học Não bộ. Nền tảng tạo lập một môi
+    trường hợp tác học thuật, nơi các bác sĩ điều trị, nhà nghiên cứu viện trường,
+    bác sĩ nội trú và kỹ sư y sinh có thể chia sẻ các ca lâm sàng đặc biệt, thảo
+    luận tài liệu nghiên cứu mới xuất bản và xây dựng các đề tài hợp tác liên
+    ngành.
+
+    Khác với các mạng xã hội giải trí thông thường, mọi tương tác trên NeuroLink
+    đều đặt tính liêm chính học thuật và đạo đức y sinh lên hàng đầu. Ý kiến lâm
+    sàng mang tính tin cậy cao nhờ huy hiệu chuyên môn đã qua thẩm định, và các
+    đóng góp trí tuệ thực chất được tưởng thưởng công bằng thông qua một hệ thống
+    tín chỉ có sổ cái kiểm toán độc lập.
+
+
+1.2 Bốn nhóm đối tượng thành viên
+
+    Hệ thống phân định rõ ràng bốn nhóm người dùng tham gia với quyền hạn tương
+    ứng:
+
+    1. Người dùng phổ thông (General Community Members)
+       Bao gồm người bệnh, thân nhân, sinh viên y khoa năm đầu và những người quan
+       tâm tới sức khỏe não bộ. Nhóm này có quyền đọc các bài viết giáo dục sức
+       khỏe công khai, tham gia trao đổi văn minh và theo dõi các chuyên gia đầu
+       ngành. Người dùng phổ thông không phải nộp chứng chỉ hành nghề và không
+       tham gia chương trình nhận thưởng tín chỉ.
+
+    2. Bác sĩ và Chuyên gia Y tế Lâm sàng
+       Các bác sĩ chuyên khoa nội thần kinh, ngoại thần kinh, chẩn đoán hình ảnh
+       và phục hồi chức năng. Thành viên nhóm này được thẩm định chứng chỉ hành
+       nghề (CCHN), chia sẻ góc nhìn lâm sàng, tham gia hội chẩn liên viện và tích
+       lũy tín chỉ để quy đổi các khóa đào tạo y khoa liên tục (CME).
+
+    3. Nhà nghiên cứu và Nhà khoa học Thần kinh
+       Các nghiên cứu viên, nghiên cứu sinh, kỹ sư xử lý tín hiệu não bộ và các nhà
+       khoa học nhận thức. Nhóm này xác minh qua đơn vị công tác viện trường hoặc
+       mã định danh ORCID, chia sẻ các công bố nghiên cứu mới và quy đổi tín chỉ lấy
+       vé tham dự các hội nghị khoa học chuyên ngành.
+
+    4. Ban Quản trị và Hội đồng Thẩm định Chuyên môn
+       Các chuyên gia y khoa và cán bộ kỹ thuật chịu trách nhiệm rà soát chứng chỉ
+       hành nghề, chấm điểm bài đóng góp theo năm tiêu chí khoa học, kiểm toán sổ
+       cái tín chỉ và duy trì môi trường trao đổi an toàn.
+
+
+1.3 Ranh giới vận hành và tính độc lập của hệ thống
+
+    Để tránh bất kỳ sự nhầm lẫn nào về phạm vi kỹ thuật của dự án, các thành viên
+    cần nắm vững hai nguyên tắc bất biến sau:
+
+    - Tính độc lập tuyệt đối với kho dữ liệu EEG bên ngoài:
+      NeuroLink vận hành độc lập như một mạng xã hội tri thức chuyên môn. Nền tảng
+      không kết nối, không sao chép, không di chuyển dữ liệu và không can thiệp
+      vào cơ sở dữ liệu của website lưu trữ tập dữ liệu điện não đồ (EEG) đối tác.
+
+    - Không chẩn đoán bệnh tự động:
+      Hệ thống không cung cấp tính năng AI chẩn đoán bệnh thay thế thầy thuốc và
+      không kê đơn điều trị tự động. Mọi phân tích ca bệnh, hình ảnh chụp và thảo
+      luận chuyên môn chỉ mang tính chất tham khảo học thuật giữa đồng nghiệp và
+      tuyệt đối không thay thế quyết định lâm sàng của bác sĩ điều trị trực tiếp.
+
+
+================================================================================
+CHƯƠNG 2: KHỞI ĐẦU VÀ ĐĂNG KÝ TÀI KHOẢN THÀNH VIÊN
+================================================================================
+
+2.1 Khởi tạo tài khoản mới
+
+    Thao tác đăng ký tài khoản trên NeuroLink diễn ra nhanh chóng và thuận tiện.
+    Quý vị mở trình duyệt web và truy cập vào đường dẫn http://localhost:5173/register
+    hoặc nhấn vào nút "Tham gia ngay" trên trang giới thiệu.
+
+    Biểu mẫu đăng ký yêu cầu bốn thông tin chính:
+    1. Tên hiển thị (Display Name): Họ và tên đầy đủ kèm chức danh nếu có, ví dụ
+       "BS. Trần Văn Minh".
+    2. Tên đăng nhập (Username): Định danh viết liền không dấu, dùng trong đường
+       dẫn trang cá nhân và nhắc tên, ví dụ "dr_minh".
+    3. Địa chỉ thư điện tử (Email): Hộp thư liên hệ chính thức dùng cho việc bảo
+       mật tài khoản.
+    4. Mật khẩu (Password): Chuỗi ký tự bảo mật có độ dài tối thiểu 8 ký tự.
+
+    Khi bấm nút xác nhận tạo tài khoản, máy chủ sẽ tự động mã hóa mật khẩu bằng
+    thuật toán băm an toàn bcrypt, lưu trữ vào cơ sở dữ liệu PostgreSQL và cấp một
+    phiên làm việc an toàn thông qua cookie HttpOnly. Quý vị sẽ được chuyển thẳng
+    vào bảng tin chính của cộng đồng.
+
+
+2.2 Đăng nhập và bảo mật phiên làm việc
+
+    Ở các lần truy cập tiếp theo, quý vị điều hướng tới trang http://localhost:5173/login.
+    Quý vị có thể sử dụng tên đăng nhập hoặc địa chỉ thư điện tử kèm mật khẩu để
+    đăng nhập vào hệ thống.
+
+    Cơ chế bảo vệ phiên làm việc của NeuroLink được thiết kế đa lớp:
+    - Phiên làm việc được quản lý bằng mã định danh ngẫu nhiên mã hóa SHA-256 lưu
+      trong cơ sở dữ liệu và đính kèm vào trình duyệt qua cookie mang cờ HttpOnly
+      và SameSite=Lax. Điều này giúp ngăn chặn hoàn toàn nguy cơ tin tặc đánh cắp
+      phiên qua các lỗ hổng Cross-Site Scripting (XSS).
+    - Bộ giới hạn tần suất truy vấn (Rate Limiter) chủ động giám sát các lần thử
+      đăng nhập sai từ mỗi địa chỉ mạng, ngăn chặn các cuộc tấn công dò quét mật
+      khẩu tự động.
+    - Mã thông báo phòng vệ CSRF Header được kiểm tra trên toàn bộ các yêu cầu
+      thay đổi dữ liệu nhạy cảm.
+
+
+2.3 Danh sách tài khoản mẫu phục vụ thử nghiệm
+
+    Trong môi trường kiểm thử cục bộ, cơ sở dữ liệu đã được nạp sẵn dữ liệu thực
+    nghiệm cho các vai trò đại diện:
+
+    +-------------------+----------------------------+-------------+
+    | Vai trò           | Tên đăng nhập / Thư điện tử| Mật khẩu    |
+    +-------------------+----------------------------+-------------+
+    | Quản trị viên     | admin                      | Password123 |
+    |                   | admin@neurolink.test       |             |
+    | Bác sĩ Thần kinh  | dr_minh                    | Password123 |
+    |                   | minh.tran@hospital.vn      |             |
+    | Nhà nghiên cứu BCI| prof_lan                   | Password123 |
+    |                   | lan.nguyen@neurotech.edu.vn|             |
+    +-------------------+----------------------------+-------------+
+
+    Tại màn hình đăng nhập, hệ thống tích hợp sẵn các phím bấm điền nhanh tài
+    khoản giúp quý vị chuyển đổi linh hoạt giữa các vai trò khi kiểm tra tính năng.
+
+
+================================================================================
+CHƯƠNG 3: TÌM HIỂU GIAO DIỆN NGƯỜI DÙNG VÀ ĐIỀU HƯỚNG THƯỜNG NHẬT
+================================================================================
+
+3.1 Không gian làm việc ba cột trên máy tính
+
+    Giao diện NeuroLink trên máy tính để bàn và máy tính xách tay được bố trí
+    thành ba phân vùng rõ ràng nhằm tối ưu hóa sự tập trung:
+
+    - Cột điều hướng bên trái:
+      Hiển thị ảnh đại diện và thông tin tóm tắt hồ sơ của quý vị. Phía dưới là
+      các liên kết trực tiếp tới Bảng tin chính, Danh bạ chuyên gia, Tin nhắn trao
+      đổi, Thông báo mới, Trung tâm đóng góp và Ví tín chỉ & Phần thưởng. Dưới
+      cùng là danh mục các thẻ chủ đề lâm sàng nổi bật (#LamSangThanKinh,
+      #BCI_Neurotech...) giúp truy cập nhanh các chủ đề thảo luận.
+
+    - Cột nội dung trung tâm:
+      Bao gồm khung soạn thảo bài viết chuyên môn ở trên cùng, thanh chuyển đổi
+      chế độ xem ("Tất cả bài viết" hoặc "Đang theo dõi"), và dòng thời gian các
+      bài viết học thuật được tải liên tục theo cơ chế phân trang vô hạn.
+
+    - Cột đề xuất bên phải:
+      Gợi ý danh sách các bác sĩ và nhà khoa học tiêu biểu cùng chuyên khoa hoặc
+      hướng nghiên cứu với quý vị, kèm nút bấm "Theo dõi" nhanh.
+
+
+3.2 Thanh công cụ đầu trang và khả năng thích ứng di động
+
+    Thanh công cụ trên cùng luôn hiển thị trên mọi trang màn hình, bao gồm:
+    - Biểu tượng NeuroLink đưa quý vị quay về Bảng tin chính từ bất kỳ đâu.
+    - Thanh tìm kiếm tổng hợp giúp tra cứu đồng nghiệp, bài viết và triệu chứng.
+    - Biểu tượng tin nhắn và thông báo với bộ đếm số lượng chưa đọc được đồng bộ
+      tự động theo thời gian thực.
+    - Menu tài khoản cá nhân dẫn tới trang xem hồ sơ, cài đặt tài khoản, cổng
+      quản trị (đối với quản trị viên) và nút đăng xuất an toàn.
+
+    Khi truy cập nền tảng từ điện thoại di động hoặc máy tính bảng, hai cột bên
+    sẽ được ẩn gọn gàng, thay vào đó là thanh điều hướng cố định ở đáy màn hình
+    giúp quý vị thao tác một chạm nhanh chóng giữa Bảng tin, Khám phá, Tin nhắn,
+    Thông báo và Hồ sơ cá nhân.
+
+
+================================================================================
+CHƯƠNG 4: QUẢN LÝ HỒ SƠ CÁ NHÂN VÀ THÔNG TIN CHUYÊN MÔN
+================================================================================
+
+4.1 Thành phần của trang hồ sơ công khai
+
+    Trang hồ sơ cá nhân tại địa chỉ http://localhost:5173/u/ten_nguoi_dung đóng vai
+    trò như một bản lý lịch khoa học và lâm sàng thu nhỏ của quý vị trên mạng lưới.
+    Đồng nghiệp khi xem trang này sẽ nắm bắt được tên hiển thị đầy đủ, tiểu sử
+    chuyên môn, ảnh đại diện, số lượng người theo dõi và danh sách các bài viết
+    học thuật mà quý vị đã công bố theo thứ tự thời gian.
+
+    Đối với các thành viên đã được xác thực chuyên môn:
+    - Thầy thuốc lâm sàng sẽ có huy hiệu y tế màu xanh ngọc, ghi rõ chức danh,
+      chuyên khoa điều trị, bệnh viện công tác và thâm niên hành nghề.
+    - Nhà khoa học sẽ có huy hiệu học thuật màu tím, hiển thị viện nghiên cứu,
+      hướng đề tài mũi nhọn và liên kết dẫn thẳng tới trang xuất bản khoa học
+      trên hệ thống ORCID quốc tế.
+
+
+4.2 Cập nhật thông tin tài khoản
+
+    Để chỉnh sửa thông tin, quý vị mở menu góc phải trên thanh tiêu đề và chọn mục
+    "Cài đặt tài khoản" (Settings). Tại tab thông tin cá nhân, quý vị có thể:
+    - Cập nhật lại tên hiển thị và thay đổi ảnh đại diện.
+    - Bổ sung nội dung tiểu sử để cập nhật các hướng đề tài mới hoặc vị trí công
+      tác mới được bổ nhiệm.
+    - Xem lại địa chỉ thư điện tử đã đăng ký.
+
+    Sau khi điều chỉnh, quý vị bấm nút "Lưu thay đổi". Mọi thông tin mới sẽ được
+    cập nhật tức thì trên toàn bộ hệ thống.
+
+
+4.3 Đổi mật khẩu bảo vệ tài khoản
+
+    Cũng tại khu vực Cài đặt, phân hệ "Bảo mật" cho phép quý vị cập nhật mật khẩu
+    định kỳ. Quý vị nhập mật khẩu hiện tại một lần, sau đó nhập mật khẩu mới và
+    xác nhận lại.
+
+    Khi xác nhận đổi mật khẩu thành công, máy chủ sẽ cập nhật mã băm mật khẩu mới
+    đồng thời tự động hủy bỏ toàn bộ các phiên đăng nhập đang hoạt động trên các
+    thiết bị khác, bảo vệ tài khoản nếu quý vị từng đăng nhập tại máy tính khoa
+    phòng mà quên đăng xuất.
+
+
+================================================================================
+CHƯƠNG 5: KHÁM PHÁ CỘNG ĐỒNG VÀ KẾT NỐI MẠNG LƯỚI ĐỒNG NGHIỆP
+================================================================================
+
+5.1 Khai thác công cụ tìm kiếm tri thức
+
+    Trang Khám phá tại địa chỉ http://localhost:5173/search cung cấp ba phương thức
+    tìm kiếm linh hoạt:
+
+    1. Tìm kiếm theo từ khóa chuyên ngành:
+       Quý vị có thể nhập tên hội chứng lâm sàng (ví dụ: "đột quỵ", "động kinh",
+       "u não") hoặc thuật ngữ kỹ thuật (ví dụ: "fMRI", "xử lý tín hiệu EEG",
+       "sóng P300"). Hệ thống sẽ quét đồng thời trên tiêu đề, nội dung bài viết,
+       tên tác giả và chuyên khoa công tác.
+
+    2. Bộ lọc ba phân loại:
+       Lọc kết quả theo ba tab: "Tất cả bài viết", "Chuyên gia Y tế & Nghiên cứu",
+       hoặc "Bài viết khoa học".
+
+    3. Thẻ chủ đề lâm sàng (Hashtags):
+       Bấm vào bất kỳ thẻ chủ đề nào gắn trong bài viết hoặc ở thanh điều hướng bên
+       trái để gom nhóm ngay các thảo luận liên quan đến cùng một lĩnh vực.
+
+
+5.2 Danh bạ chuyên gia y tế và khoa học thần kinh
+
+    Để tìm kiếm đồng nghiệp theo chuyên khoa sâu hoặc đơn vị công tác, quý vị truy
+    cập mục Danh bạ chuyên gia tại http://localhost:5173/search?category=professionals.
+
+    Danh bạ tổ chức thông tin chuyên gia một cách khoa học: hiển thị rõ khoa phòng,
+    bệnh viện hoặc viện nghiên cứu, đi kèm trạng thái tích xanh xác thực. Nhờ đó,
+    một bác sĩ điều trị ở tuyến tỉnh có thể dễ dàng định vị chuyên gia can thiệp
+    mạch não ở tuyến trung ương để xin ý kiến hội chẩn, hoặc một kỹ sư thuật toán
+    có thể kết nối với một phòng thí nghiệm sinh lý thần kinh để phối hợp nghiên
+    cứu.
+
+
+================================================================================
+CHƯƠNG 6: TẠO LẬP BÀI VIẾT LÂM SÀNG VÀ TƯƠNG TÁC HỌC THUẬT
+================================================================================
+
+6.1 Soạn thảo và công bố bài viết chuyên môn
+
+    Khung soạn thảo bài viết nằm ở vị trí trang trọng đầu bảng tin chính. Để tạo
+    một bài chia sẻ có giá trị học thuật cao, quý vị tiến hành theo các bước:
+
+    1. Trình bày nội dung:
+       Soạn thảo tóm tắt ca lâm sàng, tiến triển điều trị, hoặc phân tích kết quả
+       nghiên cứu. Quý vị nên trích dẫn nguồn tài liệu tham khảo và gắn các thẻ
+       chủ đề liên quan để đồng nghiệp cùng quan tâm dễ dàng tiếp cận.
+
+    2. Đính kèm hình ảnh chẩn đoán:
+       Bấm vào biểu tượng đính kèm tệp để tải lên tối đa bốn hình ảnh minh họa
+       (như lát cắt phim chụp cộng hưởng từ MRI, cắt lớp vi tính CT, biểu đồ phổ
+       sóng điện não EEG hoặc sơ đồ phác đồ can thiệp). Định dạng hỗ trợ gồm
+       JPEG, PNG, WebP với dung lượng tối đa 5 megabytes cho mỗi ảnh.
+
+    3. Công bố bài viết:
+       Bấm nút "Đăng bài". Bài viết sẽ xuất hiện ngay lập tức trên bảng tin của
+       cộng đồng.
+
+
+6.2 Quy định bắt buộc về ẩn danh thông tin người bệnh
+
+    Kế thừa tiêu chuẩn đạo đức nghiêm ngặt của các mạng lưới như PatientsLikeMe,
+    quyền riêng tư và tính bảo mật của người bệnh là nguyên tắc bất khả xâm phạm:
+
+    Trước khi tải lên bất kỳ hình ảnh chụp phim MRI, CT, bản ghi EEG hoặc ảnh chụp
+    tổn thương lâm sàng, quý vị BẮT BUỘC phải làm mờ, cắt bỏ hoặc che khuất hoàn
+    toàn mọi dữ liệu định danh cá nhân của người bệnh, bao gồm họ tên, ngày tháng
+    năm sinh, số hồ sơ bệnh án, mã số bảo hiểm y tế và khuôn mặt người bệnh. Mọi
+    bài viết vi phạm quy định bảo mật thông tin y tế sẽ bị gỡ bỏ ngay lập tức và
+    tài khoản vi phạm sẽ bị xem xét xử lý kỷ luật.
+
+
+6.3 Tương tác học thuật lành mạnh
+
+    - Bày tỏ sự đồng thuận (Thích bài viết):
+      Bấm vào biểu tượng trái tim dưới bài viết. Hệ thống áp dụng cơ chế khóa ở
+      tầng cơ sở dữ liệu để loại trừ các hành vi bấm đúp tạo tương tác ảo.
+
+    - Bình luận và phản biện chuyên môn:
+      Bấm vào biểu tượng bình luận để mở luồng trao đổi. Đây là không gian dành cho
+      việc đặt câu hỏi phân tích, đề xuất chẩn đoán phân biệt hoặc chia sẻ kinh
+      nghiệm xử trí tương tự. Tác giả có toàn quyền chỉnh sửa hoặc xóa bình luận
+      của mình khi cần thiết.
+
+    - Theo dõi đồng nghiệp:
+      Bấm "Theo dõi" trên hồ sơ của một đồng nghiệp sẽ đưa toàn bộ các bài viết
+      sau đó của người đó vào tab "Đang theo dõi" của quý vị, giúp quý vị xây dựng
+      một dòng thông tin học thuật được cá nhân hóa cao.
+
+
+================================================================================
+CHƯƠNG 7: NHẮN TIN RIÊNG TƯ, HỘI CHẨN 1-1 VÀ HỆ THỐNG THÔNG BÁO
+================================================================================
+
+7.1 Kênh hội chẩn riêng tư một đối một
+
+    Trong khi các thảo luận mở trên bảng tin mang lại lợi ích giáo dục cho số
+    đông, nhiều trường hợp thảo luận chi tiết ca bệnh nặng hoặc trao đổi ý tưởng
+    đề tài nghiên cứu cần sự bảo mật tuyệt đối. NeuroLink cung cấp trung tâm tin
+    nhắn riêng biệt tại http://localhost:5173/messages.
+
+    Để bắt đầu cuộc trao đổi:
+    1. Truy cập trang cá nhân của chuyên gia mà quý vị muốn tham vấn.
+    2. Bấm vào nút "Nhắn tin".
+    3. Cửa sổ hội thoại sẽ mở ra. Quý vị nhập nội dung trao đổi vào ô văn bản ở
+       đáy màn hình và nhấn phím Enter hoặc biểu tượng gửi.
+
+    Bảo đảm phân quyền máy chủ:
+    Mọi cuộc hội thoại trên NeuroLink đều được cô lập nghiêm ngặt. Máy chủ kiểm tra
+    tư cách thành viên trên từng yêu cầu đọc và gửi tin nhắn. Bất kỳ nỗ lực truy
+    cập trái phép nào vào cuộc hội thoại của người khác đều bị từ chối thẳng thừng
+    với mã lỗi 403 Forbidden.
+
+
+7.2 Trung tâm thông báo đa kênh
+
+    Hộp thư thông báo tại http://localhost:5173/notifications tập hợp toàn bộ các
+    diễn biến cần lưu ý:
+    - Lượt thích và bình luận: Cho biết khi nào đồng nghiệp phản hồi bài viết của
+      quý vị.
+    - Người theo dõi mới: Cảnh báo khi có chuyên gia bắt đầu theo dõi hồ sơ của quý
+      vị.
+    - Tin nhắn hội chẩn mới: Báo hiệu khi có tin nhắn riêng tư gửi tới.
+    - Kết quả thẩm định bài đóng góp: Thông báo tức thì khi bài viết được hội
+      đồng chấm điểm, phê duyệt cộng tín chỉ hoặc yêu cầu hoàn thiện.
+    - Kết quả đổi phần thưởng: Cung cấp mã kích hoạt khóa học hoặc thư xác nhận
+      khi yêu cầu đổi quà được quản trị viên xử lý thành công.
+
+    Quý vị có thể sử dụng nút "Đánh dấu đã đọc tất cả" ở góc trên để dọn sạch huy
+    hiệu đếm thông báo chỉ với một cú nhấp chuột.
+
+
+================================================================================
+CHƯƠNG 8: XÁC MINH CHỨNG CHỈ CHUYÊN MÔN (BÁC SĨ, NHÀ NGHIÊN CỨU, KỸ SƯ)
+================================================================================
+
+8.1 Mục đích và Các diện chuyên môn hợp lệ
+
+    Quy trình thẩm định bằng cấp là nền tảng cốt lõi tạo dựng uy tín khoa học của
+    NeuroLink. Người dùng phổ thông tham gia bình thường mà không cần xác minh.
+    Chương trình xác minh chuyên môn chỉ áp dụng cho ba diện đối tượng cụ thể:
+
+    Diện 1: Bác sĩ và Nhân viên Y tế Điều trị
+      Đối tượng: Bác sĩ chuyên khoa, bác sĩ nội trú, nhân viên y tế có Chứng chỉ
+      hành nghề (CCHN) do Bộ Y tế hoặc Sở Y tế cấp phép hợp lệ.
+
+    Diện 2: Nhà nghiên cứu và Nghiên cứu sinh Khoa học Não bộ
+      Đối tượng: Giảng viên đại học, nghiên cứu viên, nghiên cứu sinh trực thuộc
+      các trường đại học y dược, viện nghiên cứu khoa học thần kinh, sở hữu mã
+      định danh ORCID hoặc hồ sơ xuất bản khoa học được chứng thực.
+
+    Diện 3: Chuyên gia Khoa học và Kỹ sư Kỹ thuật Y sinh
+      Đối tượng: Kỹ sư lâm sàng tại bệnh viện, kỹ sư phát triển thiết bị y sinh,
+      chuyên gia xử lý tín hiệu thần kinh sở hữu xác nhận công tác từ cơ quan y tế.
+
+
+8.2 Hướng dẫn nộp hồ sơ từng bước
+
+    1. Truy cập mục Cài đặt tài khoản (http://localhost:5173/settings) và cuộn tới
+       khu vực "Xác minh danh tính chuyên môn".
+    2. Chọn diện nghề nghiệp phù hợp (Bác sĩ hoặc Nhà nghiên cứu).
+    3. Điền chức danh, đơn vị công tác chính thức và số chứng chỉ hành nghề hoặc
+       mã số định danh ORCID.
+    4. Tải lên tệp tài liệu minh chứng định dạng PDF hoặc hình ảnh rõ nét (ảnh chụp
+       chứng chỉ hành nghề CCHN, thẻ cán bộ bệnh viện hoặc bằng cấp sau đại học).
+    5. Bấm nút "Gửi hồ sơ xác minh".
+
+
+8.3 Quy trình kiểm tra bằng chứng của hệ thống
+
+    Sau khi nộp, hồ sơ sẽ được chuyển vào hàng đợi xử lý chuyên biệt:
+    - Công nghệ AI OCR quét tự động tệp tài liệu, trích xuất họ tên, số quyết định
+      cấp phép và đơn vị ban hành văn bản.
+    - Hệ thống tính toán và lưu trữ mã băm SHA-256 của tệp, bảo đảm tài liệu minh
+      chứng không thể bị tráo đổi hoặc chỉnh sửa sau thời điểm nộp.
+    - Quản trị viên đối chiếu dữ liệu OCR với cơ sở dữ liệu cấp phép chính thống,
+      xác nhận danh tính và phê duyệt cấp tích xanh.
+    - Ngay sau khi được duyệt, hồ sơ của quý vị sẽ mang huy hiệu chuyên môn và
+      được mở khóa toàn bộ quyền hạn tham gia Trung tâm Đóng góp & Tín chỉ.
+
+
+================================================================================
+CHƯƠNG 9: CHUẨN MỰC ĐẠO ĐỨC CỘNG ĐỒNG Y TẾ VÀ KHOA HỌC
+================================================================================
+
+9.1 Tinh thần hợp tác học thuật trên chứng cứ thực nghiệm
+
+    NeuroLink duy trì môi trường trao đổi tôn trọng, liêm chính và dựa trên cơ sở
+    khoa học. Mọi ý kiến phản biện về phương pháp can thiệp hay phân tích dữ liệu
+    đều được khuyến khích, với điều kiện người tham gia tập trung vào số liệu thực
+    chứng và lập luận khoa học, tuyệt đối không công kích cá nhân hay gây mất đoàn
+    kết đồng nghiệp.
+
+
+9.2 Ranh giới giữa Trao đổi học thuật và Khám chữa bệnh
+
+    Một ranh giới đạo đức quan trọng cần được tuân thủ nghiêm cẩn:
+    NeuroLink là nền tảng trao đổi chuyên môn giữa đồng nghiệp và chia sẻ tri thức
+    y học đại chúng. Nền tảng KHÔNG PHẢI là phòng khám khám chữa bệnh từ xa.
+    Thầy thuốc không được thiết lập quan hệ bác sĩ - bệnh nhân chính thức, không
+    được ra kết luận chẩn đoán mang tính pháp lý hoặc kê đơn thuốc kiểm soát qua
+    các bài đăng hay tin nhắn. Người dùng phổ thông đọc các ca bệnh thảo luận cần
+    hiểu rằng đây là tư liệu học thuật và phải luôn tham vấn bác sĩ điều trị trực
+    tiếp của mình.
+
+
+9.3 Báo cáo nội dung vi phạm
+
+    Nếu phát hiện bài viết có dấu hiệu tiết lộ danh tính bệnh nhân, lan truyền
+    thông tin y tế sai sự thật hoặc vi phạm đạo đức nghiên cứu, quý vị bấm vào
+    biểu tượng cờ báo cáo dưới bài viết. Quý vị chọn phân loại vi phạm và ghi chú
+    ngắn gọn lý do. Toàn bộ các phản ánh đều được hội đồng kiểm duyệt xem xét cẩn
+    trọng trong hàng đợi quản trị riêng biệt.
+
+
+================================================================================
+CHƯƠNG 10: QUYỀN RIÊNG TƯ, AN TOÀN THÔNG TIN VÀ QUẢN TRỊ DỮ LIỆU
+================================================================================
+
+10.1 Lưu trữ cách ly tài liệu chứng chỉ nhạy cảm
+
+    Các tệp tài liệu chứng chỉ hành nghề và bằng cấp do thành viên tải lên khi xin
+    cấp tích xanh tuyệt đối không lưu trữ trong thư mục công khai của trang web.
+    Chúng được lưu trữ tại một phân vùng máy chủ riêng biệt, chỉ có thể truy xuất
+    thông qua API quản trị có xác thực phiên nghiêm ngặt và mọi lượt mở xem tài
+    liệu đều được ghi nhận vào nhật ký kiểm toán không thể xóa.
+
+
+10.2 Quản trị phiên làm việc và bảo vệ dữ liệu
+
+    Phiên đăng nhập của quý vị sẽ tự động hết hạn sau khoảng thời gian không có
+    tương tác, buộc phải xác thực lại nhằm bảo vệ tài khoản trên các máy tính dùng
+    chung tại bệnh viện. Khi rời khỏi máy tính công cộng, quý vị luôn nhớ bấm nút
+    "Đăng xuất" để hủy bỏ cookie phiên ngay lập tức.
+
+
+10.3 Đạo đức dữ liệu nghiên cứu khoa học
+
+    Khi chia sẻ các phát hiện từ thử nghiệm lâm sàng hoặc tập dữ liệu hình ảnh não
+    bộ, các nhà khoa học phải bảo đảm rằng đề tài đã được thông qua bởi Hội đồng
+    Đạo đức trong Nghiên cứu Y sinh học (IRB) có thẩm quyền và đã thu thập đầy đủ
+    văn bản chấp thuận tham gia của người bệnh trước khi công bố dữ liệu tổng hợp.
+
+
+================================================================================
+CHƯƠNG 11: QUY TRÌNH ĐÓNG GÓP TRI THỨC VÀ THẨM ĐỊNH NĂM TIÊU CHÍ
+================================================================================
+
+11.1 Ý nghĩa của Phân hệ Đóng góp Chuyên môn
+
+    Các bác sĩ và nhà nghiên cứu thường dành nhiều tâm huyết để tổng hợp các ca
+    lâm sàng hay và viết các bài hướng dẫn chi tiết. NeuroLink tôn vinh công sức
+    đó thông qua chương trình Đóng góp & Tưởng thưởng chuyên môn.
+
+    Đặc biệt, quý vị KHÔNG CẦN phải viết lại bài mới. Quý vị có thể chọn trực
+    tiếp bất kỳ bài viết chất lượng cao nào mà mình đã đăng tải trên bảng tin cá
+    nhân để nộp xét duyệt nhận tín chỉ.
+
+
+11.2 Năm danh mục đóng góp chuyên môn
+
+    Khi nộp bài, quý vị phân loại bài viết vào một trong năm danh mục sau:
+
+    1. HEALTHCARE_EDUCATION (Giáo dục & Nhận thức Y tế)
+       Giải thích cơ chế bệnh sinh thần kinh, hướng dẫn điều trị, phác đồ phục hồi
+       chức năng sau đột quỵ và nâng cao hiểu biết sức khỏe cộng đồng.
+
+    2. RESEARCH_CONTRIBUTION (Công bố & Tóm tắt Nghiên cứu)
+       Báo cáo kết quả thử nghiệm lâm sàng, mô hình BCI mới, thuật toán giải mã
+       tín hiệu điện não và tổng hợp các công bố quốc tế mới xuất bản.
+
+    3. EXPERT_QA (Hỏi đáp Chuyên gia)
+       Các câu trả lời mang tính chuyên môn sâu, giải đáp tường tận các ca bệnh hóc
+       búa do đồng nghiệp hoặc cộng đồng nêu ra.
+
+    4. RESEARCH_DISCUSSION (Thảo luận & Phản biện Học thuật)
+       Các bài phân tích học thuật đa chiều, đánh giá ưu khuyết điểm của các kỹ
+       thuật phẫu thuật thần kinh hoặc phương pháp can thiệp vi điện cực.
+
+    5. EDUCATIONAL_RESOURCE (Học liệu & Tài liệu Đào tạo)
+       Infographic giải phẫu thần kinh, video hướng dẫn thao tác đọc bản ghi điện
+       não hoặc sơ đồ thuật toán hỗ trợ giảng dạy lâm sàng.
+
+
+11.3 Trình tự nộp bài từng bước
+
+    1. Truy cập Trung tâm Đóng góp tại http://localhost:5173/contributions.
+    2. Nếu tài khoản đã có tích xanh, bấm nút "Nộp bài đóng góp mới".
+    3. Chọn bài viết hiện có của quý vị từ danh sách sổ xuống.
+    4. Chọn danh mục đóng góp phù hợp.
+    5. Viết đoạn thuyết minh ngắn gọn về giá trị y khoa hoặc khoa học của bài.
+    6. Bấm "Xác nhận nộp hồ sơ".
+
+
+11.4 Năm tiêu chí chấm điểm của Hội đồng chuyên môn
+
+    Bài viết được hội đồng thẩm định đánh giá độc lập theo thang điểm từ 1 đến 5 sao:
+    - Độ chính xác khoa học (ACCURACY): Tính chuẩn xác của kiến thức y học và bằng chứng.
+    - Tính phù hợp chuyên môn (RELEVANCE): Sự gắn kết với ngành thần kinh và BCI.
+    - Tính hữu ích ứng dụng (USEFULNESS): Giá trị thực tiễn cho thầy thuốc và người học.
+    - Tính nguyên bản (ORIGINALITY): Góc nhìn độc lập, đúc kết thực tiễn thay vì sao chép.
+    - Tác động cộng đồng (COMMUNITY_IMPACT): Thúc đẩy tranh luận học thuật văn minh.
+
+
+11.5 Vòng đời trạng thái và Rào cản chống tự duyệt
+
+    Hồ sơ đóng góp chuyển đổi qua các trạng thái nghiêm ngặt:
+    - DRAFT -> SUBMITTED (Đã nộp) -> UNDER_REVIEW (Đang duyệt) -> APPROVED (Được duyệt và cộng tín chỉ)
+    - Hoặc: NEEDS_REVISION (Yêu cầu tác giả chỉnh sửa bổ sung)
+    - Hoặc: REJECTED (Từ chối, kèm nhận xét chi tiết của hội đồng)
+    - Tác giả có quyền rút hồ sơ (WITHDRAWN) bất kỳ lúc nào khi chưa được duyệt.
+
+    Quy tắc chống tự duyệt (Anti-Self-Review Guard):
+    Tác giả bài viết tuyệt đối không thể tự nhận thẩm định hoặc tự phê duyệt bài
+    của chính mình. Máy chủ sẽ chặn đứng mọi nỗ lực tự duyệt với mã lỗi 403
+    Forbidden, bảo đảm tính khách quan tuyệt đối cho hệ thống khen thưởng.
+
+
+================================================================================
+CHƯƠNG 12: VÍ TÍN CHỈ CHUYÊN MÔN, SỔ CÁI BẤT BIẾN VÀ DANH MỤC QUYỀN LỢI
+================================================================================
+
+12.1 Nguyên lý Sổ cái Bất biến (Immutable Append-Only Ledger)
+
+    Tín chỉ trên NeuroLink được quản lý theo tiêu chuẩn kế toán tài chính khắt khe:
+    - Sổ cái giao dịch (bảng CreditTransaction) là Nguồn Chân Lý Duy Nhất. Mọi biến
+      động tín chỉ (được thưởng, đổi quà, hoàn trả, điều chỉnh) đều được ghi nhận
+      dưới dạng một bản ghi nhật ký vĩnh viễn kèm thời điểm, mã tham chiếu và khóa
+      chống trùng lặp.
+    - Số dư ví (bảng CreditWallet) là giá trị bộ đệm phái sinh. Số dư KHÔNG BAO GIỜ
+      được cập nhật mà thiếu một giao dịch ghi sổ tương ứng bên trong một phiên cơ
+      sở dữ liệu nguyên tử (prisma.$transaction).
+    - Lịch sử sổ cái không bao giờ bị chỉnh sửa hoặc xóa bỏ.
+
+
+12.2 Các loại hình giao dịch tín chỉ
+
+    - CONTRIBUTION_REWARD (+): Tín chỉ cộng thưởng khi bài đóng góp được duyệt.
+    - REWARD_REDEMPTION (-): Tín chỉ trừ khi thành viên yêu cầu đổi quyền lợi.
+    - REFUND (+): Tín chỉ tự động hoàn lại ví khi yêu cầu đổi quà bị hủy hoặc từ chối.
+    - ADMIN_ADJUSTMENT (+/-): Điều chỉnh ghi sổ thủ công từ quản trị viên kèm lý do
+      giải trình kiểm toán bắt buộc.
+
+
+12.3 Danh mục quyền lợi chuyên môn
+
+    Thành viên có thể sử dụng tín chỉ tại trang http://localhost:5173/rewards để đổi
+    lấy các quyền lợi bồi dưỡng sự nghiệp do ban điều hành phê duyệt:
+    - Các khóa học đào tạo y khoa liên tục (CME) được chứng nhận chính thức.
+    - Vé tham dự hội nghị khoa học thần kinh quốc gia và quốc tế.
+    - Quyền truy cập cơ sở dữ liệu tạp chí nghiên cứu và thư viện y khoa số.
+    - Buổi cố vấn nghiên cứu 1-1 cùng các Giáo sư, chuyên gia đầu ngành.
+    - Đăng ký tham gia các sự kiện kết nối chuyên ngành.
+
+
+12.4 Cơ chế khóa rút tiền mặt bảo vệ quỹ thưởng (Anti-Cash-Drain)
+
+    Nhằm giữ gìn tôn chỉ học thuật phi lợi nhuận và ngăn ngừa nguy cơ gian lận tài
+    chính, tính năng quy đổi tiền mặt trực tiếp BỊ KHÓA MẶC ĐỊNH (payoutEnabled = false).
+    - Nền tảng kiên quyết từ chối mọi yêu cầu rút tiền mặt nếu chính sách chi trả
+      chưa được ban điều hành phê duyệt hợp thức.
+    - NeuroLink TUYỆT ĐỐI KHÔNG hỗ trợ tiền mã hóa (crypto), không dùng blockchain
+      và không cho phép chuyển nhượng tín chỉ giữa các cá nhân (P2P).
+    - Tín chỉ là thước đo ghi nhận đóng góp tri thức trong hệ sinh thái học thuật
+      NeuroLink.
+
+
+12.5 Quy trình đổi quà và Tự động hoàn tín chỉ
+
+    1. Thành viên duyệt danh mục phần thưởng trên trang Rewards và bấm "Đổi thưởng ngay".
+    2. Hệ thống kiểm tra số dư khả dụng, trừ tín chỉ, ghi một giao dịch vào sổ cái
+       và tạo yêu cầu ở trạng thái REQUESTED.
+    3. Quản trị viên tiếp nhận và bàn giao (cung cấp mã kích hoạt khóa học CME hoặc
+       thư mời tham dự hội thảo).
+    4. Nếu phần thưởng hết suất hoặc thành viên chủ động hủy yêu cầu, hệ thống sẽ
+       phát hành giao dịch REFUND tự động, hoàn trả 100% tín chỉ về ví tức thì.
+
+
+================================================================================
+CHƯƠNG 13: CỔNG QUẢN TRỊ HỆ THỐNG, HÀNG ĐỢI THẨM ĐỊNH VÀ KIỂM DUYỆT
+================================================================================
+
+13.1 Tổng quan về Bảng điều khiển Quản trị
+
+    Cổng quản trị tập trung tại http://localhost:5173/admin dành riêng cho các thành
+    viên ban điều hành và hội đồng y khoa, được phân thành năm tab tác nghiệp:
+
+    Tab 1: Thẩm định Bác sĩ/ORCID (Hàng đợi duyệt chứng chỉ)
+      Hiển thị hồ sơ xin cấp tích xanh. Quản trị viên xem xét đơn vị công tác, đối
+      chiếu kết quả AI OCR, kiểm tra tính toàn vẹn SHA-256 của tệp và ra quyết định
+      phê duyệt hoặc yêu cầu bổ sung bằng chứng.
+
+    Tab 2: Xét duyệt Đóng góp (Hàng đợi chấm điểm chuyên môn)
+      Thẩm định viên tiếp nhận hồ sơ, đọc toàn văn bài viết gốc, chấm điểm từ 1 đến
+      5 sao trên năm tiêu chí, ghi nhận xét phản biện, định mức tín chỉ khen thưởng
+      và đưa ra quyết định (Duyệt, Từ chối hoặc Yêu cầu sửa đổi).
+
+    Tab 3: Phần thưởng & Đổi quà (Quản lý danh mục & Bàn giao quyền lợi)
+      Quản lý kho phần thưởng (thêm khóa học CME mới, cập nhật số lượng giới hạn,
+      điều chỉnh điểm) và xử lý bàn giao mã kích hoạt cho các yêu cầu đổi quà của
+      thành viên.
+
+    Tab 4: Quản lý Ví Tín chỉ (Kiểm toán số dư và Điều chỉnh sổ cái)
+      Cung cấp báo cáo tổng lượng tín chỉ đang lưu hành. Quản trị viên có thể tra cứu
+      bất kỳ ví thành viên nào, xem toàn bộ lịch sử sổ cái và thực hiện điều chỉnh
+      tín chỉ kèm bắt buộc ghi nhận lý do phục vụ kiểm toán.
+
+    Tab 5: Báo cáo Vi phạm (Hàng đợi kiểm duyệt cộng đồng)
+      Tiếp nhận phản ánh từ các thành viên về nội dung vi phạm tiêu chuẩn y đức hoặc
+      bảo mật thông tin bệnh nhân để tiến hành ẩn bài viết hoặc áp dụng chế tài phù hợp.
+
+
+================================================================================
+CHƯƠNG 14: XỬ LÝ SỰ CỐ THƯỜNG GẶP, CÂU HỎI THƯỜNG GẶP (FAQ) VÀ THUẬT NGỮ
+================================================================================
+
+14.1 Các câu hỏi thường gặp (FAQ)
+
+    Q: Người không có bằng cấp y khoa có được đăng ký thành viên không?
+    A: Hoàn toàn được. Người dùng phổ thông có thể tạo tài khoản, đọc bài viết chia
+       sẻ, theo dõi bác sĩ và tham gia trao đổi văn minh. Chỉ có huy hiệu chuyên môn
+       mới yêu cầu thẩm định bằng cấp.
+
+    Q: Tại sao bài viết nộp nhận thưởng của tôi bị từ chối?
+    A: Bài viết nộp thẩm định được chấm điểm khắt khe trên 5 tiêu chí khoa học. Nếu
+       bài viết thiếu căn cứ y học, nội dung sơ sài hoặc chọn sai danh mục đóng góp,
+       hội đồng sẽ từ chối và ghi rõ lý do trong phần lịch sử đánh giá để quý vị hoàn
+       thiện lại.
+
+    Q: Tôi có thể chuyển nhượng tín chỉ trong ví cho đồng nghiệp được không?
+    A: Không. Mọi giao dịch chuyển điểm P2P giữa các tài khoản đều bị nghiêm cấm
+       nhằm bảo vệ tính liêm chính của hệ thống ghi nhận đóng góp học thuật.
+
+    Q: Nếu một bài viết đã duyệt thưởng sau đó bị phát hiện sao chép thì sao?
+    A: Ban quản trị có toàn quyền thu hồi trạng thái phê duyệt và phát hành một giao
+       dịch điều chỉnh trừ lại toàn bộ số tín chỉ đã trao.
+
+
+14.2 Hướng dẫn xử lý một số sự cố kỹ thuật
+
+    - Không đính kèm được ảnh khi đăng bài:
+      Kiểm tra tệp ảnh có đúng định dạng JPEG, PNG, WebP không và bảo đảm dung lượng
+      mỗi ảnh dưới 5 MB. Nếu phim chụp có dung lượng quá lớn, hãy xuất ảnh ở độ phân
+      giải tiêu chuẩn trước khi đăng.
+
+    - Gặp thông báo "Thao tác bị từ chối (403)" khi duyệt bài đóng góp:
+      Rất có thể quý vị đang thao tác trên một bài viết do chính tài khoản của mình
+      đăng tải. Quy định Chống tự duyệt ngăn cản tác giả tự chấm điểm bài của mình.
+      Hãy chuyển bài đó cho một thành viên khác trong hội đồng đánh giá.
+
+    - Báo lỗi "Rút tiền mặt hiện chưa được kích hoạt":
+      Tính năng chi trả tiền mặt bị khóa mặc định theo quy tắc Anti-Cash-Drain. Quý
+      vị vui lòng sử dụng tín chỉ để đổi các quyền lợi chuyên môn như khóa học CME
+      hoặc vé hội nghị khoa học.
+
+
+14.3 Bảng thuật ngữ chuyên ngành và nền tảng
+
+    - BCI (Brain-Computer Interface):
+      Giao diện não - máy tính, kênh giao tiếp trực tiếp giữa hoạt động điện não và
+      thiết bị tính toán bên ngoài.
+
+    - CCHN:
+      Chứng chỉ hành nghề khám bệnh, chữa bệnh do cơ quan quản lý y tế có thẩm quyền
+      cấp phép.
+
+    - CME (Continuing Medical Education):
+      Đào tạo y khoa liên tục, hoạt động bồi dưỡng chuyên môn bắt buộc đối với nhân
+      viên y tế theo quy định pháp luật.
+
+    - De-identification:
+      Tiến trình ẩn danh hóa, xóa bỏ hoàn toàn các thông tin định danh cá nhân trên
+      hồ sơ bệnh án và hình ảnh y khoa trước khi công bố.
+
+    - EEG (Electroencephalography):
+      Kỹ thuật ghi điện não đồ, phương pháp ghi nhận hoạt động điện sinh học của não
+      bộ qua các điện cực gắn trên da đầu.
+
+    - fMRI (Functional Magnetic Resonance Imaging):
+      Chụp cộng hưởng từ chức năng, kỹ thuật chẩn đoán hình ảnh thần kinh đo lường
+      hoạt động não bộ thông qua lưu lượng máu.
+
+    - Sổ cái bất biến (Immutable Ledger):
+      Cấu trúc dữ liệu ghi chép nhật ký giao dịch chỉ cho phép ghi nối tiếp
+      (append-only), không cho phép chỉnh sửa hoặc xóa bỏ lịch sử, bảo đảm tính minh
+      bạch tối đa cho công tác kiểm toán.
+
+    - ORCID (Open Researcher and Contributor ID):
+      Mã định danh kỹ thuật số duy nhất dùng để phân biệt các nhà nghiên cứu khoa học
+      trên phạm vi toàn cầu.
+
+================================================================================
+KẾT THÚC SỔ TAY HƯỚNG DẪN SỬ DỤNG NEUROLINK (BẢN TIẾNG VIỆT)
+================================================================================
