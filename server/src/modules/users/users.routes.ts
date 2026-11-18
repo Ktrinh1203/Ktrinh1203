@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { getAuth, requireAuth } from '../../middleware/auth.js';
+import { uploadMedia } from '../../middleware/upload.js';
+import { writeLimiter } from '../../middleware/rateLimit.js';
+import { badRequest } from '../../lib/errors.js';
 import { updateMeSchema, userIdOrUsernameSchema } from './users.schemas.js';
 import * as usersService from './users.service.js';
 import * as professionalService from './professional.service.js';
@@ -54,6 +57,52 @@ usersRouter.patch('/me', requireAuth, async (req, res) => {
   const auth = getAuth(req);
   const input = updateMeSchema.parse(req.body);
   const user = await usersService.updateMe(auth.userId, input);
+  res.json({ user });
+});
+
+usersRouter.post(
+  '/me/avatar',
+  requireAuth,
+  writeLimiter,
+  uploadMedia.single('avatar'),
+  async (req, res) => {
+    const auth = getAuth(req);
+    if (!req.file) throw badRequest('Vui lòng chọn tệp ảnh đại diện hợp lệ (JPG, PNG, WebP).');
+    const user = await usersService.updateUserMedia(
+      auth.userId,
+      'avatarUrl',
+      `/uploads/${req.file.filename}`,
+    );
+    res.json({ user });
+  },
+);
+
+usersRouter.delete('/me/avatar', requireAuth, async (req, res) => {
+  const auth = getAuth(req);
+  const user = await usersService.updateUserMedia(auth.userId, 'avatarUrl', null);
+  res.json({ user });
+});
+
+usersRouter.post(
+  '/me/cover',
+  requireAuth,
+  writeLimiter,
+  uploadMedia.single('cover'),
+  async (req, res) => {
+    const auth = getAuth(req);
+    if (!req.file) throw badRequest('Vui lòng chọn tệp ảnh bìa hợp lệ (JPG, PNG, WebP).');
+    const user = await usersService.updateUserMedia(
+      auth.userId,
+      'coverUrl',
+      `/uploads/${req.file.filename}`,
+    );
+    res.json({ user });
+  },
+);
+
+usersRouter.delete('/me/cover', requireAuth, async (req, res) => {
+  const auth = getAuth(req);
+  const user = await usersService.updateUserMedia(auth.userId, 'coverUrl', null);
   res.json({ user });
 });
 

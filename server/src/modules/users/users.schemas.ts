@@ -9,6 +9,18 @@ export const updateMeSchema = z
       .max(1000)
       .transform((v) => (v === '' ? null : v))
       .nullable(),
+    avatarUrl: z
+      .string()
+      .trim()
+      .max(500)
+      .transform((v) => (v === '' ? null : v))
+      .nullable(),
+    coverUrl: z
+      .string()
+      .trim()
+      .max(500)
+      .transform((v) => (v === '' ? null : v))
+      .nullable(),
   })
   .partial()
   // Unknown keys (e.g. role, verificationStatus, email) are rejected, not ignored silently.

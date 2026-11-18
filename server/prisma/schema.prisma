@@ -199,6 +199,7 @@ model User {
   displayName  String        @db.VarChar(80)
   bio          String?       @db.VarChar(1000)
   avatarUrl    String?       @db.VarChar(500)
+  coverUrl     String?       @db.VarChar(500)
   role         Role          @default(USER)
   status       AccountStatus @default(ACTIVE)
   createdAt    DateTime      @default(now())

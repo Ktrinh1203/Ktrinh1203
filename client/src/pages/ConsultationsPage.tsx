@@ -72,7 +72,7 @@ const CLINICAL_CATEGORY_OPTIONS: {
     value: 'HARDWARE_BCI',
     label: 'Phần cứng ADS1299 & Giao diện Não-Máy (Hardware / BCI)',
     shortLabel: 'Phần cứng ADS1299 & BCI',
-    badgeClass: 'bg-brand-50 text-brand-800 border-brand-200',
+    badgeClass: 'bg-[#EFF6F1] text-[#15803D] border-[#DCE6DF]',
   },
 ];
 
@@ -256,11 +256,9 @@ export function ConsultationsPage() {
     onSuccess: (res) => {
       setFeedbackError(null);
       if (res.granted) {
-        setFeedbackSuccess(
-          `Đã nhận thành công +${res.amount} Credit Khởi đầu vào ví. Bạn có thể dùng để đặt thù lao gửi câu hỏi cho bác sĩ chuyên khoa.`,
-        );
+        setFeedbackSuccess(`Đã nhận +${res.amount} Credit miễn phí vào ví.`);
       } else {
-        setFeedbackSuccess('Tài khoản của bạn đã nhận gói credit khởi đầu trước đó.');
+        setFeedbackSuccess('Tài khoản đã nhận gói khởi đầu trước đó.');
       }
       void queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
       void queryClient.invalidateQueries({ queryKey: ['rewards', 'wallet'] });
@@ -285,8 +283,8 @@ export function ConsultationsPage() {
       setFeedbackError(null);
       setFeedbackSuccess(
         res.ticket.bountyCredits > 0
-          ? `Đã gửi câu hỏi và tạm giữ ${res.ticket.bountyCredits} credit. Số dư ví còn lại: ${res.remainingBalance} credit.`
-          : 'Đã gửi yêu cầu tư vấn vào hàng đợi bác sĩ đọc ca từ xa.',
+          ? `Đã gửi câu hỏi (tạm giữ ${res.ticket.bountyCredits} Credit). Còn lại: ${res.remainingBalance} Credit.`
+          : 'Đã gửi câu hỏi tới bác sĩ.',
       );
       setTitle('');
       setSymptomSummary('');
@@ -311,9 +309,7 @@ export function ConsultationsPage() {
     mutationFn: (ticketId: string) => consultationsApi.claim(ticketId),
     onSuccess: () => {
       setFeedbackError(null);
-      setFeedbackSuccess(
-        'Bạn đã nhận đọc ca thành công. Hãy đối chiếu các chỉ số DAR/BSI/TAR hoặc mở Trạm qEEG để gửi phân tích sóng não cho người bệnh.',
-      );
+      setFeedbackSuccess('Đã nhận đọc ca. Hãy đối chiếu chỉ số hoặc mở Trạm qEEG.');
       invalidateConsultationQueries();
     },
     onError: (err) => {
@@ -336,9 +332,7 @@ export function ConsultationsPage() {
       }),
     onSuccess: (_res, vars) => {
       setFeedbackError(null);
-      setFeedbackSuccess(
-        'Đã gửi phân tích sóng não và hướng dẫn lâm sàng. Khi người đặt câu hỏi bấm Nghiệm thu, credit sẽ tự động cộng vào ví Honoraria của bạn.',
-      );
+      setFeedbackSuccess('Đã gửi phân tích sóng não cho người bệnh.');
       setReplyDrafts((prev) => {
         const next = { ...prev };
         delete next[vars.ticketId];
@@ -357,9 +351,7 @@ export function ConsultationsPage() {
       consultationsApi.acceptReply(payload.ticketId, payload.replyId, payload.rating),
     onSuccess: () => {
       setFeedbackError(null);
-      setFeedbackSuccess(
-        'Đã nghiệm thu kết quả phân tích sóng não và giải ngân credit thù lao cho bác sĩ/chuyên gia.',
-      );
+      setFeedbackSuccess('Đã nghiệm thu và chuyển Credit cho bác sĩ.');
       invalidateConsultationQueries();
     },
     onError: (err) => {
@@ -381,7 +373,7 @@ export function ConsultationsPage() {
       return;
     }
     if (bountyCredits > (wallet?.balance ?? 0)) {
-      setFeedbackError('Số dư credit hiện tại không đủ. Hãy nhận 250 credit khởi đầu hoặc giảm mức credit đặt cọc.');
+      setFeedbackError('Số dư Credit không đủ. Hãy nhận 250 Credit miễn phí hoặc giảm mức Credit.');
       return;
     }
     createTicketMutation.mutate();
@@ -418,12 +410,12 @@ export function ConsultationsPage() {
       <div className="border-b border-[#DCE6DF] pb-4 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#141413] truncate">
-            {isProfessional ? 'Phòng Đọc Ca' : 'Hỏi Bác sĩ'}
+            {isProfessional ? 'Phòng đọc ca' : 'Hỏi bác sĩ'}
           </h1>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             {/* Wallet balance text */}
             <span className="px-2.5 py-1.5 text-xs font-mono font-semibold text-[#575652] tabular-nums">
-              {walletQuery.isLoading ? '...' : `${wallet?.balance ?? 0} credit`}
+              {walletQuery.isLoading ? '...' : `${wallet?.balance ?? 0} Credit`}
             </span>
             <a
               href={workstationHref}
@@ -454,7 +446,7 @@ export function ConsultationsPage() {
           <div className="rounded-xl bg-[#F5FAF7] border border-[#DCE6DF] px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-[#262624] min-w-0">
               <Coins className="size-4 text-[#16A34A] shrink-0" aria-hidden />
-              <span className="font-medium">Nhận 250 Credit Khởi đầu để đặt câu hỏi cho bác sĩ</span>
+              <span className="font-medium">Nhận 250 Credit miễn phí để hỏi bác sĩ</span>
             </div>
             <Button
               type="button"
@@ -588,37 +580,23 @@ export function ConsultationsPage() {
         {showLeftColumn && (
           <div className="lg:col-span-5 space-y-4">
           {activeScope === 'queue' && canAccessProfessionalMode ? (
-            <Card className="p-5 border-[#DCE6DF] space-y-4">
-              <div className="border-b border-[#DCE6DF] pb-3">
-                <h2 className="text-sm font-semibold text-[#141413] flex items-center gap-2">
-                  <ShieldCheck className="size-4 text-[#16A34A]" aria-hidden />
-                  <span>Quy trình Đọc Ca Ngoài giờ (Remote Overtime Triage)</span>
-                </h2>
-                <p className="text-xs text-[#575652] mt-1 leading-relaxed">
-                  Dành cho Bác sĩ Chuyên khoa, Bác sĩ Nội trú và Nhà khoa học Thần kinh đã xác minh CCHN/ORCID. Credit cảm ơn từ người đặt câu hỏi được tạm giữ an toàn và chuyển vào Ví Honoraria ngay khi người bệnh nghiệm thu kết quả.
-                </p>
-              </div>
+            <Card className="p-5 border-[#DCE6DF] space-y-3">
+              <h2 className="text-sm font-semibold text-[#141413] flex items-center gap-2 border-b border-[#DCE6DF] pb-2.5">
+                <ShieldCheck className="size-4 text-[#16A34A]" aria-hidden />
+                <span>Quy trình đọc ca</span>
+              </h2>
 
-              <div className="space-y-2.5 text-xs text-[#262624]">
-                <div className="rounded-lg bg-[#F5FAF7] border border-[#DCE6DF] p-3 space-y-1">
-                  <p className="font-semibold text-[#141413]">1. Kiểm tra Red-Flag &amp; Tỉ số qEEG</p>
-                  <p className="text-[#575652]">
-                    Đối chiếu DAR (Delta/Alpha), BSI (chỉ số bất đối xứng bán cầu), TAR và PRI. Nếu BSI ≥ 0.22 hoặc DAR ≥ 3.2, ưu tiên cảnh báo chuyển cấp cứu 115 trước khi tư vấn kế hoạch theo dõi.
-                  </p>
-                </div>
-                <div className="rounded-lg bg-[#F5FAF7] border border-[#DCE6DF] p-3 space-y-1">
-                  <p className="font-semibold text-[#141413]">2. Nhận đọc ca &amp; Kiểm tra trên Trạm qEEG</p>
-                  <p className="text-[#575652]">
-                    Bấm <strong>Nhận đọc ca</strong> để khóa quyền xử lý ca bệnh, sau đó có thể mở Trạm Điện não Cortical để xem phân bố dải tần và bản đồ vỏ não 19 kênh.
-                  </p>
-                </div>
-                <div className="rounded-lg bg-[#F5FAF7] border border-[#DCE6DF] p-3 space-y-1">
-                  <p className="font-semibold text-[#141413]">3. Trả lời 3 phần chuẩn hóa</p>
-                  <p className="text-[#575652]">
-                    Phân tích rõ đặc trưng sóng não, đưa ra hướng dẫn điều chỉnh sinh hoạt/nghỉ ngơi phù hợp và mốc tái khám chuyên khoa — tách biệt hoàn toàn với y lệnh điều trị nội viện.
-                  </p>
-                </div>
-              </div>
+              <ul className="space-y-2 text-xs text-[#575652]">
+                <li className="rounded-lg bg-[#F5FAF7] border border-[#DCE6DF] px-3 py-2">
+                  <strong className="text-[#141413]">1. Kiểm tra khẩn:</strong> Gọi 115 nếu BSI ≥ 0.22 hoặc DAR ≥ 3.2.
+                </li>
+                <li className="rounded-lg bg-[#F5FAF7] border border-[#DCE6DF] px-3 py-2">
+                  <strong className="text-[#141413]">2. Nhận ca:</strong> Khóa ca và kiểm tra trên Trạm qEEG.
+                </li>
+                <li className="rounded-lg bg-[#F5FAF7] border border-[#DCE6DF] px-3 py-2">
+                  <strong className="text-[#141413]">3. Phản hồi:</strong> Ghi nhận xét sóng não, hướng dẫn và hẹn tái khám.
+                </li>
+              </ul>
 
               <div className="pt-2 border-t border-[#DCE6DF] flex flex-wrap gap-2">
                 <a
@@ -628,14 +606,14 @@ export function ConsultationsPage() {
                   className="inline-flex items-center gap-1.5 rounded-lg bg-[#16A34A] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#15803D] transition-colors"
                 >
                   <Activity className="size-3.5" aria-hidden />
-                  <span>Mở Trạm qEEG Cortical</span>
+                  <span>Mở Trạm qEEG</span>
                 </a>
                 <Link
                   to="/rewards"
                   className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCE6DF] bg-white px-3 py-1.5 text-xs font-medium text-[#262624] hover:bg-[#F5FAF7]"
                 >
                   <Coins className="size-3.5 text-[#16A34A]" aria-hidden />
-                  <span>Xem Ví Honoraria</span>
+                  <span>Ví Credit</span>
                 </Link>
               </div>
             </Card>
@@ -660,14 +638,14 @@ export function ConsultationsPage() {
                     id="consult-title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="VD: Đánh giá chỉ số mệt mỏi TAR và sóng chậm sau mất ngủ kéo dài"
+                    placeholder="Nhập tiêu đề câu hỏi..."
                     maxLength={200}
                     required
                   />
                 </Field>
 
                 <Field
-                  label="Mảng sức khỏe"
+                  label="Chuyên khoa"
                   htmlFor="consult-category"
                 >
                   <select
@@ -687,14 +665,13 @@ export function ConsultationsPage() {
                 <Field
                   label="Triệu chứng"
                   htmlFor="consult-summary"
-                  hint={isProfessional ? 'Ghi rõ thời gian xuất hiện triệu chứng, giấc ngủ gần đây, thuốc đang dùng.' : undefined}
                 >
                   <Textarea
                     id="consult-summary"
                     rows={4}
                     value={symptomSummary}
                     onChange={(e) => setSymptomSummary(e.target.value)}
-                    placeholder="Mô tả triệu chứng, thời điểm đo hoặc câu hỏi cần bác sĩ giải thích..."
+                    placeholder="Mô tả triệu chứng và câu hỏi..."
                     maxLength={2000}
                     required
                   />
@@ -704,7 +681,7 @@ export function ConsultationsPage() {
                   const attachmentFields = (
                     <div className="space-y-3">
                       <Field
-                        label="Mẫu phân tích qEEG (nếu có)"
+                        label="Mẫu qEEG (tùy chọn)"
                         htmlFor="consult-sample"
                       >
                         <select
@@ -713,7 +690,7 @@ export function ConsultationsPage() {
                           onChange={(e) => setSelectedSampleId(e.target.value)}
                           className="h-9.5 w-full rounded-lg border border-[#DCE6DF] bg-white px-3 text-xs text-[#141413] focus:border-[#16A34A] focus-visible:outline-none"
                         >
-                          <option value="">-- Không đính kèm (tùy chọn) --</option>
+                          <option value="">-- Không đính kèm --</option>
                           {samples.map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.subjectCode} · {CATEGORY_MAP[s.clinicalCategory]?.shortLabel} (DAR{' '}
@@ -726,10 +703,10 @@ export function ConsultationsPage() {
                       {selectedSample && (
                         <div className="rounded-lg border border-[#DCE6DF] bg-white p-3 text-[11px] font-mono tabular-nums space-y-1">
                           <div className="flex items-center justify-between font-sans font-semibold text-[#141413]">
-                            <span>Xem trước chỉ số: {selectedSample.subjectCode}</span>
+                            <span>Chỉ số: {selectedSample.subjectCode}</span>
                             {(selectedSample.bsi >= 0.22 || selectedSample.dar >= 3.2) && (
                               <span className="text-[11px] font-medium text-red-700">
-                                Dấu hiệu cần khám khẩn · Gọi 115
+                                Cần khám khẩn · Gọi 115
                               </span>
                             )}
                           </div>
@@ -743,7 +720,7 @@ export function ConsultationsPage() {
                       )}
 
                       <Field
-                        label="Hồ sơ EEG cá nhân (tùy chọn)"
+                        label="Hồ sơ EEG (tùy chọn)"
                         htmlFor="consult-dataset"
                       >
                         <select
@@ -787,7 +764,7 @@ export function ConsultationsPage() {
                       Credit cảm ơn
                     </label>
                     <span className="text-xs font-mono font-semibold text-[#15803D] tabular-nums">
-                      Ví: {wallet?.balance ?? 0}
+                      Ví: {wallet?.balance ?? 0} Credit
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -859,20 +836,16 @@ export function ConsultationsPage() {
             <Card className="p-6">
               <EmptyState
                 icon={<Stethoscope className="size-8" />}
-                title={
-                  isQueueView
-                    ? 'Hiện chưa có ca nào đang chờ trong hàng đợi'
-                    : 'Chưa có câu hỏi tư vấn sóng não nào'
-                }
+                title={isQueueView ? 'Chưa có ca chờ đọc' : 'Chưa có câu hỏi nào'}
                 description={
                   isQueueView
-                    ? 'Các ca bệnh mới từ cộng đồng kèm dữ liệu qEEG sẽ xuất hiện tại đây để bạn tiếp nhận và phân tích.'
-                    : 'Nhấn "+ Đặt câu hỏi cho Bác sĩ" và đính kèm bản ghi sóng não để nhận phân tích từ bác sĩ chuyên khoa.'
+                    ? 'Các ca mới sẽ hiển thị tại đây.'
+                    : 'Đặt câu hỏi để bác sĩ xem và tư vấn.'
                 }
                 action={
                   !isQueueView && !showForm ? (
                     <Button size="sm" onClick={() => setShowForm(true)}>
-                      + Đặt câu hỏi cho Bác sĩ
+                      Đặt câu hỏi
                     </Button>
                   ) : null
                 }
@@ -930,8 +903,8 @@ export function ConsultationsPage() {
                       <span aria-hidden>·</span>
                       <span>
                         {ticket.bountyCredits > 0
-                          ? `${ticket.bountyCredits} credit (${ticket.status === 'ACCEPTED' ? 'đã giải ngân' : 'tạm giữ'})`
-                          : 'Hỏi đáp miễn phí'}
+                          ? `${ticket.bountyCredits} Credit (${ticket.status === 'ACCEPTED' ? 'đã chuyển' : 'tạm giữ'})`
+                          : 'Miễn phí'}
                       </span>
                       {ticket.urgentRedFlag && (
                         <>
@@ -1136,7 +1109,7 @@ export function ConsultationsPage() {
                     <div className="rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] p-4 space-y-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <h4 className="text-xs font-semibold uppercase tracking-wider text-[#141413]">
-                          Gửi Báo cáo Phân tích Sóng não &amp; Hướng dẫn Lâm sàng
+                          Gửi phân tích cho người bệnh
                         </h4>
                         <a
                           href="/clinical-workstation?mode=professional"
@@ -1144,13 +1117,13 @@ export function ConsultationsPage() {
                           rel="noopener noreferrer"
                           className="text-[11px] font-semibold text-[#16A34A] hover:text-[#15803D] hover:underline inline-flex items-center gap-1"
                         >
-                          <span>Kiểm tra trên Trạm qEEG</span>
+                          <span>Mở Trạm qEEG</span>
                           <ArrowUpRight className="size-3" aria-hidden />
                         </a>
                       </div>
 
                       <Field
-                        label="1. Phân tích sóng não & Chỉ số định lượng (DAR / BSI / TAR)"
+                        label="1. Phân tích sóng não"
                         htmlFor={`wave-${ticket.id}`}
                       >
                         <Textarea
@@ -1160,12 +1133,12 @@ export function ConsultationsPage() {
                           onChange={(e) =>
                             updateDraft(ticket.id, 'waveAnalysisText', e.target.value)
                           }
-                          placeholder="Nhận định phân bố sóng Delta, Theta, Alpha, Beta, mức độ đối xứng bán cầu (BSI) và chất lượng tín hiệu..."
+                          placeholder="Nhận xét các dải sóng và chất lượng tín hiệu..."
                         />
                       </Field>
 
                       <Field
-                        label="2. Hướng dẫn lâm sàng & Điều chỉnh sinh hoạt"
+                        label="2. Hướng dẫn sinh hoạt"
                         htmlFor={`guide-${ticket.id}`}
                       >
                         <Textarea
@@ -1175,12 +1148,12 @@ export function ConsultationsPage() {
                           onChange={(e) =>
                             updateDraft(ticket.id, 'clinicalGuidanceText', e.target.value)
                           }
-                          placeholder="Giải thích nguyên nhân khả dĩ, hướng dẫn vệ sinh giấc ngủ, phân bổ nhịp làm việc hoặc lưu ý dấu hiệu cần khám..."
+                          placeholder="Hướng dẫn nghỉ ngơi, giấc ngủ và lưu ý..."
                         />
                       </Field>
 
                       <Field
-                        label="3. Mốc theo dõi & Khuyến nghị tái khám"
+                        label="3. Theo dõi tiếp theo"
                         htmlFor={`follow-${ticket.id}`}
                       >
                         <Input
@@ -1189,7 +1162,7 @@ export function ConsultationsPage() {
                           onChange={(e) =>
                             updateDraft(ticket.id, 'recommendedFollowUp', e.target.value)
                           }
-                          placeholder="VD: Đo kiểm tra lại sau 7 ngày hoặc khám chuyên khoa Nội Thần kinh nếu triệu chứng tăng"
+                          placeholder="Lịch đo lại hoặc tái khám..."
                         />
                       </Field>
 
@@ -1334,7 +1307,7 @@ export function ConsultationsPage() {
                                   }
                                   icon={<CheckCircle2 className="size-4" />}
                                 >
-                                  Nghiệm thu &amp; Chuyển Credit ({ticket.bountyCredits} credit)
+                                  Nghiệm thu ({ticket.bountyCredits} Credit)
                                 </Button>
                               </div>
                             )}

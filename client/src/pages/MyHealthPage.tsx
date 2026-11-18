@@ -244,18 +244,13 @@ export function MyHealthPage() {
       {isProfessional ? (
         <section className="rounded-xl border border-[#DCE6DF] bg-white overflow-hidden">
           <div className="px-5 py-4 border-b border-[#DCE6DF] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#141413]">
-                  Theo dõi Sinh lý Thần kinh &amp; Kế hoạch Làm việc
-                </h1>
-                <span className="text-xs font-medium text-[#6E6D68]">
-                  · {user?.displayName || 'Thành viên'}
-                </span>
-              </div>
-              <p className="text-xs text-[#575652] max-w-3xl">
-                Giám sát biến thiên Focus, TAR, BSI, giấc ngủ đa ngày và điều phối lịch làm việc / phục hồi dựa trên bằng chứng sóng não.
-              </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#141413]">
+                Nhật ký sức khỏe
+              </h1>
+              <span className="text-xs font-medium text-[#6E6D68]">
+                · {user?.displayName || 'Thành viên'}
+              </span>
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Link to="/eeg-hub">
@@ -266,7 +261,7 @@ export function MyHealthPage() {
                   className="text-xs"
                   icon={<Brain className="size-3.5 text-[#16A34A]" aria-hidden />}
                 >
-                  Trạm qEEG &amp; My EEG
+                  Đo sóng não
                 </Button>
               </Link>
               <Link to="/consultations">
@@ -277,7 +272,7 @@ export function MyHealthPage() {
                   className="text-xs"
                   icon={<MessageSquarePlus className="size-3.5" aria-hidden />}
                 >
-                  Hỏi Bác sĩ từ xa
+                  Hỏi bác sĩ
                 </Button>
               </Link>
             </div>
@@ -386,8 +381,8 @@ export function MyHealthPage() {
               const detailedNumericFields = (
                 <>
                   <div className="space-y-1">
-                    <label htmlFor="mh-focus" className="font-bold text-slate-700 block">
-                      Độ tập trung (0–100)
+                    <label htmlFor="mh-focus" className="font-semibold text-[#262624] block">
+                      Tập trung (0–100)
                     </label>
                     <Input
                       id="mh-focus"
@@ -401,8 +396,8 @@ export function MyHealthPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label htmlFor="mh-sleep" className="font-bold text-slate-700 block">
-                      Số giờ ngủ
+                    <label htmlFor="mh-sleep" className="font-semibold text-[#262624] block">
+                      Giấc ngủ (giờ)
                     </label>
                     <Input
                       id="mh-sleep"
@@ -417,7 +412,7 @@ export function MyHealthPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label htmlFor="mh-stress" className="font-bold text-slate-700 block">
+                    <label htmlFor="mh-stress" className="font-semibold text-[#262624] block">
                       Căng thẳng (1–10)
                     </label>
                     <Input
@@ -505,8 +500,8 @@ export function MyHealthPage() {
               const checkInFormSection = isProfessional ? (
                 <form onSubmit={handleCheckInSubmit} className="grid gap-3 sm:grid-cols-2 text-xs">
                   <div className="space-y-1">
-                    <label htmlFor="mh-focus" className="font-bold text-slate-700 block">
-                      Độ tập trung (0–100)
+                    <label htmlFor="mh-focus" className="font-semibold text-[#262624] block">
+                      Tập trung (0–100)
                     </label>
                     <Input
                       id="mh-focus"
@@ -520,8 +515,8 @@ export function MyHealthPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label htmlFor="mh-sleep" className="font-bold text-slate-700 block">
-                      Số giờ ngủ đêm qua
+                    <label htmlFor="mh-sleep" className="font-semibold text-[#262624] block">
+                      Giấc ngủ (giờ)
                     </label>
                     <Input
                       id="mh-sleep"
@@ -536,8 +531,8 @@ export function MyHealthPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label htmlFor="mh-stress" className="font-bold text-slate-700 block">
-                      Mức căng thẳng (1–10)
+                    <label htmlFor="mh-stress" className="font-semibold text-[#262624] block">
+                      Căng thẳng (1–10)
                     </label>
                     <Input
                       id="mh-stress"
@@ -551,8 +546,8 @@ export function MyHealthPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label htmlFor="mh-notes" className="font-bold text-slate-700 block">
-                      Ghi chú ngắn
+                    <label htmlFor="mh-notes" className="font-semibold text-[#262624] block">
+                      Ghi chú
                     </label>
                     <Input
                       id="mh-notes"
@@ -563,14 +558,14 @@ export function MyHealthPage() {
                     />
                   </div>
 
-                  <details className="sm:col-span-2 rounded-lg border border-slate-200 bg-slate-50/60">
-                    <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100/60 rounded-lg">
-                      Nhập thông số máy đo EEG (tùy chọn) ▾
+                  <details className="sm:col-span-2 rounded-lg border border-[#DCE6DF] bg-[#F5FAF7]">
+                    <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-[#575652] hover:text-[#141413] rounded-lg">
+                      Thông số máy đo ▾
                     </summary>
                     <div className="px-3 pb-3 pt-2 grid gap-3 sm:grid-cols-3">
                       <div className="space-y-1">
-                        <label htmlFor="mh-tar" className="font-bold text-slate-700 block">
-                          Chỉ số Mệt mỏi TAR
+                        <label htmlFor="mh-tar" className="font-semibold text-[#262624] block">
+                          TAR
                         </label>
                         <Input
                           id="mh-tar"
@@ -585,8 +580,8 @@ export function MyHealthPage() {
                       </div>
 
                       <div className="space-y-1">
-                        <label htmlFor="mh-bsi" className="font-bold text-slate-700 block">
-                          Đối xứng Bán cầu BSI
+                        <label htmlFor="mh-bsi" className="font-semibold text-[#262624] block">
+                          BSI
                         </label>
                         <Input
                           id="mh-bsi"
@@ -601,8 +596,8 @@ export function MyHealthPage() {
                       </div>
 
                       <div className="space-y-1">
-                        <label htmlFor="mh-alpha" className="font-bold text-slate-700 block">
-                          Đỉnh Alpha (Hz)
+                        <label htmlFor="mh-alpha" className="font-semibold text-[#262624] block">
+                          Alpha (Hz)
                         </label>
                         <Input
                           id="mh-alpha"
@@ -618,16 +613,16 @@ export function MyHealthPage() {
 
                       {samplesQuery.data?.samples && samplesQuery.data.samples.length > 0 && (
                         <div className="sm:col-span-3 space-y-1">
-                          <label htmlFor="mh-sample-link" className="font-bold text-slate-700 block">
-                            Gắn kèm Mẫu EEG từ CSDL (tự điền TAR &amp; BSI · tùy chọn)
+                          <label htmlFor="mh-sample-link" className="font-semibold text-[#262624] block">
+                            Chọn mẫu EEG
                           </label>
                           <select
                             id="mh-sample-link"
                             value={neuralSampleId}
                             onChange={(e) => handleSampleChange(e.target.value)}
-                            className="h-9.5 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-900"
+                            className="h-9.5 w-full rounded-lg border border-[#DCE6DF] bg-white px-3 text-xs text-[#141413]"
                           >
-                            <option value="">-- Nhập thủ công từ cảm nhận cá nhân --</option>
+                            <option value="">-- Nhập thủ công --</option>
                             {samplesQuery.data.samples.slice(0, 12).map((s) => (
                               <option key={s.id} value={s.id}>
                                 {s.subjectCode} · TAR {s.tar.toFixed(2)} · BSI {s.bsi.toFixed(3)} ({s.clinicalCategory})
@@ -643,11 +638,11 @@ export function MyHealthPage() {
                     <Button
                       type="submit"
                       size="sm"
-                      variant="accent"
+                      variant="primary"
                       loading={addCheckInMutation.isPending}
                       icon={<Plus className="size-3.5" aria-hidden />}
                     >
-                      Lưu Check-in Sinh lý
+                      Lưu ghi nhận
                     </Button>
                   </div>
                 </form>
@@ -874,24 +869,14 @@ export function MyHealthPage() {
               const workingPlanCard = (
                 <Card className="p-5 sm:p-6 border-[#DCE6DF] space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <h2 className="text-base sm:text-lg font-semibold text-[#141413] flex items-center gap-2">
-                        <CalendarClock className="size-5 text-[#16A34A]" aria-hidden />
-                        <span>
-                          {isProfessional
-                            ? 'Kế hoạch Làm việc & Phục hồi Theo Sóng não (Working Plan)'
-                            : `Lịch hôm nay (${completedCount}/${workPlan.length})`}
-                        </span>
-                      </h2>
-                      {isProfessional && (
-                        <p className="text-xs text-[#6E6D68] mt-0.5">
-                          Phân bổ khối công việc tập trung cao, tác vụ nhẹ, thư giãn Alpha và giấc ngủ dựa trên ngưỡng mệt mỏi TAR · Đã hoàn thành{' '}
-                          <strong className="font-mono tabular-nums text-[#141413]">
-                            {completedCount}/{workPlan.length}
-                          </strong>
-                        </p>
-                      )}
-                    </div>
+                    <h2 className="text-base sm:text-lg font-semibold text-[#141413] flex items-center gap-2">
+                      <CalendarClock className="size-5 text-[#16A34A]" aria-hidden />
+                      <span>
+                        {isProfessional
+                          ? `Kế hoạch làm việc (${completedCount}/${workPlan.length})`
+                          : `Lịch hôm nay (${completedCount}/${workPlan.length})`}
+                      </span>
+                    </h2>
                     <Button
                       type="button"
                       size="sm"
@@ -900,11 +885,7 @@ export function MyHealthPage() {
                       onClick={() => setShowAddBlock((v) => !v)}
                       icon={isProfessional ? <Plus className="size-3.5" aria-hidden /> : undefined}
                     >
-                      {showAddBlock
-                        ? 'Đóng'
-                        : isProfessional
-                          ? 'Thêm khối lịch'
-                          : '+ Thêm'}
+                      {showAddBlock ? 'Đóng' : 'Thêm lịch'}
                     </Button>
                   </div>
 
@@ -916,7 +897,7 @@ export function MyHealthPage() {
                     >
                       <div className="space-y-1">
                         <label htmlFor="wp-day" className="font-semibold text-[#262624] block">
-                          Ngày trong tuần
+                          Ngày
                         </label>
                         <select
                           id="wp-day"
@@ -947,7 +928,7 @@ export function MyHealthPage() {
 
                       <div className="space-y-1">
                         <label htmlFor="wp-type" className="font-semibold text-[#262624] block">
-                          {isProfessional ? 'Loại Khối Sinh lý' : 'Loại hoạt động'}
+                          Loại hoạt động
                         </label>
                         <select
                           id="wp-type"
@@ -965,17 +946,13 @@ export function MyHealthPage() {
 
                       <div className="sm:col-span-3 space-y-1">
                         <label htmlFor="wp-title" className="font-semibold text-[#262624] block">
-                          Tiêu đề Công việc / Hoạt động *
+                          Tiêu đề *
                         </label>
                         <Input
                           id="wp-title"
                           value={blockTitle}
                           onChange={(e) => setBlockTitle(e.target.value)}
-                          placeholder={
-                            isProfessional
-                              ? 'Ví dụ: Đọc báo cáo lâm sàng chuyên sâu (Deep Work 90 phút)'
-                              : 'Ví dụ: Làm việc tập trung buổi sáng hoặc nghỉ ngơi 15 phút'
-                          }
+                          placeholder="Nhập tên hoạt động..."
                           className="bg-white"
                         />
                       </div>
@@ -983,7 +960,7 @@ export function MyHealthPage() {
                       {isProfessional && (
                         <div className="sm:col-span-3 space-y-1">
                           <label htmlFor="wp-rationale" className="font-semibold text-[#262624] block">
-                            Cơ sở Sinh lý Sóng não (EEG Rationale)
+                            Cơ sở EEG
                           </label>
                           <Textarea
                             id="wp-rationale"
@@ -1000,7 +977,7 @@ export function MyHealthPage() {
                           Hủy
                         </Button>
                         <Button type="submit" size="xs" variant="primary" loading={addWorkBlockMutation.isPending}>
-                          {isProfessional ? 'Lưu Khối Lịch' : 'Lưu lịch'}
+                          Lưu lịch
                         </Button>
                       </div>
                     </form>
@@ -1046,7 +1023,7 @@ export function MyHealthPage() {
                   {/* Blocks List */}
                   {filteredBlocks.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-[#DCE6DF] p-6 text-center text-xs text-[#6E6D68]">
-                      Chưa có lịch nào trong mục này. Nhấn &quot;{isProfessional ? 'Thêm khối lịch' : 'Thêm lịch'}&quot; để thiết lập thời khóa biểu phù hợp.
+                      Chưa có lịch nào.
                     </div>
                   ) : (
                     <div className="space-y-2.5">
@@ -1133,10 +1110,7 @@ export function MyHealthPage() {
 
                     {/* Daily Check-in */}
                     <Card className="p-5 sm:p-6 border-[#DCE6DF] bg-white space-y-4">
-                      <div>
-                        <h2 className="text-base font-semibold text-[#141413]">Ghi nhận hôm nay</h2>
-                        <p className="text-xs text-[#6E6D68] mt-0.5">Lưu vào hồ sơ theo dõi để bác sĩ có thể xem khi cần.</p>
-                      </div>
+                      <h2 className="text-base font-semibold text-[#141413]">Ghi nhận hôm nay</h2>
                       {checkInFormSection}
                       {checkInTableSection}
                     </Card>
@@ -1185,24 +1159,20 @@ export function MyHealthPage() {
               <>
                 {/* Latest Personal EEG Summary */}
                 <Card className="p-5 border-[#DCE6DF] bg-white space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <Activity className="size-4 text-[#16A34A] shrink-0" aria-hidden />
-                      <div>
-                        <h2 className="text-sm font-semibold text-[#141413]">Bản ghi EEG Gần nhất</h2>
-                        <p className="text-[11px] text-[#6E6D68]">
-                          {latestDataset
-                            ? `${latestDataset.patientCode} · ${latestDataset.date}`
-                            : 'Chưa có bản ghi cá nhân'}
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-2.5">
+                    <Activity className="size-4 text-[#16A34A] shrink-0" aria-hidden />
+                    <div>
+                      <h2 className="text-sm font-semibold text-[#141413]">Bản ghi EEG gần nhất</h2>
+                      <p className="text-[11px] text-[#6E6D68]">
+                        {latestDataset
+                          ? `${latestDataset.patientCode} · ${latestDataset.date}`
+                          : 'Chưa có bản ghi'}
+                      </p>
                     </div>
                   </div>
-                  <p className="text-xs text-[#575652] leading-relaxed">
-                    {latestDataset
-                      ? latestDataset.clinicalNote
-                      : 'Mở Trung tâm Điện não qEEG để đo, phân tích sóng não và lưu hồ sơ riêng tư.'}
-                  </p>
+                  {latestDataset && (
+                    <p className="text-xs text-[#575652] line-clamp-2">{latestDataset.clinicalNote}</p>
+                  )}
                   <Link to="/eeg-hub?view=personal" className="block">
                     <Button
                       type="button"
@@ -1211,7 +1181,7 @@ export function MyHealthPage() {
                       className="w-full"
                       icon={<ChevronRight className="size-3.5" aria-hidden />}
                     >
-                      Mở Hồ sơ My EEG &amp; Quyền Bác sĩ
+                      Mở hồ sơ sóng não
                     </Button>
                   </Link>
                 </Card>
@@ -1220,10 +1190,10 @@ export function MyHealthPage() {
                 <Card className="p-5 border-[#DCE6DF] bg-[#F5FAF7] space-y-3">
                   <div className="flex items-center gap-2 text-[#141413] font-semibold text-sm">
                     <MessageSquarePlus className="size-4 text-[#16A34A]" aria-hidden />
-                    <span>Cần Bác sĩ Đọc Sóng não Từ xa?</span>
+                    <span>Hỏi bác sĩ từ xa</span>
                   </div>
-                  <p className="text-xs text-[#575652] leading-relaxed">
-                    Khi chỉ số mệt mỏi TAR tăng cao kéo dài hoặc BSI bất đối xứng, bạn có thể gửi bản ghi đính kèm tới đội ngũ Bác sĩ Thần kinh &amp; Bác sĩ Nội trú trực.
+                  <p className="text-xs text-[#575652]">
+                    Gửi bản ghi sóng não để bác sĩ chuyên khoa xem xét.
                   </p>
                   <div className="space-y-2">
                     <Link to="/consultations" className="block">
@@ -1233,7 +1203,7 @@ export function MyHealthPage() {
                         variant="primary"
                         className="w-full text-xs"
                       >
-                        Tạo Yêu cầu Tư vấn Bác sĩ
+                        Đặt câu hỏi
                       </Button>
                     </Link>
                     <Link to="/eeg-hub" className="block">
@@ -1243,7 +1213,7 @@ export function MyHealthPage() {
                         variant="outline"
                         className="w-full text-xs"
                       >
-                        Mở Trạm Đọc qEEG
+                        Đo sóng não
                       </Button>
                     </Link>
                   </div>

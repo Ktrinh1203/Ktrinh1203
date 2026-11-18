@@ -3,11 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Heart, MessageSquare, UserPlus, CheckCheck, Bell, ShieldCheck, Award, Gift } from 'lucide-react';
 import { notificationsApi } from '../api/endpoints';
 import { Avatar, Button, Card, EmptyState, Spinner } from '../components/ui';
-import { useMode } from '../context/ModeContext';
 import type { NotificationItem } from '../api/types';
 
 export function NotificationsPage() {
-  const { isProfessional } = useMode();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -54,19 +52,19 @@ export function NotificationsPage() {
   const getIcon = (type: NotificationItem['type']) => {
     switch (type) {
       case 'POST_LIKED':
-        return <Heart className="size-4 text-red-500 fill-red-500" />;
+        return <Heart className="size-3.5 text-red-500 fill-red-500" />;
       case 'POST_COMMENTED':
-        return <MessageSquare className="size-4 text-brand-600" />;
+        return <MessageSquare className="size-3.5 text-[#16A34A]" />;
       case 'NEW_FOLLOWER':
-        return <UserPlus className="size-4 text-blue-500" />;
+        return <UserPlus className="size-3.5 text-[#16A34A]" />;
       case 'NEW_MESSAGE':
-        return <MessageSquare className="size-4 text-emerald-500" />;
+        return <MessageSquare className="size-3.5 text-[#15803D]" />;
       case 'VERIFICATION_UPDATE':
-        return <ShieldCheck className="size-4 text-brand-600" />;
+        return <ShieldCheck className="size-3.5 text-[#16A34A]" />;
       case 'CONTRIBUTION_UPDATE':
-        return <Award className="size-4 text-purple-600" />;
+        return <Award className="size-3.5 text-[#15803D]" />;
       case 'REWARD_UPDATE':
-        return <Gift className="size-4 text-amber-500" />;
+        return <Gift className="size-3.5 text-amber-500" />;
     }
   };
 
@@ -91,50 +89,31 @@ export function NotificationsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <div
-        className={`flex flex-wrap items-center justify-between gap-3 rounded-lg p-5 shadow-2xs ${
-          isProfessional
-            ? 'bg-[#162B47] text-white border border-slate-700'
-            : 'bg-white text-slate-900 border border-teal-200/80'
-        }`}
-      >
-        <div>
-          <h1
-            className={`text-xl sm:text-2xl font-extrabold tracking-tight ${
-              isProfessional ? 'text-white' : 'text-slate-900'
-            }`}
-          >
-            {isProfessional
-              ? 'Trung tâm Thông báo Lâm sàng & Hệ thống'
-              : 'Thông báo Hoạt động Cộng đồng'}
-          </h1>
-          <p className={`text-xs sm:text-sm mt-0.5 ${isProfessional ? 'text-slate-300' : 'text-slate-600'}`}>
-            {isProfessional
-              ? 'Cập nhật phản biện đồng cấp, kết quả xét duyệt CCHN/ORCID, credit CME và tin nhắn chuyên môn'
-              : 'Cập nhật tương tác bài viết, cộng đồng và tin nhắn từ bác sĩ / thành viên'}
-          </p>
-        </div>
+      <Card className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#141413]">
+          Thông báo
+        </h1>
         {unreadCount > 0 && (
           <Button
-            variant={isProfessional ? 'secondary' : 'outline'}
+            variant="outline"
             size="sm"
             loading={markAllMutation.isPending}
             onClick={() => markAllMutation.mutate()}
-            icon={<CheckCheck className="size-4" />}
+            icon={<CheckCheck className="size-4 text-[#16A34A]" aria-hidden />}
           >
-            Đánh dấu đã đọc tất cả
+            Đánh dấu đã đọc
           </Button>
         )}
-      </div>
+      </Card>
 
-      <Card className="divide-y divide-slate-100 overflow-hidden">
+      <Card className="divide-y divide-[#DCE6DF] overflow-hidden">
         {isLoading ? (
           <Spinner label="Đang tải thông báo..." />
         ) : items.length === 0 ? (
           <EmptyState
-            icon={<Bell className="size-6" />}
+            icon={<Bell className="size-6 text-[#16A34A]" />}
             title="Chưa có thông báo nào"
-            description="Khi có người thích, bình luận bài viết hoặc gửi tin nhắn cho bạn, thông báo sẽ xuất hiện tại đây."
+            description="Thông báo tương tác và tin nhắn sẽ hiển thị tại đây."
           />
         ) : (
           items.map((n) => (
@@ -145,38 +124,35 @@ export function NotificationsPage() {
                 if (!n.read) markSingleMutation.mutate(n.id);
               }}
               className={`p-4 flex items-start gap-3 transition-colors block ${
-                !n.read ? 'bg-brand-50/40 hover:bg-brand-50/70' : 'hover:bg-slate-50'
+                !n.read ? 'bg-[#EFF6F1]/70 hover:bg-[#EFF6F1]' : 'hover:bg-[#F5FAF7]'
               }`}
             >
               <div className="relative shrink-0">
                 <Avatar name={n.actor.displayName} src={n.actor.avatarUrl} size="md" />
-                <span className="absolute -bottom-1 -right-1 rounded-full bg-white p-0.5 shadow">
+                <span className="absolute -bottom-1 -right-1 rounded-full bg-white p-0.5 border border-[#DCE6DF]">
                   {getIcon(n.type)}
                 </span>
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-slate-800 leading-snug">
-                  <span className="font-semibold text-slate-900">{n.actor.displayName}</span>{' '}
+                <p className="text-sm text-[#262624] leading-snug">
+                  <span className="font-semibold text-[#141413]">{n.actor.displayName}</span>{' '}
                   {n.type === 'POST_LIKED' && 'đã thích bài viết của bạn.'}
-                  {n.type === 'POST_COMMENTED' && 'đã bình luận vào bài viết của bạn.'}
-                  {n.type === 'NEW_FOLLOWER' && 'đã bắt đầu theo dõi bạn.'}
+                  {n.type === 'POST_COMMENTED' && 'đã bình luận bài viết của bạn.'}
+                  {n.type === 'NEW_FOLLOWER' && 'đã theo dõi bạn.'}
                   {n.type === 'NEW_MESSAGE' && 'đã gửi tin nhắn cho bạn.'}
-                  {n.type === 'VERIFICATION_UPDATE' &&
-                    'đã cập nhật trạng thái hồ sơ xác minh chuyên môn của bạn. Nhấn để xem chi tiết.'}
-                  {n.type === 'CONTRIBUTION_UPDATE' &&
-                    'đã cập nhật kết quả thẩm định bài đóng góp chuyên môn của bạn.'}
-                  {n.type === 'REWARD_UPDATE' &&
-                    'đã cập nhật trạng thái yêu cầu quy đổi quyền lợi CME / Honoraria.'}
+                  {n.type === 'VERIFICATION_UPDATE' && 'đã cập nhật hồ sơ xác minh của bạn.'}
+                  {n.type === 'CONTRIBUTION_UPDATE' && 'đã cập nhật kết quả bài đóng góp.'}
+                  {n.type === 'REWARD_UPDATE' && 'đã cập nhật yêu cầu đổi ưu đãi Credit.'}
                 </p>
 
                 {(n.postSnippet || n.commentSnippet) && (
-                  <p className="mt-1 text-xs text-slate-500 line-clamp-1 italic">
-                    "{n.commentSnippet || n.postSnippet}"
+                  <p className="mt-1 text-xs text-[#6E6D68] line-clamp-1 italic">
+                    &ldquo;{n.commentSnippet || n.postSnippet}&rdquo;
                   </p>
                 )}
 
-                <span className="mt-1 block text-[11px] text-slate-400">
+                <span className="mt-1 block text-[11px] text-[#6E6D68] tabular-nums">
                   {new Date(n.updatedAt).toLocaleDateString('vi-VN', {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -186,7 +162,7 @@ export function NotificationsPage() {
                 </span>
               </div>
 
-              {!n.read && <span className="size-2 rounded-full bg-brand-600 mt-2 shrink-0" />}
+              {!n.read && <span className="size-2 rounded-full bg-[#16A34A] mt-2 shrink-0" />}
             </Link>
           ))
         )}

@@ -52,3 +52,16 @@ export async function updateMe(userId: string, input: UpdateMeInput) {
   });
   return withExperienceResolution(updated);
 }
+
+export async function updateUserMedia(
+  userId: string,
+  field: 'avatarUrl' | 'coverUrl',
+  url: string | null,
+) {
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { [field]: url },
+    select: selfUserSelect,
+  });
+  return withExperienceResolution(updated);
+}

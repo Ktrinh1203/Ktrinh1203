@@ -1,43 +1,39 @@
-import { useParams, Link, useNavigate } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useRef, useState, type ChangeEvent } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Building2,
-  CalendarDays,
-  FileText,
-  UserX,
-  MessageCircle,
-  ShieldCheck,
-  Award,
-  Users,
-  Heart,
+  BadgeCheck,
   BookOpen,
-  Stethoscope,
-  Download,
-  ThumbsUp,
+  Camera,
+  FileText,
+  ImagePlus,
+  Loader2,
+  MessageCircle,
+  UserX,
 } from 'lucide-react';
-import {
-  usersApi,
-  communitiesApi,
-  contributionsApi,
-  communityInsightsApi,
-} from '../api/endpoints';
+import { contributionsApi, usersApi } from '../api/endpoints';
 import { ApiError, errorMessage } from '../api/client';
-import { Alert, Avatar, Button, Card, DataTableContainer, EmptyState, Spinner } from '../components/ui';
-import {
-  ProfessionalBadge,
-  PROFESSIONAL_LABEL,
-  VerificationStatusText,
-} from '../components/user/ProfessionalBadge';
+import type { SelfUser } from '../api/types';
+import { Alert, Avatar, Button, Card, EmptyState, Spinner } from '../components/ui';
 import { FollowButton } from '../components/user/FollowButton';
 import { useMode } from '../context/ModeContext';
+import { useAuth } from '../features/auth/AuthContext';
 import { PostCard } from '../features/feed/PostCard';
 import { useChatPopup } from '../features/messages/ChatPopupContext';
 
 export function ProfilePage() {
   const { username = '' } = useParams();
+  const { user: authUser, setUser } = useAuth();
   const { isProfessional } = useMode();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { startChatWithUser } = useChatPopup();
+
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: ['users', username],
@@ -51,22 +47,55 @@ export function ProfilePage() {
     enabled: Boolean(query.data?.user.id),
   });
 
-  const communitiesQuery = useQuery({
-    queryKey: ['communities'],
-    queryFn: () => communitiesApi.list(),
-  });
+  const verifiedProfiles = (query.data?.user.professionalProfiles ?? []).filter(
+    (p) => p.verificationStatus === 'VERIFIED',
+  );
 
   const contributionsQuery = useQuery({
     queryKey: ['my-contributions'],
     queryFn: () => contributionsApi.getMyContributions(),
-    enabled: Boolean(query.data?.user.isSelf && isProfessional),
+    enabled: Boolean(query.data?.user.isSelf && isProfessional && verifiedProfiles.length > 0),
   });
 
-  const spotlightQuery = useQuery({
-    queryKey: ['community-spotlight'],
-    queryFn: () => communityInsightsApi.getSpotlight(),
-    staleTime: 60 * 1000,
-  });
+  function syncAfterUpload(updated: SelfUser) {
+    setUser(updated);
+    void queryClient.invalidateQueries({ queryKey: ['posts'] });
+    void queryClient.invalidateQueries({ queryKey: ['user'] });
+    void queryClient.invalidateQueries({ queryKey: ['users', username] });
+    void query.refetch();
+  }
+
+  async function handleCoverUpload(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploadError(null);
+    setUploadingCover(true);
+    try {
+      const res = await usersApi.uploadCover(file);
+      syncAfterUpload(res.user);
+    } catch (err) {
+      setUploadError(errorMessage(err));
+    } finally {
+      setUploadingCover(false);
+    }
+  }
+
+  async function handleAvatarUpload(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploadError(null);
+    setUploadingAvatar(true);
+    try {
+      const res = await usersApi.uploadAvatar(file);
+      syncAfterUpload(res.user);
+    } catch (err) {
+      setUploadError(errorMessage(err));
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
 
   const handleStartChat = async (targetUserId: string) => {
     try {
@@ -80,7 +109,7 @@ export function ProfilePage() {
   if (query.isError) {
     if (query.error instanceof ApiError && query.error.status === 404) {
       return (
-        <Card className="p-8">
+        <Card className="p-8 border-[#DCE6DF]">
           <EmptyState
             icon={<UserX className="size-8 text-slate-300" />}
             title="Không tìm thấy người dùng"
@@ -92,463 +121,228 @@ export function ProfilePage() {
     return <Alert>{errorMessage(query.error)}</Alert>;
   }
 
-  const user = query.data.user;
+  const profile = query.data.user;
   const posts = postsQuery.data?.items ?? [];
-  const hasVerifiedProfile = user.professionalProfiles.some(
-    (p) => p.verificationStatus === 'VERIFIED',
-  );
-  const spotlightEntry = (spotlightQuery.data?.professionals ?? []).find(
-    (item) => item.user.id === user.id || item.user.username === user.username,
-  );
+  const contributions = contributionsQuery.data?.contributions ?? [];
+
+  const displayCoverUrl = profile.isSelf ? (authUser?.coverUrl ?? profile.coverUrl) : profile.coverUrl;
+  const displayAvatarUrl = profile.isSelf
+    ? (authUser?.avatarUrl ?? profile.avatarUrl)
+    : profile.avatarUrl;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      {/* Mode-Differentiated Profile Overview Card */}
-      <Card
-        className={`overflow-hidden p-0 shadow-2xs border-[#DCE6DF] ${
-          isProfessional ? 'rounded-lg' : 'rounded-xl'
-        }`}
-      >
-        {isProfessional ? (
-          <div className="bg-[#14532D] px-6 py-4 text-white flex flex-wrap items-center justify-between gap-2 border-b border-[#052E16]">
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-200">
-              <ShieldCheck className="size-4 text-emerald-300" />
-              <span>Hồ sơ Định danh Chuyên gia Y tế & Học thuật (CCHN / ORCID Verified Registry)</span>
-            </div>
-            <span className="font-mono text-[11px] text-emerald-100/80">
-              ID: @{user.username}
-            </span>
-          </div>
-        ) : (
-          <div className="h-20 sm:h-24 bg-[#F5FAF7] border-b border-[#DCE6DF] border-t-4 border-t-[#16A34A] px-6 flex items-center justify-end">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#DCE6DF] px-3 py-1 text-xs font-semibold text-[#15803D]">
-              Thành viên Cộng đồng NeuroLink
-            </span>
-          </div>
-        )}
-
-        <div className="px-5 pb-6 pt-5 sm:px-7">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Avatar
-                name={user.displayName}
-                src={user.avatarUrl}
-                size="xl"
-                className="ring-2 ring-[#DCE6DF]"
+    <div className="mx-auto max-w-3xl space-y-5">
+      {/* Profile Header Card */}
+      <div className="rounded-xl border border-[#DCE6DF] bg-white overflow-hidden">
+        {/* Cover Photo Banner */}
+        <div className="relative h-36 sm:h-48 bg-[#E8F3EC]">
+          {displayCoverUrl && (
+            <img
+              src={displayCoverUrl}
+              alt={`Ảnh bìa của ${profile.displayName}`}
+              className="h-full w-full object-cover"
+            />
+          )}
+          {profile.isSelf && (
+            <>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleCoverUpload}
               />
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                    {user.displayName}
-                  </h1>
-                  <span className="text-sm font-mono text-slate-500">@{user.username}</span>
-                </div>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                loading={uploadingCover}
+                onClick={() => coverInputRef.current?.click()}
+                icon={<ImagePlus className="size-3.5 text-[#15803D]" />}
+                className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-xs border-[#DCE6DF] text-[#111827] hover:bg-white"
+              >
+                Đổi ảnh bìa
+              </Button>
+            </>
+          )}
+        </div>
 
-                {user.professionalProfiles.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {user.professionalProfiles.map((p) => (
-                      <ProfessionalBadge key={p.id} type={p.type} status={p.verificationStatus} />
-                    ))}
-                  </div>
-                )}
-              </div>
+        <div className="px-5 pb-5">
+          {/* Avatar + Action Row */}
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="-mt-10 sm:-mt-12 relative shrink-0">
+              <Avatar
+                name={profile.displayName}
+                src={displayAvatarUrl}
+                size="xl"
+                className="size-20 sm:size-24 rounded-full ring-4 ring-white"
+              />
+              {profile.isSelf && (
+                <>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                  <button
+                    type="button"
+                    disabled={uploadingAvatar}
+                    onClick={() => avatarInputRef.current?.click()}
+                    aria-label="Đổi ảnh đại diện"
+                    title="Đổi ảnh đại diện"
+                    className="absolute bottom-0 right-0 flex size-7 sm:size-8 items-center justify-center rounded-full border border-[#DCE6DF] bg-white text-[#15803D] shadow-xs hover:bg-[#F5FAF7] disabled:opacity-60"
+                  >
+                    {uploadingAvatar ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Camera className="size-3.5 sm:size-4" />
+                    )}
+                  </button>
+                </>
+              )}
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              {user.isSelf ? (
+            <div className="flex items-center gap-2 pt-3">
+              {profile.isSelf ? (
                 <Link to="/settings">
                   <Button
                     variant="outline"
                     size="sm"
-                    className={
-                      isProfessional
-                        ? 'rounded border-[#DCE6DF] font-semibold'
-                        : 'rounded-full border-[#DCE6DF] text-[#15803D] hover:bg-[#ECFDF3] px-4 font-semibold'
-                    }
+                    className="border-[#DCE6DF] text-[#15803D] hover:bg-[#F5FAF7] font-semibold"
                   >
                     Chỉnh sửa hồ sơ
                   </Button>
                 </Link>
               ) : (
                 <>
+                  <FollowButton targetUserId={profile.id} initialFollowing={profile.isFollowing} />
                   <Button
-                    variant="secondary"
+                    variant="outline"
                     size="sm"
-                    className="px-3.5 text-xs sm:text-sm font-semibold"
-                    icon={<MessageCircle className="size-4" />}
-                    onClick={() => handleStartChat(user.id)}
+                    className="border-[#DCE6DF] text-[#111827] hover:bg-[#F5FAF7]"
+                    icon={<MessageCircle className="size-4 text-[#16A34A]" />}
+                    onClick={() => handleStartChat(profile.id)}
                   >
                     Nhắn tin
                   </Button>
-                  <FollowButton targetUserId={user.id} initialFollowing={user.isFollowing} />
                 </>
               )}
             </div>
           </div>
 
-          {user.bio && (
-            <p className="mt-4 whitespace-pre-line text-sm text-slate-700 leading-relaxed max-w-3xl">
-              {user.bio}
-            </p>
+          {uploadError && (
+            <Alert tone="error" className="mt-3">
+              {uploadError}
+            </Alert>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm text-slate-600 border-t border-[#EEF3F0] pt-3.5">
-            <span>
-              <strong className="text-slate-900 font-bold tabular-nums">{user.stats.posts}</strong> bài viết
-            </span>
-            <span>
-              <strong className="text-slate-900 font-bold tabular-nums">{user.stats.followers}</strong> người theo dõi
-            </span>
-            <span>
-              <strong className="text-slate-900 font-bold tabular-nums">{user.stats.following}</strong> đang theo dõi
-            </span>
-            <span className="flex items-center gap-1.5 text-slate-500">
-              <CalendarDays className="size-3.5 text-[#16A34A]" /> Tham gia{' '}
-              {new Date(user.createdAt).toLocaleDateString('vi-VN')}
-            </span>
+          {/* Clean User Info */}
+          <div className="mt-3 space-y-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h1 className="text-xl font-bold text-[#111827] tracking-tight">
+                {profile.displayName}
+              </h1>
+              {verifiedProfiles.length > 0 && (
+                <BadgeCheck
+                  className="size-5 text-[#16A34A] shrink-0"
+                  aria-label="Chuyên gia đã xác minh"
+                />
+              )}
+            </div>
+            <p className="text-sm text-[#6B7280]">@{profile.username}</p>
+
+            {verifiedProfiles.length > 0 && (
+              <div className="space-y-0.5 pt-0.5 text-xs sm:text-sm text-[#15803D]">
+                {verifiedProfiles.slice(0, 2).map((p) => (
+                  <p key={p.id} className="font-medium">
+                    {p.title}
+                    {p.specialty ? ` · ${p.specialty}` : ''}
+                    {p.institution ? ` · ${p.institution}` : ''}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {profile.bio && (
+              <p className="pt-1 whitespace-pre-line text-sm text-[#374151] leading-relaxed">
+                {profile.bio}
+              </p>
+            )}
+
+            <div className="pt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-[#6B7280]">
+              <span>
+                <strong className="font-semibold text-[#111827] tabular-nums">
+                  {profile.stats.posts}
+                </strong>{' '}
+                bài viết
+              </span>
+              <span>·</span>
+              <span>
+                <strong className="font-semibold text-[#111827] tabular-nums">
+                  {profile.stats.followers}
+                </strong>{' '}
+                người theo dõi
+              </span>
+              <span>·</span>
+              <span>
+                <strong className="font-semibold text-[#111827] tabular-nums">
+                  {profile.stats.following}
+                </strong>{' '}
+                đang theo dõi
+              </span>
+            </div>
           </div>
         </div>
-      </Card>
+      </div>
 
-      {/* Verified Community Impact Metrics Card */}
-      {hasVerifiedProfile && (
-        <Card className="p-6 border-teal-200/80 bg-white space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">
-                Chỉ số Đóng góp Cộng đồng & Lâm sàng
-              </h2>
-              <p className="text-xs text-slate-500">
-                Tổng hợp hoạt động đọc ca sóng não, chia sẻ Data Bank và tương tác học thuật
-              </p>
-            </div>
-            {spotlightEntry && (
-              <span className="rounded-md bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-mono font-bold text-amber-800 tabular-nums">
-                {spotlightEntry.metrics.impactScore} điểm tác động
-              </span>
+      {/* Concise Publications Section (Verified Professionals only when data exists) */}
+      {verifiedProfiles.length > 0 && contributions.length > 0 && (
+        <div className="rounded-xl border border-[#DCE6DF] bg-white p-5 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-[#111827]">
+              <BookOpen className="size-4 text-[#16A34A]" />
+              <span>Công bố &amp; Đóng góp</span>
+            </h2>
+            {profile.isSelf && (
+              <Link
+                to="/contributions"
+                className="text-xs font-semibold text-[#15803D] hover:underline"
+              >
+                Xem tất cả
+              </Link>
             )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 tabular-nums">
-            <div className="rounded-lg border border-slate-200/80 bg-slate-50/70 p-3.5">
-              <span className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
-                <Stethoscope className="size-3.5 text-teal-600" aria-hidden /> Ca đọc sóng não
-              </span>
-              <span className="mt-1 block text-xl font-extrabold text-slate-900 font-mono">
-                {spotlightEntry?.metrics.consultationsCompleted ?? 0}
-              </span>
-            </div>
-            <div className="rounded-lg border border-slate-200/80 bg-slate-50/70 p-3.5">
-              <span className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
-                <Download className="size-3.5 text-sky-600" aria-hidden /> Lượt tải DataBank
-              </span>
-              <span className="mt-1 block text-xl font-extrabold text-slate-900 font-mono">
-                {spotlightEntry?.metrics.dataBankDownloads ?? 0}
-              </span>
-            </div>
-            <div className="rounded-lg border border-slate-200/80 bg-slate-50/70 p-3.5">
-              <span className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
-                <ThumbsUp className="size-3.5 text-teal-600" aria-hidden /> Lượt thích bài viết
-              </span>
-              <span className="mt-1 block text-xl font-extrabold text-slate-900 font-mono">
-                {spotlightEntry?.metrics.totalLikesReceived ?? 0}
-              </span>
-            </div>
-            <div className="rounded-lg border border-slate-200/80 bg-slate-50/70 p-3.5">
-              <span className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
-                <Users className="size-3.5 text-[#162B47]" aria-hidden /> Người theo dõi
-              </span>
-              <span className="mt-1 block text-xl font-extrabold text-slate-900 font-mono">
-                {spotlightEntry?.metrics.followersCount ?? user.stats.followers}
-              </span>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Professional Credentials Section: Structured Table in Pro Mode, Friendly Cards in General Mode */}
-      {user.professionalProfiles.length > 0 && (
-        <>
-          {isProfessional ? (
-            <DataTableContainer
-              title="Bảng Đăng bạ Chứng chỉ Hành nghề & Hồ sơ Học thuật"
-              metaLabel="CCHN / ORCID Verification Matrix"
-              icon={<Award className="size-4 text-[#1E3A5F]" />}
-            >
-              <table className="w-full text-left border-collapse text-xs tabular-nums">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                    <th className="py-2.5 px-3.5">Phân nhóm Chuyên gia</th>
-                    <th className="py-2.5 px-3.5">Chức danh / Học hàm</th>
-                    <th className="py-2.5 px-3.5">Chuyên khoa / Hướng Nghiên cứu</th>
-                    <th className="py-2.5 px-3.5">Đơn vị Công tác / Viện</th>
-                    <th className="py-2.5 px-3.5">Mã CCHN / ORCID</th>
-                    <th className="py-2.5 px-3.5">Trạng thái Kiểm định</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200/80">
-                  {user.professionalProfiles.map((p) => (
-                    <tr key={p.id} className="hover:bg-slate-50/90">
-                      <td className="py-3 px-3.5 font-bold text-[#1E3A5F] align-top">
-                        {PROFESSIONAL_LABEL[p.type]}
-                      </td>
-                      <td className="py-3 px-3.5 font-semibold text-slate-800 align-top">
-                        {p.title || 'Chưa cập nhật'}
-                      </td>
-                      <td className="py-3 px-3.5 text-[#2C6865] font-semibold align-top">
-                        {p.specialty || 'Chưa cập nhật'}
-                      </td>
-                      <td className="py-3 px-3.5 text-slate-700 align-top">
-                        {p.institution || 'Chưa cập nhật'}
-                      </td>
-                      <td className="py-3 px-3.5 font-mono text-slate-600 align-top">
-                        {p.licenseOrOrcidNumber || '001928/BYT-CCHN'}
-                      </td>
-                      <td className="py-3 px-3.5 align-top">
-                        <VerificationStatusText status={p.verificationStatus} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {user.professionalProfiles.some((p) => p.researchInterests.length > 0) && (
-                <div className="px-4 py-3 bg-white border-t border-slate-200 flex flex-wrap items-center gap-1.5">
-                  <span className="text-xs font-bold text-slate-600 mr-1">
-                    Từ khóa Nghiên cứu & Lâm sàng:
-                  </span>
-                  {user.professionalProfiles
-                    .flatMap((p) => p.researchInterests)
-                    .map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded bg-slate-100 px-2 py-0.5 text-xs font-mono text-slate-700 border border-slate-200"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
+          <div className="divide-y divide-[#DCE6DF]">
+            {contributions.slice(0, 5).map((c) => (
+              <div key={c.id} className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3 text-xs">
+                <div className="min-w-0">
+                  <p className="font-medium text-[#111827] truncate">{c.summary}</p>
+                  <p className="text-[#6B7280]">{c.category}</p>
                 </div>
-              )}
-            </DataTableContainer>
-          ) : (
-            user.professionalProfiles.map((p) => (
-              <Card key={p.id} className="p-5 border-slate-200/90 rounded-xl shadow-2xs space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-                  <h2 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
-                    <span>{PROFESSIONAL_LABEL[p.type]}</span>
-                  </h2>
-                  <VerificationStatusText status={p.verificationStatus} />
-                </div>
-
-                <dl className="grid gap-3 text-xs sm:text-sm sm:grid-cols-2">
-                  <div>
-                    <dt className="text-slate-400 font-medium">Chức danh / Học hàm</dt>
-                    <dd className="font-semibold text-slate-800 mt-0.5">
-                      {p.title || 'Chưa cập nhật'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400 font-medium">
-                      {p.type === 'HEALTHCARE_PROFESSIONAL' ? 'Chuyên khoa' : 'Lĩnh vực nghiên cứu'}
-                    </dt>
-                    <dd className="font-semibold text-teal-700 mt-0.5">
-                      {p.specialty || 'Chưa cập nhật'}
-                    </dd>
-                  </div>
-                  {p.institution && (
-                    <div className="sm:col-span-2">
-                      <dt className="text-slate-400 font-medium">Đơn vị công tác / Viện nghiên cứu</dt>
-                      <dd className="flex items-center gap-1.5 font-semibold text-slate-800 mt-0.5">
-                        <Building2 className="size-4 text-teal-600" /> {p.institution}
-                      </dd>
-                    </div>
-                  )}
-                </dl>
-
-                {p.researchInterests.length > 0 && (
-                  <div className="pt-2 border-t border-slate-100">
-                    <p className="text-xs text-slate-400 font-medium mb-1.5">
-                      Chủ đề quan tâm:
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {p.researchInterests.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-800 border border-teal-200"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </Card>
-            ))
-          )}
-        </>
-      )}
-
-      {/* Mode-Specific Profile Extensions: Publications & Contribution History (Pro) vs Interests & Community Activity (General) */}
-      {isProfessional ? (
-        <DataTableContainer
-          title="Công bố Khoa học & Lịch sử Đóng góp Chuyên môn (Publications & Contributions)"
-          subtitle="Các công trình bình duyệt đồng cấp, báo cáo ca lâm sàng và điểm credit CME/Honoraria"
-          icon={<BookOpen className="size-4 text-[#2C6865]" />}
-          action={
-            user.isSelf ? (
-              <Link to="/contributions">
-                <Button size="xs" variant="outline">
-                  Mở Research Hub
-                </Button>
-              </Link>
-            ) : undefined
-          }
-        >
-          <table className="w-full text-left border-collapse text-xs tabular-nums">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-100/80 text-[10.5px] font-bold uppercase tracking-wider text-slate-600">
-                <th className="py-2.5 px-4">Danh mục / Mã</th>
-                <th className="py-2.5 px-4">Tóm tắt Công trình & Ca Lâm sàng</th>
-                <th className="py-2.5 px-3 text-center">Trạng thái</th>
-                <th className="py-2.5 px-4 text-right">Credit CME</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200/80">
-              {(contributionsQuery.data?.contributions ?? []).length > 0 ? (
-                contributionsQuery.data!.contributions.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50/90">
-                    <td className="py-3 px-4 font-mono font-bold text-[#1E3A5F] whitespace-nowrap">
-                      {c.category}
-                    </td>
-                    <td className="py-3 px-4 text-slate-800 font-medium">{c.summary}</td>
-                    <td className="py-3 px-3 text-center whitespace-nowrap">
-                      <span className="inline-flex rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10.5px] font-semibold text-emerald-800">
-                        {c.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-[#2C6865]">
-                      +{c.awardCredits ?? 25} CME
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <>
-                  <tr className="hover:bg-slate-50/90">
-                    <td className="py-3 px-4 font-mono font-bold text-[#1E3A5F] whitespace-nowrap">
-                      PUB-EEG-2026
-                    </td>
-                    <td className="py-3 px-4 text-slate-800 font-medium">
-                      Quantitative 10-20 EEG Biomarkers for Early Absence Seizure Differentiation in Clinical Practice
-                    </td>
-                    <td className="py-3 px-3 text-center whitespace-nowrap">
-                      <span className="inline-flex rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10.5px] font-semibold text-emerald-800">
-                        PEER-REVIEWED
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-[#2C6865]">
-                      +40 CME
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-50/90">
-                    <td className="py-3 px-4 font-mono font-bold text-[#1E3A5F] whitespace-nowrap">
-                      CASE-NEURO-19
-                    </td>
-                    <td className="py-3 px-4 text-slate-800 font-medium">
-                      Phác đồ theo dõi nhịp sóng Alpha/Theta phục hồi chức năng sau đột quỵ bán cầu trái
-                    </td>
-                    <td className="py-3 px-3 text-center whitespace-nowrap">
-                      <span className="inline-flex rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10.5px] font-semibold text-emerald-800">
-                        APPROVED
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-[#2C6865]">
-                      +25 CME
-                    </td>
-                  </tr>
-                </>
-              )}
-            </tbody>
-          </table>
-        </DataTableContainer>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* General Mode: Interests */}
-          <Card className="p-6 border-teal-200/70 rounded-xl shadow-2xs space-y-3">
-            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Heart className="size-4 text-teal-600" />
-              <span>Chủ đề Quan tâm</span>
-            </h2>
-            <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
-              Các chủ đề chăm sóc sức khỏe và khoa học não bộ đang theo dõi trên NeuroLink:
-            </p>
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {[
-                'Giấc ngủ sâu & Nhịp sinh học',
-                'Sức khỏe Não bộ Thường thức',
-                'Hiểu biết Sóng não (My EEG)',
-                'Phòng ngừa Căng thẳng Thần kinh',
-                'Hỗ trợ Người bệnh Động kinh',
-              ].map((topic) => (
-                <span
-                  key={topic}
-                  className="rounded-full bg-[#F0FDFA] border border-teal-200/80 px-2.5 py-1 text-xs font-medium text-teal-800"
-                >
-                  {topic}
+                <span className="shrink-0 rounded-full bg-[#F5FAF7] border border-[#DCE6DF] px-2.5 py-0.5 text-[11px] font-semibold text-[#15803D]">
+                  {c.status}
                 </span>
-              ))}
-            </div>
-          </Card>
-
-          {/* General Mode: Community Activity */}
-          <Card className="p-6 border-sky-200/70 rounded-xl shadow-2xs space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Users className="size-4 text-sky-600" />
-                <span>Hoạt động Cộng đồng</span>
-              </h2>
-              <Link to="/communities" className="text-xs font-semibold text-teal-700 hover:underline">
-                Xem tất cả →
-              </Link>
-            </div>
-            <div className="space-y-2 text-xs">
-              {(communitiesQuery.data?.communities ?? [])
-                .filter((c) => !c.isVerifiedOnly)
-                .slice(0, 3)
-                .map((c) => (
-                  <div
-                    key={c.id}
-                    className="flex items-center justify-between rounded-lg bg-[#F0F9FF] border border-sky-200/60 px-3 py-2"
-                  >
-                    <div className="min-w-0 pr-2">
-                      <p className="font-semibold text-slate-800 truncate">{c.name}</p>
-                      <p className="text-[11px] text-slate-500">
-                        {c.membersCount.toLocaleString('vi-VN')} thành viên
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded-full bg-white border border-sky-200 px-2 py-0.5 text-[10.5px] font-semibold text-sky-800">
-                      {c.isMember ? 'Đang tham gia' : 'Nhóm mở'}
-                    </span>
-                  </div>
-                ))}
-            </div>
-          </Card>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* User Published Posts */}
-      <div className="space-y-4 pt-1">
-        <h2 className="font-extrabold text-slate-900 text-lg tracking-tight">
-          {isProfessional ? 'Công bố Ca bệnh & Thảo luận Học thuật' : 'Bài viết đã chia sẻ'}
-        </h2>
+      {/* Posts Feed */}
+      <div className="space-y-3.5">
+        <h2 className="text-base font-bold text-[#111827]">Bài viết</h2>
         {postsQuery.isLoading ? (
-          <Spinner label="Đang tải các bài đăng..." />
+          <Spinner label="Đang tải bài viết..." />
         ) : posts.length === 0 ? (
-          <Card className="p-8">
+          <div className="rounded-xl border border-[#DCE6DF] bg-white p-8">
             <EmptyState
-              icon={<FileText className="size-8 text-slate-300" />}
+              icon={<FileText className="size-8 text-[#16A34A]/40" />}
               title="Chưa có bài viết nào"
-              description="Thành viên này hiện chưa đăng tải bài viết nào."
+              description="Chưa có bài viết nào được chia sẻ."
             />
-          </Card>
+          </div>
         ) : (
           <div className="space-y-3.5">
             {posts.map((post) => (

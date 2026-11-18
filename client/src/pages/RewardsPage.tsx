@@ -11,13 +11,12 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  Database,
   Lock,
   Award,
-  Stethoscope,
 } from 'lucide-react';
 import { rewardsApi, contributionsApi } from '../api/endpoints';
 import { useAuth } from '../features/auth/AuthContext';
+import { useMode } from '../context/ModeContext';
 import { Button, Card, DataTableContainer, EmptyState, Spinner, Textarea } from '../components/ui';
 import { errorMessage } from '../api/client';
 import type {
@@ -28,48 +27,49 @@ import type {
 } from '../api/types';
 
 const TRANSACTION_TYPE_LABELS: Record<CreditTransactionType, { label: string; className: string }> = {
-  CONTRIBUTION_REWARD: { label: 'Thưởng CME', className: 'bg-teal-50 text-teal-800 border-teal-200' },
-  REWARD_REDEMPTION: { label: 'Đổi quyền lợi', className: 'bg-slate-100 text-slate-700 border-slate-200' },
-  ADMIN_ADJUSTMENT: { label: 'Điều chỉnh hệ thống', className: 'bg-slate-100 text-slate-700 border-slate-200' },
-  REWARD_REVERSAL: { label: 'Thu hồi thưởng', className: 'bg-red-50 text-red-700 border-red-200' },
-  REFUND: { label: 'Hoàn credit', className: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+  CONTRIBUTION_REWARD: { label: 'Thưởng CME', className: 'bg-[#EFF6F1] text-[#15803D] border-[#DCE6DF]' },
+  REWARD_REDEMPTION: { label: 'Đổi ưu đãi', className: 'bg-[#F5FAF7] text-[#262624] border-[#DCE6DF]' },
+  ADMIN_ADJUSTMENT: { label: 'Điều chỉnh', className: 'bg-[#F5FAF7] text-[#262624] border-[#DCE6DF]' },
+  REWARD_REVERSAL: { label: 'Thu hồi', className: 'bg-red-50 text-red-700 border-red-200' },
+  REFUND: { label: 'Hoàn Credit', className: 'bg-[#EFF6F1] text-[#15803D] border-[#DCE6DF]' },
   CONSULTATION_ESCROW: { label: 'Tạm giữ hỏi bác sĩ', className: 'bg-amber-50 text-amber-800 border-amber-200' },
-  CONSULTATION_EARNING: { label: 'Thù lao Đọc ca', className: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
-  CONSULTATION_REFUND: { label: 'Hoàn credit tư vấn', className: 'bg-sky-50 text-sky-800 border-sky-200' },
-  DATABANK_PURCHASE: { label: 'Mở khóa Data Bank', className: 'bg-amber-50 text-amber-800 border-amber-200' },
-  DATABANK_ROYALTY: { label: 'Bản quyền Data Bank', className: 'bg-sky-50 text-sky-800 border-sky-200' },
-  STARTER_GRANT: { label: 'Gói Khởi đầu', className: 'bg-teal-50 text-teal-800 border-teal-200' },
+  CONSULTATION_EARNING: { label: 'Thù lao đọc ca', className: 'bg-[#EFF6F1] text-[#15803D] border-[#DCE6DF]' },
+  CONSULTATION_REFUND: { label: 'Hoàn Credit tư vấn', className: 'bg-[#EFF6F1] text-[#15803D] border-[#DCE6DF]' },
+  DATABANK_PURCHASE: { label: 'Mở khóa dữ liệu', className: 'bg-amber-50 text-amber-800 border-amber-200' },
+  DATABANK_ROYALTY: { label: 'Chia sẻ dữ liệu', className: 'bg-[#EFF6F1] text-[#15803D] border-[#DCE6DF]' },
+  STARTER_GRANT: { label: 'Quà khởi đầu', className: 'bg-[#EFF6F1] text-[#15803D] border-[#DCE6DF]' },
 };
 
 const REWARD_CATEGORY_CONFIG: Record<
   RewardCategory,
-  { label: string; icon: any; colorClass: string }
+  { label: string; icon: typeof Gift; colorClass: string }
 > = {
-  PROFESSIONAL_COURSE: { label: 'Khóa học Y khoa & CME', icon: GraduationCap, colorClass: 'text-brand-600 bg-brand-50' },
-  CONFERENCE_ACCESS: { label: 'Vé Hội nghị & Workshop', icon: Ticket, colorClass: 'text-sky-700 bg-sky-50' },
-  ACADEMIC_RESOURCE: { label: 'Cơ sở dữ liệu Học thuật', icon: BookOpen, colorClass: 'text-blue-600 bg-blue-50' },
-  MENTORING: { label: 'Cố vấn Chuyên gia 1:1', icon: Users, colorClass: 'text-teal-600 bg-teal-50' },
-  PROFESSIONAL_EVENT: { label: 'Sự kiện Kết nối Chuyên ngành', icon: Calendar, colorClass: 'text-amber-600 bg-amber-50' },
-  OTHER_BENEFIT: { label: 'Quyền lợi Chuyên môn Khác', icon: Gift, colorClass: 'text-slate-600 bg-slate-50' },
-  MONETARY_REWARD: { label: 'Kinh phí Công bố Bài báo (Chờ kích hoạt)', icon: Coins, colorClass: 'text-slate-400 bg-slate-100' },
+  PROFESSIONAL_COURSE: { label: 'Khóa học', icon: GraduationCap, colorClass: 'text-[#15803D] bg-[#EFF6F1]' },
+  CONFERENCE_ACCESS: { label: 'Hội nghị & Workshop', icon: Ticket, colorClass: 'text-[#15803D] bg-[#EFF6F1]' },
+  ACADEMIC_RESOURCE: { label: 'Tài liệu chuyên môn', icon: BookOpen, colorClass: 'text-[#15803D] bg-[#EFF6F1]' },
+  MENTORING: { label: 'Cố vấn 1:1', icon: Users, colorClass: 'text-[#15803D] bg-[#EFF6F1]' },
+  PROFESSIONAL_EVENT: { label: 'Sự kiện', icon: Calendar, colorClass: 'text-[#15803D] bg-[#EFF6F1]' },
+  OTHER_BENEFIT: { label: 'Ưu đãi khác', icon: Gift, colorClass: 'text-[#15803D] bg-[#EFF6F1]' },
+  MONETARY_REWARD: { label: 'Kinh phí nghiên cứu', icon: Coins, colorClass: 'text-[#6E6D68] bg-[#F5FAF7]' },
 };
 
 const REDEMPTION_STATUS_META: Record<
   RedemptionStatus,
   { label: string; className: string }
 > = {
-  REQUESTED: { label: 'Đang chờ xử lý', className: 'bg-amber-50 text-amber-800 border-amber-200' },
-  UNDER_REVIEW: { label: 'Đang xét duyệt', className: 'bg-blue-50 text-blue-800 border-blue-200' },
-  APPROVED: { label: 'Đã duyệt cấp', className: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
-  PROCESSING: { label: 'Đang giải ngân', className: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
-  FULFILLED: { label: 'Đã hoàn tất bàn giao', className: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
-  REJECTED: { label: 'Từ chối (Đã hoàn credit)', className: 'bg-red-50 text-red-800 border-red-200' },
-  CANCELLED: { label: 'Đã hủy (Đã hoàn credit)', className: 'bg-slate-100 text-slate-700 border-slate-300' },
-  REFUNDED: { label: 'Đã hoàn trả credit', className: 'bg-sky-50 text-sky-800 border-sky-200' },
+  REQUESTED: { label: 'Chờ xử lý', className: 'bg-amber-50 text-amber-800 border-amber-200' },
+  UNDER_REVIEW: { label: 'Đang duyệt', className: 'bg-amber-50 text-amber-800 border-amber-200' },
+  APPROVED: { label: 'Đã duyệt', className: 'bg-[#EFF6F1] text-[#15803D] border-[#DCE6DF]' },
+  PROCESSING: { label: 'Đang xử lý', className: 'bg-[#F5FAF7] text-[#262624] border-[#DCE6DF]' },
+  FULFILLED: { label: 'Đã hoàn tất', className: 'bg-[#ECFDF3] text-[#15803D] border-[#86EFAC]' },
+  REJECTED: { label: 'Từ chối (Đã hoàn Credit)', className: 'bg-red-50 text-red-700 border-red-200' },
+  CANCELLED: { label: 'Đã hủy (Đã hoàn Credit)', className: 'bg-[#F5FAF7] text-[#6E6D68] border-[#DCE6DF]' },
+  REFUNDED: { label: 'Đã hoàn Credit', className: 'bg-[#EFF6F1] text-[#15803D] border-[#DCE6DF]' },
 };
 
 export function RewardsPage() {
   const { user } = useAuth();
+  const { isProfessional } = useMode();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'catalog' | 'contributions' | 'history' | 'my-redemptions'>('catalog');
   const [catalogFilter, setCatalogFilter] = useState<'all' | 'benefits' | 'monetary'>('all');
@@ -78,44 +78,45 @@ export function RewardsPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // 1. Fetch Wallet & Transactions
+  const effectiveTab =
+    !isProfessional && (activeTab === 'contributions' || activeTab === 'my-redemptions')
+      ? 'catalog'
+      : activeTab;
+
   const { data: walletData, isLoading: loadingWallet } = useQuery({
     queryKey: ['my-wallet'],
     queryFn: () => rewardsApi.getWallet(),
     enabled: Boolean(user),
   });
 
-  // 2. Fetch Catalog
   const { data: catalogData, isLoading: loadingCatalog } = useQuery({
     queryKey: ['rewards-catalog'],
     queryFn: () => rewardsApi.getCatalog(),
   });
 
-  // 3. Fetch My Redemptions
   const { data: redemptionsData, isLoading: loadingRedemptions } = useQuery({
     queryKey: ['my-redemptions'],
     queryFn: () => rewardsApi.getMyRedemptions(),
-    enabled: Boolean(user && activeTab === 'my-redemptions'),
+    enabled: Boolean(user && (effectiveTab === 'my-redemptions' || effectiveTab === 'history')),
   });
 
-  // 4. Fetch My Contributions for Contribution History tab
   const { data: myContributionsData, isLoading: loadingContributions } = useQuery({
     queryKey: ['my-contributions'],
     queryFn: () => contributionsApi.getMyContributions(),
-    enabled: Boolean(user),
+    enabled: Boolean(user && isProfessional),
   });
 
   const redeemMutation = useMutation({
     mutationFn: (data: { rewardId: string; userNote?: string }) => rewardsApi.redeem(data),
     onSuccess: (res) => {
       setError(null);
-      setSuccessMsg(`Đổi phần thưởng thành công! Số dư khả dụng còn lại: ${res.remainingBalance} credit.`);
+      setSuccessMsg(`Đổi ưu đãi thành công! Số dư còn lại: ${res.remainingBalance} Credit.`);
       setSelectedReward(null);
       setUserNote('');
       void queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
       void queryClient.invalidateQueries({ queryKey: ['rewards-catalog'] });
       void queryClient.invalidateQueries({ queryKey: ['my-redemptions'] });
-      setActiveTab('my-redemptions');
+      setActiveTab(isProfessional ? 'my-redemptions' : 'history');
     },
     onError: (err) => setError(errorMessage(err)),
   });
@@ -126,8 +127,8 @@ export function RewardsPage() {
       setError(null);
       setSuccessMsg(
         res.granted
-          ? `Đã nhận thành công +${res.amount} Credit Khởi đầu vào ví!`
-          : 'Tài khoản của bạn đã nhận gói khởi đầu trước đó.',
+          ? `Đã nhận +${res.amount} Credit miễn phí vào ví!`
+          : 'Tài khoản đã nhận gói khởi đầu trước đó.',
       );
       void queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
       void queryClient.invalidateQueries({ queryKey: ['rewards', 'wallet'] });
@@ -150,8 +151,10 @@ export function RewardsPage() {
   const starterEarned = transactions
     .filter((tx) => tx.type === 'STARTER_GRANT' && tx.amount > 0)
     .reduce((sum, tx) => sum + tx.amount, 0);
+
   const catalog = catalogData?.items ?? [];
   const filteredCatalog = catalog.filter((item) => {
+    if (!isProfessional) return !item.isMonetary || item.payoutEnabled;
     if (catalogFilter === 'monetary') return item.isMonetary || item.category === 'MONETARY_REWARD';
     if (catalogFilter === 'benefits') return !item.isMonetary && item.category !== 'MONETARY_REWARD';
     return true;
@@ -160,129 +163,76 @@ export function RewardsPage() {
   const myContributions = myContributionsData?.contributions ?? [];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      {/* Top Banner & Wallet Balance Card */}
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* Wallet Overview Card */}
-        <div className="md:col-span-2 rounded-xl bg-[#162B47] p-6 text-white border border-slate-700 shadow-2xs flex flex-col justify-between space-y-5">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-                Ví Credit & Quyền lợi (CME & Honoraria)
-              </h1>
-              <span className="inline-flex items-center gap-1.5 rounded bg-[#2C6865] px-2.5 py-0.5 text-[11px] font-bold text-teal-50 border border-teal-400/30">
-                <Award className="size-3 text-teal-200" aria-hidden /> NeuroLink Wallet
+    <div className="mx-auto max-w-5xl space-y-5">
+      {/* Compact White Wallet Card */}
+      <Card className="p-5 sm:p-6 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#141413]">
+            Ví Credit
+          </h1>
+
+          {!loadingWallet && wallet && wallet.balance === 0 && !hasClaimedStarterGrant && (
+            <Button
+              type="button"
+              size="sm"
+              variant="primary"
+              loading={claimStarterGrantMutation.isPending}
+              onClick={() => claimStarterGrantMutation.mutate()}
+              icon={<Coins className="size-3.5" aria-hidden />}
+            >
+              Nhận 250 Credit miễn phí
+            </Button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-end justify-between gap-4 border-t border-[#DCE6DF] pt-4 tabular-nums">
+          <div>
+            <span className="text-xs font-medium text-[#6E6D68] block">Số dư khả dụng</span>
+            <div className="mt-0.5 flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-bold text-[#16A34A]">
+                {loadingWallet ? '...' : wallet?.balance ?? 0}
               </span>
+              <span className="text-sm font-semibold text-[#141413]">Credit</span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-200 max-w-xl leading-relaxed line-clamp-2">
-              Tích lũy credit từ đọc ca sóng não, chia sẻ Data Bank và bài đóng góp chuyên môn để đổi khóa học CME, vé hội nghị.
-            </p>
           </div>
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/15 tabular-nums">
-              <div>
-                <span className="text-[11px] text-slate-300 block uppercase font-semibold">Số dư khả dụng</span>
-                <span className="text-2xl sm:text-3xl font-black text-amber-300">
-                  {loadingWallet ? '...' : wallet?.balance ?? 0}
-                </span>
-                <span className="text-[11px] text-slate-200 ml-1">credit</span>
-              </div>
-              <div>
-                <span className="text-[11px] text-slate-300 block uppercase font-semibold">Tổng tích lũy</span>
-                <span className="text-lg sm:text-xl font-bold text-white">
-                  {loadingWallet ? '...' : wallet?.totalEarned ?? 0}
-                </span>
-              </div>
-              <div>
-                <span className="text-[11px] text-slate-300 block uppercase font-semibold">Tổng đã đổi</span>
-                <span className="text-lg sm:text-xl font-bold text-white">
-                  {loadingWallet ? '...' : wallet?.totalSpent ?? 0}
-                </span>
-              </div>
+          <div className="flex items-center gap-6 text-xs">
+            <div>
+              <span className="text-[#6E6D68] block">Đã nhận</span>
+              <span className="font-semibold text-sm text-[#141413]">
+                {loadingWallet ? '...' : wallet?.totalEarned ?? 0} Credit
+              </span>
             </div>
-
-            {/* Earnings Source Breakdown */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-white/10 text-xs tabular-nums">
-              <div className="rounded-md bg-white/10 px-2.5 py-2">
-                <span className="flex items-center gap-1 text-[10px] text-slate-300">
-                  <Award className="size-3 text-teal-300" aria-hidden /> CME Honoraria
-                </span>
-                <span className="font-mono font-bold text-white">+{cmeEarned}</span>
-              </div>
-              <div className="rounded-md bg-white/10 px-2.5 py-2">
-                <span className="flex items-center gap-1 text-[10px] text-slate-300">
-                  <Stethoscope className="size-3 text-emerald-300" aria-hidden /> Đọc ca Từ xa
-                </span>
-                <span className="font-mono font-bold text-emerald-300">+{consultationEarned}</span>
-              </div>
-              <div className="rounded-md bg-white/10 px-2.5 py-2">
-                <span className="flex items-center gap-1 text-[10px] text-slate-300">
-                  <Database className="size-3 text-sky-300" aria-hidden /> Bản quyền DataBank
-                </span>
-                <span className="font-mono font-bold text-sky-300">+{dataBankRoyaltyEarned}</span>
-              </div>
-              <div className="rounded-md bg-white/10 px-2.5 py-2">
-                <span className="flex items-center gap-1 text-[10px] text-slate-300">
-                  <Coins className="size-3 text-amber-300" aria-hidden /> Gói Khởi đầu
-                </span>
-                <span className="font-mono font-bold text-amber-300">+{starterEarned}</span>
-              </div>
+            <div>
+              <span className="text-[#6E6D68] block">Đã dùng</span>
+              <span className="font-semibold text-sm text-[#141413]">
+                {loadingWallet ? '...' : wallet?.totalSpent ?? 0} Credit
+              </span>
             </div>
-
-            {!loadingWallet && wallet && wallet.balance === 0 && !hasClaimedStarterGrant && (
-              <div className="rounded-lg bg-amber-400/15 border border-amber-300/40 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-                <span className="text-xs font-semibold text-amber-100">
-                  Nhận ngay 250 Credit khởi đầu để hỏi bác sĩ hoặc mở khóa dữ liệu.
-                </span>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="accent"
-                  loading={claimStarterGrantMutation.isPending}
-                  onClick={() => claimStarterGrantMutation.mutate()}
-                  icon={<Coins className="size-3.5" />}
-                >
-                  Nhận 250 Credit Khởi đầu
-                </Button>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Quick Program Policy Card */}
-        <Card className="p-6 flex flex-col justify-between border-slate-200/80 shadow-2xs bg-white rounded-xl">
-          <div className="space-y-3">
-            <h2 className="font-bold text-xs uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Coins className="size-4 text-teal-600" aria-hidden /> Quy định Sổ cái
-            </h2>
-            <ul className="text-xs text-slate-600 space-y-2.5 leading-relaxed">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0 mt-0.5" aria-hidden />
-                <span className="line-clamp-2">Mọi giao dịch được ghi nhận minh bạch trong sổ cái cá nhân.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0 mt-0.5" aria-hidden />
-                <span className="line-clamp-2">Hoàn trả 100% credit nếu yêu cầu đổi thưởng bị từ chối.</span>
-              </li>
-            </ul>
+        {isProfessional && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-[#DCE6DF] text-xs tabular-nums">
+            <div className="rounded-lg bg-[#F5FAF7] border border-[#DCE6DF] px-3 py-2">
+              <span className="text-[11px] text-[#6E6D68] block">Thưởng CME</span>
+              <span className="font-mono font-semibold text-[#141413]">+{cmeEarned}</span>
+            </div>
+            <div className="rounded-lg bg-[#F5FAF7] border border-[#DCE6DF] px-3 py-2">
+              <span className="text-[11px] text-[#6E6D68] block">Đọc ca từ xa</span>
+              <span className="font-mono font-semibold text-[#15803D]">+{consultationEarned}</span>
+            </div>
+            <div className="rounded-lg bg-[#F5FAF7] border border-[#DCE6DF] px-3 py-2">
+              <span className="text-[11px] text-[#6E6D68] block">Dữ liệu EEG</span>
+              <span className="font-mono font-semibold text-[#141413]">+{dataBankRoyaltyEarned}</span>
+            </div>
+            <div className="rounded-lg bg-[#F5FAF7] border border-[#DCE6DF] px-3 py-2">
+              <span className="text-[11px] text-[#6E6D68] block">Khởi đầu</span>
+              <span className="font-mono font-semibold text-[#141413]">+{starterEarned}</span>
+            </div>
           </div>
-          <div className="pt-4 border-t border-slate-100 flex flex-col gap-1.5 text-xs">
-            <a
-              href="/consultations"
-              className="inline-flex items-center gap-1 font-bold text-teal-700 hover:underline"
-            >
-              Đọc ca / Hỏi bác sĩ ngay →
-            </a>
-            <a
-              href="/contributions"
-              className="inline-flex items-center gap-1 font-bold text-[#162B47] hover:underline"
-            >
-              Nộp bài tích lũy CME →
-            </a>
-          </div>
-        </Card>
-      </div>
+        )}
+      </Card>
 
       {error && (
         <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 text-xs sm:text-sm rounded-xl flex items-center justify-between">
@@ -294,7 +244,7 @@ export function RewardsPage() {
       )}
 
       {successMsg && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm rounded-xl flex items-center justify-between">
+        <div className="p-3.5 bg-[#EFF6F1] border border-[#DCE6DF] text-[#15803D] text-xs sm:text-sm rounded-xl flex items-center justify-between">
           <span>{successMsg}</span>
           <button type="button" onClick={() => setSuccessMsg(null)} className="text-xs font-semibold underline ml-2">
             Đóng
@@ -303,91 +253,98 @@ export function RewardsPage() {
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-200">
+      <div className="flex items-center gap-6 overflow-x-auto border-b border-[#DCE6DF]">
         <button
           type="button"
           onClick={() => setActiveTab('catalog')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
-            activeTab === 'catalog'
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+          className={`flex items-center gap-2 border-b-2 pb-2.5 text-sm transition-colors whitespace-nowrap shrink-0 ${
+            effectiveTab === 'catalog'
+              ? 'border-[#16A34A] font-bold text-[#15803D]'
+              : 'border-transparent font-normal text-[#6E6D68] hover:text-[#15803D]'
           }`}
         >
-          <Gift className="size-4" /> Danh mục Phần thưởng ({catalog.length})
+          <Gift className="size-4" aria-hidden /> Đổi ưu đãi ({filteredCatalog.length})
         </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('contributions')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
-            activeTab === 'contributions'
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Award className="size-4" /> Lịch sử Đóng góp ({myContributions.length})
-        </button>
+
         <button
           type="button"
           onClick={() => setActiveTab('history')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
-            activeTab === 'history'
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+          className={`flex items-center gap-2 border-b-2 pb-2.5 text-sm transition-colors whitespace-nowrap shrink-0 ${
+            effectiveTab === 'history'
+              ? 'border-[#16A34A] font-bold text-[#15803D]'
+              : 'border-transparent font-normal text-[#6E6D68] hover:text-[#15803D]'
           }`}
         >
-          <History className="size-4" /> Sổ cái Giao dịch ({transactions.length})
+          <History className="size-4" aria-hidden /> Lịch sử giao dịch ({transactions.length})
         </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('my-redemptions')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
-            activeTab === 'my-redemptions'
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Clock className="size-4" /> Lịch sử Đổi thưởng ({redemptions.length})
-        </button>
+
+        {isProfessional && (
+          <>
+            <button
+              type="button"
+              onClick={() => setActiveTab('contributions')}
+              className={`flex items-center gap-2 border-b-2 pb-2.5 text-sm transition-colors whitespace-nowrap shrink-0 ${
+                effectiveTab === 'contributions'
+                  ? 'border-[#16A34A] font-bold text-[#15803D]'
+                  : 'border-transparent font-normal text-[#6E6D68] hover:text-[#15803D]'
+              }`}
+            >
+              <Award className="size-4" aria-hidden /> Đóng góp CME ({myContributions.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('my-redemptions')}
+              className={`flex items-center gap-2 border-b-2 pb-2.5 text-sm transition-colors whitespace-nowrap shrink-0 ${
+                effectiveTab === 'my-redemptions'
+                  ? 'border-[#16A34A] font-bold text-[#15803D]'
+                  : 'border-transparent font-normal text-[#6E6D68] hover:text-[#15803D]'
+              }`}
+            >
+              <Clock className="size-4" aria-hidden /> Đã đổi ({redemptions.length})
+            </button>
+          </>
+        )}
       </div>
 
       {/* Tab 1: Reward Catalog */}
-      {activeTab === 'catalog' && (
+      {effectiveTab === 'catalog' && (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          {isProfessional && (
             <div className="flex flex-wrap gap-1.5">
               {[
-                { key: 'all', label: 'Tất cả Danh mục' },
-                { key: 'benefits', label: 'Quyền lợi Chuyên môn & CME (Professional Benefits)' },
-                { key: 'monetary', label: 'Thù lao & Kinh phí Công bố (Monetary Rewards)' },
+                { key: 'all', label: 'Tất cả' },
+                { key: 'benefits', label: 'Ưu đãi & CME' },
+                { key: 'monetary', label: 'Kinh phí công bố' },
               ].map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
                   onClick={() => setCatalogFilter(tab.key as 'all' | 'benefits' | 'monetary')}
-                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors border ${
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors border ${
                     catalogFilter === tab.key
-                      ? 'bg-[#162B47] text-white border-[#162B47]'
-                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                      ? 'bg-[#16A34A] text-white border-[#16A34A]'
+                      : 'bg-white text-[#6E6D68] border-[#DCE6DF] hover:bg-[#EFF6F1] hover:text-[#15803D]'
                   }`}
                 >
                   {tab.label}
                 </button>
               ))}
             </div>
-          </div>
+          )}
 
           {loadingCatalog ? (
-            <Spinner label="Đang tải danh mục phần thưởng..." />
+            <Spinner label="Đang tải ưu đãi..." />
           ) : filteredCatalog.length === 0 ? (
             <Card>
               <EmptyState
-                icon={<Gift className="size-8 text-slate-400" />}
-                title="Chưa có phần thưởng nào trong phân mục này"
-                description="Hội đồng Quản trị đang cập nhật các đợt tài trợ khóa học, kinh phí công bố và vé hội nghị mới."
+                icon={<Gift className="size-7 text-[#16A34A]" />}
+                title="Chưa có ưu đãi nào"
+                description="Các ưu đãi mới sẽ sớm được cập nhật."
               />
             </Card>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               {filteredCatalog.map((item) => {
                 const catConfig = REWARD_CATEGORY_CONFIG[item.category];
                 const IconComponent = catConfig?.icon ?? Gift;
@@ -396,54 +353,55 @@ export function RewardsPage() {
                 const isLockedMonetary = item.isMonetary && !item.payoutEnabled;
 
                 return (
-                  <Card key={item.id} className="p-6 flex flex-col justify-between space-y-4 border-slate-200 shadow-2xs hover:border-slate-300 transition-all">
-                    <div className="space-y-3">
+                  <Card key={item.id} className="p-5 flex flex-col justify-between space-y-4 hover:border-[#86EFAC] transition-colors">
+                    <div className="space-y-2.5">
                       <div className="flex items-start justify-between gap-2">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${catConfig?.colorClass}`}>
-                          <IconComponent className="size-3.5" /> {catConfig?.label}
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-medium border border-[#DCE6DF] ${catConfig?.colorClass}`}>
+                          <IconComponent className="size-3.5" aria-hidden /> {catConfig?.label}
                         </span>
-                        <span className="font-extrabold text-sm text-brand-700 bg-brand-50 border border-brand-200 px-2.5 py-0.5 rounded-full">
+                        <span className="font-bold text-xs text-[#15803D] bg-[#EFF6F1] border border-[#DCE6DF] px-2.5 py-0.5 rounded-full tabular-nums shrink-0">
                           {item.creditCost} Credit
                         </span>
                       </div>
 
                       <div>
-                        <h3 className="font-bold text-sm text-slate-900 leading-snug">{item.name}</h3>
-                        <p className="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
+                        <h3 className="font-semibold text-sm text-[#141413] leading-snug">{item.name}</h3>
+                        <p className="text-xs text-[#6E6D68] mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
                       </div>
 
                       {item.terms && (
-                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-[11px] text-slate-500">
-                          <strong>Điều kiện:</strong> {item.terms}
+                        <div className="bg-[#F5FAF7] px-2.5 py-2 rounded-lg border border-[#DCE6DF] text-[11px] text-[#575652] line-clamp-2">
+                          {item.terms}
                         </div>
                       )}
                     </div>
 
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-slate-400">
+                    <div className="pt-3 border-t border-[#DCE6DF] flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-[#6E6D68] tabular-nums">
                         {item.stockQuantity === null
-                          ? 'Không giới hạn suất'
-                          : `Còn ${Math.max(0, item.stockQuantity - item.redeemedCount)} / ${item.stockQuantity} suất`}
+                          ? 'Không giới hạn'
+                          : `Còn ${Math.max(0, item.stockQuantity - item.redeemedCount)}/${item.stockQuantity} suất`}
                       </span>
 
                       {isLockedMonetary ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
-                          <Lock className="size-3" /> Chưa kích hoạt giải ngân
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6E6D68] bg-[#F5FAF7] border border-[#DCE6DF] px-2.5 py-1 rounded-lg">
+                          <Lock className="size-3" aria-hidden /> Chưa mở
                         </span>
                       ) : isOutOfStock ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-red-700 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200">
-                          Hết suất đợt này
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200">
+                          Hết suất
                         </span>
                       ) : (
                         <Button
                           size="sm"
+                          variant="primary"
                           disabled={!canAfford}
                           onClick={() => {
                             setError(null);
                             setSelectedReward(item);
                           }}
                         >
-                          {canAfford ? 'Đổi phần thưởng' : 'Không đủ credit'}
+                          {canAfford ? 'Đổi ngay' : 'Chưa đủ Credit'}
                         </Button>
                       )}
                     </div>
@@ -453,50 +411,48 @@ export function RewardsPage() {
             </div>
           )}
 
-          {/* Modal / Confirmation Dialog for Redemption */}
+          {/* Confirmation Dialog for Redemption */}
           {selectedReward && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in duration-150">
-              <Card className="w-full max-w-lg p-6 space-y-4 shadow-2xl">
-                <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-                  <div>
-                    <h3 className="font-bold text-base text-slate-900">Xác nhận Đổi Phần thưởng</h3>
-                    <p className="text-xs text-slate-500">Credit sẽ được trừ từ ví và đưa vào hàng đợi cấp quyền lợi.</p>
-                  </div>
-                  <span className="font-bold text-sm text-brand-700 bg-brand-50 border border-brand-200 px-2.5 py-0.5 rounded-full">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+              <Card className="w-full max-w-md p-5 space-y-4 shadow-xl">
+                <div className="flex items-start justify-between gap-3 border-b border-[#DCE6DF] pb-3">
+                  <h3 className="font-bold text-base text-[#141413]">Xác nhận đổi ưu đãi</h3>
+                  <span className="font-bold text-xs text-[#15803D] bg-[#EFF6F1] border border-[#DCE6DF] px-2.5 py-0.5 rounded-full tabular-nums">
                     -{selectedReward.creditCost} Credit
                   </span>
                 </div>
 
-                <div className="space-y-2 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                  <p className="font-bold text-slate-800">{selectedReward.name}</p>
-                  <p className="text-slate-600">{selectedReward.description}</p>
-                  <div className="flex justify-between pt-1 border-t border-slate-200 text-slate-500 text-[11px]">
-                    <span>Số dư hiện tại: {wallet?.balance ?? 0}</span>
-                    <span className="font-bold text-brand-700">
-                      Số dư sau khi đổi: {(wallet?.balance ?? 0) - selectedReward.creditCost}
+                <div className="space-y-1.5 text-xs bg-[#F5FAF7] p-3.5 rounded-xl border border-[#DCE6DF]">
+                  <p className="font-semibold text-[#141413]">{selectedReward.name}</p>
+                  <p className="text-[#6E6D68] line-clamp-2">{selectedReward.description}</p>
+                  <div className="flex justify-between pt-2 border-t border-[#DCE6DF] text-[#6E6D68] text-[11px] tabular-nums">
+                    <span>Hiện có: {wallet?.balance ?? 0} Credit</span>
+                    <span className="font-semibold text-[#15803D]">
+                      Còn lại: {(wallet?.balance ?? 0) - selectedReward.creditCost} Credit
                     </span>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="reward-redeem-note" className="text-xs font-bold text-slate-700 block">
-                    Ghi chú / Thông tin nhận quyền lợi (VD: Email nhận vé, link tài khoản học tập):
+                  <label htmlFor="reward-redeem-note" className="text-xs font-semibold text-[#262624] block">
+                    Thông tin nhận ưu đãi
                   </label>
                   <Textarea
                     id="reward-redeem-note"
                     rows={3}
                     value={userNote}
                     onChange={(e) => setUserNote(e.target.value)}
-                    placeholder="Nhập thông tin liên hệ hoặc nhu cầu cụ thể..."
+                    placeholder="Email hoặc ghi chú nhận ưu đãi..."
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#DCE6DF]">
                   <Button variant="ghost" size="sm" onClick={() => setSelectedReward(null)}>
-                    Hủy bỏ
+                    Hủy
                   </Button>
                   <Button
                     size="sm"
+                    variant="primary"
                     loading={redeemMutation.isPending}
                     onClick={() => {
                       redeemMutation.mutate({
@@ -504,9 +460,9 @@ export function RewardsPage() {
                         userNote: userNote.trim() || undefined,
                       });
                     }}
-                    icon={<Gift className="size-4" />}
+                    icon={<Gift className="size-4" aria-hidden />}
                   >
-                    Xác nhận đổi ngay
+                    Đổi ngay
                   </Button>
                 </div>
               </Card>
@@ -516,79 +472,112 @@ export function RewardsPage() {
       )}
 
       {/* Tab 2: Transaction Ledger History */}
-      {activeTab === 'history' && (
-        <Card className="overflow-hidden border-slate-200">
-          <div className="p-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700">
-              Sổ cái Giao dịch Bất biến (Immutable Credit Ledger)
-            </h3>
-            <span className="text-[11px] text-slate-400">Hiển thị tối đa 50 giao dịch gần nhất</span>
-          </div>
-
-          {loadingWallet ? (
-            <div className="p-8"><Spinner label="Đang tải lịch sử giao dịch..." /></div>
-          ) : transactions.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-400">Chưa có giao dịch credit nào được ghi nhận.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
-                  <tr>
-                    <th className="py-2.5 px-4 font-semibold">Thời gian</th>
-                    <th className="py-2.5 px-4 font-semibold">Loại giao dịch</th>
-                    <th className="py-2.5 px-4 font-semibold">Nội dung diễn giải</th>
-                    <th className="py-2.5 px-4 font-semibold text-right">Biến động credit</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {transactions.map((tx) => {
-                    const isPositive = tx.amount > 0;
-                    const typeMeta = TRANSACTION_TYPE_LABELS[tx.type] ?? {
-                      label: tx.type,
-                      className: 'bg-slate-100 text-slate-700 border-slate-200',
-                    };
-                    return (
-                      <tr key={tx.id} className="hover:bg-slate-50/50">
-                        <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap tabular-nums">
-                          {new Date(tx.createdAt).toLocaleString('vi-VN')}
-                        </td>
-                        <td className="py-2.5 px-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-bold ${typeMeta.className}`}>
-                            {typeMeta.label}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-4 text-slate-800 font-medium">
-                          {tx.description}
-                        </td>
-                        <td className="py-2.5 px-4 text-right whitespace-nowrap font-bold font-mono tabular-nums">
-                          <span className={isPositive ? 'text-emerald-600' : 'text-red-600'}>
-                            {isPositive ? `+${tx.amount}` : tx.amount}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+      {effectiveTab === 'history' && (
+        <div className="space-y-4">
+          {!isProfessional && redemptions.length > 0 && (
+            <Card className="p-4 space-y-3">
+              <h3 className="font-semibold text-sm text-[#141413]">Ưu đãi đã đổi ({redemptions.length})</h3>
+              <div className="space-y-2.5">
+                {redemptions.map((redemption) => {
+                  const statusMeta = REDEMPTION_STATUS_META[redemption.status];
+                  return (
+                    <div key={redemption.id} className="rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] p-3 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-xs sm:text-sm text-[#141413]">{redemption.reward.name}</p>
+                          <p className="text-[11px] text-[#6E6D68] tabular-nums">
+                            {new Date(redemption.createdAt).toLocaleString('vi-VN')} · {redemption.creditCost} Credit
+                          </p>
+                        </div>
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${statusMeta.className}`}>
+                          {statusMeta.label}
+                        </span>
+                      </div>
+                      {redemption.fulfillmentInfo && (
+                        <p className="font-mono text-xs bg-white p-2 rounded border border-[#DCE6DF] select-all text-[#141413]">
+                          {redemption.fulfillmentInfo}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
           )}
-        </Card>
+
+          <Card className="overflow-hidden">
+            <div className="p-4 border-b border-[#DCE6DF] bg-[#F5FAF7] flex items-center justify-between">
+              <h3 className="font-semibold text-xs sm:text-sm text-[#141413]">
+                Lịch sử giao dịch Credit
+              </h3>
+              <span className="text-[11px] text-[#6E6D68]">50 giao dịch gần nhất</span>
+            </div>
+
+            {loadingWallet ? (
+              <div className="p-8"><Spinner label="Đang tải lịch sử..." /></div>
+            ) : transactions.length === 0 ? (
+              <div className="p-8 text-center text-xs text-[#6E6D68]">Chưa có giao dịch nào.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#F5FAF7] text-[#6E6D68] border-b border-[#DCE6DF]">
+                    <tr>
+                      <th className="py-2.5 px-4 font-semibold">Thời gian</th>
+                      <th className="py-2.5 px-4 font-semibold">Loại</th>
+                      <th className="py-2.5 px-4 font-semibold">Nội dung</th>
+                      <th className="py-2.5 px-4 font-semibold text-right">Credit</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#DCE6DF]">
+                    {transactions.map((tx) => {
+                      const isPositive = tx.amount > 0;
+                      const typeMeta = TRANSACTION_TYPE_LABELS[tx.type] ?? {
+                        label: tx.type,
+                        className: 'bg-[#F5FAF7] text-[#262624] border-[#DCE6DF]',
+                      };
+                      return (
+                        <tr key={tx.id} className="hover:bg-[#F5FAF7]/60">
+                          <td className="py-2.5 px-4 text-[#6E6D68] whitespace-nowrap tabular-nums">
+                            {new Date(tx.createdAt).toLocaleString('vi-VN')}
+                          </td>
+                          <td className="py-2.5 px-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-semibold ${typeMeta.className}`}>
+                              {typeMeta.label}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-[#141413] font-medium">
+                            {tx.description}
+                          </td>
+                          <td className="py-2.5 px-4 text-right whitespace-nowrap font-bold font-mono tabular-nums">
+                            <span className={isPositive ? 'text-[#16A34A]' : 'text-red-600'}>
+                              {isPositive ? `+${tx.amount}` : tx.amount}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        </div>
       )}
 
-      {/* Tab 3: My Redemptions */}
-      {activeTab === 'my-redemptions' && (
+      {/* Tab 3 (Pro only): My Redemptions */}
+      {isProfessional && effectiveTab === 'my-redemptions' && (
         <div className="space-y-4">
           {loadingRedemptions ? (
-            <Spinner label="Đang tải lịch sử đổi thưởng..." />
+            <Spinner label="Đang tải..." />
           ) : redemptions.length === 0 ? (
             <Card>
               <EmptyState
-                icon={<Clock className="size-8 text-slate-400" />}
-                title="Chưa có yêu cầu đổi thưởng nào"
-                description="Bạn có thể duyệt Danh mục Phần thưởng để chọn các khóa học và quyền lợi phù hợp."
+                icon={<Clock className="size-7 text-[#16A34A]" />}
+                title="Chưa có yêu cầu đổi ưu đãi"
+                description="Chọn ưu đãi phù hợp tại danh mục Đổi ưu đãi."
                 action={
-                  <Button size="sm" onClick={() => setActiveTab('catalog')} icon={<Gift className="size-4" />}>
-                    Duyệt danh mục ngay
+                  <Button size="sm" onClick={() => setActiveTab('catalog')} icon={<Gift className="size-4" aria-hidden />}>
+                    Xem ưu đãi
                   </Button>
                 }
               />
@@ -598,13 +587,13 @@ export function RewardsPage() {
               const statusMeta = REDEMPTION_STATUS_META[redemption.status];
 
               return (
-                <Card key={redemption.id} className="p-5 space-y-3 border-slate-200">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <Card key={redemption.id} className="p-5 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#DCE6DF] pb-3">
                     <div>
-                      <h4 className="font-bold text-sm text-slate-900">{redemption.reward.name}</h4>
-                      <p className="text-[11px] text-slate-400">
-                        Yêu cầu lúc: {new Date(redemption.createdAt).toLocaleString('vi-VN')} · Chi phí:{' '}
-                        <strong>{redemption.creditCost} credit</strong>
+                      <h4 className="font-semibold text-sm text-[#141413]">{redemption.reward.name}</h4>
+                      <p className="text-[11px] text-[#6E6D68] tabular-nums">
+                        {new Date(redemption.createdAt).toLocaleString('vi-VN')} ·{' '}
+                        <strong>{redemption.creditCost} Credit</strong>
                       </p>
                     </div>
                     <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusMeta.className}`}>
@@ -613,23 +602,23 @@ export function RewardsPage() {
                   </div>
 
                   {redemption.userNote && (
-                    <p className="text-xs text-slate-600">
-                      <strong>Ghi chú của bạn:</strong> {redemption.userNote}
+                    <p className="text-xs text-[#575652]">
+                      <strong>Ghi chú:</strong> {redemption.userNote}
                     </p>
                   )}
 
                   {redemption.adminNote && (
-                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs text-slate-700">
-                      <strong>Phản hồi từ Hội đồng Quản trị:</strong> {redemption.adminNote}
+                    <div className="bg-[#F5FAF7] p-2.5 rounded-lg border border-[#DCE6DF] text-xs text-[#262624]">
+                      <strong>Phản hồi:</strong> {redemption.adminNote}
                     </div>
                   )}
 
                   {redemption.fulfillmentInfo && (
-                    <div className="bg-emerald-50/80 p-3 rounded-xl border border-emerald-200 text-xs text-emerald-900 space-y-1">
-                      <div className="font-bold flex items-center gap-1.5">
-                        <CheckCircle2 className="size-4 text-emerald-600" /> Thông tin Nhận quyền lợi / Vé / Tài khoản:
+                    <div className="bg-[#EFF6F1] p-3 rounded-xl border border-[#DCE6DF] text-xs text-[#15803D] space-y-1">
+                      <div className="font-semibold flex items-center gap-1.5">
+                        <CheckCircle2 className="size-4 text-[#16A34A]" aria-hidden /> Thông tin nhận ưu đãi:
                       </div>
-                      <p className="font-mono bg-white p-2 rounded border border-emerald-200 select-all">
+                      <p className="font-mono bg-white p-2 rounded border border-[#DCE6DF] select-all text-[#141413]">
                         {redemption.fulfillmentInfo}
                       </p>
                     </div>
@@ -641,52 +630,51 @@ export function RewardsPage() {
         </div>
       )}
 
-      {/* Tab: Contribution History */}
-      {activeTab === 'contributions' && (
+      {/* Tab 4 (Pro only): Contribution History */}
+      {isProfessional && effectiveTab === 'contributions' && (
         <DataTableContainer
-          title="Lịch sử Đóng góp Chuyên môn & Quy đổi Credit (Contribution History)"
-          subtitle="Danh sách các bài báo cáo ca bệnh, nghiên cứu BCI và hỏi đáp chuyên gia đã nộp xét duyệt"
-          icon={<Award className="size-4 text-[#1E3A5F]" />}
-          metaLabel="Peer-Reviewed Contributions"
+          title="Đóng góp CME"
+          icon={<Award className="size-4 text-[#16A34A]" />}
+          className="border-[#DCE6DF]"
         >
           {loadingContributions ? (
             <div className="p-6">
-              <Spinner label="Đang tải lịch sử đóng góp..." />
+              <Spinner label="Đang tải..." />
             </div>
           ) : (
             <table className="w-full text-left border-collapse text-xs tabular-nums">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-100/80 text-[10.5px] font-bold uppercase tracking-wider text-slate-600">
+                <tr className="border-b border-[#DCE6DF] bg-[#F5FAF7] text-[11px] font-semibold uppercase tracking-wider text-[#6E6D68]">
                   <th className="py-2.5 px-4">Danh mục</th>
-                  <th className="py-2.5 px-4">Tóm tắt Đóng góp Chuyên môn</th>
+                  <th className="py-2.5 px-4">Tóm tắt</th>
                   <th className="py-2.5 px-3 text-center">Trạng thái</th>
-                  <th className="py-2.5 px-4 text-right">Credit Nhận</th>
+                  <th className="py-2.5 px-4 text-right">Credit</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200/80">
+              <tbody className="divide-y divide-[#DCE6DF]">
                 {myContributions.length > 0 ? (
                   myContributions.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-50/90">
-                      <td className="py-3 px-4 font-mono font-bold text-[#1E3A5F] whitespace-nowrap">
+                    <tr key={c.id} className="hover:bg-[#F5FAF7]/60">
+                      <td className="py-3 px-4 font-mono font-semibold text-[#141413] whitespace-nowrap">
                         {c.category}
                       </td>
-                      <td className="py-3 px-4 text-slate-800 font-medium">{c.summary}</td>
+                      <td className="py-3 px-4 text-[#262624] font-medium">{c.summary}</td>
                       <td className="py-3 px-3 text-center whitespace-nowrap">
-                        <span className="inline-flex rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10.5px] font-semibold text-emerald-800">
+                        <span className="inline-flex rounded bg-[#EFF6F1] border border-[#DCE6DF] px-2 py-0.5 text-[11px] font-semibold text-[#15803D]">
                           {c.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right font-mono font-bold text-[#2C6865]">
-                        {c.awardCredits ? `+${c.awardCredits} credit` : 'Đang xét duyệt'}
+                      <td className="py-3 px-4 text-right font-mono font-semibold text-[#15803D]">
+                        {c.awardCredits ? `+${c.awardCredits} Credit` : 'Chờ duyệt'}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="py-8 px-4 text-center text-slate-500">
-                      Chưa có đóng góp nào được ghi nhận. Bạn có thể nộp bài viết chuyên môn tại mục{' '}
-                      <a href="/contributions" className="font-bold text-brand-700 hover:underline">
-                        Research Hub
+                    <td colSpan={4} className="py-8 px-4 text-center text-[#6E6D68]">
+                      Chưa có đóng góp nào. Nộp bài tại{' '}
+                      <a href="/contributions" className="font-semibold text-[#16A34A] hover:underline">
+                        Đóng góp chuyên môn
                       </a>
                       .
                     </td>

@@ -14,15 +14,12 @@ import {
   Gift,
   Activity,
   Heart,
-  Brain,
   Users,
   LayoutDashboard,
   Stethoscope,
   Clock,
   AlertCircle,
-  ShieldCheck,
   ChevronDown,
-  ExternalLink,
   HelpCircle,
   X,
   ArrowRight,
@@ -99,15 +96,7 @@ export function Logo({
 
 function UserMenu({ inverted = false }: { inverted?: boolean }) {
   const { user, logout } = useAuth();
-  const {
-    toggleMode,
-    isProfessional,
-    canAccessProfessionalMode,
-    enableVerificationCenter,
-    enableResubmission,
-    accountRole,
-    verificationStatus,
-  } = useMode();
+  const { toggleMode, isProfessional, canAccessProfessionalMode } = useMode();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -135,7 +124,7 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
             'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border shrink-0',
             inverted
               ? 'border-white/20 text-white hover:bg-white/10'
-              : 'border-[#E6E4DF] text-[#141413] hover:bg-[#EFECE6]',
+              : 'border-[#DCE6DF] text-[#111827] hover:bg-[#F5FAF7]',
           )}
         >
           Đăng nhập
@@ -145,8 +134,8 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
           className={cn(
             'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors shrink-0',
             inverted
-              ? 'bg-white text-[#141413] hover:bg-white/90'
-              : 'bg-[#141413] text-white hover:bg-[#292927]',
+              ? 'bg-white text-[#14532D] hover:bg-white/90'
+              : 'bg-[#16A34A] text-white hover:bg-[#15803D]',
           )}
         >
           Đăng ký
@@ -156,7 +145,7 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
   }
 
   const item =
-    'group flex w-full items-center gap-2.5 px-3.5 py-2 text-xs text-[#262624] hover:bg-[#F3F2EE] transition-colors font-medium';
+    'group flex w-full items-center gap-2.5 px-3.5 py-2 text-xs text-[#1F2937] hover:bg-[#F5FAF7] hover:text-[#15803D] transition-colors font-medium';
 
   return (
     <div className="relative" ref={ref}>
@@ -167,7 +156,7 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
           'flex items-center gap-2 rounded-lg px-1.5 py-1 transition-colors focus-visible:outline-none select-none shrink-0',
           inverted
             ? 'text-white hover:bg-white/10'
-            : 'text-[#141413] hover:bg-[#EFECE6]',
+            : 'text-[#111827] hover:bg-[#F5FAF7]',
         )}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -181,7 +170,7 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
           className={cn(
             'size-3.5 transition-transform duration-150 hidden sm:block',
             open && 'rotate-180',
-            inverted ? 'text-white/60' : 'text-[#6E6D68]',
+            inverted ? 'text-white/60' : 'text-[#6B7280]',
           )}
         />
       </button>
@@ -189,175 +178,95 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-[#E6E4DF] bg-white py-1 shadow-md text-[#141413]"
+          className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-[#DCE6DF] bg-white py-1 shadow-lg text-[#111827]"
         >
-          <div className="border-b border-[#E6E4DF] bg-[#FAF9F6] px-3.5 py-2.5">
-            <p className="truncate text-sm font-semibold text-[#141413]">{user.displayName}</p>
-            <p className="truncate text-xs text-[#6E6D68]">
-              @{user.username} · {ACCOUNT_ROLE_LABELS[accountRole]}
-            </p>
-            <div className="mt-1.5 flex items-center gap-1.5 flex-wrap text-[11px] text-[#575652]">
-              <span className="font-medium text-[#1B4332]">
-                {isProfessional ? 'Chế độ Chuyên gia' : 'Chế độ Thành viên'}
-              </span>
-              {verificationStatus === 'VERIFIED' && <span>· Đã xác minh</span>}
-              {verificationStatus === 'PENDING' && <span>· Chờ xét duyệt</span>}
-              {verificationStatus === 'REJECTED' && (
-                <span className="text-[#B91C1C]">· Cần nộp lại</span>
-              )}
-              {user.role === 'ADMIN' && <span>· Quản trị viên</span>}
-            </div>
-          </div>
-
-          <div className="py-1">
-            {canAccessProfessionalMode ? (
+          <div className="border-b border-[#DCE6DF] bg-[#F5FAF7] px-3.5 py-2.5">
+            <p className="truncate text-sm font-semibold text-[#111827]">{user.displayName}</p>
+            <p className="truncate text-xs text-[#6B7280]">@{user.username}</p>
+            {canAccessProfessionalMode && (
               <button
                 type="button"
-                className={cn(item, 'font-semibold text-[#1B4332]')}
                 onClick={() => {
                   toggleMode();
                   setOpen(false);
                 }}
+                className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#DCE6DF] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#15803D] hover:bg-[#ECFDF3] transition-colors"
               >
-                {isProfessional ? (
-                  <>
-                    <UserIcon className="size-4 text-[#6E6D68]" /> Chuyển sang Chế độ Thành viên
-                  </>
-                ) : (
-                  <>
-                    <Stethoscope className="size-4 text-[#1B4332]" /> Chuyển sang Chế độ Chuyên gia
-                  </>
-                )}
+                <Stethoscope className="size-3.5 shrink-0" aria-hidden />
+                <span>{isProfessional ? 'Chế độ Cá nhân' : 'Chế độ Chuyên gia'}</span>
               </button>
-            ) : enableResubmission ? (
-              <Link
-                role="menuitem"
-                to="/settings?resubmit=true#verification-center"
-                className={cn(item, 'font-semibold text-[#B91C1C]')}
-                onClick={() => setOpen(false)}
-              >
-                <AlertCircle className="size-4 text-[#B91C1C]" /> Nộp lại Hồ sơ Minh chứng
-              </Link>
-            ) : enableVerificationCenter ? (
-              <Link
-                role="menuitem"
-                to="/settings#verification-center"
-                className={item}
-                onClick={() => setOpen(false)}
-              >
-                <Clock className="size-4 text-[#6E6D68]" /> Trung tâm Xác minh (Chờ duyệt)
-              </Link>
-            ) : (
-              <Link
-                role="menuitem"
-                to="/settings#verification-center"
-                className={item}
-                onClick={() => setOpen(false)}
-              >
-                <ShieldCheck className="size-4 text-[#6E6D68]" /> Đăng ký Xác minh Chuyên gia
-              </Link>
             )}
+          </div>
 
+          <div className="py-1">
             <Link
               role="menuitem"
               to={`/u/${user.username}`}
               className={item}
               onClick={() => setOpen(false)}
             >
-              <UserIcon className="size-4 text-[#6E6D68]" />
-              {isProfessional ? 'Hồ sơ Chuyên môn' : 'Trang cá nhân'}
+              <UserIcon className="size-4 text-[#6B7280] group-hover:text-[#16A34A]" />
+              <span>Trang cá nhân</span>
             </Link>
 
-            {isProfessional ? (
-              <>
-                <Link role="menuitem" to="/dashboard" className={item} onClick={() => setOpen(false)}>
-                  <LayoutDashboard className="size-4 text-[#6E6D68]" /> Tổng quan Chuyên môn
-                </Link>
-                <Link role="menuitem" to="/contributions" className={item} onClick={() => setOpen(false)}>
-                  <Award className="size-4 text-[#6E6D68]" /> Nghiên cứu &amp; CME
-                </Link>
-                <Link role="menuitem" to="/eeg-hub?view=workspace" className={item} onClick={() => setOpen(false)}>
-                  <Activity className="size-4 text-[#6E6D68]" /> Trạm qEEG
-                </Link>
-                <a
-                  role="menuitem"
-                  href="/clinical-workstation?mode=professional"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={item}
-                  onClick={() => setOpen(false)}
-                >
-                  <ExternalLink className="size-4 text-[#6E6D68]" /> Trạm qEEG Cortical
-                </a>
-                <Link role="menuitem" to="/consultations?tab=queue" className={item} onClick={() => setOpen(false)}>
-                  <Stethoscope className="size-4 text-[#6E6D68]" /> Đọc ca Từ xa
-                </Link>
-                <Link role="menuitem" to="/rewards" className={item} onClick={() => setOpen(false)}>
-                  <Gift className="size-4 text-[#6E6D68]" /> Ví thù lao &amp; CME
-                </Link>
-                <div className="my-1 border-t border-[#E6E4DF]" />
-                <Link role="menuitem" to="/my-health" className={item} onClick={() => setOpen(false)}>
-                  <Heart className="size-4 text-[#6E6D68]" /> Sức khỏe cá nhân
-                </Link>
-                <Link role="menuitem" to="/eeg-hub?view=personal" className={item} onClick={() => setOpen(false)}>
-                  <Brain className="size-4 text-[#6E6D68]" /> Bản ghi EEG cá nhân
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link role="menuitem" to="/my-health" className={item} onClick={() => setOpen(false)}>
-                  <Heart className="size-4 text-[#6E6D68]" /> Sức khỏe của tôi
-                </Link>
-                <Link role="menuitem" to="/eeg-hub?view=personal" className={item} onClick={() => setOpen(false)}>
-                  <Brain className="size-4 text-[#6E6D68]" /> Dữ liệu EEG cá nhân
-                </Link>
-                <Link role="menuitem" to="/consultations" className={item} onClick={() => setOpen(false)}>
-                  <Stethoscope className="size-4 text-[#6E6D68]" /> Tư vấn Sóng não
-                </Link>
-                <a
-                  role="menuitem"
-                  href="/clinical-workstation?mode=general"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={item}
-                  onClick={() => setOpen(false)}
-                >
-                  <ExternalLink className="size-4 text-[#6E6D68]" /> Trạm qEEG Cortical
-                </a>
-                <Link role="menuitem" to="/rewards" className={item} onClick={() => setOpen(false)}>
-                  <Gift className="size-4 text-[#6E6D68]" /> Ví Credit &amp; Quyền lợi
-                </Link>
-                <Link role="menuitem" to="/communities" className={item} onClick={() => setOpen(false)}>
-                  <Users className="size-4 text-[#6E6D68]" /> Cộng đồng hỗ trợ
-                </Link>
-                <Link role="menuitem" to="/messages" className={item} onClick={() => setOpen(false)}>
-                  <MessageCircle className="size-4 text-[#6E6D68]" /> Tin nhắn
-                </Link>
-              </>
+            <Link
+              role="menuitem"
+              to="/rewards"
+              className={item}
+              onClick={() => setOpen(false)}
+            >
+              <Gift className="size-4 text-[#6B7280] group-hover:text-[#16A34A]" />
+              <span>Ví Credit</span>
+            </Link>
+
+            <Link
+              role="menuitem"
+              to="/settings"
+              className={item}
+              onClick={() => setOpen(false)}
+            >
+              <Settings className="size-4 text-[#6B7280] group-hover:text-[#16A34A]" />
+              <span>Cài đặt</span>
+            </Link>
+
+            {canAccessProfessionalMode && (
+              <Link
+                role="menuitem"
+                to="/dashboard"
+                className={item}
+                onClick={() => setOpen(false)}
+              >
+                <LayoutDashboard className="size-4 text-[#6B7280] group-hover:text-[#16A34A]" />
+                <span>Bảng chuyên gia</span>
+              </Link>
             )}
 
-            <Link role="menuitem" to="/settings" className={item} onClick={() => setOpen(false)}>
-              <Settings className="size-4 text-[#6E6D68]" /> Cài đặt tài khoản
-            </Link>
             {user.role === 'ADMIN' && (
-              <Link role="menuitem" to="/admin" className={item} onClick={() => setOpen(false)}>
-                <Shield className="size-4 text-[#6E6D68]" /> Quản trị hệ thống
+              <Link
+                role="menuitem"
+                to="/admin"
+                className={item}
+                onClick={() => setOpen(false)}
+              >
+                <Shield className="size-4 text-[#6B7280] group-hover:text-[#16A34A]" />
+                <span>Quản trị</span>
               </Link>
             )}
           </div>
 
-          <div className="border-t border-[#E6E4DF] pt-1">
+          <div className="border-t border-[#DCE6DF] pt-1">
             <button
               role="menuitem"
               type="button"
-              className={cn(item, 'text-[#B91C1C] hover:bg-[#FEF2F2]')}
+              className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-[#DC2626] hover:bg-[#FEF2F2] transition-colors"
               onClick={async () => {
                 setOpen(false);
                 await logout();
                 navigate('/login', { replace: true });
               }}
             >
-              <LogOut className="size-4 text-[#B91C1C]" /> Đăng xuất
+              <LogOut className="size-4 text-[#DC2626]" />
+              <span>Đăng xuất</span>
             </button>
           </div>
         </div>

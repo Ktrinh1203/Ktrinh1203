@@ -22,8 +22,24 @@ export const authApi = {
 export const usersApi = {
   get: (idOrUsername: string) =>
     api<{ user: UserProfile }>(`/users/${encodeURIComponent(idOrUsername)}`),
-  updateMe: (body: { displayName?: string; bio?: string | null }) =>
-    api<{ user: SelfUser }>('/users/me', { method: 'PATCH', body }),
+  updateMe: (body: {
+    displayName?: string;
+    bio?: string | null;
+    avatarUrl?: string | null;
+    coverUrl?: string | null;
+  }) => api<{ user: SelfUser }>('/users/me', { method: 'PATCH', body }),
+  uploadAvatar: (file: File) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return api<{ user: SelfUser }>('/users/me/avatar', { method: 'POST', body: formData });
+  },
+  removeAvatar: () => api<{ user: SelfUser }>('/users/me/avatar', { method: 'DELETE' }),
+  uploadCover: (file: File) => {
+    const formData = new FormData();
+    formData.append('cover', file);
+    return api<{ user: SelfUser }>('/users/me/cover', { method: 'POST', body: formData });
+  },
+  removeCover: () => api<{ user: SelfUser }>('/users/me/cover', { method: 'DELETE' }),
   follow: (userId: string) =>
     api<{ following: boolean }>(`/users/${userId}/follow`, { method: 'POST' }),
   unfollow: (userId: string) =>

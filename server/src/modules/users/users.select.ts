@@ -35,6 +35,7 @@ export const publicUserSelect = {
   username: true,
   displayName: true,
   avatarUrl: true,
+  coverUrl: true,
   bio: true,
   role: true,
   createdAt: true,

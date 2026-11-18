@@ -102,6 +102,7 @@ export interface PublicUser {
   username: string;
   displayName: string;
   avatarUrl: string | null;
+  coverUrl?: string | null;
   bio: string | null;
   role: Role;
   createdAt: string;

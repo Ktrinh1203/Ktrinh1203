@@ -222,6 +222,9 @@ export function EEGHubPage() {
   const recParam = searchParams.get('rec');
 
   const [activeTab, setActiveTab] = useState<HubTab>(() => resolveInitialTab(searchParams));
+  const [showResearchTabs, setShowResearchTabs] = useState(
+    () => activeTab === 'databank' || activeTab === 'neural-db',
+  );
   const [datasetScope, setDatasetScope] = useState<'my' | 'workspace'>(() =>
     isProfessional && viewParam === 'workspace' ? 'workspace' : 'my',
   );
@@ -248,6 +251,9 @@ export function EEGHubPage() {
     const tabParam = searchParams.get('tab');
     if (tabParam === 'qeeg' || tabParam === 'personal' || tabParam === 'databank' || tabParam === 'neural-db') {
       setActiveTab(tabParam);
+      if (tabParam === 'databank' || tabParam === 'neural-db') {
+        setShowResearchTabs(true);
+      }
     } else if (recParam || viewParam === 'personal') {
       setActiveTab('personal');
       setDatasetScope('my');
@@ -312,9 +318,7 @@ export function EEGHubPage() {
         samplingRate: newSamplingRate.trim() || '250 Hz',
         channelsCount: Number(newChannelsCount) || 8,
         duration: newDuration.trim() || '15 phút 00 giây',
-        clinicalNote:
-          newClinicalNote.trim() ||
-          'Bản ghi điện não đồ cá nhân mới tải lên. Mặc định khoá riêng tư 100% cho đến khi chủ sở hữu cấp quyền bác sĩ.',
+        clinicalNote: newClinicalNote.trim() || 'Bản ghi sóng não cá nhân.',
       });
       setRecordings((prev) => [res.dataset, ...prev]);
       setSelectedRecId(res.dataset.id);
@@ -324,7 +328,7 @@ export function EEGHubPage() {
       setActiveTab('personal');
       setConsentFeedback({
         tone: 'success',
-        text: `Đã tạo bản ghi EEG mới "${res.dataset.title}" (${res.dataset.patientCode}). Bạn có thể cấp quyền bác sĩ ngay bên dưới.`,
+        text: `Đã tạo bản ghi "${res.dataset.title}" (${res.dataset.patientCode}).`,
       });
     } catch (err) {
       setConsentFeedback({
@@ -409,16 +413,18 @@ export function EEGHubPage() {
     }
   };
 
-  const tabs: { id: HubTab; label: string }[] = [
-    { id: 'qeeg', label: 'Đo sóng' },
-    { id: 'personal', label: 'Hồ sơ của tôi' },
-    { id: 'databank', label: 'Kho dữ liệu' },
-    { id: 'neural-db', label: 'Mẫu AI' },
+  const allTabs: { id: HubTab; label: string }[] = [
+    { id: 'qeeg', label: 'Đo & Đọc kết quả' },
+    { id: 'personal', label: 'Hồ sơ đã lưu' },
+    { id: 'databank', label: 'Kho Dữ liệu' },
+    { id: 'neural-db', label: 'Mẫu chuẩn AI' },
   ];
+  const visibleTabs =
+    isProfessional || showResearchTabs ? allTabs : allTabs.slice(0, 2);
 
   return (
     <div className={isProfessional ? 'space-y-4' : 'mx-auto max-w-6xl space-y-4'}>
-      {/* Header & 4-Tab Hairline Underline Navigation */}
+      {/* Header & Navigation */}
       <header className="space-y-3">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <h1
@@ -427,7 +433,7 @@ export function EEGHubPage() {
               isProfessional ? 'text-base sm:text-lg' : 'text-lg sm:text-xl',
             )}
           >
-            Sóng não
+            Đo sóng não
           </h1>
 
           {activeTab === 'personal' && (
@@ -487,10 +493,10 @@ export function EEGHubPage() {
         </div>
 
         <nav
-          aria-label="Điều hướng Trạm Điện não"
+          aria-label="Điều hướng Đo sóng não"
           className="border-b border-[#DCE6DF] flex items-center gap-6 overflow-x-auto"
         >
-          {tabs.map((tab) => {
+          {visibleTabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
@@ -509,6 +515,22 @@ export function EEGHubPage() {
               </button>
             );
           })}
+
+          {!isProfessional && (
+            <button
+              type="button"
+              onClick={() => {
+                const next = !showResearchTabs;
+                setShowResearchTabs(next);
+                if (!next && (activeTab === 'databank' || activeTab === 'neural-db')) {
+                  switchTab('qeeg');
+                }
+              }}
+              className="ml-auto pb-2.5 text-xs font-medium text-[#6E6D68] hover:text-[#15803D] whitespace-nowrap shrink-0 transition-colors"
+            >
+              {showResearchTabs ? 'Ẩn chế độ nghiên cứu' : 'Kho dữ liệu & AI'}
+            </button>
+          )}
         </nav>
       </header>
 
@@ -549,7 +571,7 @@ export function EEGHubPage() {
                     id="personal-eeg-title"
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="Ví dụ: Đo sóng não giấc ngủ 8 kênh"
+                    placeholder="Nhập tên bản ghi..."
                     className="bg-white"
                   />
                 </div>
@@ -843,7 +865,7 @@ export function EEGHubPage() {
                           id="consent-target-username"
                           value={consentTargetUsername}
                           onChange={(e) => setConsentTargetUsername(e.target.value)}
-                          placeholder="Username bác sĩ (vd: dr_minh)"
+                          placeholder="Username bác sĩ..."
                           className="bg-white text-xs h-8"
                         />
                       </div>
