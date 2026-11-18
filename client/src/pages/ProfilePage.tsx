@@ -391,7 +391,7 @@ export function ProfilePage() {
       {isProfessional ? (
         <DataTableContainer
           title="Công bố Khoa học & Lịch sử Đóng góp Chuyên môn (Publications & Contributions)"
-          subtitle="Các công trình bình duyệt đồng cấp, báo cáo ca lâm sàng và điểm tín chỉ CME/Honoraria"
+          subtitle="Các công trình bình duyệt đồng cấp, báo cáo ca lâm sàng và điểm credit CME/Honoraria"
           icon={<BookOpen className="size-4 text-[#2C6865]" />}
           action={
             user.isSelf ? (
@@ -409,7 +409,7 @@ export function ProfilePage() {
                 <th className="py-2.5 px-4">Danh mục / Mã</th>
                 <th className="py-2.5 px-4">Tóm tắt Công trình & Ca Lâm sàng</th>
                 <th className="py-2.5 px-3 text-center">Trạng thái</th>
-                <th className="py-2.5 px-4 text-right">Tín chỉ CME</th>
+                <th className="py-2.5 px-4 text-right">Credit CME</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/80">
@@ -550,7 +550,11 @@ export function ProfilePage() {
             />
           </Card>
         ) : (
-          posts.map((post) => <PostCard key={post.id} post={post} />)
+          <div className="space-y-3.5">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
         )}
       </div>
     </div>

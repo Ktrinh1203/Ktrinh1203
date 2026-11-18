@@ -204,105 +204,111 @@ export function FeedPage() {
   };
 
   const renderStreamSheet = (isProMode: boolean) => (
-    <div className="rounded-xl border border-[#DCE6DF] bg-white overflow-hidden">
-      {/* Top Stream Header */}
-      <div className="flex items-center justify-between gap-3 px-4 sm:px-5 border-b border-[#DCE6DF]">
-        <div className="flex items-center gap-5">
-          <button
-            type="button"
-            onClick={() => setFeedType('community')}
-            className={cn(
-              'py-3 text-sm transition-colors -mb-px whitespace-nowrap',
-              feedType === 'community'
-                ? 'border-b-2 border-[#16A34A] font-bold text-[#15803D]'
-                : 'text-[#6E6D68] hover:text-[#15803D]',
-            )}
+    <div className="space-y-3.5">
+      {/* Top Tabs + Inline Composer Card */}
+      <div className="rounded-xl border border-[#DCE6DF] bg-white shadow-[0_1px_2px_rgba(16,26,20,0.04)] overflow-hidden">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 border-b border-[#EDF3EF]">
+          <div className="flex items-center gap-5">
+            <button
+              type="button"
+              onClick={() => setFeedType('community')}
+              className={cn(
+                'py-3 text-sm transition-colors -mb-px whitespace-nowrap',
+                feedType === 'community'
+                  ? 'border-b-2 border-[#16A34A] font-bold text-[#15803D]'
+                  : 'text-[#6E6D68] hover:text-[#15803D]',
+              )}
+            >
+              {isProMode ? 'Ca lâm sàng' : 'Dành cho bạn'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFeedType('following')}
+              className={cn(
+                'py-3 text-sm transition-colors -mb-px whitespace-nowrap',
+                feedType === 'following'
+                  ? 'border-b-2 border-[#16A34A] font-bold text-[#15803D]'
+                  : 'text-[#6E6D68] hover:text-[#15803D]',
+              )}
+            >
+              Đang theo dõi
+            </button>
+          </div>
+
+          <select
+            aria-label="Lọc chủ đề"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value as 'ALL' | ClinicalCategory)}
+            className="text-xs text-[#575652] bg-transparent border border-[#DCE6DF] rounded-md px-2 py-1 focus:outline-none focus:border-[#16A34A]"
           >
-            {isProMode ? 'Ca lâm sàng' : 'Dành cho bạn'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setFeedType('following')}
-            className={cn(
-              'py-3 text-sm transition-colors -mb-px whitespace-nowrap',
-              feedType === 'following'
-                ? 'border-b-2 border-[#16A34A] font-bold text-[#15803D]'
-                : 'text-[#6E6D68] hover:text-[#15803D]',
-            )}
-          >
-            Đang theo dõi
-          </button>
+            {MEDICAL_CATEGORY_FILTERS.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.selectLabel}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <select
-          aria-label="Lọc chủ đề"
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value as 'ALL' | ClinicalCategory)}
-          className="text-xs text-[#575652] bg-transparent border border-[#DCE6DF] rounded-md px-2 py-1 focus:outline-none focus:border-[#16A34A]"
-        >
-          {MEDICAL_CATEGORY_FILTERS.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.selectLabel}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Inline Composer */}
-      <div className="border-b border-[#DCE6DF]">
+        {/* Inline Composer */}
         <CreatePostCard onPostCreated={() => void refetch()} />
       </div>
 
-      {/* Posts Stream */}
+      {/* Posts Stream (Separated Individual Cards) */}
       {isLoading ? (
-        <Spinner label={isProMode ? 'Đang tải dữ liệu hội chẩn...' : 'Đang tải bài viết...'} />
+        <div className="rounded-xl border border-[#DCE6DF] bg-white p-6">
+          <Spinner label={isProMode ? 'Đang tải dữ liệu hội chẩn...' : 'Đang tải bài viết...'} />
+        </div>
       ) : isError ? (
-        <EmptyState
-          title="Không thể tải bảng tin"
-          description="Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau."
-          action={
-            <Button size="sm" onClick={() => void refetch()}>
-              Thử lại
-            </Button>
-          }
-        />
+        <div className="rounded-xl border border-[#DCE6DF] bg-white p-6">
+          <EmptyState
+            title="Không thể tải bảng tin"
+            description="Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau."
+            action={
+              <Button size="sm" onClick={() => void refetch()}>
+                Thử lại
+              </Button>
+            }
+          />
+        </div>
       ) : posts.length === 0 ? (
-        <EmptyState
-          icon={<Newspaper className="size-6" />}
-          title={
-            selectedCategory !== 'ALL'
-              ? `Chưa có bài viết trong nhóm ${activeCategoryMeta?.label ?? ''}`
-              : feedType === 'following'
-                ? 'Chưa có bài viết từ người bạn theo dõi'
-                : 'Bảng tin chưa có bài đăng nào'
-          }
-          description={
-            selectedCategory !== 'ALL'
-              ? 'Thử chọn lại tất cả chủ đề để xem toàn bộ bài viết.'
-              : 'Theo dõi các bác sĩ chuyên khoa hoặc chia sẻ ghi chú đầu tiên của bạn.'
-          }
-          action={
-            selectedCategory !== 'ALL' ? (
-              <Button size="xs" variant="outline" onClick={() => setSelectedCategory('ALL')}>
-                Xem tất cả chủ đề
-              </Button>
-            ) : feedType === 'following' ? (
-              <Button size="xs" variant="outline" onClick={() => setFeedType('community')}>
-                {isProMode ? 'Xem tất cả ca lâm sàng' : 'Xem bảng tin chung'}
-              </Button>
-            ) : null
-          }
-        />
+        <div className="rounded-xl border border-[#DCE6DF] bg-white p-6">
+          <EmptyState
+            icon={<Newspaper className="size-6" />}
+            title={
+              selectedCategory !== 'ALL'
+                ? `Chưa có bài viết trong nhóm ${activeCategoryMeta?.label ?? ''}`
+                : feedType === 'following'
+                  ? 'Chưa có bài viết từ người bạn theo dõi'
+                  : 'Bảng tin chưa có bài đăng nào'
+            }
+            description={
+              selectedCategory !== 'ALL'
+                ? 'Thử chọn lại tất cả chủ đề để xem toàn bộ bài viết.'
+                : 'Theo dõi các bác sĩ chuyên khoa hoặc chia sẻ ghi chú đầu tiên của bạn.'
+            }
+            action={
+              selectedCategory !== 'ALL' ? (
+                <Button size="xs" variant="outline" onClick={() => setSelectedCategory('ALL')}>
+                  Xem tất cả chủ đề
+                </Button>
+              ) : feedType === 'following' ? (
+                <Button size="xs" variant="outline" onClick={() => setFeedType('community')}>
+                  {isProMode ? 'Xem tất cả ca lâm sàng' : 'Xem bảng tin chung'}
+                </Button>
+              ) : null
+            }
+          />
+        </div>
       ) : (
-        <div className="divide-y divide-[#DCE6DF]">
+        <div className="space-y-3.5">
           {posts.map((post) => (
             <PostCard key={post.id} post={post} onDeleted={handleDeletePost} />
           ))}
 
           {hasNextPage && (
-            <div className="py-3 text-center">
+            <div className="py-2 text-center">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="xs"
                 loading={isFetchingNextPage}
                 onClick={() => void fetchNextPage()}
@@ -419,7 +425,7 @@ export function FeedPage() {
             )}
 
             <div className="flex items-center justify-between pt-1 text-xs">
-              <span className="text-[#6E6D68]">Tín chỉ CME</span>
+              <span className="text-[#6E6D68]">Credit CME</span>
               <Link to="/rewards" className="font-semibold text-[#141413] tabular-nums hover:underline">
                 {walletData?.wallet?.balance ?? 0} điểm
               </Link>

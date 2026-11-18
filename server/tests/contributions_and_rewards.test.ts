@@ -285,7 +285,7 @@ describe('Credit Wallet, Ledger & Double-Spending Prevention', () => {
     // Admin creates a monetary reward entry (isMonetary = true, payoutEnabled = false by default)
     const monetaryReward = (await admin.post('/api/admin/rewards/catalog', {
       name: 'Giải ngân tiền mặt tài trợ bài báo',
-      description: 'Quy đổi tín chỉ ra tiền mặt',
+      description: 'Quy đổi credit ra tiền mặt',
       category: 'MONETARY_REWARD',
       creditCost: 500,
       isMonetary: true,
@@ -297,7 +297,7 @@ describe('Credit Wallet, Ledger & Double-Spending Prevention', () => {
     const walletId = (await doctor.get('/api/rewards/wallet')).body.wallet.id;
     await admin.post(`/api/admin/rewards/wallets/${walletId}/adjust`, {
       amount: 1000,
-      reason: 'Cấp tín chỉ thử nghiệm',
+      reason: 'Cấp credit thử nghiệm',
     }).expect(200);
 
     // Doctor attempts to redeem monetary payout -> 400 MONETARY_PAYOUT_DISABLED

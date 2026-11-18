@@ -790,7 +790,7 @@ export function AdminPage() {
           Trung tâm Quản trị & Thẩm định NeuroLink
         </h1>
         <p className="text-sm text-slate-500">
-          Hệ thống Thẩm định Chuyên môn, Khen thưởng Đóng góp Học thuật và Quản lý Tín chỉ
+          Hệ thống Thẩm định Chuyên môn, Khen thưởng Đóng góp Học thuật và Quản lý Credit
         </p>
       </div>
 
@@ -803,7 +803,7 @@ export function AdminPage() {
             <span className="text-slate-400 text-[11px] block mt-0.5">Tổng số: {stats.contributions.total}</span>
           </Card>
           <Card className="p-3 border-slate-200">
-            <span className="text-slate-400 block font-medium">Tổng tín chỉ lưu hành</span>
+            <span className="text-slate-400 block font-medium">Tổng credit lưu hành</span>
             <span className="text-xl font-black text-amber-600">{stats.credits.totalInCirculation}</span>
             <span className="text-slate-400 text-[11px] block mt-0.5">Đã giải ngân: {stats.credits.totalEarned}</span>
           </Card>
@@ -877,7 +877,7 @@ export function AdminPage() {
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
-            <Coins className="size-4 text-amber-600" /> Quản lý Ví Tín chỉ
+            <Coins className="size-4 text-amber-600" /> Quản lý Ví Credit
           </button>
 
           <button
@@ -1061,7 +1061,7 @@ export function AdminPage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="font-bold text-sm text-slate-900">Hàng đợi Xử lý Yêu cầu Đổi thưởng ({redemptions.length})</h3>
-                <p className="text-xs text-slate-500">Phê duyệt cấp khóa học, vé hội nghị hoặc hoàn trả tín chỉ tự động nếu từ chối.</p>
+                <p className="text-xs text-slate-500">Phê duyệt cấp khóa học, vé hội nghị hoặc hoàn trả credit tự động nếu từ chối.</p>
               </div>
             </div>
 
@@ -1078,7 +1078,7 @@ export function AdminPage() {
                         <div>
                           <span className="font-bold text-slate-900 text-sm">{redemption.reward.name}</span>
                           <p className="text-slate-500 text-[11px]">
-                            Thành viên: <strong>{redemption.user?.displayName}</strong> (@{redemption.user?.username}) · Chi phí: <strong>{redemption.creditCost} tín chỉ</strong>
+                            Thành viên: <strong>{redemption.user?.displayName}</strong> (@{redemption.user?.username}) · Chi phí: <strong>{redemption.creditCost} credit</strong>
                           </p>
                         </div>
                         <span className="font-mono px-2 py-0.5 rounded bg-white border border-slate-200 font-bold">
@@ -1106,7 +1106,7 @@ export function AdminPage() {
                             size="sm"
                             loading={redemptionDecisionMutation.isPending}
                             onClick={() => {
-                              const note = prompt('Nhập lý do từ chối (tín chỉ sẽ được hoàn trả tự động cho thành viên):');
+                              const note = prompt('Nhập lý do từ chối (credit sẽ được hoàn trả tự động cho thành viên):');
                               if (note) {
                                 redemptionDecisionMutation.mutate({
                                   id: redemption.id,
@@ -1116,7 +1116,7 @@ export function AdminPage() {
                               }
                             }}
                           >
-                            Từ chối & Hoàn tín chỉ
+                            Từ chối & Hoàn credit
                           </Button>
                           <Button
                             size="sm"
@@ -1142,7 +1142,7 @@ export function AdminPage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="font-bold text-sm text-slate-900">Quản trị Danh mục Phần thưởng ({catalog.length})</h3>
-                <p className="text-xs text-slate-500">Thêm mới, bật/tắt hoặc điều chỉnh giá tín chỉ của các gói quyền lợi.</p>
+                <p className="text-xs text-slate-500">Thêm mới, bật/tắt hoặc điều chỉnh giá credit của các gói quyền lợi.</p>
               </div>
               <Button size="sm" onClick={() => setNewRewardOpen(true)} icon={<Plus className="size-4" />}>
                 Thêm phần thưởng mới
@@ -1158,7 +1158,7 @@ export function AdminPage() {
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
-                          {item.creditCost} Tín chỉ
+                          {item.creditCost} Credit
                         </span>
                         <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${item.isActive ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-500'}`}>
                           {item.isActive ? 'ĐANG MỞ' : 'TẠM KHÓA'}
@@ -1191,8 +1191,8 @@ export function AdminPage() {
         <Card className="p-5 space-y-4 border-slate-200 shadow-2xs">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div>
-              <h3 className="font-bold text-sm text-slate-900">Quản trị Ví Tín chỉ & Điều chỉnh Kiểm toán ({wallets.length})</h3>
-              <p className="text-xs text-slate-500">Tra cứu số dư, lịch sử giao dịch và thực hiện điều chỉnh tín chỉ có lưu vết kiểm toán bắt buộc.</p>
+              <h3 className="font-bold text-sm text-slate-900">Quản trị Ví Credit & Điều chỉnh Kiểm toán ({wallets.length})</h3>
+              <p className="text-xs text-slate-500">Tra cứu số dư, lịch sử giao dịch và thực hiện điều chỉnh credit có lưu vết kiểm toán bắt buộc.</p>
             </div>
             <div className="w-64">
               <Input
@@ -1400,7 +1400,7 @@ export function AdminPage() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700">Chi phí tín chỉ:</label>
+                  <label className="font-bold text-slate-700">Chi phí credit:</label>
                   <Input
                     type="number"
                     min={1}
@@ -1462,10 +1462,10 @@ export function AdminPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
           <Card className="w-full max-w-md p-6 space-y-4 shadow-2xl">
             <h3 className="font-bold text-base text-slate-900">
-              Điều chỉnh Ví Tín chỉ: @{adjustWalletModal.username}
+              Điều chỉnh Ví Credit: @{adjustWalletModal.username}
             </h3>
             <p className="text-xs text-slate-500">
-              Số dư hiện tại: <strong>{adjustWalletModal.currentBalance} tín chỉ</strong>. Mọi điều chỉnh được ghi nhận vào Sổ cái bất biến.
+              Số dư hiện tại: <strong>{adjustWalletModal.currentBalance} credit</strong>. Mọi điều chỉnh được ghi nhận vào Sổ cái bất biến.
             </p>
 
             <div className="space-y-3 text-xs">
@@ -1621,7 +1621,7 @@ function ContributionEvaluationForm({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-1 space-y-1">
-              <label className="font-bold text-xs text-slate-700 block">Tín chỉ khen thưởng:</label>
+              <label className="font-bold text-xs text-slate-700 block">Credit khen thưởng:</label>
               <Input type="number" min={10} max={2000} value={awardedCredits} onChange={(e) => setAwardedCredits(Number(e.target.value))} />
             </div>
             <div className="sm:col-span-2 space-y-1">
@@ -1690,7 +1690,7 @@ function ContributionEvaluationForm({
               }}
               icon={<Check className="size-3.5" />}
             >
-              Phê duyệt & Giải ngân Tín chỉ
+              Phê duyệt & Giải ngân Credit
             </Button>
           </div>
         </div>

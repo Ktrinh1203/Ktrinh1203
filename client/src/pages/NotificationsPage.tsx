@@ -110,7 +110,7 @@ export function NotificationsPage() {
           </h1>
           <p className={`text-xs sm:text-sm mt-0.5 ${isProfessional ? 'text-slate-300' : 'text-slate-600'}`}>
             {isProfessional
-              ? 'Cập nhật phản biện đồng cấp, kết quả xét duyệt CCHN/ORCID, tín chỉ CME và tin nhắn chuyên môn'
+              ? 'Cập nhật phản biện đồng cấp, kết quả xét duyệt CCHN/ORCID, credit CME và tin nhắn chuyên môn'
               : 'Cập nhật tương tác bài viết, cộng đồng và tin nhắn từ bác sĩ / thành viên'}
           </p>
         </div>

@@ -20,7 +20,7 @@ const ECOSYSTEM_PILLARS = [
     num: '03',
     label: 'Data Bank',
     title: 'Kho Dữ liệu & CSDL Mạng Nơ-ron',
-    text: 'Chia sẻ dữ liệu EEG chuẩn 4-split và nhận tín chỉ bản quyền.',
+    text: 'Chia sẻ dữ liệu EEG chuẩn 4-split và nhận credit bản quyền.',
   },
   {
     num: '04',
@@ -56,18 +56,18 @@ const CLINICAL_CATEGORIES = [
 const HONORARIA_POLICIES = [
   {
     item: 'Hỏi đáp & Đọc ca từ xa',
-    policy: 'Nhận tín chỉ thù lao ngay khi người hỏi nghiệm thu.',
-    credit: '+50 tín chỉ',
+    policy: 'Nhận credit thù lao ngay khi người hỏi nghiệm thu.',
+    credit: '+50 credit',
   },
   {
     item: 'Bản quyền Data Bank',
-    policy: 'Nhận tín chỉ khi đồng nghiệp mở khóa bộ dữ liệu.',
-    credit: '+60 tín chỉ',
+    policy: 'Nhận credit khi đồng nghiệp mở khóa bộ dữ liệu.',
+    credit: '+60 credit',
   },
   {
     item: 'Bình duyệt CME',
-    policy: 'Tích lũy tín chỉ CME qua công bố ca lâm sàng.',
-    credit: '+30 tín chỉ',
+    policy: 'Tích lũy credit CME qua công bố ca lâm sàng.',
+    credit: '+30 credit',
   },
 ];
 
@@ -89,7 +89,7 @@ export function LandingPage() {
                 4 Nhóm bệnh lý
               </a>
               <a href="#honoraria-cme" className="hover:text-[#15803D] transition-colors">
-                Tín chỉ & Thù lao
+                Credit & Thù lao
               </a>
             </nav>
           </div>
@@ -186,7 +186,7 @@ export function LandingPage() {
                 </p>
                 <footer className="flex items-center justify-between gap-2 pt-1 text-[11px] text-[#6E6D68]">
                   <span className="font-medium text-[#141413]">BS.CKII Trần Thanh Hải · Nội Thần kinh</span>
-                  <span className="font-mono text-[#16A34A] font-semibold shrink-0">+50 tín chỉ</span>
+                  <span className="font-mono text-[#16A34A] font-semibold shrink-0">+50 credit</span>
                 </footer>
               </blockquote>
             </div>
@@ -321,12 +321,12 @@ export function LandingPage() {
                 Ghi nhận xứng đáng cho bác sĩ và người đóng góp dữ liệu
               </h2>
               <p className="text-sm sm:text-base text-[#575652] leading-relaxed">
-                Tặng 250 tín chỉ khởi đầu cho thành viên mới; bác sĩ nhận thù lao qua đọc ca và CME.
+                Tặng 250 credit khởi đầu cho thành viên mới; bác sĩ nhận thù lao qua đọc ca và CME.
               </p>
               <div className="pt-2">
                 <Link to={user ? '/rewards' : '/register'}>
                   <Button size="lg" variant="primary">
-                    {user ? 'Mở Ví Tín chỉ' : 'Đăng ký ngay'}
+                    {user ? 'Mở Ví Credit' : 'Đăng ký ngay'}
                   </Button>
                 </Link>
               </div>

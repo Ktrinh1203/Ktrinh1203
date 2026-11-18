@@ -93,8 +93,8 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
       setFeedback({
         tone: res.granted ? 'success' : 'info',
         text: res.granted
-          ? `Đã cộng +${res.amount} Tín chỉ Khởi đầu vào ví nghiên cứu của bạn (Số dư: ${res.wallet.balance} Tín chỉ).`
-          : 'Tài khoản của bạn đã nhận gói tín chỉ khởi đầu trước đó.',
+          ? `Đã cộng +${res.amount} Credit Khởi đầu vào ví nghiên cứu của bạn (Số dư: ${res.wallet.balance} Credit).`
+          : 'Tài khoản của bạn đã nhận gói credit khởi đầu trước đó.',
       });
     },
     onError: (err) => {
@@ -110,7 +110,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
       queryClient.invalidateQueries({ queryKey: ['rewards-wallet'] });
       setFeedback({
         tone: 'success',
-        text: `Đã mở khóa "${res.listing.title}". Số dư còn lại: ${res.remainingBalance} Tín chỉ. Bạn có thể tải CSV ngay.`,
+        text: `Đã mở khóa "${res.listing.title}". Số dư còn lại: ${res.remainingBalance} Credit. Bạn có thể tải CSV ngay.`,
       });
     },
     onError: (err) => {
@@ -248,7 +248,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
                 onClick={() => claimGrantMutation.mutate()}
                 icon={<Coins className="size-3.5" aria-hidden />}
               >
-                Nhận 250 tín chỉ
+                Nhận 250 credit
               </Button>
             )}
 
@@ -436,7 +436,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
 
             <div className="sm:col-span-2 space-y-1">
               <label htmlFor="db-pub-price" className="font-bold text-slate-700 block">
-                Phí mở khóa (Tín chỉ · 0 = Miễn phí)
+                Phí mở khóa (Credit · 0 = Miễn phí)
               </label>
               <Input
                 id="db-pub-price"
@@ -639,7 +639,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
                         </>
                       ) : (
                         <>
-                          <Lock className="size-3" aria-hidden /> {item.priceCredits} Tín chỉ
+                          <Lock className="size-3" aria-hidden /> {item.priceCredits} Credit
                         </>
                       )}
                     </span>
@@ -741,7 +741,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
                             loading={claimGrantMutation.isPending}
                             onClick={() => claimGrantMutation.mutate()}
                           >
-                            Nhận 250 tín chỉ
+                            Nhận 250 credit
                           </Button>
                         ) : (
                           <Button

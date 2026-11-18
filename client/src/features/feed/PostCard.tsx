@@ -255,7 +255,7 @@ export function PostCard({
     post.author.professionalProfiles?.filter((p) => p.verificationStatus === 'VERIFIED') ?? [];
 
   return (
-    <article className="px-4 sm:px-5 py-4 transition-colors hover:bg-[#F5FAF7]/50">
+    <article className="rounded-xl border border-[#DCE6DF] bg-white px-4 sm:px-5 py-4 shadow-[0_1px_2px_rgba(16,26,20,0.04)] transition-colors hover:border-[#C5D8CB]">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -452,7 +452,7 @@ export function PostCard({
       )}
 
       {/* Minimal Left-Aligned Action Row */}
-      <div className="mt-3 flex items-center gap-5 text-xs text-[#6E6D68]">
+      <div className="mt-3.5 pt-3 border-t border-[#EDF3EF] flex items-center gap-5 text-xs text-[#6E6D68]">
         <button
           type="button"
           onClick={handleToggleLike}

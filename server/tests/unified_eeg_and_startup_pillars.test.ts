@@ -327,7 +327,7 @@ describe('Unified qEEG Workstation, Neural DB & 4 Startup Pillars', () => {
     // Cannot create ticket with bounty exceeding balance
     const overBounty = await requester
       .post('/api/consultations', {
-        title: 'Hỏi đáp vượt quá số dư ví tín chỉ',
+        title: 'Hỏi đáp vượt quá số dư ví credit',
         symptomSummary: 'Kiểm tra bảo vệ chống chi vượt số dư ví khi ký quỹ.',
         clinicalCategory: 'SLEEP_COGNITIVE',
         bountyCredits: 400,

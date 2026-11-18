@@ -429,7 +429,7 @@ describe('Comprehensive 14-Point End-to-End Platform Verification Suite', () => 
         scoreOriginality: 5,
         scoreImpact: 5,
         awardedCredits: 300,
-        feedback: 'Báo cáo lâm sàng xuất sắc, phê duyệt cấp 300 tín chỉ CME.',
+        feedback: 'Báo cáo lâm sàng xuất sắc, phê duyệt cấp 300 credit CME.',
       })
       .expect(200);
 

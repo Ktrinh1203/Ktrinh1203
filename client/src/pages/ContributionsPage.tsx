@@ -168,7 +168,7 @@ export function ContributionsPage() {
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
-              Không gian công bố báo cáo tiền lâm sàng, thử nghiệm mô hình BCI, giải thích ca bệnh chuyên sâu và phản biện đồng cấp (Peer Review) nhận tín chỉ khen thưởng Honoraria & CME.
+              Không gian công bố báo cáo tiền lâm sàng, thử nghiệm mô hình BCI, giải thích ca bệnh chuyên sâu và phản biện đồng cấp (Peer Review) nhận credit khen thưởng Honoraria & CME.
             </p>
           </div>
         </div>
@@ -286,7 +286,7 @@ export function ContributionsPage() {
               <EmptyState
                 icon={<Award className="size-8 text-brand-600" />}
                 title="Chưa có bài đóng góp nào được nộp"
-                description="Hãy chọn một bài viết chuyên môn có sẵn của bạn để nộp vào chương trình xét duyệt và nhận tín chỉ khen thưởng."
+                description="Hãy chọn một bài viết chuyên môn có sẵn của bạn để nộp vào chương trình xét duyệt và nhận credit khen thưởng."
                 action={
                   <Button size="sm" onClick={() => setActiveTab('submit')} icon={<PlusCircle className="size-4" />}>
                     Nộp bài viết ngay
@@ -316,7 +316,7 @@ export function ContributionsPage() {
                     <div className="flex items-center gap-2">
                       {contrib.status === 'APPROVED' && contrib.awardCredits && contrib.awardCredits > 0 && (
                         <span className="inline-flex items-center gap-1 font-bold text-xs text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                          <Star className="size-3.5 fill-amber-500 text-amber-500" /> +{contrib.awardCredits} Tín chỉ
+                          <Star className="size-3.5 fill-amber-500 text-amber-500" /> +{contrib.awardCredits} Credit
                         </span>
                       )}
                       <span

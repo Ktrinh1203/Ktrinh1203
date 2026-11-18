@@ -423,7 +423,7 @@ export async function adminReviewContribution(
             type: 'CONTRIBUTION_REWARD',
             referenceId: contributionId,
             idempotencyKey,
-            description: `Khen thưởng bài đóng góp học thuật/chuyên môn (${contribution.category}): +${input.awardedCredits} tín chỉ`,
+            description: `Khen thưởng bài đóng góp học thuật/chuyên môn (${contribution.category}): +${input.awardedCredits} credit`,
             actorId: adminId,
             contributionId,
           },

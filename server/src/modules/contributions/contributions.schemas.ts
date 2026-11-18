@@ -56,7 +56,7 @@ export const reviewContributionSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['awardedCredits'],
-        message: 'Khi phê duyệt đóng góp, số tín chỉ khen thưởng phải lớn hơn 0',
+        message: 'Khi phê duyệt đóng góp, số credit khen thưởng phải lớn hơn 0',
       });
     }
   });

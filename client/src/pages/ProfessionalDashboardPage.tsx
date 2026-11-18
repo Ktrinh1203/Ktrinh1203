@@ -119,8 +119,8 @@ export function ProfessionalDashboardPage() {
       setGrantFeedback({
         tone: 'success',
         text: res.granted
-          ? `Đã kích hoạt +${res.amount} Tín chỉ Khởi đầu vào ví.`
-          : 'Tài khoản đã nhận gói tín chỉ khởi đầu trước đó.',
+          ? `Đã kích hoạt +${res.amount} Credit Khởi đầu vào ví.`
+          : 'Tài khoản đã nhận gói credit khởi đầu trước đó.',
       });
       void queryClient.invalidateQueries({ queryKey: ['rewards', 'wallet'] });
       void queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
@@ -224,10 +224,10 @@ export function ProfessionalDashboardPage() {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <span className="block text-[11px] font-semibold text-slate-500">
-                  Số dư Tín chỉ & Honoraria
+                  Số dư Credit & Honoraria
                 </span>
                 <span className="mt-0.5 block text-xl font-black text-slate-900">
-                  {loadingWallet ? '...' : `${balance} tín chỉ`}
+                  {loadingWallet ? '...' : `${balance} credit`}
                 </span>
                 <span className="text-[11px] text-slate-500">Tổng tích lũy: {totalEarned}</span>
               </div>
@@ -250,7 +250,7 @@ export function ProfessionalDashboardPage() {
                 onClick={() => claimGrantMutation.mutate()}
                 icon={<Coins className="size-3" />}
               >
-                Nhận 250 Tín chỉ Khởi đầu
+                Nhận 250 Credit Khởi đầu
               </Button>
             )}
           </div>
@@ -538,7 +538,7 @@ export function ProfessionalDashboardPage() {
               >
                 <span className="flex items-center gap-2.5">
                   <BookOpen className="size-4 text-brand-600" />
-                  <span>Nộp báo cáo lâm sàng & nhận tín chỉ CME</span>
+                  <span>Nộp báo cáo lâm sàng & nhận credit CME</span>
                 </span>
                 <ChevronRight className="size-3.5 text-slate-400" />
               </Link>

@@ -257,10 +257,10 @@ export function ConsultationsPage() {
       setFeedbackError(null);
       if (res.granted) {
         setFeedbackSuccess(
-          `Đã nhận thành công +${res.amount} Tín chỉ Khởi đầu vào ví. Bạn có thể dùng để đặt thù lao gửi câu hỏi cho bác sĩ chuyên khoa.`,
+          `Đã nhận thành công +${res.amount} Credit Khởi đầu vào ví. Bạn có thể dùng để đặt thù lao gửi câu hỏi cho bác sĩ chuyên khoa.`,
         );
       } else {
-        setFeedbackSuccess('Tài khoản của bạn đã nhận gói tín chỉ khởi đầu trước đó.');
+        setFeedbackSuccess('Tài khoản của bạn đã nhận gói credit khởi đầu trước đó.');
       }
       void queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
       void queryClient.invalidateQueries({ queryKey: ['rewards', 'wallet'] });
@@ -285,7 +285,7 @@ export function ConsultationsPage() {
       setFeedbackError(null);
       setFeedbackSuccess(
         res.ticket.bountyCredits > 0
-          ? `Đã gửi câu hỏi và tạm giữ ${res.ticket.bountyCredits} tín chỉ. Số dư ví còn lại: ${res.remainingBalance} tín chỉ.`
+          ? `Đã gửi câu hỏi và tạm giữ ${res.ticket.bountyCredits} credit. Số dư ví còn lại: ${res.remainingBalance} credit.`
           : 'Đã gửi yêu cầu tư vấn vào hàng đợi bác sĩ đọc ca từ xa.',
       );
       setTitle('');
@@ -337,7 +337,7 @@ export function ConsultationsPage() {
     onSuccess: (_res, vars) => {
       setFeedbackError(null);
       setFeedbackSuccess(
-        'Đã gửi phân tích sóng não và hướng dẫn lâm sàng. Khi người đặt câu hỏi bấm Nghiệm thu, tín chỉ sẽ tự động cộng vào ví Honoraria của bạn.',
+        'Đã gửi phân tích sóng não và hướng dẫn lâm sàng. Khi người đặt câu hỏi bấm Nghiệm thu, credit sẽ tự động cộng vào ví Honoraria của bạn.',
       );
       setReplyDrafts((prev) => {
         const next = { ...prev };
@@ -358,7 +358,7 @@ export function ConsultationsPage() {
     onSuccess: () => {
       setFeedbackError(null);
       setFeedbackSuccess(
-        'Đã nghiệm thu kết quả phân tích sóng não và giải ngân tín chỉ thù lao cho bác sĩ/chuyên gia.',
+        'Đã nghiệm thu kết quả phân tích sóng não và giải ngân credit thù lao cho bác sĩ/chuyên gia.',
       );
       invalidateConsultationQueries();
     },
@@ -381,7 +381,7 @@ export function ConsultationsPage() {
       return;
     }
     if (bountyCredits > (wallet?.balance ?? 0)) {
-      setFeedbackError('Số dư tín chỉ hiện tại không đủ. Hãy nhận 250 tín chỉ khởi đầu hoặc giảm mức tín chỉ đặt cọc.');
+      setFeedbackError('Số dư credit hiện tại không đủ. Hãy nhận 250 credit khởi đầu hoặc giảm mức credit đặt cọc.');
       return;
     }
     createTicketMutation.mutate();
@@ -423,7 +423,7 @@ export function ConsultationsPage() {
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             {/* Wallet balance text */}
             <span className="px-2.5 py-1.5 text-xs font-mono font-semibold text-[#575652] tabular-nums">
-              {walletQuery.isLoading ? '...' : `${wallet?.balance ?? 0} tín chỉ`}
+              {walletQuery.isLoading ? '...' : `${wallet?.balance ?? 0} credit`}
             </span>
             <a
               href={workstationHref}
@@ -454,7 +454,7 @@ export function ConsultationsPage() {
           <div className="rounded-xl bg-[#F5FAF7] border border-[#DCE6DF] px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-[#262624] min-w-0">
               <Coins className="size-4 text-[#16A34A] shrink-0" aria-hidden />
-              <span className="font-medium">Nhận 250 Tín chỉ Khởi đầu để đặt câu hỏi cho bác sĩ</span>
+              <span className="font-medium">Nhận 250 Credit Khởi đầu để đặt câu hỏi cho bác sĩ</span>
             </div>
             <Button
               type="button"
@@ -595,7 +595,7 @@ export function ConsultationsPage() {
                   <span>Quy trình Đọc Ca Ngoài giờ (Remote Overtime Triage)</span>
                 </h2>
                 <p className="text-xs text-[#575652] mt-1 leading-relaxed">
-                  Dành cho Bác sĩ Chuyên khoa, Bác sĩ Nội trú và Nhà khoa học Thần kinh đã xác minh CCHN/ORCID. Tín chỉ cảm ơn từ người đặt câu hỏi được tạm giữ an toàn và chuyển vào Ví Honoraria ngay khi người bệnh nghiệm thu kết quả.
+                  Dành cho Bác sĩ Chuyên khoa, Bác sĩ Nội trú và Nhà khoa học Thần kinh đã xác minh CCHN/ORCID. Credit cảm ơn từ người đặt câu hỏi được tạm giữ an toàn và chuyển vào Ví Honoraria ngay khi người bệnh nghiệm thu kết quả.
                 </p>
               </div>
 
@@ -784,7 +784,7 @@ export function ConsultationsPage() {
                       htmlFor="consult-bounty"
                       className="block text-xs font-semibold uppercase tracking-wider text-[#6E6D68]"
                     >
-                      Tín chỉ cảm ơn
+                      Credit cảm ơn
                     </label>
                     <span className="text-xs font-mono font-semibold text-[#15803D] tabular-nums">
                       Ví: {wallet?.balance ?? 0}
@@ -930,7 +930,7 @@ export function ConsultationsPage() {
                       <span aria-hidden>·</span>
                       <span>
                         {ticket.bountyCredits > 0
-                          ? `${ticket.bountyCredits} tín chỉ (${ticket.status === 'ACCEPTED' ? 'đã giải ngân' : 'tạm giữ'})`
+                          ? `${ticket.bountyCredits} credit (${ticket.status === 'ACCEPTED' ? 'đã giải ngân' : 'tạm giữ'})`
                           : 'Hỏi đáp miễn phí'}
                       </span>
                       {ticket.urgentRedFlag && (
@@ -1334,7 +1334,7 @@ export function ConsultationsPage() {
                                   }
                                   icon={<CheckCircle2 className="size-4" />}
                                 >
-                                  Nghiệm thu &amp; Chuyển Tín chỉ ({ticket.bountyCredits} tín chỉ)
+                                  Nghiệm thu &amp; Chuyển Credit ({ticket.bountyCredits} credit)
                                 </Button>
                               </div>
                             )}

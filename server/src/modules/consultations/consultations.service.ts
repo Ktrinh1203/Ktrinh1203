@@ -153,7 +153,7 @@ export async function createConsultation(userId: string, input: CreateConsultati
         throw new AppError(
           400,
           'INSUFFICIENT_CREDITS',
-          `Số dư tín chỉ không đủ. Cần ${input.bountyCredits} tín chỉ ký quỹ nhưng hiện có 0 tín chỉ.`,
+          `Số dư credit không đủ. Cần ${input.bountyCredits} credit ký quỹ nhưng hiện có 0 credit.`,
         );
       }
 
@@ -169,7 +169,7 @@ export async function createConsultation(userId: string, input: CreateConsultati
         throw new AppError(
           400,
           'INSUFFICIENT_CREDITS',
-          `Số dư tín chỉ không đủ. Cần ${input.bountyCredits} tín chỉ ký quỹ nhưng số dư hiện tại chỉ có ${wallet.balance} tín chỉ.`,
+          `Số dư credit không đủ. Cần ${input.bountyCredits} credit ký quỹ nhưng số dư hiện tại chỉ có ${wallet.balance} credit.`,
         );
       }
 
@@ -198,7 +198,7 @@ export async function createConsultation(userId: string, input: CreateConsultati
           type: 'CONSULTATION_ESCROW',
           referenceId: ticket.id,
           idempotencyKey: `consultation-escrow:${ticket.id}`,
-          description: `Ký quỹ tín chỉ tư vấn ca "${input.title}" (-${input.bountyCredits} tín chỉ)`,
+          description: `Ký quỹ credit tư vấn ca "${input.title}" (-${input.bountyCredits} credit)`,
           actorId: userId,
         },
       });
@@ -414,7 +414,7 @@ export async function acceptConsultationReply(
             type: 'CONSULTATION_EARNING',
             referenceId: ticketId,
             idempotencyKey,
-            description: `Thù lao đọc sóng não & tư vấn từ xa ca "${ticket.title}" (+${ticket.bountyCredits} tín chỉ)`,
+            description: `Thù lao đọc sóng não & tư vấn từ xa ca "${ticket.title}" (+${ticket.bountyCredits} credit)`,
             actorId: requesterId,
           },
         });

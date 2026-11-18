@@ -96,7 +96,7 @@ export async function claimOnboardingGrant(userId: string) {
           type: 'STARTER_GRANT',
           referenceId: userId,
           idempotencyKey,
-          description: `Cấp tín chỉ khởi đầu hệ sinh thái NeuroLink (+${ONBOARDING_GRANT_AMOUNT} tín chỉ)`,
+          description: `Cấp credit khởi đầu hệ sinh thái NeuroLink (+${ONBOARDING_GRANT_AMOUNT} credit)`,
           actorId: userId,
         },
       });
@@ -170,7 +170,7 @@ export async function redeemReward(userId: string, input: RedeemRewardInput) {
       throw new AppError(
         400,
         'INSUFFICIENT_CREDITS',
-        `Số dư tín chỉ không đủ. Cần ${reward.creditCost} tín chỉ nhưng số dư hiện tại chỉ có ${wallet?.balance ?? 0} tín chỉ.`,
+        `Số dư credit không đủ. Cần ${reward.creditCost} credit nhưng số dư hiện tại chỉ có ${wallet?.balance ?? 0} credit.`,
       );
     }
 
@@ -202,7 +202,7 @@ export async function redeemReward(userId: string, input: RedeemRewardInput) {
         type: 'REWARD_REDEMPTION',
         referenceId: redemption.id,
         idempotencyKey: `redemption:${redemption.id}`,
-        description: `Đổi phần thưởng: ${reward.name} (-${reward.creditCost} tín chỉ)`,
+        description: `Đổi phần thưởng: ${reward.name} (-${reward.creditCost} credit)`,
         actorId: userId,
         redemptionId: redemption.id,
       },
@@ -383,7 +383,7 @@ export async function adminReviewRedemption(
             type: 'REFUND',
             referenceId: redemptionId,
             idempotencyKey: refundIdempotencyKey,
-            description: `Hoàn trả tín chỉ đổi quà không thành công: ${redemption.reward.name} (+${redemption.creditCost} tín chỉ). Lý do: ${input.adminNote || 'Yêu cầu bị từ chối'}`,
+            description: `Hoàn trả credit đổi quà không thành công: ${redemption.reward.name} (+${redemption.creditCost} credit). Lý do: ${input.adminNote || 'Yêu cầu bị từ chối'}`,
             actorId: adminId,
             redemptionId,
           },
@@ -474,7 +474,7 @@ export async function adminAdjustWallet(adminId: string, walletId: string, input
     where: { id: walletId },
   });
 
-  if (!wallet) throw notFound('Ví tín chỉ không tồn tại');
+  if (!wallet) throw notFound('Ví credit không tồn tại');
 
   if (wallet.balance + input.amount < 0) {
     throw new AppError(
@@ -499,7 +499,7 @@ export async function adminAdjustWallet(adminId: string, walletId: string, input
         walletId,
         amount: input.amount,
         type: 'ADMIN_ADJUSTMENT',
-        description: `Quản trị viên điều chỉnh số dư ví: ${input.amount > 0 ? '+' : ''}${input.amount} tín chỉ. Lý do: ${input.reason}`,
+        description: `Quản trị viên điều chỉnh số dư ví: ${input.amount > 0 ? '+' : ''}${input.amount} credit. Lý do: ${input.reason}`,
         actorId: adminId,
       },
     });

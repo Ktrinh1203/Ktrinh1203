@@ -32,10 +32,10 @@ const TRANSACTION_TYPE_LABELS: Record<CreditTransactionType, { label: string; cl
   REWARD_REDEMPTION: { label: 'Đổi quyền lợi', className: 'bg-slate-100 text-slate-700 border-slate-200' },
   ADMIN_ADJUSTMENT: { label: 'Điều chỉnh hệ thống', className: 'bg-slate-100 text-slate-700 border-slate-200' },
   REWARD_REVERSAL: { label: 'Thu hồi thưởng', className: 'bg-red-50 text-red-700 border-red-200' },
-  REFUND: { label: 'Hoàn tín chỉ', className: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+  REFUND: { label: 'Hoàn credit', className: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
   CONSULTATION_ESCROW: { label: 'Tạm giữ hỏi bác sĩ', className: 'bg-amber-50 text-amber-800 border-amber-200' },
   CONSULTATION_EARNING: { label: 'Thù lao Đọc ca', className: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
-  CONSULTATION_REFUND: { label: 'Hoàn tín chỉ tư vấn', className: 'bg-sky-50 text-sky-800 border-sky-200' },
+  CONSULTATION_REFUND: { label: 'Hoàn credit tư vấn', className: 'bg-sky-50 text-sky-800 border-sky-200' },
   DATABANK_PURCHASE: { label: 'Mở khóa Data Bank', className: 'bg-amber-50 text-amber-800 border-amber-200' },
   DATABANK_ROYALTY: { label: 'Bản quyền Data Bank', className: 'bg-sky-50 text-sky-800 border-sky-200' },
   STARTER_GRANT: { label: 'Gói Khởi đầu', className: 'bg-teal-50 text-teal-800 border-teal-200' },
@@ -63,9 +63,9 @@ const REDEMPTION_STATUS_META: Record<
   APPROVED: { label: 'Đã duyệt cấp', className: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
   PROCESSING: { label: 'Đang giải ngân', className: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
   FULFILLED: { label: 'Đã hoàn tất bàn giao', className: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
-  REJECTED: { label: 'Từ chối (Đã hoàn tín chỉ)', className: 'bg-red-50 text-red-800 border-red-200' },
-  CANCELLED: { label: 'Đã hủy (Đã hoàn tín chỉ)', className: 'bg-slate-100 text-slate-700 border-slate-300' },
-  REFUNDED: { label: 'Đã hoàn trả tín chỉ', className: 'bg-sky-50 text-sky-800 border-sky-200' },
+  REJECTED: { label: 'Từ chối (Đã hoàn credit)', className: 'bg-red-50 text-red-800 border-red-200' },
+  CANCELLED: { label: 'Đã hủy (Đã hoàn credit)', className: 'bg-slate-100 text-slate-700 border-slate-300' },
+  REFUNDED: { label: 'Đã hoàn trả credit', className: 'bg-sky-50 text-sky-800 border-sky-200' },
 };
 
 export function RewardsPage() {
@@ -109,7 +109,7 @@ export function RewardsPage() {
     mutationFn: (data: { rewardId: string; userNote?: string }) => rewardsApi.redeem(data),
     onSuccess: (res) => {
       setError(null);
-      setSuccessMsg(`Đổi phần thưởng thành công! Số dư khả dụng còn lại: ${res.remainingBalance} tín chỉ.`);
+      setSuccessMsg(`Đổi phần thưởng thành công! Số dư khả dụng còn lại: ${res.remainingBalance} credit.`);
       setSelectedReward(null);
       setUserNote('');
       void queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
@@ -126,7 +126,7 @@ export function RewardsPage() {
       setError(null);
       setSuccessMsg(
         res.granted
-          ? `Đã nhận thành công +${res.amount} Tín chỉ Khởi đầu vào ví!`
+          ? `Đã nhận thành công +${res.amount} Credit Khởi đầu vào ví!`
           : 'Tài khoản của bạn đã nhận gói khởi đầu trước đó.',
       );
       void queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
@@ -168,14 +168,14 @@ export function RewardsPage() {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-                Ví Tín chỉ & Quyền lợi (CME & Honoraria)
+                Ví Credit & Quyền lợi (CME & Honoraria)
               </h1>
               <span className="inline-flex items-center gap-1.5 rounded bg-[#2C6865] px-2.5 py-0.5 text-[11px] font-bold text-teal-50 border border-teal-400/30">
                 <Award className="size-3 text-teal-200" aria-hidden /> NeuroLink Wallet
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-200 max-w-xl leading-relaxed line-clamp-2">
-              Tích lũy tín chỉ từ đọc ca sóng não, chia sẻ Data Bank và bài đóng góp chuyên môn để đổi khóa học CME, vé hội nghị.
+              Tích lũy credit từ đọc ca sóng não, chia sẻ Data Bank và bài đóng góp chuyên môn để đổi khóa học CME, vé hội nghị.
             </p>
           </div>
 
@@ -186,7 +186,7 @@ export function RewardsPage() {
                 <span className="text-2xl sm:text-3xl font-black text-amber-300">
                   {loadingWallet ? '...' : wallet?.balance ?? 0}
                 </span>
-                <span className="text-[11px] text-slate-200 ml-1">tín chỉ</span>
+                <span className="text-[11px] text-slate-200 ml-1">credit</span>
               </div>
               <div>
                 <span className="text-[11px] text-slate-300 block uppercase font-semibold">Tổng tích lũy</span>
@@ -233,7 +233,7 @@ export function RewardsPage() {
             {!loadingWallet && wallet && wallet.balance === 0 && !hasClaimedStarterGrant && (
               <div className="rounded-lg bg-amber-400/15 border border-amber-300/40 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
                 <span className="text-xs font-semibold text-amber-100">
-                  Nhận ngay 250 Tín chỉ khởi đầu để hỏi bác sĩ hoặc mở khóa dữ liệu.
+                  Nhận ngay 250 Credit khởi đầu để hỏi bác sĩ hoặc mở khóa dữ liệu.
                 </span>
                 <Button
                   type="button"
@@ -243,7 +243,7 @@ export function RewardsPage() {
                   onClick={() => claimStarterGrantMutation.mutate()}
                   icon={<Coins className="size-3.5" />}
                 >
-                  Nhận 250 Tín chỉ Khởi đầu
+                  Nhận 250 Credit Khởi đầu
                 </Button>
               </div>
             )}
@@ -263,7 +263,7 @@ export function RewardsPage() {
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0 mt-0.5" aria-hidden />
-                <span className="line-clamp-2">Hoàn trả 100% tín chỉ nếu yêu cầu đổi thưởng bị từ chối.</span>
+                <span className="line-clamp-2">Hoàn trả 100% credit nếu yêu cầu đổi thưởng bị từ chối.</span>
               </li>
             </ul>
           </div>
@@ -403,7 +403,7 @@ export function RewardsPage() {
                           <IconComponent className="size-3.5" /> {catConfig?.label}
                         </span>
                         <span className="font-extrabold text-sm text-brand-700 bg-brand-50 border border-brand-200 px-2.5 py-0.5 rounded-full">
-                          {item.creditCost} Tín chỉ
+                          {item.creditCost} Credit
                         </span>
                       </div>
 
@@ -443,7 +443,7 @@ export function RewardsPage() {
                             setSelectedReward(item);
                           }}
                         >
-                          {canAfford ? 'Đổi phần thưởng' : 'Không đủ tín chỉ'}
+                          {canAfford ? 'Đổi phần thưởng' : 'Không đủ credit'}
                         </Button>
                       )}
                     </div>
@@ -460,10 +460,10 @@ export function RewardsPage() {
                 <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
                   <div>
                     <h3 className="font-bold text-base text-slate-900">Xác nhận Đổi Phần thưởng</h3>
-                    <p className="text-xs text-slate-500">Tín chỉ sẽ được trừ từ ví và đưa vào hàng đợi cấp quyền lợi.</p>
+                    <p className="text-xs text-slate-500">Credit sẽ được trừ từ ví và đưa vào hàng đợi cấp quyền lợi.</p>
                   </div>
                   <span className="font-bold text-sm text-brand-700 bg-brand-50 border border-brand-200 px-2.5 py-0.5 rounded-full">
-                    -{selectedReward.creditCost} Tín chỉ
+                    -{selectedReward.creditCost} Credit
                   </span>
                 </div>
 
@@ -528,7 +528,7 @@ export function RewardsPage() {
           {loadingWallet ? (
             <div className="p-8"><Spinner label="Đang tải lịch sử giao dịch..." /></div>
           ) : transactions.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-400">Chưa có giao dịch tín chỉ nào được ghi nhận.</div>
+            <div className="p-8 text-center text-xs text-slate-400">Chưa có giao dịch credit nào được ghi nhận.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
@@ -537,7 +537,7 @@ export function RewardsPage() {
                     <th className="py-2.5 px-4 font-semibold">Thời gian</th>
                     <th className="py-2.5 px-4 font-semibold">Loại giao dịch</th>
                     <th className="py-2.5 px-4 font-semibold">Nội dung diễn giải</th>
-                    <th className="py-2.5 px-4 font-semibold text-right">Biến động tín chỉ</th>
+                    <th className="py-2.5 px-4 font-semibold text-right">Biến động credit</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -604,7 +604,7 @@ export function RewardsPage() {
                       <h4 className="font-bold text-sm text-slate-900">{redemption.reward.name}</h4>
                       <p className="text-[11px] text-slate-400">
                         Yêu cầu lúc: {new Date(redemption.createdAt).toLocaleString('vi-VN')} · Chi phí:{' '}
-                        <strong>{redemption.creditCost} tín chỉ</strong>
+                        <strong>{redemption.creditCost} credit</strong>
                       </p>
                     </div>
                     <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusMeta.className}`}>
@@ -644,7 +644,7 @@ export function RewardsPage() {
       {/* Tab: Contribution History */}
       {activeTab === 'contributions' && (
         <DataTableContainer
-          title="Lịch sử Đóng góp Chuyên môn & Quy đổi Tín chỉ (Contribution History)"
+          title="Lịch sử Đóng góp Chuyên môn & Quy đổi Credit (Contribution History)"
           subtitle="Danh sách các bài báo cáo ca bệnh, nghiên cứu BCI và hỏi đáp chuyên gia đã nộp xét duyệt"
           icon={<Award className="size-4 text-[#1E3A5F]" />}
           metaLabel="Peer-Reviewed Contributions"
@@ -660,7 +660,7 @@ export function RewardsPage() {
                   <th className="py-2.5 px-4">Danh mục</th>
                   <th className="py-2.5 px-4">Tóm tắt Đóng góp Chuyên môn</th>
                   <th className="py-2.5 px-3 text-center">Trạng thái</th>
-                  <th className="py-2.5 px-4 text-right">Tín chỉ Nhận</th>
+                  <th className="py-2.5 px-4 text-right">Credit Nhận</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200/80">
@@ -677,7 +677,7 @@ export function RewardsPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right font-mono font-bold text-[#2C6865]">
-                        {c.awardCredits ? `+${c.awardCredits} tín chỉ` : 'Đang xét duyệt'}
+                        {c.awardCredits ? `+${c.awardCredits} credit` : 'Đang xét duyệt'}
                       </td>
                     </tr>
                   ))

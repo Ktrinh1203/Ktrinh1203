@@ -21,7 +21,7 @@ export const createRewardCatalogSchema = z.object({
   name: z.string().trim().min(3, 'Tên phần thưởng tối thiểu 3 ký tự').max(160),
   description: z.string().trim().min(10, 'Mô tả phần thưởng tối thiểu 10 ký tự').max(2000),
   category: z.enum(rewardCategories),
-  creditCost: z.number().int().min(1, 'Số tín chỉ quy đổi phải lớn hơn 0'),
+  creditCost: z.number().int().min(1, 'Số credit quy đổi phải lớn hơn 0'),
   stockQuantity: z.number().int().min(1).nullable().optional(),
   eligibilityReq: z.string().trim().max(500).optional(),
   terms: z.string().trim().max(2000).optional(),
@@ -47,7 +47,7 @@ export const reviewRedemptionSchema = z.object({
 export type ReviewRedemptionInput = z.infer<typeof reviewRedemptionSchema>;
 
 export const adjustWalletSchema = z.object({
-  amount: z.number().int().refine((val) => val !== 0, 'Số lượng tín chỉ điều chỉnh phải khác 0'),
+  amount: z.number().int().refine((val) => val !== 0, 'Số lượng credit điều chỉnh phải khác 0'),
   reason: z.string().trim().min(5, 'Lý do điều chỉnh ví bắt buộc tối thiểu 5 ký tự').max(500),
 });
 

@@ -325,7 +325,7 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
                   <ExternalLink className="size-4 text-[#6E6D68]" /> Trạm qEEG Cortical
                 </a>
                 <Link role="menuitem" to="/rewards" className={item} onClick={() => setOpen(false)}>
-                  <Gift className="size-4 text-[#6E6D68]" /> Ví Tín chỉ &amp; Quyền lợi
+                  <Gift className="size-4 text-[#6E6D68]" /> Ví Credit &amp; Quyền lợi
                 </Link>
                 <Link role="menuitem" to="/communities" className={item} onClick={() => setOpen(false)}>
                   <Users className="size-4 text-[#6E6D68]" /> Cộng đồng hỗ trợ
@@ -437,7 +437,7 @@ function AppShellContent() {
         { to: '/my-health', label: 'Nhật ký', icon: Heart },
         { to: '/communities', label: 'Cộng đồng', icon: Users },
         { to: '/messages', label: 'Tin nhắn', icon: MessageCircle, badge: unreadConvs },
-        { to: '/rewards', label: 'Tín chỉ', icon: Gift },
+        { to: '/rewards', label: 'Credit', icon: Gift },
       ];
 
   // Mobile Bottom Nav items (5 monochrome tabs)

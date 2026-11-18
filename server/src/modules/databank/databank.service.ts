@@ -160,7 +160,7 @@ export async function purchaseDataBankListing(buyerId: string, listingId: string
         throw new AppError(
           400,
           'INSUFFICIENT_CREDITS',
-          `Số dư tín chỉ không đủ. Gói dữ liệu yêu cầu ${listing.priceCredits} tín chỉ nhưng bạn hiện có 0 tín chỉ.`,
+          `Số dư credit không đủ. Gói dữ liệu yêu cầu ${listing.priceCredits} credit nhưng bạn hiện có 0 credit.`,
         );
       }
 
@@ -176,7 +176,7 @@ export async function purchaseDataBankListing(buyerId: string, listingId: string
         throw new AppError(
           400,
           'INSUFFICIENT_CREDITS',
-          `Số dư tín chỉ không đủ. Cần ${listing.priceCredits} tín chỉ nhưng số dư hiện tại chỉ có ${buyerWallet.balance} tín chỉ.`,
+          `Số dư credit không đủ. Cần ${listing.priceCredits} credit nhưng số dư hiện tại chỉ có ${buyerWallet.balance} credit.`,
         );
       }
 
@@ -189,7 +189,7 @@ export async function purchaseDataBankListing(buyerId: string, listingId: string
           type: 'DATABANK_PURCHASE',
           referenceId: listing.id,
           idempotencyKey: `databank-purchase:${listing.id}:${buyerId}`,
-          description: `Mở khóa gói dữ liệu "${listing.title}" (-${listing.priceCredits} tín chỉ)`,
+          description: `Mở khóa gói dữ liệu "${listing.title}" (-${listing.priceCredits} credit)`,
           actorId: buyerId,
         },
       });
@@ -215,7 +215,7 @@ export async function purchaseDataBankListing(buyerId: string, listingId: string
           type: 'DATABANK_ROYALTY',
           referenceId: listing.id,
           idempotencyKey: `databank-royalty:${listing.id}:${buyerId}`,
-          description: `Tác quyền Data Bank cho gói "${listing.title}" (+${listing.priceCredits} tín chỉ)`,
+          description: `Tác quyền Data Bank cho gói "${listing.title}" (+${listing.priceCredits} credit)`,
           actorId: buyerId,
         },
       });
