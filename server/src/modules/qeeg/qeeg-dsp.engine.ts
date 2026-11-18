@@ -1135,12 +1135,15 @@ export function analyzeCsvTs(params: {
   const headerNames = hasHeader ? firstCells : firstCells.map((_, idx) => `CH${idx + 1}`);
   const dataLines = hasHeader ? lines.slice(1) : lines;
 
-  // Identify numeric EEG columns, skipping time/index columns
+  // Identify numeric EEG columns, skipping time/index/holter-metadata columns
+  const skipNames = new Set([
+    'time', 't', 'timestamp', 'timestamp_s', 'sample', 'samples',
+    'sample_idx', 'index', 'idx', 'seq', 'marker', 'status', 'status_hex', 'ms', 'sec',
+  ]);
   const skipCols = new Set<number>();
   if (hasHeader) {
     headerNames.forEach((h, idx) => {
-      const lower = h.toLowerCase();
-      if (lower === 'time' || lower === 't' || lower === 'timestamp' || lower === 'sample' || lower === 'index') {
+      if (skipNames.has(h.toLowerCase())) {
         skipCols.add(idx);
       }
     });

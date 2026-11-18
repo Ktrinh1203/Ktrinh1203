@@ -6,7 +6,16 @@ NeuroLink kết hợp mạng xã hội chuyên môn y khoa, trạm phân tích �
 2. Bác sĩ thần kinh, bác sĩ nội trú và nhân viên y tế đã xác minh chứng chỉ hành nghề (CCHN) tham gia đọc ca qEEG từ xa, phản biện ca lâm sàng và tích lũy tín chỉ đào tạo liên tục (CME) / honoraria.
 3. Nhà nghiên cứu khoa học thần kinh và kỹ sư giao diện não - máy tính (BCI) có mã ORCID khai thác kho dữ liệu đa trung tâm đã khử định danh và xuất tập đặc trưng 80 chiều.
 
-Chiến lược kinh doanh chi tiết và phân tích rủi ro pháp lý - lâm sàng được ghi nhận tại [docs/STARTUP_STRATEGY_BMC.md](./docs/STARTUP_STRATEGY_BMC.md), mô hình kiến trúc tại [docs/MENTAL_MODEL.md](./docs/MENTAL_MODEL.md), và đặc tả hệ thống tại [docs/PROJECT_CONTEXT.md](./docs/PROJECT_CONTEXT.md).
+Chiến lược kinh doanh chi tiết và phân tích rủi ro pháp lý - lâm sàng được ghi nhận tại [docs/STARTUP_STRATEGY_BMC.md](./docs/STARTUP_STRATEGY_BMC.md), mô hình kiến trúc tại [docs/MENTAL_MODEL.md](./docs/MENTAL_MODEL.md), đặc tả hệ thống tại [docs/PROJECT_CONTEXT.md](./docs/PROJECT_CONTEXT.md), và **hướng dẫn phân vùng làm việc cho 4 Team tại [docs/TEAM_GUIDE.md](./docs/TEAM_GUIDE.md)**.
+
+### Bản Đồ Nhanh Cho 4 Team Trong Monorepo
+
+| Phân hệ / Team | Thư mục chính | Mô tả & Điểm vào nhanh |
+|---|---|---|
+| **Frontend Team** | [`client/`](./client/) | Giao diện Web React 19 + Vite + Tailwind v4 (`npm run dev:client` -> `:5173`) |
+| **Backend Team** | [`server/`](./server/) | Cổng API Express 5 + Prisma + PostgreSQL 16 (`npm run dev:server` -> `:4000`) |
+| **AI & qEEG Team** | [`qeeg_service/`](./qeeg_service/) | Microservice Python FastAPI qEEG, wPLI & Stroke Ensemble (`:8001`) |
+| **Hardware & Embedded Team** | [`hardware/`](./hardware/) | Firmware C++ `ESP32 + ADS1299 V1.4` Dual-Core, 5 trang TFT, Holter SD & `pc_eeg_studio.py` (`921600 bps`) — xem [`hardware/README.md`](./hardware/README.md) |
 
 ---
 
@@ -101,7 +110,13 @@ software_neuronlink_eeg/
 │   ├── sample_data/               # Bản ghi mẫu TI ADS1299 500 Hz
 │   ├── static/index.html          # Trạm lâm sàng Dual-Mode (/clinical-workstation)
 │   └── tests/test_qeeg_service.py # Bộ kiểm thử pytest cho dịch vụ Python qEEG
-└── docs/                          # PROJECT_CONTEXT.md, MENTAL_MODEL.md, STARTUP_STRATEGY_BMC.md, SESSION_HANDOFF.md, DESIGN_SPECIFICATION.md
+├── hardware/                      # Phần mềm Nhúng & PC Studio cho thiết bị đo thực tế ESP32 + ADS1299 V1.4
+│   ├── firmware/                  # Firmware C++ Dual-Core/Dual-SPI (ADS1299 + TFT ST7735S + 5D Switch + MicroSD)
+│   ├── src/                       # PC EEG Studio (thu sóng 921600 bps, lọc DSP, chuyển Holter .BIN -> .CSV, POST runner)
+│   ├── tests/                     # Unit tests giao thức nhị phân & lọc số (pytest)
+│   └── docs/                      # Báo cáo đo kiểm thực tế trên mạch & bản ghi mẫu CSV 8 kênh
+├── scripts/                       # Tiện ích nội bộ & kịch bản hỗ trợ
+└── docs/                          # TEAM_GUIDE.md, PROJECT_CONTEXT.md, MENTAL_MODEL.md, STARTUP_STRATEGY_BMC.md, handbook/
 ```
 
 ---
@@ -111,15 +126,17 @@ software_neuronlink_eeg/
 - **Frontend:** React 19, Vite 8, TypeScript 5.9, Tailwind CSS v4, React Router v7, `@tanstack/react-query` v5, Lucide React.
 - **Backend Node.js:** Node.js, Express 5, TypeScript 5.9, Prisma ORM 6.19, PostgreSQL 16 (`embedded-postgres`), Zod, Helmet, bcryptjs, Multer.
 - **Microservice qEEG Python:** FastAPI, Uvicorn, NumPy, SciPy, Pandas, Joblib, ReportLab.
+- **Hardware Firmware & PC Studio:** ESP32 Arduino Core (FreeRTOS Dual-Core, HSPI/VSPI), TI ADS1299 24-bit AFE, Python `pyserial` + `scipy` SOS DSP.
 
 Các lệnh kiểm thử và kiểm tra tĩnh:
 
 ```powershell
-# Kiểm tra cú pháp launcher Python
+# Kiểm tra cú pháp launcher Python & cổng tĩnh phần cứng
 python -m py_compile start_unified_server.py
 
-# Kiểm thử Python FastAPI qEEG service
+# Kiểm thử Python FastAPI qEEG service & phần mềm thiết bị phần cứng
 pytest qeeg_service/tests
+pytest hardware/tests -v
 
 # Kiểm tra TypeScript, build production và test tích hợp Node/Express (PostgreSQL test DB)
 npm run typecheck

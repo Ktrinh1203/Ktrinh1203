@@ -546,8 +546,11 @@ def _parse_csv_eeg(csv_text: str) -> Tuple[np.ndarray, List[str]]:
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Không thể phân tích cú pháp CSV: {exc}")
 
-    # Drop non-signal index/timestamp columns when headers are present
-    ignore_names = {"time", "t", "timestamp", "sample", "samples", "index", "idx", "ms", "sec"}
+    # Drop non-signal index/timestamp/holter-metadata columns when headers are present
+    ignore_names = {
+        "time", "t", "timestamp", "timestamp_s", "sample", "samples",
+        "sample_idx", "index", "idx", "seq", "marker", "status", "status_hex", "ms", "sec",
+    }
     numeric_cols: List[Any] = []
     for col in df.columns:
         col_norm = str(col).strip().lower()

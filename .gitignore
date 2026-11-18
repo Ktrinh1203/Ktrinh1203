@@ -30,5 +30,11 @@ qeeg_service/tests/__pycache__/
 .DS_Store
 Thumbs.db
 .impeccable/
+.agent/
+.agents/
+.pytest_cache/
+.ruff_cache/
+hardware/build/
 docs/verification_screenshots/
 *.zip
+!hardware/**/*.zip
