@@ -1,0 +1,122 @@
+{
+  "report": {
+    "fw": "esp32_ads1299_holter_v2",
+    "sd_cs_isolated": true,
+    "sd_ready": false,
+    "sd_mb": 0,
+    "tft_ok": true,
+    "tft_preset": "G-Tab (2,1,BGR)",
+    "id_raw": "0x3E",
+    "id_masked": "0x1E",
+    "id_ok": true,
+    "drdy_boot_hz": 230.0,
+    "drdy_ok": true,
+    "regs_hex": "3E064040006161616161616161000000000000000F000000",
+    "short_cfg_ok": true,
+    "short_samples": 128,
+    "short_mean_uV": [
+      1.21,
+      -3.5,
+      -1.06,
+      14.03,
+      -3.35,
+      -5.9,
+      -2.56,
+      -5.57
+    ],
+    "short_rms_uV": [
+      0.22,
+      0.26,
+      0.27,
+      0.24,
+      0.24,
+      0.29,
+      0.3,
+      0.26
+    ],
+    "short_pp_uV": [
+      1.18,
+      1.27,
+      1.36,
+      1.3,
+      1.25,
+      1.74,
+      1.54,
+      1.3
+    ],
+    "test_cfg_ok": true,
+    "test_samples": 350,
+    "expected_test_pp_uV": 3750.0,
+    "test_pp_uV": [
+      3787.28,
+      3785.63,
+      3771.9,
+      3768.77,
+      3786.61,
+      3786.48,
+      3769.09,
+      3768.95
+    ],
+    "buttons_idle": {
+      "UP": 1,
+      "DWN": 1,
+      "LET": 1,
+      "RHT": 1,
+      "MID": 1,
+      "SET": 1
+    }
+  },
+  "stream_info": {
+    "info": 1,
+    "ads_ok": true,
+    "id": "0x3E",
+    "mode": 2,
+    "mode_name": "TEST",
+    "rate_sps": 500,
+    "pga": 12,
+    "bias": true,
+    "loff": false,
+    "sd_ready": false,
+    "sd_rec": false,
+    "sd_samples": 0,
+    "markers": 0,
+    "sps": 500.0,
+    "fps": 20,
+    "total": 1245,
+    "dropped": 0,
+    "loff_stat_p": 0,
+    "loff_stat_n": 0,
+    "pp_uV": [
+      3787.41,
+      3785.13,
+      3771.95,
+      3768.82,
+      3786.3,
+      3785.67,
+      3768.73,
+      3769.22
+    ],
+    "buttons_idle": {
+      "UP": 1,
+      "DWN": 1,
+      "LET": 1,
+      "RHT": 1,
+      "MID": 1,
+      "SET": 1
+    }
+  },
+  "verdict": {
+    "overall_pass": true,
+    "checks": {
+      "sd_cs_isolated": true,
+      "tft_ok": true,
+      "ads_id_ok": true,
+      "drdy_ok": true,
+      "short_noise_ok": true,
+      "test_signal_ok": true,
+      "buttons_idle_ok": true,
+      "stream_sps_ok": true
+    },
+    "issues": []
+  }
+}
