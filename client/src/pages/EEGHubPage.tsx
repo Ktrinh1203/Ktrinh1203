@@ -1,29 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router';
 import {
-  Activity,
-  Brain,
-  CheckCircle2,
-  Clock,
   Download,
-  Eye,
-  FileSpreadsheet,
-  History,
-  Lock,
   Plus,
   ShieldCheck,
-  Sliders,
-  Sparkles,
-  UserCheck,
-  UserPlus,
   UserX,
 } from 'lucide-react';
 import { eegDatasetsApi } from '../api/endpoints';
+import { ApiError } from '../api/client';
 import type { EegDatasetRecord } from '../api/types';
-import { Alert, Button, Card, Input } from '../components/ui';
+import { Alert, Button, Card, Input, cn } from '../components/ui';
 import { useMode } from '../context/ModeContext';
 import { useAuth } from '../features/auth/AuthContext';
-import { ApiError } from '../api/client';
+import { BrainWaveformViewer } from '../features/eeg/BrainWaveformViewer';
+import { DataBankMarketplacePanel } from '../features/eeg/DataBankMarketplacePanel';
+import { NeuralDatabasePanel } from '../features/eeg/NeuralDatabasePanel';
+import { QeegStudioPanel } from '../features/eeg/QeegStudioPanel';
+import { triggerCsvDownload } from '../features/eeg/eegLabels';
+
+type HubTab = 'qeeg' | 'personal' | 'databank' | 'neural-db';
 
 const FALLBACK_RECORDINGS: EegDatasetRecord[] = [
   {
@@ -31,7 +26,7 @@ const FALLBACK_RECORDINGS: EegDatasetRecord[] = [
     ownerId: 'seed-owner-hoa',
     ownerUsername: 'hoa_health',
     patientCode: 'BN-****84 (Ẩn danh)',
-    title: 'Ghi điện não đồ bề mặt: Thử nghiệm kích thích vận động tinh tay phải (Motor Imagery)',
+    title: 'Thử nghiệm vận động tay phải',
     date: '04/11/2026 09:15',
     duration: '18 phút 42 giây',
     samplingRate: '250 Hz',
@@ -40,7 +35,7 @@ const FALLBACK_RECORDINGS: EegDatasetRecord[] = [
     filter: 'Dải thông 0.5 - 70 Hz · Bộ lọc khuyết 50 Hz Notch',
     status: 'ANALYZED',
     clinicalNote:
-      'Phát hiện sự giảm đồng bộ liên quan đến sự kiện (ERD) rõ rệt tại đạo trình C3 trong dải sóng Mu (8-12 Hz) và Beta (18-24 Hz) khi bệnh nhân tưởng tượng nắm bàn tay phải.',
+      'Giảm đồng bộ (ERD) rõ tại C3 trong dải Mu (8–12 Hz) và Beta (18–24 Hz) khi tưởng tượng nắm tay phải.',
     consentedProfessionals: [
       {
         userId: 'seed-dr-minh',
@@ -84,7 +79,7 @@ const FALLBACK_RECORDINGS: EegDatasetRecord[] = [
     ownerId: 'seed-owner-hoa',
     ownerUsername: 'hoa_health',
     patientCode: 'BN-****29 (Ẩn danh)',
-    title: 'Đánh giá hoạt động điện não giấc ngủ ban đêm & Động kinh thùy thái dương',
+    title: 'Theo dõi giấc ngủ ban đêm',
     date: '31/10/2026 22:40',
     duration: '45 phút',
     samplingRate: '500 Hz',
@@ -93,7 +88,7 @@ const FALLBACK_RECORDINGS: EegDatasetRecord[] = [
     filter: '0.1 - 100 Hz · Notch 50 Hz',
     status: 'REVIEW_PENDING',
     clinicalNote:
-      'Xuất hiện rải rác phức hợp nhọn - sóng chậm đồng thì vùng thái dương - đỉnh bán cầu trái trong pha ngủ sâu N3.',
+      'Rải rác phức hợp nhọn - sóng chậm vùng thái dương trái trong pha ngủ sâu N3.',
     consentedProfessionals: [
       {
         userId: 'seed-dr-minh',
@@ -120,79 +115,120 @@ const FALLBACK_RECORDINGS: EegDatasetRecord[] = [
 
 const EEG_CHANNELS = [
   {
-    name: 'C3 (Motor Left)',
+    name: 'F3',
+    region: 'Thùy trán trái',
+    freq: '13-18 Hz (Beta thấp)',
+    peakUv: '26.4 µV',
+    erdPercent: '-11.2% (ERD)',
+    impedance: '3.4 kΩ',
+    clinicalStatus: 'Ổn định',
+  },
+  {
+    name: 'F4',
+    region: 'Thùy trán phải',
+    freq: '13-18 Hz (Beta thấp)',
+    peakUv: '25.8 µV',
+    erdPercent: '-9.4% (ERD)',
+    impedance: '3.1 kΩ',
+    clinicalStatus: 'Ổn định',
+  },
+  {
+    name: 'C3',
     region: 'Vỏ vận động sơ cấp trái',
     freq: '18-22 Hz (Beta)',
     peakUv: '42.8 µV',
     erdPercent: '-38.4% (ERD)',
     impedance: '3.2 kΩ',
     clinicalStatus: 'Đáp ứng rõ rệt',
-    d: 'M0 24 Q15 6 30 24 T60 24 T90 24 T120 24 T150 10 T180 38 T210 24 T240 24 T270 24 T300 24 T330 14 T360 34 T390 24 T420 24',
   },
   {
-    name: 'C4 (Motor Right)',
+    name: 'C4',
     region: 'Vỏ vận động sơ cấp phải',
     freq: '10-12 Hz (Mu)',
     peakUv: '28.5 µV',
     erdPercent: '-6.2% (Baseline)',
     impedance: '2.9 kΩ',
     clinicalStatus: 'Nền ổn định',
-    d: 'M0 24 Q20 12 40 24 T80 24 T120 24 T160 24 T200 24 T240 24 T280 24 T320 24 T360 24 T400 24 T420 24',
   },
   {
-    name: 'Cz (Vertex)',
-    region: 'Đỉnh trung tâm',
-    freq: '8-13 Hz (Alpha/Mu)',
-    peakUv: '34.1 µV',
-    erdPercent: '-14.0% (ERD)',
-    impedance: '3.5 kΩ',
-    clinicalStatus: 'Đồng bộ tốt',
-    d: 'M0 24 Q25 8 50 24 T100 24 T150 24 T200 16 T250 32 T300 24 T350 24 T400 24 T420 24',
-  },
-  {
-    name: 'Fz (Frontal)',
-    region: 'Thùy trán trung tâm',
-    freq: '4-7 Hz (Theta)',
-    peakUv: '25.0 µV',
-    erdPercent: '+4.1% (ERS)',
-    impedance: '4.1 kΩ',
-    clinicalStatus: 'Không nhiễu EOG',
-    d: 'M0 24 Q30 10 60 24 T120 24 T180 24 T240 24 T300 24 T360 24 T420 24',
-  },
-  {
-    name: 'Pz (Parietal)',
-    region: 'Thùy đỉnh trung tâm',
-    freq: '14-16 Hz (SMR)',
-    peakUv: '39.4 µV',
-    erdPercent: '-19.5% (ERD)',
-    impedance: '3.0 kΩ',
-    clinicalStatus: 'Đáp ứng SMR',
-    d: 'M0 24 Q18 10 36 24 T72 24 T108 24 T144 24 T180 8 T216 40 T252 24 T288 24 T324 24 T360 24 T396 24 T420 24',
-  },
-  {
-    name: 'O1 (Occipital Left)',
+    name: 'O1',
     region: 'Thùy chẩm trái',
-    freq: '9.5 Hz (Alpha)',
+    freq: '9.8 Hz (Alpha)',
     peakUv: '46.2 µV',
     erdPercent: '+11.8% (ERS)',
     impedance: '3.8 kΩ',
     clinicalStatus: 'Nhịp Alpha sinh lý',
-    d: 'M0 24 Q22 4 44 24 T88 24 T132 24 T176 24 T220 24 T264 24 T308 24 T352 24 T396 24 T420 24',
+  },
+  {
+    name: 'O2',
+    region: 'Thùy chẩm phải',
+    freq: '10.1 Hz (Alpha)',
+    peakUv: '44.9 µV',
+    erdPercent: '+10.6% (ERS)',
+    impedance: '3.6 kΩ',
+    clinicalStatus: 'Nhịp Alpha sinh lý',
   },
 ];
+
+/** Builds deterministic 6-channel multi-lead preview waveforms for a personal EEG record. */
+function buildPreviewWaveformForDataset(rec: EegDatasetRecord) {
+  const nPts = 300; // 5 seconds at 60 Hz display
+  const time = Array.from({ length: nPts }, (_, i) => Number(((i / (nPts - 1)) * 5).toFixed(3)));
+  const channels = ['F3', 'F4', 'C3', 'C4', 'O1', 'O2'];
+  const isSleepOrPending = rec.status === 'REVIEW_PENDING' || /giấc ngủ|động kinh/i.test(rec.title);
+  const seedShift = rec.id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) % 7;
+
+  const filtered: Record<string, number[]> = {};
+  const raw: Record<string, number[]> = {};
+
+  channels.forEach((ch, chIdx) => {
+    const fArr: number[] = [];
+    const rArr: number[] = [];
+    for (let i = 0; i < nPts; i++) {
+      const t = time[i]!;
+      const alphaAmp = ch.startsWith('O') ? 26 : ch.startsWith('C') ? 14 : 9;
+      const slowAmp = isSleepOrPending ? (chIdx % 2 === 0 ? 34 : 20) : 7;
+      const clean =
+        slowAmp * Math.sin(2 * Math.PI * (isSleepOrPending ? 2.1 : 1.4) * t + chIdx * 0.7 + seedShift) +
+        alphaAmp * Math.sin(2 * Math.PI * 10.1 * t + chIdx * 0.4) +
+        8 * Math.sin(2 * Math.PI * 18.5 * t + chIdx * 1.1);
+      const powerline = 6.5 * Math.sin(2 * Math.PI * 50 * t + chIdx);
+      fArr.push(Number(clean.toFixed(2)));
+      rArr.push(Number((clean + powerline).toFixed(2)));
+    }
+    filtered[ch] = fArr;
+    raw[ch] = rArr;
+  });
+
+  return { time, channels, raw, filtered };
+}
+
+function resolveInitialTab(searchParams: URLSearchParams): HubTab {
+  const tab = searchParams.get('tab');
+  if (tab === 'qeeg' || tab === 'personal' || tab === 'databank' || tab === 'neural-db') {
+    return tab;
+  }
+  const view = searchParams.get('view');
+  const rec = searchParams.get('rec');
+  if (rec || view === 'personal') return 'personal';
+  return 'qeeg';
+}
 
 export function EEGHubPage() {
   const { user } = useAuth();
   const { isProfessional } = useMode();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const viewParam = searchParams.get('view');
   const recParam = searchParams.get('rec');
-  const isWorkspaceView = isProfessional && viewParam !== 'personal';
 
+  const [activeTab, setActiveTab] = useState<HubTab>(() => resolveInitialTab(searchParams));
+  const [datasetScope, setDatasetScope] = useState<'my' | 'workspace'>(() =>
+    isProfessional && viewParam === 'workspace' ? 'workspace' : 'my',
+  );
+
+  // Personal EEG Datasets & Consent state (Tab 2)
   const [recordings, setRecordings] = useState<EegDatasetRecord[]>(FALLBACK_RECORDINGS);
   const [selectedRecId, setSelectedRecId] = useState<string>(recParam || 'rec-01');
-  const [timeScale, setTimeScale] = useState<'1s' | '5s' | '10s'>('5s');
-  const [sensitivity, setSensitivity] = useState<'20' | '50' | '100'>('50');
   const [consentTargetUsername, setConsentTargetUsername] = useState('');
   const [consentBusy, setConsentBusy] = useState(false);
   const [consentFeedback, setConsentFeedback] = useState<{
@@ -208,18 +244,22 @@ export function EEGHubPage() {
   const [newClinicalNote, setNewClinicalNote] = useState('');
   const [createBusy, setCreateBusy] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'visualizer' | 'datasets' | 'access'>(() => {
-    if (viewParam === 'workspace' && isProfessional) return 'visualizer';
-    if (viewParam === 'personal') return 'datasets';
-    return isProfessional ? 'visualizer' : 'datasets';
-  });
-
   useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'qeeg' || tabParam === 'personal' || tabParam === 'databank' || tabParam === 'neural-db') {
+      setActiveTab(tabParam);
+    } else if (recParam || viewParam === 'personal') {
+      setActiveTab('personal');
+      setDatasetScope('my');
+    } else if (viewParam === 'workspace' && isProfessional) {
+      setDatasetScope('workspace');
+    }
     if (recParam) {
       setSelectedRecId(recParam);
-      setActiveTab('visualizer');
     }
-  }, [recParam]);
+  }, [searchParams, recParam, viewParam, isProfessional]);
+
+  const isWorkspaceView = isProfessional && datasetScope === 'workspace';
 
   useEffect(() => {
     if (!user) return;
@@ -237,17 +277,25 @@ export function EEGHubPage() {
         }
       })
       .catch(() => {
-        // Fallback if unauthenticated or offline
+        // Retain fallback records when offline
       });
   }, [user, isWorkspaceView]);
+
+  const switchTab = (nextTab: HubTab) => {
+    setActiveTab(nextTab);
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', nextTab);
+    setSearchParams(next, { replace: true });
+  };
 
   const selectedRec =
     recordings.find((r) => r.id === selectedRecId) ?? recordings[0] ?? FALLBACK_RECORDINGS[0]!;
   const isOwnerOfSelected = Boolean(
     user && (selectedRec.ownerId === user.id || selectedRec.ownerUsername === user.username),
   );
+  const previewWaveform = useMemo(() => buildPreviewWaveformForDataset(selectedRec), [selectedRec]);
 
-  const handleCreateDataset = async (e: React.FormEvent) => {
+  const handleCreateDataset = async (e: FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || newTitle.trim().length < 3) {
       setConsentFeedback({
@@ -273,7 +321,7 @@ export function EEGHubPage() {
       setShowCreateForm(false);
       setNewTitle('');
       setNewClinicalNote('');
-      setActiveTab('access');
+      setActiveTab('personal');
       setConsentFeedback({
         tone: 'success',
         text: `Đã tạo bản ghi EEG mới "${res.dataset.title}" (${res.dataset.patientCode}). Bạn có thể cấp quyền bác sĩ ngay bên dưới.`,
@@ -311,14 +359,7 @@ export function EEGHubPage() {
         ch.impedance,
       ]),
     ];
-    const csvContent = csvRows.map((r) => r.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `neurolink-eeg-${selectedRec.id}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    triggerCsvDownload(`neurolink-eeg-${selectedRec.id}.csv`, csvRows.map((r) => r.join(',')).join('\n'));
     setConsentFeedback({
       tone: 'success',
       text: `Đã xuất tệp dữ liệu ${selectedRec.id} (CSV chuẩn 10-20) thành công.`,
@@ -368,613 +409,277 @@ export function EEGHubPage() {
     }
   };
 
+  const tabs: { id: HubTab; label: string }[] = [
+    { id: 'qeeg', label: 'Đo sóng' },
+    { id: 'personal', label: 'Hồ sơ của tôi' },
+    { id: 'databank', label: 'Kho dữ liệu' },
+    { id: 'neural-db', label: 'Mẫu AI' },
+  ];
+
   return (
-    <div className={isWorkspaceView ? 'space-y-5' : 'mx-auto max-w-5xl space-y-6'}>
-      {/* Mode-Differentiated Header */}
-      {isWorkspaceView ? (
-        <section className="rounded-lg border border-slate-300 bg-white shadow-2xs overflow-hidden">
-          <div className="bg-[#162B47] px-5 py-4 text-white flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-white">
-                  EEG Workspace · Phân tích Đạo trình 10-20 & Hội chẩn BCI
-                </h1>
-                <span className="inline-flex items-center gap-1 rounded bg-[#2C6865] px-2 py-0.5 text-[11px] font-semibold text-teal-50 border border-teal-400/30">
-                  <ShieldCheck className="size-3 text-teal-200" />
-                  Explicit Data-Owner Consent
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 max-w-3xl">
-                Trạm làm việc dành cho Bác sĩ và Nhà nghiên cứu đã xác minh: chỉ hiển thị các tập dữ liệu điện não đồ đã được chủ sở hữu cấp quyền tường minh.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleExportDataset}
-                className="border-white/25 bg-white/10 text-white hover:bg-white/20 text-xs"
-                icon={<Download className="size-3.5 text-teal-200" />}
-              >
-                Xuất EDF+ / CSV
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => setShowCreateForm((v) => !v)}
-                className="bg-[#2C6865] hover:bg-teal-700 text-white text-xs"
-                icon={<Plus className="size-3.5 text-white" />}
-              >
-                Nhập bản ghi lâm sàng
-              </Button>
-            </div>
-          </div>
-
-          {/* 4-Column Clinical Telemetry Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 bg-slate-50/80 text-xs">
-            <div className="px-4 py-2.5 flex items-center justify-between">
-              <span className="font-semibold text-slate-600">Bản ghi Được Ủy quyền</span>
-              <span className="font-extrabold text-slate-900 tabular-nums">{recordings.length}</span>
-            </div>
-            <div className="px-4 py-2.5 flex items-center justify-between">
-              <span className="font-semibold text-slate-600">Đạo trình Đang mở</span>
-              <span className="font-mono font-bold text-[#1E3A5F]">{selectedRec.channelsCount} kênh (10-20)</span>
-            </div>
-            <div className="px-4 py-2.5 flex items-center justify-between">
-              <span className="font-semibold text-slate-600">Tần số Lấy mẫu</span>
-              <span className="font-mono font-bold text-[#2C6865]">{selectedRec.samplingRate}</span>
-            </div>
-            <div className="px-4 py-2.5 flex items-center justify-between">
-              <span className="font-semibold text-slate-600">Trạng thái Bảo mật</span>
-              <span className="font-mono font-semibold text-emerald-700">PHI Anonymized</span>
-            </div>
-          </div>
-
-          {/* Structured Sub-Tabs */}
-          <div className="px-5 py-2.5 bg-white border-t border-slate-200 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab('visualizer')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded transition-colors ${
-                activeTab === 'visualizer'
-                  ? 'bg-[#162B47] text-white'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <Eye className="size-3.5" />
-              <span>Trực quan hóa Đạo trình & Thông số Kênh</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('datasets')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded transition-colors ${
-                activeTab === 'datasets'
-                  ? 'bg-[#162B47] text-white'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <FileSpreadsheet className="size-3.5" />
-              <span>Bảng Danh mục Tập dữ liệu ({recordings.length})</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('access')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded transition-colors ${
-                activeTab === 'access'
-                  ? 'bg-[#162B47] text-white'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <Lock className="size-3.5" />
-              <span>Ủy quyền Chủ sở hữu & Nhật ký Kiểm toán</span>
-            </button>
-          </div>
-        </section>
-      ) : (
-        <section className="rounded-xl border border-teal-200/80 bg-white p-6 sm:p-7 shadow-2xs">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="space-y-2 max-w-2xl">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                  Hồ sơ Sóng não Cá nhân & Quyền Bác sĩ (My EEG)
-                </h1>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 border border-teal-200/80">
-                  <Activity className="size-3.5 text-teal-600" />
-                  Bảo mật Chủ sở hữu 100%
-                </span>
-              </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Lưu trữ an toàn các bản đo điện não đồ của bạn, xem tóm tắt kết quả dễ hiểu và chủ động quyết định bác sĩ nào được phép xem dữ liệu.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleExportDataset}
-                className="border-teal-200 text-teal-800 hover:bg-teal-50"
-                icon={<Download className="size-3.5 text-teal-600" />}
-              >
-                Tải về bản ghi
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => setShowCreateForm((v) => !v)}
-                className="bg-teal-600 hover:bg-teal-700 text-white"
-                icon={<Plus className="size-3.5 text-white" />}
-              >
-                Tải lên bản ghi mới
-              </Button>
-            </div>
-          </div>
-
-          {/* Friendly Pill Switcher */}
-          <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
-            <button
-              type="button"
-              onClick={() => setActiveTab('datasets')}
-              className={`flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold rounded-full transition-colors ${
-                activeTab === 'datasets'
-                  ? 'bg-teal-600 text-white shadow-2xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-teal-50 hover:text-teal-700'
-              }`}
-            >
-              <FileSpreadsheet className="size-4" />
-              <span>Bản ghi EEG của tôi ({recordings.length})</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('access')}
-              className={`flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold rounded-full transition-colors ${
-                activeTab === 'access'
-                  ? 'bg-teal-600 text-white shadow-2xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-teal-50 hover:text-teal-700'
-              }`}
-            >
-              <Lock className="size-4" />
-              <span>Quản lý Quyền Bác sĩ ({selectedRec.consentedProfessionals.length})</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('visualizer')}
-              className={`flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold rounded-full transition-colors ${
-                activeTab === 'visualizer'
-                  ? 'bg-teal-600 text-white shadow-2xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-teal-50 hover:text-teal-700'
-              }`}
-            >
-              <Eye className="size-4" />
-              <span>Xem Biểu đồ Sóng não</span>
-            </button>
-          </div>
-        </section>
-      )}
-
-      {/* Working Upload / Create EEG Dataset Form */}
-      {showCreateForm && (
-        <Card className="p-5 border-teal-300 bg-[#F0FDFA]/80 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm sm:text-base font-bold text-slate-900">
-              Đăng ký & Tải lên Bản ghi Điện não đồ (EEG Dataset) Mới
-            </h2>
-            <button
-              type="button"
-              onClick={() => setShowCreateForm(false)}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-800"
-            >
-              Đóng
-            </button>
-          </div>
-          <form onSubmit={handleCreateDataset} className="grid gap-3 sm:grid-cols-3 text-xs">
-            <div className="sm:col-span-2 space-y-1">
-              <label className="font-bold text-slate-700 block">Tiêu đề Bản ghi EEG *</label>
-              <Input
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="Ví dụ: Đo điện não đồ giấc ngủ trưa 8 kênh (Alpha/Theta)"
-                className="bg-white"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="font-bold text-slate-700 block">Tần số Lấy mẫu</label>
-              <Input
-                value={newSamplingRate}
-                onChange={(e) => setNewSamplingRate(e.target.value)}
-                placeholder="250 Hz"
-                className="bg-white"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="font-bold text-slate-700 block">Số kênh Đạo trình</label>
-              <Input
-                type="number"
-                value={newChannelsCount}
-                onChange={(e) => setNewChannelsCount(e.target.value)}
-                placeholder="8"
-                className="bg-white"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="font-bold text-slate-700 block">Thời lượng Đo</label>
-              <Input
-                value={newDuration}
-                onChange={(e) => setNewDuration(e.target.value)}
-                placeholder="15 phút 00 giây"
-                className="bg-white"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="font-bold text-slate-700 block">Ghi chú Lâm sàng / Cảm nhận</label>
-              <Input
-                value={newClinicalNote}
-                onChange={(e) => setNewClinicalNote(e.target.value)}
-                placeholder="Ghi chú ngắn gọn về trạng thái khi đo..."
-                className="bg-white"
-              />
-            </div>
-            <div className="sm:col-span-3 flex justify-end gap-2 pt-1">
-              <Button type="button" size="sm" variant="outline" onClick={() => setShowCreateForm(false)}>
-                Hủy
-              </Button>
-              <Button type="submit" size="sm" loading={createBusy} icon={<Plus className="size-3.5" />}>
-                Lưu Bản ghi EEG
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
-
-      {/* Main Tab 1: Multi-Channel EEG Visualizer */}
-      {activeTab === 'visualizer' && (
-        <div className="grid gap-5 lg:grid-cols-12 items-start">
-          {/* Left / Main: Oscilloscope & Quantitative Table (in Pro mode) */}
-          <div className="lg:col-span-8 space-y-5">
-            <Card className="p-4 sm:p-5 border-slate-200/90 shadow-2xs space-y-4">
-              {/* Visualizer Controls Toolbar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <Sliders className="size-3.5 text-brand-600" />
-                    <span>Khung thời gian & Độ nhạy:</span>
-                  </span>
-                  <div className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold">
-                    {(['1s', '5s', '10s'] as const).map((scale) => (
-                      <button
-                        key={scale}
-                        type="button"
-                        onClick={() => setTimeScale(scale)}
-                        className={`rounded px-2.5 py-1 transition-colors ${
-                          timeScale === scale
-                            ? 'bg-white text-brand-700 shadow-2xs font-bold'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        {scale}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold">
-                    {(['20', '50', '100'] as const).map((sens) => (
-                      <button
-                        key={sens}
-                        type="button"
-                        onClick={() => setSensitivity(sens)}
-                        className={`rounded px-2 py-1 transition-colors ${
-                          sensitivity === sens
-                            ? 'bg-white text-brand-700 shadow-2xs font-bold'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        {sens} µV
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
-                  <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                    <CheckCircle2 className="size-3" /> Trở kháng &lt; 5 kΩ
-                  </span>
-                  <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                    {selectedRec.samplingRate}
-                  </span>
-                </div>
-              </div>
-
-              {/* Waveform Canvas Frame */}
-              <div className="rounded-lg border border-slate-200 bg-[#FAFCFF] p-3 sm:p-4 space-y-3">
-                {EEG_CHANNELS.map((ch) => (
-                  <div key={ch.name} className="space-y-1">
-                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
-                      <span className="font-bold text-slate-700">{ch.name}</span>
-                      <span className="text-slate-500">{ch.freq}</span>
-                    </div>
-                    <div className="relative h-10 w-full overflow-hidden rounded border border-slate-200/80 bg-white">
-                      <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:32px_16px]" />
-                      <svg
-                        viewBox="0 0 420 48"
-                        preserveAspectRatio="none"
-                        className="absolute inset-0 h-full w-full"
-                      >
-                        <path
-                          d={ch.d}
-                          fill="none"
-                          stroke={isProfessional ? '#1E3A5F' : '#0D9488'}
-                          strokeWidth="1.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                ))}
-
-                <div className="flex justify-between text-[10px] font-mono text-slate-400 border-t border-slate-200 pt-1.5">
-                  <span>0.0s</span>
-                  <span>1.0s</span>
-                  <span>2.0s</span>
-                  <span>3.0s</span>
-                  <span>4.0s</span>
-                  <span>5.0s</span>
-                </div>
-              </div>
-
-              {/* Clinical Annotation Box */}
-              <div
-                className={`rounded-lg border p-3.5 space-y-2 ${
-                  isProfessional
-                    ? 'bg-slate-50 border-slate-200/90'
-                    : 'bg-[#F0FDFA] border-teal-200/80'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <Brain className="size-4 text-teal-700" />
-                    <span>
-                      {isProfessional
-                        ? 'Nhận định lâm sàng & Đánh giá sóng não:'
-                        : 'Tóm tắt kết quả đọc sóng não từ Bác sĩ:'}
-                    </span>
-                  </span>
-                  <span className="rounded bg-teal-50 text-teal-800 border border-teal-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                    {selectedRec.status === 'ANALYZED' ? 'Đã có kết luận' : 'Đang chờ bác sĩ đọc'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-700 leading-relaxed">{selectedRec.clinicalNote}</p>
-              </div>
-            </Card>
-
-            {/* Professional Mode Only: Quantitative 10-20 Electrode Parameters Data Table */}
-            {isProfessional && (
-              <Card className="p-0 overflow-hidden border-slate-300 shadow-2xs">
-                <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                  <h2 className="text-xs sm:text-sm font-bold text-slate-900">
-                    Bảng Thông số Định lượng Đạo trình Quốc tế 10-20 (Electrode Telemetry)
-                  </h2>
-                  <span className="text-[11px] font-mono text-slate-500">
-                    Notch 50Hz · Bandpass 0.5–70Hz
-                  </span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200 bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                        <th className="py-2.5 px-3.5">Đạo trình</th>
-                        <th className="py-2.5 px-3.5">Vùng Giải phẫu</th>
-                        <th className="py-2.5 px-3.5">Dải tần Ưu thế</th>
-                        <th className="py-2.5 px-3.5 text-right">Biên độ Đỉnh</th>
-                        <th className="py-2.5 px-3.5 text-right">Chỉ số ERD/ERS</th>
-                        <th className="py-2.5 px-3.5 text-right">Trở kháng</th>
-                        <th className="py-2.5 px-3.5">Nhận định Kênh</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200/80">
-                      {EEG_CHANNELS.map((ch) => (
-                        <tr key={ch.name} className="hover:bg-slate-50/90">
-                          <td className="py-2.5 px-3.5 font-mono font-bold text-[#1E3A5F]">
-                            {ch.name}
-                          </td>
-                          <td className="py-2.5 px-3.5 text-slate-700">{ch.region}</td>
-                          <td className="py-2.5 px-3.5 font-mono text-slate-700">{ch.freq}</td>
-                          <td className="py-2.5 px-3.5 text-right font-mono font-bold text-slate-900 tabular-nums">
-                            {ch.peakUv}
-                          </td>
-                          <td className="py-2.5 px-3.5 text-right font-mono font-semibold text-[#2C6865] tabular-nums">
-                            {ch.erdPercent}
-                          </td>
-                          <td className="py-2.5 px-3.5 text-right font-mono text-emerald-700 tabular-nums">
-                            {ch.impedance}
-                          </td>
-                          <td className="py-2.5 px-3.5">
-                            <span className="inline-block rounded bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700 border border-slate-200">
-                              {ch.clinicalStatus}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
+    <div className={isProfessional ? 'space-y-4' : 'mx-auto max-w-6xl space-y-4'}>
+      {/* Header & 4-Tab Hairline Underline Navigation */}
+      <header className="space-y-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h1
+            className={cn(
+              'font-bold tracking-tight text-[#141413]',
+              isProfessional ? 'text-base sm:text-lg' : 'text-lg sm:text-xl',
             )}
-          </div>
+          >
+            Sóng não
+          </h1>
 
-          {/* Right Column: Metadata, Band Spectrum & Access Guard */}
-          <div className="lg:col-span-4 space-y-4">
-            <Card className="p-4 sm:p-5 border-slate-200/90 shadow-2xs space-y-3.5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Thông tin Bản ghi Đang mở
-              </h3>
-
-              <div className="space-y-2 text-xs">
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Mã hồ sơ:</span>
-                  <span className="font-bold text-slate-800">{selectedRec.patientCode}</span>
+          {activeTab === 'personal' && (
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
+              {isProfessional && (
+                <div className="inline-flex rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] p-0.5 text-xs font-medium">
+                  <button
+                    type="button"
+                    aria-pressed={datasetScope === 'my'}
+                    onClick={() => setDatasetScope('my')}
+                    className={cn(
+                      'rounded-md px-2.5 py-1 transition-colors',
+                      datasetScope === 'my'
+                        ? 'bg-[#16A34A] text-white font-semibold'
+                        : 'text-[#6E6D68] hover:text-[#15803D]',
+                    )}
+                  >
+                    Của tôi
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={datasetScope === 'workspace'}
+                    onClick={() => setDatasetScope('workspace')}
+                    className={cn(
+                      'rounded-md px-2.5 py-1 transition-colors',
+                      datasetScope === 'workspace'
+                        ? 'bg-[#16A34A] text-white font-semibold'
+                        : 'text-[#6E6D68] hover:text-[#15803D]',
+                    )}
+                  >
+                    Bệnh nhân
+                  </button>
                 </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Thời gian đo:</span>
-                  <span className="font-semibold text-slate-700">
-                    {selectedRec.date} ({selectedRec.duration})
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Cấu hình đo:</span>
-                  <span className="font-medium text-slate-700">{selectedRec.filter}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">
-                    Bác sĩ & Chuyên gia được chủ sở hữu cấp quyền:
-                  </span>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {selectedRec.consentedProfessionals.map((doc) => (
-                      <span
-                        key={doc.username}
-                        className="rounded bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-800 border border-teal-200"
-                      >
-                        {doc.displayName}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-start gap-2 text-xs text-slate-500">
-                <ShieldCheck className="size-4 text-teal-600 shrink-0 mt-0.5" />
-                <span className="leading-snug">
-                  Dữ liệu được khử định danh (PHI Anonymized) và bảo vệ bởi cơ chế uỷ quyền tường minh từ chủ sở hữu (Explicit Data-Owner Consent).
-                </span>
-              </div>
-            </Card>
-
-            {/* Power Spectral Density (PSD) Bands Distribution */}
-            <Card className="p-4 sm:p-5 border-slate-200/90 shadow-2xs space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Tỷ trọng Tần số Sóng não (PSD)
-              </h3>
-
-              <div className="space-y-2.5 text-xs">
-                <div>
-                  <div className="flex justify-between text-[11px] font-semibold text-slate-700 pb-1">
-                    <span>Delta (0.5 – 4 Hz · Ngủ sâu)</span>
-                    <span className="text-slate-500 font-mono">14%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                    <div className="h-full bg-slate-400 rounded-full" style={{ width: '14%' }} />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[11px] font-semibold text-slate-700 pb-1">
-                    <span>Theta (4 – 8 Hz · Thư giãn sâu)</span>
-                    <span className="text-slate-500 font-mono">22%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                    <div className="h-full bg-sky-500 rounded-full" style={{ width: '22%' }} />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[11px] font-semibold text-slate-700 pb-1">
-                    <span>Alpha / Mu (8 – 13 Hz · Thư thái)</span>
-                    <span className="text-teal-700 font-bold font-mono">42% (Ưu thế)</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                    <div className="h-full bg-teal-600 rounded-full" style={{ width: '42%' }} />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[11px] font-semibold text-slate-700 pb-1">
-                    <span>Beta (13 – 30 Hz · Tập trung)</span>
-                    <span className="text-slate-500 font-mono">22%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                    <div className="h-full bg-[#2B4C7E] rounded-full" style={{ width: '22%' }} />
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Future Analysis Roadmap Notice */}
-            <div className="rounded-lg border border-sky-200/80 bg-[#F0F9FF] p-4 space-y-1.5 text-xs text-slate-800">
-              <div className="flex items-center gap-1.5 font-bold text-sky-900">
-                <Sparkles className="size-4 text-sky-600" />
-                <span>Lộ trình Tích hợp Giai đoạn Tiếp theo</span>
-              </div>
-              <p className="leading-relaxed text-slate-600">
-                Mô-đun tiền xử lý tín hiệu số (DSP) và tự động lọc nhiễu chớp mắt (ICA) sẽ được tích hợp trong giai đoạn phát triển tiếp theo.
-              </p>
+              )}
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={handleExportDataset}
+                className="border-[#DCE6DF] text-[#262624] hover:bg-[#F5FAF7] text-xs"
+                icon={<Download className="size-3.5 text-[#575652]" aria-hidden />}
+              >
+                Xuất CSV
+              </Button>
+              <Button
+                type="button"
+                size="xs"
+                variant="primary"
+                onClick={() => setShowCreateForm((v) => !v)}
+                className="text-xs"
+                icon={<Plus className="size-3.5" aria-hidden />}
+              >
+                Thêm bản ghi
+              </Button>
             </div>
-          </div>
+          )}
         </div>
+
+        <nav
+          aria-label="Điều hướng Trạm Điện não"
+          className="border-b border-[#DCE6DF] flex items-center gap-6 overflow-x-auto"
+        >
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => switchTab(tab.id)}
+                className={cn(
+                  'border-b-2 pb-2.5 text-sm transition-colors whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#16A34A]',
+                  isActive
+                    ? 'border-[#16A34A] font-bold text-[#15803D]'
+                    : 'border-transparent font-normal text-[#6E6D68] hover:text-[#15803D]',
+                )}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
+      </header>
+
+      {/* TAB 1: qEEG Studio */}
+      {activeTab === 'qeeg' && (
+        <QeegStudioPanel
+          isProfessional={isProfessional}
+          onSavedToPlatform={(dataset) => {
+            setRecordings((prev) => [dataset, ...prev]);
+            setSelectedRecId(dataset.id);
+          }}
+          onSwitchTab={(tab) => switchTab(tab)}
+        />
       )}
 
-      {/* Main Tab 2: Datasets Management List (Structured Table in Pro Mode, Friendly Cards in General Mode) */}
-      {activeTab === 'datasets' && (
-        <>
+      {/* TAB 2: Personal EEG Datasets & Data-Owner Doctor Consent */}
+      {activeTab === 'personal' && (
+        <div className="space-y-4">
+          {/* Create Dataset Form */}
+          {showCreateForm && (
+            <Card className="p-4 border-[#DCE6DF] bg-[#F5FAF7] space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-[#141413]">Thêm bản ghi mới</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateForm(false)}
+                  className="text-xs font-medium text-[#6E6D68] hover:text-[#141413]"
+                >
+                  Đóng
+                </button>
+              </div>
+              <form onSubmit={handleCreateDataset} className="grid gap-3 sm:grid-cols-3 text-xs">
+                <div className="sm:col-span-2 space-y-1">
+                  <label htmlFor="personal-eeg-title" className="font-semibold text-[#262624] block">
+                    Tiêu đề *
+                  </label>
+                  <Input
+                    id="personal-eeg-title"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="Ví dụ: Đo sóng não giấc ngủ 8 kênh"
+                    className="bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="personal-eeg-rate" className="font-semibold text-[#262624] block">
+                    Tần số
+                  </label>
+                  <Input
+                    id="personal-eeg-rate"
+                    value={newSamplingRate}
+                    onChange={(e) => setNewSamplingRate(e.target.value)}
+                    placeholder="250 Hz"
+                    className="bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="personal-eeg-ch" className="font-semibold text-[#262624] block">
+                    Số kênh
+                  </label>
+                  <Input
+                    id="personal-eeg-ch"
+                    type="number"
+                    value={newChannelsCount}
+                    onChange={(e) => setNewChannelsCount(e.target.value)}
+                    placeholder="8"
+                    className="bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="personal-eeg-dur" className="font-semibold text-[#262624] block">
+                    Thời lượng
+                  </label>
+                  <Input
+                    id="personal-eeg-dur"
+                    value={newDuration}
+                    onChange={(e) => setNewDuration(e.target.value)}
+                    placeholder="15 phút 00 giây"
+                    className="bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="personal-eeg-note" className="font-semibold text-[#262624] block">
+                    Ghi chú
+                  </label>
+                  <Input
+                    id="personal-eeg-note"
+                    value={newClinicalNote}
+                    onChange={(e) => setNewClinicalNote(e.target.value)}
+                    placeholder="Ghi chú ngắn gọn..."
+                    className="bg-white"
+                  />
+                </div>
+                <div className="sm:col-span-3 flex justify-end gap-2 pt-1">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setShowCreateForm(false)}>
+                    Hủy
+                  </Button>
+                  <Button type="submit" size="sm" variant="primary" loading={createBusy} icon={<Plus className="size-3.5" aria-hidden />}>
+                    Lưu
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          )}
+
+          {consentFeedback && <Alert tone={consentFeedback.tone}>{consentFeedback.text}</Alert>}
+
+          {/* Recordings List / Table */}
           {isProfessional ? (
-            <Card className="p-0 overflow-hidden border-slate-300 shadow-2xs">
-              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <h2 className="font-bold text-slate-900 text-xs sm:text-sm">
-                  Danh mục Tập dữ liệu EEG Đã Cấp Quyền Truy Cập ({recordings.length})
+            <Card className="p-0 overflow-hidden border-[#DCE6DF]">
+              <div className="px-4 py-2.5 bg-[#F5FAF7] border-b border-[#DCE6DF] flex items-center justify-between">
+                <h2 className="font-semibold text-[#141413] text-xs sm:text-sm">
+                  Bản ghi EEG ({recordings.length})
                 </h2>
-                <span className="text-[11px] font-mono text-slate-500">
-                  Định dạng hỗ trợ: EDF+, BDF, CSV, MAT
-                </span>
               </div>
 
-              <div className="overflow-x-auto">
+              <div
+                tabIndex={0}
+                role="region"
+                aria-label="Bảng danh mục tập dữ liệu EEG cá nhân và được ủy quyền"
+                className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-[#16A34A]"
+              >
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-slate-200 bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                      <th className="py-2.5 px-3.5">Mã Hồ sơ</th>
-                      <th className="py-2.5 px-3.5">Tên Bản ghi Lâm sàng</th>
-                      <th className="py-2.5 px-3.5">Cấu hình Đạo trình</th>
+                    <tr className="border-b border-[#DCE6DF] bg-[#F5FAF7] text-[11px] font-semibold uppercase tracking-wider text-[#6E6D68]">
+                      <th className="py-2.5 px-3.5">Mã hồ sơ</th>
+                      <th className="py-2.5 px-3.5">Tiêu đề</th>
+                      <th className="py-2.5 px-3.5">Đạo trình</th>
                       <th className="py-2.5 px-3.5">Tần số / Thời lượng</th>
-                      <th className="py-2.5 px-3.5">Ủy quyền Chủ sở hữu</th>
+                      <th className="py-2.5 px-3.5">Quyền xem</th>
                       <th className="py-2.5 px-3.5 text-right">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200/80">
+                  <tbody className="divide-y divide-[#DCE6DF]">
                     {recordings.map((rec) => (
-                      <tr key={rec.id} className="hover:bg-slate-50/90">
-                        <td className="py-3 px-3.5 font-mono font-bold text-[#1E3A5F] whitespace-nowrap align-top">
+                      <tr
+                        key={rec.id}
+                        className={cn(
+                          'hover:bg-[#F5FAF7]/80',
+                          selectedRecId === rec.id && 'bg-[#ECFDF3]/70',
+                        )}
+                      >
+                        <td className="py-3 px-3.5 font-mono font-semibold text-[#141413] whitespace-nowrap align-top">
                           {rec.patientCode}
                         </td>
                         <td className="py-3 px-3.5 align-top max-w-md">
-                          <div className="font-bold text-slate-900">{rec.title}</div>
-                          <div className="text-[11px] text-slate-500 mt-0.5">
-                            Ngày ghi: {rec.date} · Chủ sở hữu: @{rec.ownerUsername}
+                          <div className="font-semibold text-[#141413]">{rec.title}</div>
+                          <div className="text-[11px] text-[#6E6D68] mt-0.5">
+                            {rec.date} · @{rec.ownerUsername}
                           </div>
                         </td>
-                        <td className="py-3 px-3.5 text-slate-700 align-top">
+                        <td className="py-3 px-3.5 text-[#575652] align-top">
                           {rec.channelsCount} kênh · {rec.montage}
                         </td>
-                        <td className="py-3 px-3.5 font-mono text-slate-700 whitespace-nowrap align-top">
+                        <td className="py-3 px-3.5 font-mono text-[#575652] whitespace-nowrap align-top tabular-nums">
                           {rec.samplingRate} · {rec.duration}
                         </td>
                         <td className="py-3 px-3.5 align-top">
-                          <span className="inline-flex items-center gap-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[11px] font-bold">
-                            <ShieldCheck className="size-3 text-emerald-600" />{' '}
-                            {rec.consentedProfessionals.length} chuyên gia
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#15803D]">
+                            <ShieldCheck className="size-3.5 text-[#16A34A] shrink-0" aria-hidden />
+                            {rec.consentedProfessionals.length} bác sĩ
                           </span>
                         </td>
                         <td className="py-3 px-3.5 text-right whitespace-nowrap align-top">
                           <Button
-                            size="sm"
+                            type="button"
+                            size="xs"
                             variant={selectedRecId === rec.id ? 'primary' : 'outline'}
-                            onClick={() => {
-                              setSelectedRecId(rec.id);
-                              setActiveTab('visualizer');
-                            }}
+                            onClick={() => setSelectedRecId(rec.id)}
                           >
-                            Mở Trạm Đọc
+                            {selectedRecId === rec.id ? 'Đang mở' : 'Xem'}
                           </Button>
                         </td>
                       </tr>
@@ -984,235 +689,248 @@ export function EEGHubPage() {
               </div>
             </Card>
           ) : (
-            <Card className="p-5 sm:p-6 border-slate-200/80 rounded-xl shadow-2xs space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div>
-                  <h2 className="font-bold text-slate-900 text-base">
-                    Các bản ghi sóng não cá nhân của bạn ({recordings.length})
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Nhấn vào bản ghi để xem biểu đồ sóng não hoặc quản lý bác sĩ được phép xem kết quả.
-                  </p>
-                </div>
-                <span className="text-xs text-teal-700 font-semibold bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200">
-                  Hỗ trợ EDF+, CSV
-                </span>
-              </div>
-
-              <div className="space-y-3.5">
-                {recordings.map((rec) => (
-                  <div
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {recordings.map((rec) => {
+                const isSelected = selectedRecId === rec.id;
+                return (
+                  <button
                     key={rec.id}
-                    onClick={() => {
-                      setSelectedRecId(rec.id);
-                      setActiveTab('visualizer');
-                    }}
-                    className={`p-4 sm:p-5 rounded-xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${
-                      selectedRecId === rec.id
-                        ? 'border-teal-500 bg-[#F0FDFA] shadow-2xs'
-                        : 'border-slate-200 bg-white hover:border-teal-300 hover:bg-slate-50/50'
-                    }`}
-                  >
-                    <div className="space-y-1.5 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-slate-900 text-sm sm:text-base">
-                          {rec.title}
-                        </span>
-                        <span className="rounded-full bg-sky-50 text-sky-800 border border-sky-200 px-2.5 py-0.5 text-[11px] font-semibold">
-                          {rec.status === 'ANALYZED' ? 'Đã có nhận xét Bác sĩ' : 'Đang chờ đọc'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-600">{rec.clinicalNote}</p>
-                      <div className="flex items-center gap-4 text-xs text-slate-500 pt-1 flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <Clock className="size-3.5 text-teal-600" /> {rec.date}
-                        </span>
-                        <span>Thời lượng: {rec.duration}</span>
-                        <span className="text-teal-700 font-semibold">
-                          Đang chia sẻ với {rec.consentedProfessionals.length} bác sĩ chuyên khoa
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-teal-200 text-teal-700 hover:bg-teal-50"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedRecId(rec.id);
-                          setActiveTab('access');
-                        }}
-                      >
-                        Quyền Bác sĩ
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="bg-teal-600 hover:bg-teal-700 text-white"
-                      >
-                        Xem sóng não
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-        </>
-      )}
-
-      {/* Main Tab 3: Authorized Expert Access & Data-Owner Consent Management */}
-      {activeTab === 'access' && (
-        <div className="space-y-5">
-          <Card className="p-5 sm:p-6 border-slate-200/90 shadow-2xs space-y-4">
-            <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div>
-                <h2 className="font-bold text-slate-900 text-sm sm:text-base">
-                  Kiểm soát Truy cập & Sự đồng thuận của Chủ sở hữu Dữ liệu (Data-Owner Consent)
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Trạng thái Chuyên gia không tự động cấp quyền xem mọi dữ liệu EEG của bệnh nhân. Chỉ các Bác sĩ / Nhà nghiên cứu có tích xanh được chủ sở hữu uỷ quyền mới có thể truy cập bản ghi:{' '}
-                  <strong className="text-slate-700">{selectedRec.title}</strong>
-                </p>
-              </div>
-              <span className="inline-flex items-center gap-1.5 rounded bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-bold text-emerald-800 shrink-0">
-                <ShieldCheck className="size-3.5 text-emerald-600" />
-                <span>Chủ sở hữu: @{selectedRec.ownerUsername}</span>
-              </span>
-            </div>
-
-            {consentFeedback && <Alert tone={consentFeedback.tone}>{consentFeedback.text}</Alert>}
-
-            {/* Data-Owner Consent Grant Form */}
-            {isOwnerOfSelected && (
-              <div className="rounded-lg border border-teal-200 bg-[#F0FDFA] p-4 space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <UserPlus className="size-4 text-teal-600" />
-                    <span>Cấp quyền đọc bản ghi EEG cho Bác sĩ / Chuyên gia đã xác minh:</span>
-                  </span>
-                  <div className="flex items-center gap-1.5 text-[11px]">
-                    <span className="text-slate-500">Chọn nhanh:</span>
-                    <button
-                      type="button"
-                      onClick={() => handleGrantConsent('dr_minh')}
-                      disabled={consentBusy}
-                      className="rounded bg-white border border-teal-200 px-2 py-0.5 font-semibold text-teal-700 hover:bg-teal-50"
-                    >
-                      + @dr_minh
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleGrantConsent('prof_lan')}
-                      disabled={consentBusy}
-                      className="rounded bg-white border border-teal-200 px-2 py-0.5 font-semibold text-teal-700 hover:bg-teal-50"
-                    >
-                      + @prof_lan
-                    </button>
-                  </div>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="flex-1">
-                    <Input
-                      value={consentTargetUsername}
-                      onChange={(e) => setConsentTargetUsername(e.target.value)}
-                      placeholder="Nhập username chuyên gia đã xác minh (ví dụ: dr_minh hoặc prof_lan)"
-                    />
-                  </div>
-                  <Button
-                    size="sm"
-                    loading={consentBusy}
-                    onClick={() => handleGrantConsent(consentTargetUsername)}
-                  >
-                    Cấp quyền truy cập
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* List of Consented Professionals */}
-            <div className="grid gap-3 sm:grid-cols-2">
-              {selectedRec.consentedProfessionals.map((prof) => (
-                <div
-                  key={prof.username}
-                  className="p-4 rounded-lg border border-slate-200 bg-slate-50/60 space-y-2 flex flex-col justify-between"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                        <UserCheck className="size-4 text-teal-600" />
-                        <span>{prof.displayName}</span>
-                      </div>
-                      <span className="text-[11px] font-mono text-slate-400">@{prof.username}</span>
-                    </div>
-                    <p className="text-xs text-slate-600">
-                      {prof.title} · {prof.specialty}
-                    </p>
-                  </div>
-
-                  <div className="pt-2 flex items-center justify-between gap-2">
-                    <span className="inline-block rounded bg-teal-50 text-teal-800 border border-teal-200 px-2 py-0.5 text-[10px] font-bold">
-                      Đã được chủ sở hữu uỷ quyền đọc EEG
-                    </span>
-                    {isOwnerOfSelected && (
-                      <button
-                        type="button"
-                        disabled={consentBusy}
-                        onClick={() => handleRevokeConsent(prof.username)}
-                        className="inline-flex items-center gap-1 rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 hover:bg-rose-100"
-                      >
-                        <UserX className="size-3" />
-                        <span>Thu hồi</span>
-                      </button>
+                    type="button"
+                    onClick={() => setSelectedRecId(rec.id)}
+                    className={cn(
+                      'p-3.5 text-left rounded-xl border transition-colors',
+                      isSelected
+                        ? 'border-[#86EFAC] bg-[#ECFDF3]'
+                        : 'border-[#DCE6DF] bg-white hover:border-[#86EFAC]',
                     )}
-                  </div>
-                </div>
-              ))}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-sm text-[#141413] line-clamp-1">{rec.title}</span>
+                      <span className="shrink-0 inline-flex items-center gap-1.5 text-[11px] font-medium text-[#6E6D68]">
+                        <span
+                          className={cn(
+                            'size-1.5 rounded-full',
+                            rec.status === 'ANALYZED' ? 'bg-[#16A34A]' : 'bg-amber-500',
+                          )}
+                          aria-hidden
+                        />
+                        {rec.status === 'ANALYZED' ? 'Đã đọc' : 'Chờ đọc'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#6E6D68] mt-1">
+                      {rec.patientCode} · {rec.date} · {rec.channelsCount} kênh
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-              {selectedRec.consentedProfessionals.length === 0 && (
-                <div className="sm:col-span-2 rounded-lg border border-dashed border-slate-200 p-6 text-center text-xs text-slate-500">
-                  Hiện chưa có chuyên gia nào được cấp quyền truy cập bản ghi này. Bản ghi đang ở chế độ riêng tư 100% chỉ mình chủ sở hữu xem được.
-                </div>
+          {/* Selected Record Grid */}
+          <div className="grid gap-4 lg:grid-cols-12 items-start">
+            <div className="lg:col-span-8 min-w-0 space-y-3">
+              <BrainWaveformViewer
+                waveforms={previewWaveform}
+                samplingRateHz={parseInt(selectedRec.samplingRate, 10) || 250}
+                isProfessional={isProfessional}
+                title={selectedRec.patientCode}
+                subtitle={`${selectedRec.channelsCount} kênh · ${selectedRec.samplingRate}`}
+              />
+
+              <div className="rounded-xl border border-[#DCE6DF] bg-[#F5FAF7] px-4 py-3 text-xs sm:text-sm text-[#262624]">
+                <span className="font-semibold text-[#141413] mr-1.5">Nhận xét:</span>
+                {selectedRec.clinicalNote}
+              </div>
+
+              {isProfessional && (
+                <details className="rounded-xl border border-[#DCE6DF] bg-white">
+                  <summary className="cursor-pointer px-4 py-2.5 text-xs font-semibold text-[#141413]">
+                    Thông số 6 đạo trình ▾
+                  </summary>
+                  <div
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Bảng thông số định lượng các đạo trình điện não 10-20"
+                    className="overflow-x-auto border-t border-[#DCE6DF] focus-visible:outline-2 focus-visible:outline-[#16A34A]"
+                  >
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-[#DCE6DF] bg-[#F5FAF7] text-[11px] font-semibold uppercase tracking-wider text-[#6E6D68]">
+                          <th className="py-2 px-3">Đạo trình</th>
+                          <th className="py-2 px-3">Vùng</th>
+                          <th className="py-2 px-3">Dải tần</th>
+                          <th className="py-2 px-3 text-right">Biên độ</th>
+                          <th className="py-2 px-3 text-right">ERD/ERS</th>
+                          <th className="py-2 px-3 text-right">Trở kháng</th>
+                          <th className="py-2 px-3">Trạng thái</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#DCE6DF]">
+                        {EEG_CHANNELS.map((ch) => (
+                          <tr key={ch.name} className="hover:bg-[#F5FAF7]">
+                            <td className="py-2 px-3 font-mono font-semibold text-[#141413]">{ch.name}</td>
+                            <td className="py-2 px-3 text-[#575652]">{ch.region}</td>
+                            <td className="py-2 px-3 font-mono text-[#575652]">{ch.freq}</td>
+                            <td className="py-2 px-3 text-right font-mono font-semibold text-[#141413] tabular-nums">
+                              {ch.peakUv}
+                            </td>
+                            <td className="py-2 px-3 text-right font-mono font-medium text-[#15803D] tabular-nums">
+                              {ch.erdPercent}
+                            </td>
+                            <td className="py-2 px-3 text-right font-mono text-[#575652] tabular-nums">
+                              {ch.impedance}
+                            </td>
+                            <td className="py-2 px-3 text-[#575652]">
+                              {ch.clinicalStatus}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
               )}
             </div>
-          </Card>
 
-          {/* Immutable Access & Consent Audit History */}
-          <Card className="p-5 border-slate-200/90 shadow-2xs space-y-3">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
-              <History className="size-4 text-brand-600" />
-              <h3 className="text-xs sm:text-sm font-bold text-slate-800">
-                Nhật ký Cấp quyền & Lịch sử Truy cập Bản ghi (Dataset Access History)
-              </h3>
-            </div>
-            <div className="space-y-2">
-              {selectedRec.accessHistory.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 rounded-md border border-slate-200/80 bg-slate-50/70 px-3.5 py-2 text-xs"
-                >
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2 font-semibold text-slate-800">
-                      <span className="rounded bg-white border border-slate-200 px-1.5 py-0.5 text-[10px] font-mono text-brand-700">
-                        {entry.action}
-                      </span>
-                      <span>{entry.note}</span>
-                    </div>
-                    {entry.targetProfessional && (
-                      <p className="text-[11px] text-slate-500">
-                        Đối tượng: {entry.targetProfessional} · Thực hiện bởi: @{entry.actorUsername}
-                      </p>
-                    )}
-                  </div>
-                  <span className="text-[11px] font-mono text-slate-400 shrink-0">
-                    {new Date(entry.timestamp).toLocaleString('vi-VN')}
-                  </span>
+            {/* Right Sidebar: Single Consent & Info Card + Collapsed PSD & History */}
+            <div className="lg:col-span-4 min-w-0 space-y-3">
+              <Card className="p-4 border-[#DCE6DF] space-y-3">
+                <div className="text-xs text-[#6E6D68] flex flex-wrap gap-x-2.5 gap-y-1 border-b border-[#DCE6DF] pb-2.5">
+                  <span>{selectedRec.duration}</span>
+                  <span>·</span>
+                  <span className="font-mono">{selectedRec.samplingRate}</span>
+                  <span>·</span>
+                  <span className="font-mono">@{selectedRec.ownerUsername}</span>
                 </div>
-              ))}
+
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-[#141413]">
+                    Bác sĩ được xem ({selectedRec.consentedProfessionals.length})
+                  </h3>
+
+                  {selectedRec.consentedProfessionals.length === 0 ? (
+                    <p className="text-xs text-[#6E6D68]">Chưa chia sẻ (Riêng tư)</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {selectedRec.consentedProfessionals.map((prof) => (
+                        <div
+                          key={prof.username}
+                          className="flex items-center justify-between gap-2 rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] px-2.5 py-1.5 text-xs"
+                        >
+                          <span className="font-medium text-[#141413] truncate">{prof.displayName}</span>
+                          {isOwnerOfSelected && (
+                            <button
+                              type="button"
+                              disabled={consentBusy}
+                              onClick={() => handleRevokeConsent(prof.username)}
+                              className="inline-flex items-center gap-1 shrink-0 rounded border border-[#DCE6DF] bg-white px-2 py-0.5 text-[11px] font-medium text-[#575652] hover:text-red-700 hover:border-red-200 transition-colors"
+                            >
+                              <UserX className="size-3" aria-hidden />
+                              <span>Thu hồi</span>
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {isOwnerOfSelected && (
+                  <div className="pt-2 border-t border-[#DCE6DF] space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex-1 min-w-0">
+                        <Input
+                          id="consent-target-username"
+                          value={consentTargetUsername}
+                          onChange={(e) => setConsentTargetUsername(e.target.value)}
+                          placeholder="Username bác sĩ (vd: dr_minh)"
+                          className="bg-white text-xs h-8"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        size="xs"
+                        variant="primary"
+                        loading={consentBusy}
+                        onClick={() => handleGrantConsent(consentTargetUsername)}
+                        className="h-8 px-3 whitespace-nowrap shrink-0"
+                      >
+                        Chia sẻ
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                      {(['dr_minh', 'prof_lan', 'bs_noitru_khang'] as const).map((uname) => (
+                        <button
+                          key={uname}
+                          type="button"
+                          onClick={() => handleGrantConsent(uname)}
+                          disabled={consentBusy}
+                          className="rounded-md bg-[#EFF6F1] border border-[#DCE6DF] px-2 py-0.5 font-medium text-[#374151] hover:text-[#15803D] hover:bg-[#E2EFE6] transition-colors"
+                        >
+                          +{uname}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
+
+              <details className="rounded-xl border border-[#DCE6DF] bg-white">
+                <summary className="list-none cursor-pointer px-4 py-2.5 text-xs font-medium text-[#575652] hover:text-[#141413] flex items-center justify-between">
+                  <span>Phổ tần số &amp; Lịch sử truy cập ({selectedRec.accessHistory.length})</span>
+                  <span aria-hidden>▾</span>
+                </summary>
+                <div className="px-4 pb-4 pt-2 border-t border-[#DCE6DF] space-y-4">
+                  <div className="space-y-2 text-xs font-mono tabular-nums">
+                    {[
+                      { label: 'Delta (0.5–4 Hz)', pct: 14, bar: 'bg-[#8A8882]' },
+                      { label: 'Theta (4–8 Hz)', pct: 22, bar: 'bg-[#575652]' },
+                      { label: 'Alpha (8–13 Hz)', pct: 42, bar: 'bg-[#16A34A]' },
+                      { label: 'Beta (13–30 Hz)', pct: 22, bar: 'bg-[#141413]' },
+                    ].map((b) => (
+                      <div key={b.label}>
+                        <div className="flex justify-between text-[11px] font-medium text-[#575652] pb-1">
+                          <span className="font-sans">{b.label}</span>
+                          <span>{b.pct}%</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-[#EFF6F1] overflow-hidden">
+                          <div className={cn('h-full rounded-full', b.bar)} style={{ width: `${b.pct}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-1.5 border-t border-[#DCE6DF] pt-3">
+                    {selectedRec.accessHistory.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] px-2.5 py-1.5 text-[11px] space-y-0.5"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono font-semibold text-[#141413]">{entry.action}</span>
+                          <span className="font-mono text-[10px] text-[#6E6D68] tabular-nums">
+                            {new Date(entry.timestamp).toLocaleString('vi-VN')}
+                          </span>
+                        </div>
+                        <p className="text-[#575652]">{entry.note}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </details>
             </div>
-          </Card>
+          </div>
         </div>
+      )}
+
+      {/* TAB 3: Data Bank Marketplace */}
+      {activeTab === 'databank' && (
+        <DataBankMarketplacePanel isProfessional={isProfessional} />
+      )}
+
+      {/* TAB 4: Neural Network Training DB */}
+      {activeTab === 'neural-db' && (
+        <NeuralDatabasePanel isProfessional={isProfessional} />
       )}
     </div>
   );

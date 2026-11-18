@@ -11,8 +11,16 @@ import {
   Users,
   Heart,
   BookOpen,
+  Stethoscope,
+  Download,
+  ThumbsUp,
 } from 'lucide-react';
-import { usersApi, messagesApi, communitiesApi, contributionsApi } from '../api/endpoints';
+import {
+  usersApi,
+  communitiesApi,
+  contributionsApi,
+  communityInsightsApi,
+} from '../api/endpoints';
 import { ApiError, errorMessage } from '../api/client';
 import { Alert, Avatar, Button, Card, DataTableContainer, EmptyState, Spinner } from '../components/ui';
 import {
@@ -23,11 +31,13 @@ import {
 import { FollowButton } from '../components/user/FollowButton';
 import { useMode } from '../context/ModeContext';
 import { PostCard } from '../features/feed/PostCard';
+import { useChatPopup } from '../features/messages/ChatPopupContext';
 
 export function ProfilePage() {
   const { username = '' } = useParams();
   const { isProfessional } = useMode();
   const navigate = useNavigate();
+  const { startChatWithUser } = useChatPopup();
 
   const query = useQuery({
     queryKey: ['users', username],
@@ -52,10 +62,15 @@ export function ProfilePage() {
     enabled: Boolean(query.data?.user.isSelf && isProfessional),
   });
 
+  const spotlightQuery = useQuery({
+    queryKey: ['community-spotlight'],
+    queryFn: () => communityInsightsApi.getSpotlight(),
+    staleTime: 60 * 1000,
+  });
+
   const handleStartChat = async (targetUserId: string) => {
     try {
-      const res = await messagesApi.startConversation(targetUserId);
-      navigate(`/messages?conv=${res.conversation.id}`);
+      await startChatWithUser(targetUserId);
     } catch {
       navigate('/messages');
     }
@@ -79,28 +94,34 @@ export function ProfilePage() {
 
   const user = query.data.user;
   const posts = postsQuery.data?.items ?? [];
+  const hasVerifiedProfile = user.professionalProfiles.some(
+    (p) => p.verificationStatus === 'VERIFIED',
+  );
+  const spotlightEntry = (spotlightQuery.data?.professionals ?? []).find(
+    (item) => item.user.id === user.id || item.user.username === user.username,
+  );
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="mx-auto max-w-4xl space-y-6">
       {/* Mode-Differentiated Profile Overview Card */}
       <Card
-        className={`overflow-hidden p-0 shadow-2xs ${
-          isProfessional ? 'rounded-lg border-slate-300' : 'rounded-xl border-teal-200/80'
+        className={`overflow-hidden p-0 shadow-2xs border-[#DCE6DF] ${
+          isProfessional ? 'rounded-lg' : 'rounded-xl'
         }`}
       >
         {isProfessional ? (
-          <div className="bg-[#162B47] px-6 py-4 text-white flex flex-wrap items-center justify-between gap-2 border-b border-slate-700">
-            <div className="flex items-center gap-2 text-xs font-semibold text-teal-200">
-              <ShieldCheck className="size-4 text-teal-300" />
-              <span>Hồ sơ Định danh Chuyên gia Y tế & Học thuật (Doximity / ResearchGate Registry)</span>
+          <div className="bg-[#14532D] px-6 py-4 text-white flex flex-wrap items-center justify-between gap-2 border-b border-[#052E16]">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-200">
+              <ShieldCheck className="size-4 text-emerald-300" />
+              <span>Hồ sơ Định danh Chuyên gia Y tế & Học thuật (CCHN / ORCID Verified Registry)</span>
             </div>
-            <span className="font-mono text-[11px] text-slate-300">
+            <span className="font-mono text-[11px] text-emerald-100/80">
               ID: @{user.username}
             </span>
           </div>
         ) : (
-          <div className="h-20 sm:h-24 bg-[#F0FDFA] border-b border-teal-200/70 border-t-4 border-t-teal-600 px-6 flex items-center justify-end">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 border border-teal-200 px-3 py-1 text-xs font-semibold text-teal-700">
+          <div className="h-20 sm:h-24 bg-[#F5FAF7] border-b border-[#DCE6DF] border-t-4 border-t-[#16A34A] px-6 flex items-center justify-end">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#DCE6DF] px-3 py-1 text-xs font-semibold text-[#15803D]">
               Thành viên Cộng đồng NeuroLink
             </span>
           </div>
@@ -113,7 +134,7 @@ export function ProfilePage() {
                 name={user.displayName}
                 src={user.avatarUrl}
                 size="xl"
-                className="ring-2 ring-slate-200"
+                className="ring-2 ring-[#DCE6DF]"
               />
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -141,8 +162,8 @@ export function ProfilePage() {
                     size="sm"
                     className={
                       isProfessional
-                        ? 'rounded border-slate-300 font-semibold'
-                        : 'rounded-full border-teal-200 text-teal-800 hover:bg-teal-50 px-4 font-semibold'
+                        ? 'rounded border-[#DCE6DF] font-semibold'
+                        : 'rounded-full border-[#DCE6DF] text-[#15803D] hover:bg-[#ECFDF3] px-4 font-semibold'
                     }
                   >
                     Chỉnh sửa hồ sơ
@@ -171,7 +192,7 @@ export function ProfilePage() {
             </p>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm text-slate-600 border-t border-slate-100 pt-3.5">
+          <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm text-slate-600 border-t border-[#EEF3F0] pt-3.5">
             <span>
               <strong className="text-slate-900 font-bold tabular-nums">{user.stats.posts}</strong> bài viết
             </span>
@@ -182,12 +203,67 @@ export function ProfilePage() {
               <strong className="text-slate-900 font-bold tabular-nums">{user.stats.following}</strong> đang theo dõi
             </span>
             <span className="flex items-center gap-1.5 text-slate-500">
-              <CalendarDays className="size-3.5 text-teal-600" /> Tham gia{' '}
+              <CalendarDays className="size-3.5 text-[#16A34A]" /> Tham gia{' '}
               {new Date(user.createdAt).toLocaleDateString('vi-VN')}
             </span>
           </div>
         </div>
       </Card>
+
+      {/* Verified Community Impact Metrics Card */}
+      {hasVerifiedProfile && (
+        <Card className="p-6 border-teal-200/80 bg-white space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">
+                Chỉ số Đóng góp Cộng đồng & Lâm sàng
+              </h2>
+              <p className="text-xs text-slate-500">
+                Tổng hợp hoạt động đọc ca sóng não, chia sẻ Data Bank và tương tác học thuật
+              </p>
+            </div>
+            {spotlightEntry && (
+              <span className="rounded-md bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-mono font-bold text-amber-800 tabular-nums">
+                {spotlightEntry.metrics.impactScore} điểm tác động
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 tabular-nums">
+            <div className="rounded-lg border border-slate-200/80 bg-slate-50/70 p-3.5">
+              <span className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
+                <Stethoscope className="size-3.5 text-teal-600" aria-hidden /> Ca đọc sóng não
+              </span>
+              <span className="mt-1 block text-xl font-extrabold text-slate-900 font-mono">
+                {spotlightEntry?.metrics.consultationsCompleted ?? 0}
+              </span>
+            </div>
+            <div className="rounded-lg border border-slate-200/80 bg-slate-50/70 p-3.5">
+              <span className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
+                <Download className="size-3.5 text-sky-600" aria-hidden /> Lượt tải DataBank
+              </span>
+              <span className="mt-1 block text-xl font-extrabold text-slate-900 font-mono">
+                {spotlightEntry?.metrics.dataBankDownloads ?? 0}
+              </span>
+            </div>
+            <div className="rounded-lg border border-slate-200/80 bg-slate-50/70 p-3.5">
+              <span className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
+                <ThumbsUp className="size-3.5 text-teal-600" aria-hidden /> Lượt thích bài viết
+              </span>
+              <span className="mt-1 block text-xl font-extrabold text-slate-900 font-mono">
+                {spotlightEntry?.metrics.totalLikesReceived ?? 0}
+              </span>
+            </div>
+            <div className="rounded-lg border border-slate-200/80 bg-slate-50/70 p-3.5">
+              <span className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
+                <Users className="size-3.5 text-[#162B47]" aria-hidden /> Người theo dõi
+              </span>
+              <span className="mt-1 block text-xl font-extrabold text-slate-900 font-mono">
+                {spotlightEntry?.metrics.followersCount ?? user.stats.followers}
+              </span>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Professional Credentials Section: Structured Table in Pro Mode, Friendly Cards in General Mode */}
       {user.professionalProfiles.length > 0 && (
@@ -394,14 +470,14 @@ export function ProfilePage() {
           </table>
         </DataTableContainer>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* General Mode: Interests */}
-          <Card className="p-5 border-teal-200/70 rounded-xl shadow-2xs space-y-3">
+          <Card className="p-6 border-teal-200/70 rounded-xl shadow-2xs space-y-3">
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <Heart className="size-4 text-teal-600" />
-              <span>Chủ đề Quan tâm (Interests)</span>
+              <span>Chủ đề Quan tâm</span>
             </h2>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
               Các chủ đề chăm sóc sức khỏe và khoa học não bộ đang theo dõi trên NeuroLink:
             </p>
             <div className="flex flex-wrap gap-1.5 pt-1">
@@ -423,7 +499,7 @@ export function ProfilePage() {
           </Card>
 
           {/* General Mode: Community Activity */}
-          <Card className="p-5 border-sky-200/70 rounded-xl shadow-2xs space-y-3">
+          <Card className="p-6 border-sky-200/70 rounded-xl shadow-2xs space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Users className="size-4 text-sky-600" />

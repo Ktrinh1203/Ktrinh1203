@@ -35,11 +35,21 @@ export function LoginPage() {
     }
   }
 
-  const fillAccount = (username: string) => {
+  async function quickLogin(username: string) {
+    if (submitting) return;
     setIdentifier(username);
     setPassword('Password123');
+    setSubmitting(true);
     setError(null);
-  };
+    try {
+      await login(username, 'Password123');
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <AuthLayout
@@ -48,7 +58,7 @@ export function LoginPage() {
       footer={
         <>
           Chưa có tài khoản?{' '}
-          <Link to="/register" className="font-medium text-brand-700 hover:underline">
+          <Link to="/register" className="font-medium text-[#16A34A] hover:text-[#15803D] hover:underline">
             Đăng ký tài khoản mới
           </Link>
         </>
@@ -80,39 +90,61 @@ export function LoginPage() {
         </Button>
       </form>
 
-      {/* Demo Account Quick-Fill Buttons */}
-      <div className="mt-6 border-t border-slate-100 pt-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-          Đăng nhập nhanh tài khoản mẫu:
+      {/* Demo Account Quick-Login Buttons */}
+      <div className="mt-6 border-t border-[#DCE6DF] pt-4 space-y-2">
+        <p className="text-xs font-medium text-[#6E6D68]">
+          Đăng nhập nhanh tài khoản mẫu
         </p>
+        <button
+          type="button"
+          disabled={submitting}
+          onClick={() => void quickLogin('hoa_health')}
+          className="w-full rounded-lg border border-[#86EFAC] bg-[#ECFDF3] px-3.5 py-2.5 text-left text-xs hover:bg-[#DCFCE7] transition-colors disabled:opacity-60"
+        >
+          <span className="flex items-center justify-between gap-2 font-semibold text-[#141413]">
+            <span>Nguyễn Thanh Hoa — Người dùng cá nhân</span>
+            <span className="text-[11px] font-semibold text-[#15803D]">Khuyên dùng</span>
+          </span>
+          <span className="block text-[11px] text-[#6E6D68] mt-0.5">
+            Trải nghiệm đo sóng não, hỏi bác sĩ và nhật ký giấc ngủ
+          </span>
+        </button>
         <div className="grid grid-cols-2 gap-1.5 text-xs">
           <button
             type="button"
-            onClick={() => fillAccount('dr_minh')}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-left text-slate-700 hover:bg-brand-50 hover:border-brand-300 transition-colors"
+            disabled={submitting}
+            onClick={() => void quickLogin('dr_minh')}
+            className="rounded-lg border border-[#DCE6DF] bg-white px-2.5 py-2 text-left hover:bg-[#F5FAF7] hover:border-[#86EFAC] transition-colors disabled:opacity-60"
           >
-            🩺 <strong>BS. Minh</strong> (Bác sĩ)
+            <strong className="block font-semibold text-[#141413]">BS. Nguyễn Văn Minh</strong>
+            <span className="text-[11px] text-[#6E6D68]">Bác sĩ đọc ca</span>
           </button>
           <button
             type="button"
-            onClick={() => fillAccount('prof_lan')}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-left text-slate-700 hover:bg-brand-50 hover:border-brand-300 transition-colors"
+            disabled={submitting}
+            onClick={() => void quickLogin('bs_noitru_khang')}
+            className="rounded-lg border border-[#DCE6DF] bg-white px-2.5 py-2 text-left hover:bg-[#F5FAF7] hover:border-[#86EFAC] transition-colors disabled:opacity-60"
           >
-            🔬 <strong>PGS. Lan</strong> (BCI)
+            <strong className="block font-semibold text-[#141413]">BS. Nội trú Lê Minh Khang</strong>
+            <span className="text-[11px] text-[#6E6D68]">Trực ngoài giờ</span>
           </button>
           <button
             type="button"
-            onClick={() => fillAccount('tuan_bme')}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-left text-slate-700 hover:bg-brand-50 hover:border-brand-300 transition-colors"
+            disabled={submitting}
+            onClick={() => void quickLogin('prof_lan')}
+            className="rounded-lg border border-[#DCE6DF] bg-white px-2.5 py-2 text-left hover:bg-[#F5FAF7] hover:border-[#86EFAC] transition-colors disabled:opacity-60"
           >
-            🎓 <strong>Tuấn BME</strong> (Sinh viên)
+            <strong className="block font-semibold text-[#141413]">PGS. Trần Mai Lan</strong>
+            <span className="text-[11px] text-[#6E6D68]">Nghiên cứu Data Bank</span>
           </button>
           <button
             type="button"
-            onClick={() => fillAccount('admin')}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-left text-slate-700 hover:bg-brand-50 hover:border-brand-300 transition-colors"
+            disabled={submitting}
+            onClick={() => void quickLogin('admin')}
+            className="rounded-lg border border-[#DCE6DF] bg-white px-2.5 py-2 text-left hover:bg-[#F5FAF7] hover:border-[#86EFAC] transition-colors disabled:opacity-60"
           >
-            🛡️ <strong>Admin</strong> (Quản trị)
+            <strong className="block font-semibold text-[#141413]">Quản trị viên</strong>
+            <span className="text-[11px] text-[#6E6D68]">Điều phối hệ thống</span>
           </button>
         </div>
       </div>

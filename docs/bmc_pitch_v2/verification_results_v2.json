@@ -1,0 +1,62 @@
+{
+  "ai_rules": {
+    "passed": true,
+    "checks": []
+  },
+  "report_html_style": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "No bold inside <p> or <li>",
+        "passed": true,
+        "details": []
+      },
+      {
+        "name": "Zero emoji in report",
+        "passed": true
+      },
+      {
+        "name": "Report 100% monochrome",
+        "passed": true,
+        "details": {
+          "totalHexFound": 18,
+          "nonMonoHex": []
+        }
+      }
+    ]
+  },
+  "bmc_slide_monochrome": {
+    "passed": true,
+    "checks": [
+      {
+        "svgInsideCardsCount": 0,
+        "nonMonoHex": []
+      }
+    ]
+  },
+  "slide_render": {
+    "passed": true,
+    "checks": [
+      {
+        "scrollMetrics": {
+          "bodyScrollHeight": 1080,
+          "htmlScrollHeight": 1080,
+          "innerHeight": 1080
+        },
+        "footerOverlapCheck": {
+          "hasFooter": true,
+          "overlaps": [],
+          "totalCardsChecked": 0
+        }
+      }
+    ]
+  },
+  "report_pdf": {
+    "passed": true,
+    "checks": []
+  },
+  "report_previews": {
+    "passed": true,
+    "checks": []
+  }
+}

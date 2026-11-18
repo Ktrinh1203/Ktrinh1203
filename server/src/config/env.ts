@@ -26,6 +26,7 @@ const envSchema = z.object({
   BCRYPT_ROUNDS: z.coerce.number().int().min(4).max(15).default(12),
   UPLOAD_DIR: z.string().default('uploads'),
   MAX_UPLOAD_MB: z.coerce.number().positive().max(20).default(5),
+  QEEG_SERVICE_URL: z.string().default('http://127.0.0.1:8001'),
 });
 
 export type Env = z.infer<typeof envSchema>;

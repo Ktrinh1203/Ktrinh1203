@@ -1,6 +1,6 @@
-// PBL4_Web database schema
-// Social networking platform for healthcare & neuroscience communities.
-// NOTE: This schema intentionally contains NO EEG / dataset / diagnosis entities.
+// NeuroLink Unified Platform Database Schema
+// Connects healthcare & neuroscience social community, qEEG diagnostic workstation,
+// Neural Network training dataset repository, and 4-pillar startup workflows.
 
 generator client {
   provider = "prisma-client-js"
@@ -69,6 +69,8 @@ enum NotificationType {
   VERIFICATION_UPDATE
   CONTRIBUTION_UPDATE
   REWARD_UPDATE
+  CONSULTATION_UPDATE
+  DATABANK_UPDATE
 }
 
 enum ContributionCategory {
@@ -95,6 +97,50 @@ enum CreditTransactionType {
   ADMIN_ADJUSTMENT
   REWARD_REVERSAL
   REFUND
+  CONSULTATION_ESCROW
+  CONSULTATION_EARNING
+  CONSULTATION_REFUND
+  DATABANK_PURCHASE
+  DATABANK_ROYALTY
+  STARTER_GRANT
+}
+
+enum ClinicalCategory {
+  VASCULAR_STROKE
+  EPILEPSY_ICU
+  SLEEP_COGNITIVE
+  HARDWARE_BCI
+}
+
+enum NeuralLabel {
+  CONTROL
+  ISCHEMIC_STROKE
+  HEMORRHAGIC_STROKE
+  EPILEPTIFORM_SLOWING
+  COGNITIVE_FATIGUE
+}
+
+enum DatasetSplit {
+  TRAIN
+  VALIDATION
+  TEST
+  EXTERNAL_HOLDOUT
+}
+
+enum ConsultationStatus {
+  OPEN
+  CLAIMED
+  ANSWERED
+  ACCEPTED
+  CANCELLED
+}
+
+enum WorkBlockType {
+  DEEP_WORK
+  LIGHT_ADMIN
+  NEURO_RECOVERY
+  SLEEP_TARGET
+  CLINICAL_CHECK
 }
 
 enum RewardCategory {
@@ -183,6 +229,15 @@ model User {
   transactionsActed             CreditTransaction[]   @relation("TransactionActor")
   rewardRedemptions             RewardRedemption[]    @relation("UserRedemptions")
   redemptionsReviewed           RewardRedemption[]    @relation("RedemptionReviewer")
+  neuralSamplesUploaded         NeuralTrainingSample[] @relation("NeuralSampleUploader")
+  neuralSamplesVerified         NeuralTrainingSample[] @relation("NeuralSampleVerifier")
+  dataBankListings              DataBankListing[]     @relation("DataBankAuthor")
+  dataBankPurchases             DataBankPurchase[]    @relation("DataBankBuyer")
+  consultationsRequested        ConsultationTicket[]  @relation("ConsultationRequester")
+  consultationsClaimed          ConsultationTicket[]  @relation("ConsultationClaimer")
+  consultationReplies           ConsultationReply[]   @relation("ConsultationResponder")
+  healthCheckIns                HealthCheckIn[]
+  workingPlanBlocks             WorkingPlanBlock[]
 
   @@index([displayName])
 }
@@ -612,4 +667,159 @@ model RewardRedemption {
 
   @@index([userId, status])
   @@index([status, createdAt(sort: Desc)])
+}
+
+// ---------------------------------------------------------------------------
+// Unified qEEG Neural Network DB & 4 Startup Pillars
+// ---------------------------------------------------------------------------
+
+model NeuralTrainingSample {
+  id                    String           @id @default(uuid()) @db.Uuid
+  datasetId             String?          @db.VarChar(80)
+  uploaderId            String           @db.Uuid
+  uploader              User             @relation("NeuralSampleUploader", fields: [uploaderId], references: [id], onDelete: Cascade)
+  subjectCode           String           @db.VarChar(60)
+  clinicalCategory      ClinicalCategory
+  groundTruthLabel      NeuralLabel
+  split                 DatasetSplit     @default(TRAIN)
+  samplingRateHz        Int              @default(500)
+  channelsCount         Int              @default(6)
+  montage               String           @db.VarChar(200)
+  signalQualityScore    Float            @default(0.95)
+  dar                   Float
+  bsi                   Float
+  tar                   Float
+  pri                   Float            @default(0.0)
+  wpli                  Float            @default(0.3)
+  tpaLockoutTriggered   Boolean          @default(false)
+  spectralBandsJson     String           @db.Text
+  featureVectorJson     String           @db.Text
+  waveformPreviewJson   String           @db.Text
+  verifiedById          String?          @db.Uuid
+  verifiedBy            User?            @relation("NeuralSampleVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  deidentifiedConfirmed Boolean          @default(true)
+  createdAt             DateTime         @default(now())
+
+  consultations         ConsultationTicket[]
+
+  @@index([clinicalCategory, groundTruthLabel])
+  @@index([split, createdAt(sort: Desc)])
+  @@index([uploaderId])
+}
+
+model DataBankListing {
+  id                 String           @id @default(uuid()) @db.Uuid
+  authorId           String           @db.Uuid
+  author             User             @relation("DataBankAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  datasetId          String?          @db.VarChar(80)
+  title              String           @db.VarChar(220)
+  summary            String           @db.VarChar(2000)
+  clinicalCategory   ClinicalCategory
+  methodologyNote    String           @db.Text
+  sampleCount        Int              @default(1)
+  channelsSpec       String           @db.VarChar(160)
+  samplingRateHz     Int              @default(500)
+  priceCredits       Int              @default(0)
+  downloadsCount     Int              @default(0)
+  previewMetricsJson String           @db.Text
+  payloadCsvJson     String           @db.Text
+  status             ContentStatus    @default(PUBLISHED)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  purchases          DataBankPurchase[]
+
+  @@index([clinicalCategory, status, createdAt(sort: Desc)])
+  @@index([authorId])
+}
+
+model DataBankPurchase {
+  id          String          @id @default(uuid()) @db.Uuid
+  listingId   String          @db.Uuid
+  listing     DataBankListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerId     String          @db.Uuid
+  buyer       User            @relation("DataBankBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  creditsPaid Int
+  createdAt   DateTime        @default(now())
+
+  @@unique([listingId, buyerId])
+  @@index([buyerId])
+}
+
+model ConsultationTicket {
+  id               String                @id @default(uuid()) @db.Uuid
+  requesterId      String                @db.Uuid
+  requester        User                  @relation("ConsultationRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  claimedById      String?               @db.Uuid
+  claimedBy        User?                 @relation("ConsultationClaimer", fields: [claimedById], references: [id], onDelete: SetNull)
+  datasetId        String?               @db.VarChar(80)
+  neuralSampleId   String?               @db.Uuid
+  neuralSample     NeuralTrainingSample? @relation(fields: [neuralSampleId], references: [id], onDelete: SetNull)
+  title            String                @db.VarChar(200)
+  symptomSummary   String                @db.VarChar(2000)
+  clinicalCategory ClinicalCategory
+  bountyCredits    Int                   @default(50)
+  urgentRedFlag    Boolean               @default(false)
+  status           ConsultationStatus    @default(OPEN)
+  acceptedReplyId  String?               @db.Uuid
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  replies          ConsultationReply[]
+
+  @@index([status, clinicalCategory, createdAt(sort: Desc)])
+  @@index([requesterId])
+  @@index([claimedById])
+}
+
+model ConsultationReply {
+  id                  String             @id @default(uuid()) @db.Uuid
+  ticketId            String             @db.Uuid
+  ticket              ConsultationTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  responderId         String             @db.Uuid
+  responder           User               @relation("ConsultationResponder", fields: [responderId], references: [id], onDelete: Cascade)
+  responderTier       String             @db.VarChar(60)
+  waveAnalysisText    String             @db.Text
+  clinicalGuidanceText String            @db.Text
+  recommendedFollowUp String             @db.VarChar(500)
+  rating              Int?
+  isAccepted          Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+
+  @@index([ticketId, createdAt])
+  @@index([responderId])
+}
+
+model HealthCheckIn {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  neuralSampleId String?  @db.Uuid
+  recordedDate   DateTime @default(now())
+  focusScore     Int
+  fatigueIndexTar Float
+  hemisphericBsi Float
+  alphaPeakHz    Float
+  sleepHours     Float
+  stressLevel    Int
+  notes          String   @db.VarChar(1000)
+  createdAt      DateTime @default(now())
+
+  @@index([userId, recordedDate(sort: Desc)])
+}
+
+model WorkingPlanBlock {
+  id           String        @id @default(uuid()) @db.Uuid
+  userId       String        @db.Uuid
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayOfWeek    String        @db.VarChar(24)
+  timeSlot     String        @db.VarChar(40)
+  title        String        @db.VarChar(160)
+  blockType    WorkBlockType
+  eegRationale String        @db.VarChar(500)
+  completed    Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([userId, dayOfWeek])
 }

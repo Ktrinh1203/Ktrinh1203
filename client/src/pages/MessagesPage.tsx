@@ -78,35 +78,35 @@ export function MessagesPage() {
 
   return (
     <div className="mx-auto max-w-5xl h-[calc(100vh-8.5rem)] min-h-[520px]">
-      <Card className="h-full grid grid-cols-1 md:grid-cols-[320px_1fr] overflow-hidden border-slate-200/70 shadow-[0_4px_24px_-4px_rgba(15,23,42,0.04)] rounded-2xl">
-        {/* Left: Conversation List (MindBridge Clean List) */}
+      <Card className="h-full grid grid-cols-1 md:grid-cols-[320px_1fr] overflow-hidden border-[#DCE6DF] shadow-[0_4px_24px_-4px_rgba(15,23,42,0.04)] rounded-2xl">
+        {/* Left: Conversation List */}
         <div
-          className={`flex flex-col border-r border-slate-200/80 bg-white h-full ${
+          className={`flex flex-col border-r border-[#DCE6DF] bg-white h-full ${
             activeConvId ? 'hidden md:flex' : 'flex'
           }`}
         >
           <div
             className={`p-4.5 border-b ${
               isProfessional
-                ? 'bg-[#162B47] text-white border-slate-700'
-                : 'bg-[#F0FDFA] text-slate-900 border-teal-200/70'
+                ? 'bg-[#14532D] text-white border-[#052E16]'
+                : 'bg-[#F5FAF7] text-[#111827] border-[#DCE6DF]'
             }`}
           >
             <h1
               className={`font-bold text-base ${
-                isProfessional ? 'text-white' : 'text-slate-900'
+                isProfessional ? 'text-white' : 'text-[#111827]'
               }`}
             >
               {isProfessional ? 'Kênh Trao đổi & Hội chẩn Chuyên gia' : 'Hộp thư Trao đổi Trực tiếp'}
             </h1>
-            <p className={`text-xs ${isProfessional ? 'text-slate-300' : 'text-slate-600'}`}>
+            <p className={`text-xs ${isProfessional ? 'text-emerald-100/80' : 'text-[#4B5563]'}`}>
               {isProfessional
                 ? 'Liên lạc đồng nghiệp CCHN/ORCID và tư vấn người bệnh'
                 : 'Tin nhắn trực tiếp bảo mật cùng bác sĩ và thành viên'}
             </p>
           </div>
 
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+          <div className="flex-1 overflow-y-auto divide-y divide-[#EEF3F0]">
             {loadingConvs ? (
               <Spinner label="Đang tải danh sách..." />
             ) : conversations.length === 0 ? (
@@ -127,18 +127,18 @@ export function MessagesPage() {
                     type="button"
                     onClick={() => setSearchParams({ conv: c.id })}
                     className={`w-full text-left p-3.5 flex items-start gap-3 transition-colors ${
-                      isActive ? 'bg-sky-50/80 ring-1 ring-sky-200/80 shadow-2xs' : 'hover:bg-slate-50/80'
+                      isActive ? 'bg-[#ECFDF3] ring-1 ring-[#BBF7D0]' : 'hover:bg-[#F5FAF7]'
                     }`}
                   >
                     <div className="relative shrink-0">
-                      <Avatar name={other?.displayName || 'User'} src={other?.avatarUrl} size="md" className="ring-2 ring-slate-100" />
+                      <Avatar name={other?.displayName || 'User'} src={other?.avatarUrl} size="md" className="ring-2 ring-[#EEF3F0]" />
                       {c.isUnread && (
-                        <span className="absolute top-0 right-0 size-2.5 rounded-full bg-accent-600 ring-2 ring-white" />
+                        <span className="absolute top-0 right-0 size-2.5 rounded-full bg-[#16A34A] ring-2 ring-white" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <span className="font-semibold text-xs sm:text-sm text-slate-900 truncate">
+                        <span className="font-semibold text-xs sm:text-sm text-[#111827] truncate">
                           {other?.displayName || 'Người dùng'}
                         </span>
                         <span className="text-[10px] text-slate-400 shrink-0">
@@ -147,7 +147,7 @@ export function MessagesPage() {
                       </div>
                       <p
                         className={`text-xs truncate mt-0.5 ${
-                          c.isUnread ? 'font-semibold text-slate-900' : 'text-slate-500'
+                          c.isUnread ? 'font-semibold text-[#111827]' : 'text-[#6B7280]'
                         }`}
                       >
                         {c.lastMessage ? c.lastMessage.content : 'Chưa có tin nhắn'}
@@ -160,16 +160,16 @@ export function MessagesPage() {
           </div>
         </div>
 
-        {/* Right: Active Chat Window (MindBridge Chat Surface) */}
+        {/* Right: Active Chat Window */}
         <div
-          className={`flex flex-col h-full bg-[#F8FAFC] ${
+          className={`flex flex-col h-full bg-[#F7FAF8] ${
             !activeConvId ? 'hidden md:flex' : 'flex'
           }`}
         >
           {activeConvId && activeConv ? (
             <>
               {/* Chat Header */}
-              <div className="h-16 px-4.5 border-b border-slate-200/80 bg-white flex items-center justify-between gap-3 shrink-0">
+              <div className="h-16 px-4.5 border-b border-[#DCE6DF] bg-white flex items-center justify-between gap-3 shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
                   <button
                     type="button"
@@ -183,13 +183,13 @@ export function MessagesPage() {
                     name={activeConv.otherUser?.displayName || 'User'}
                     src={activeConv.otherUser?.avatarUrl}
                     size="sm"
-                    className="ring-2 ring-slate-100"
+                    className="ring-2 ring-[#EEF3F0]"
                   />
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <Link
                         to={`/u/${activeConv.otherUser?.username}`}
-                        className="font-bold text-xs sm:text-sm text-slate-900 hover:text-brand-600 transition-colors truncate"
+                        className="font-bold text-xs sm:text-sm text-[#111827] hover:text-[#16A34A] transition-colors truncate"
                       >
                         {activeConv.otherUser?.displayName}
                       </Link>
@@ -201,13 +201,13 @@ export function MessagesPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                  <Shield className="size-3.5 text-teal-600" />
+                <div className="flex items-center gap-1.5 text-xs text-[#6B7280] font-medium">
+                  <Shield className="size-3.5 text-[#16A34A]" />
                   <span className="hidden sm:inline">Mã hoá bảo mật</span>
                 </div>
               </div>
 
-              {/* Messages History (MindBridge Calming Bubbles) */}
+              {/* Messages History */}
               <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5">
                 {loadingMsgs ? (
                   <Spinner label="Đang tải lịch sử trao đổi..." />
@@ -225,10 +225,10 @@ export function MessagesPage() {
                         className={`flex flex-col animate-slide-up ${isSelf ? 'items-end' : 'items-start'}`}
                       >
                         <div
-                          className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm shadow-2xs leading-relaxed ${
+                          className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed ${
                             isSelf
-                              ? 'bg-[#E8F4FC] text-[#0F2942] border border-[#CCE5F7] rounded-tr-xs'
-                              : 'bg-white text-slate-800 border border-slate-200/80 rounded-tl-xs'
+                              ? 'bg-[#16A34A] text-white rounded-tr-xs'
+                              : 'bg-white text-[#111827] border border-[#DCE6DF] rounded-tl-xs'
                           }`}
                         >
                           <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -246,8 +246,8 @@ export function MessagesPage() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message Input Box (MindBridge Pill Bar) */}
-              <div className="p-3.5 bg-white border-t border-slate-200/70 shrink-0">
+              {/* Message Input Box */}
+              <div className="p-3.5 bg-white border-t border-[#DCE6DF] shrink-0">
                 {error && <div className="text-xs text-red-600 mb-2">{error}</div>}
                 <form onSubmit={handleSend} className="flex gap-2">
                   <input
@@ -256,7 +256,7 @@ export function MessagesPage() {
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     maxLength={4000}
-                    className="flex-1 rounded-full border border-slate-200/90 bg-slate-50/70 px-4.5 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-100/60 transition-all"
+                    className="flex-1 rounded-full border border-[#DCE6DF] bg-[#F5FAF7] px-4.5 py-2.5 text-xs sm:text-sm text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:bg-white focus:border-[#16A34A] transition-colors"
                   />
                   <Button
                     type="submit"
@@ -272,11 +272,11 @@ export function MessagesPage() {
             </>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
-              <div className="size-14 rounded-2xl bg-brand-50 flex items-center justify-center text-brand-600 mb-3 ring-4 ring-brand-50/50">
+              <div className="size-14 rounded-2xl bg-[#ECFDF3] flex items-center justify-center text-[#16A34A] mb-3 ring-4 ring-[#ECFDF3]/60">
                 <MessageSquare className="size-7" />
               </div>
-              <h2 className="font-bold text-slate-800 text-base">Hộp thư NeuroLink</h2>
-              <p className="text-xs text-slate-500 max-w-xs mt-1.5 leading-relaxed">
+              <h2 className="font-bold text-[#111827] text-base">Hộp thư NeuroLink</h2>
+              <p className="text-xs text-[#6B7280] max-w-xs mt-1.5 leading-relaxed">
                 Chọn một cuộc trò chuyện từ danh sách bên trái hoặc tìm kiếm chuyên gia để bắt đầu trao đổi học thuật.
               </p>
             </div>

@@ -11,26 +11,42 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  Sparkles,
+  Database,
   Lock,
   Award,
+  Stethoscope,
 } from 'lucide-react';
 import { rewardsApi, contributionsApi } from '../api/endpoints';
 import { useAuth } from '../features/auth/AuthContext';
 import { Button, Card, DataTableContainer, EmptyState, Spinner, Textarea } from '../components/ui';
 import { errorMessage } from '../api/client';
 import type {
+  CreditTransactionType,
   RedemptionStatus,
   RewardCatalogItem,
   RewardCategory,
 } from '../api/types';
+
+const TRANSACTION_TYPE_LABELS: Record<CreditTransactionType, { label: string; className: string }> = {
+  CONTRIBUTION_REWARD: { label: 'Thưởng CME', className: 'bg-teal-50 text-teal-800 border-teal-200' },
+  REWARD_REDEMPTION: { label: 'Đổi quyền lợi', className: 'bg-slate-100 text-slate-700 border-slate-200' },
+  ADMIN_ADJUSTMENT: { label: 'Điều chỉnh hệ thống', className: 'bg-slate-100 text-slate-700 border-slate-200' },
+  REWARD_REVERSAL: { label: 'Thu hồi thưởng', className: 'bg-red-50 text-red-700 border-red-200' },
+  REFUND: { label: 'Hoàn tín chỉ', className: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+  CONSULTATION_ESCROW: { label: 'Tạm giữ hỏi bác sĩ', className: 'bg-amber-50 text-amber-800 border-amber-200' },
+  CONSULTATION_EARNING: { label: 'Thù lao Đọc ca', className: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+  CONSULTATION_REFUND: { label: 'Hoàn tín chỉ tư vấn', className: 'bg-sky-50 text-sky-800 border-sky-200' },
+  DATABANK_PURCHASE: { label: 'Mở khóa Data Bank', className: 'bg-amber-50 text-amber-800 border-amber-200' },
+  DATABANK_ROYALTY: { label: 'Bản quyền Data Bank', className: 'bg-sky-50 text-sky-800 border-sky-200' },
+  STARTER_GRANT: { label: 'Gói Khởi đầu', className: 'bg-teal-50 text-teal-800 border-teal-200' },
+};
 
 const REWARD_CATEGORY_CONFIG: Record<
   RewardCategory,
   { label: string; icon: any; colorClass: string }
 > = {
   PROFESSIONAL_COURSE: { label: 'Khóa học Y khoa & CME', icon: GraduationCap, colorClass: 'text-brand-600 bg-brand-50' },
-  CONFERENCE_ACCESS: { label: 'Vé Hội nghị & Workshop', icon: Ticket, colorClass: 'text-purple-600 bg-purple-50' },
+  CONFERENCE_ACCESS: { label: 'Vé Hội nghị & Workshop', icon: Ticket, colorClass: 'text-sky-700 bg-sky-50' },
   ACADEMIC_RESOURCE: { label: 'Cơ sở dữ liệu Học thuật', icon: BookOpen, colorClass: 'text-blue-600 bg-blue-50' },
   MENTORING: { label: 'Cố vấn Chuyên gia 1:1', icon: Users, colorClass: 'text-teal-600 bg-teal-50' },
   PROFESSIONAL_EVENT: { label: 'Sự kiện Kết nối Chuyên ngành', icon: Calendar, colorClass: 'text-amber-600 bg-amber-50' },
@@ -49,7 +65,7 @@ const REDEMPTION_STATUS_META: Record<
   FULFILLED: { label: 'Đã hoàn tất bàn giao', className: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
   REJECTED: { label: 'Từ chối (Đã hoàn tín chỉ)', className: 'bg-red-50 text-red-800 border-red-200' },
   CANCELLED: { label: 'Đã hủy (Đã hoàn tín chỉ)', className: 'bg-slate-100 text-slate-700 border-slate-300' },
-  REFUNDED: { label: 'Đã hoàn trả tín chỉ', className: 'bg-purple-50 text-purple-800 border-purple-200' },
+  REFUNDED: { label: 'Đã hoàn trả tín chỉ', className: 'bg-sky-50 text-sky-800 border-sky-200' },
 };
 
 export function RewardsPage() {
@@ -104,8 +120,36 @@ export function RewardsPage() {
     onError: (err) => setError(errorMessage(err)),
   });
 
+  const claimStarterGrantMutation = useMutation({
+    mutationFn: () => rewardsApi.claimOnboardingGrant(),
+    onSuccess: (res) => {
+      setError(null);
+      setSuccessMsg(
+        res.granted
+          ? `Đã nhận thành công +${res.amount} Tín chỉ Khởi đầu vào ví!`
+          : 'Tài khoản của bạn đã nhận gói khởi đầu trước đó.',
+      );
+      void queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
+      void queryClient.invalidateQueries({ queryKey: ['rewards', 'wallet'] });
+    },
+    onError: (err) => setError(errorMessage(err)),
+  });
+
   const wallet = walletData?.wallet;
   const transactions = walletData?.transactions ?? [];
+  const hasClaimedStarterGrant = transactions.some((tx) => tx.type === 'STARTER_GRANT');
+  const cmeEarned = transactions
+    .filter((tx) => tx.type === 'CONTRIBUTION_REWARD' && tx.amount > 0)
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  const consultationEarned = transactions
+    .filter((tx) => tx.type === 'CONSULTATION_EARNING' && tx.amount > 0)
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  const dataBankRoyaltyEarned = transactions
+    .filter((tx) => tx.type === 'DATABANK_ROYALTY' && tx.amount > 0)
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  const starterEarned = transactions
+    .filter((tx) => tx.type === 'STARTER_GRANT' && tx.amount > 0)
+    .reduce((sum, tx) => sum + tx.amount, 0);
   const catalog = catalogData?.items ?? [];
   const filteredCatalog = catalog.filter((item) => {
     if (catalogFilter === 'monetary') return item.isMonetary || item.category === 'MONETARY_REWARD';
@@ -117,74 +161,124 @@ export function RewardsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      {/* Top Banner & Wallet Balance Card (Sermo Electric Royal Violet) */}
-      <div className="grid gap-4.5 md:grid-cols-3">
+      {/* Top Banner & Wallet Balance Card */}
+      <div className="grid gap-6 md:grid-cols-3">
         {/* Wallet Overview Card */}
-        <div className="md:col-span-2 rounded-lg bg-[#162B47] p-6 sm:p-7 text-white border border-slate-700 shadow-2xs relative overflow-hidden flex flex-col justify-between">
-          <div className="relative z-10 space-y-2">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-                Quyền lợi & Khen thưởng (CME & Honoraria)
+        <div className="md:col-span-2 rounded-xl bg-[#162B47] p-6 text-white border border-slate-700 shadow-2xs flex flex-col justify-between space-y-5">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+                Ví Tín chỉ & Quyền lợi (CME & Honoraria)
               </h1>
               <span className="inline-flex items-center gap-1.5 rounded bg-[#2C6865] px-2.5 py-0.5 text-[11px] font-bold text-teal-50 border border-teal-400/30">
-                <Sparkles className="size-3 text-amber-300" /> Sermo Honoraria Wallet
+                <Award className="size-3 text-teal-200" aria-hidden /> NeuroLink Wallet
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-200 max-w-xl leading-relaxed">
-              Tích lũy tín chỉ từ các bài đóng góp chuyên môn đã qua kiểm duyệt để đổi các khóa đào tạo y khoa liên tục (CME), vé hội nghị khoa học và tài nguyên học thuật.
+            <p className="text-xs sm:text-sm text-slate-200 max-w-xl leading-relaxed line-clamp-2">
+              Tích lũy tín chỉ từ đọc ca sóng não, chia sẻ Data Bank và bài đóng góp chuyên môn để đổi khóa học CME, vé hội nghị.
             </p>
           </div>
 
-          <div className="relative z-10 grid grid-cols-3 gap-3 pt-5 border-t border-white/15 mt-4 tabular-nums">
-            <div>
-              <span className="text-[11px] text-slate-300 block uppercase font-semibold">Số dư khả dụng</span>
-              <span className="text-2xl sm:text-3xl font-black text-amber-300">
-                {loadingWallet ? '...' : wallet?.balance ?? 0}
-              </span>
-              <span className="text-[11px] text-slate-200 ml-1">tín chỉ</span>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/15 tabular-nums">
+              <div>
+                <span className="text-[11px] text-slate-300 block uppercase font-semibold">Số dư khả dụng</span>
+                <span className="text-2xl sm:text-3xl font-black text-amber-300">
+                  {loadingWallet ? '...' : wallet?.balance ?? 0}
+                </span>
+                <span className="text-[11px] text-slate-200 ml-1">tín chỉ</span>
+              </div>
+              <div>
+                <span className="text-[11px] text-slate-300 block uppercase font-semibold">Tổng tích lũy</span>
+                <span className="text-lg sm:text-xl font-bold text-white">
+                  {loadingWallet ? '...' : wallet?.totalEarned ?? 0}
+                </span>
+              </div>
+              <div>
+                <span className="text-[11px] text-slate-300 block uppercase font-semibold">Tổng đã đổi</span>
+                <span className="text-lg sm:text-xl font-bold text-white">
+                  {loadingWallet ? '...' : wallet?.totalSpent ?? 0}
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="text-[11px] text-slate-300 block uppercase font-semibold">Tổng tích lũy</span>
-              <span className="text-lg sm:text-xl font-bold text-white">
-                {loadingWallet ? '...' : wallet?.totalEarned ?? 0}
-              </span>
+
+            {/* Earnings Source Breakdown */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-white/10 text-xs tabular-nums">
+              <div className="rounded-md bg-white/10 px-2.5 py-2">
+                <span className="flex items-center gap-1 text-[10px] text-slate-300">
+                  <Award className="size-3 text-teal-300" aria-hidden /> CME Honoraria
+                </span>
+                <span className="font-mono font-bold text-white">+{cmeEarned}</span>
+              </div>
+              <div className="rounded-md bg-white/10 px-2.5 py-2">
+                <span className="flex items-center gap-1 text-[10px] text-slate-300">
+                  <Stethoscope className="size-3 text-emerald-300" aria-hidden /> Đọc ca Từ xa
+                </span>
+                <span className="font-mono font-bold text-emerald-300">+{consultationEarned}</span>
+              </div>
+              <div className="rounded-md bg-white/10 px-2.5 py-2">
+                <span className="flex items-center gap-1 text-[10px] text-slate-300">
+                  <Database className="size-3 text-sky-300" aria-hidden /> Bản quyền DataBank
+                </span>
+                <span className="font-mono font-bold text-sky-300">+{dataBankRoyaltyEarned}</span>
+              </div>
+              <div className="rounded-md bg-white/10 px-2.5 py-2">
+                <span className="flex items-center gap-1 text-[10px] text-slate-300">
+                  <Coins className="size-3 text-amber-300" aria-hidden /> Gói Khởi đầu
+                </span>
+                <span className="font-mono font-bold text-amber-300">+{starterEarned}</span>
+              </div>
             </div>
-            <div>
-              <span className="text-[11px] text-slate-300 block uppercase font-semibold">Tổng đã đổi</span>
-              <span className="text-lg sm:text-xl font-bold text-white">
-                {loadingWallet ? '...' : wallet?.totalSpent ?? 0}
-              </span>
-            </div>
+
+            {!loadingWallet && wallet && wallet.balance === 0 && !hasClaimedStarterGrant && (
+              <div className="rounded-lg bg-amber-400/15 border border-amber-300/40 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-amber-100">
+                  Nhận ngay 250 Tín chỉ khởi đầu để hỏi bác sĩ hoặc mở khóa dữ liệu.
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="accent"
+                  loading={claimStarterGrantMutation.isPending}
+                  onClick={() => claimStarterGrantMutation.mutate()}
+                  icon={<Coins className="size-3.5" />}
+                >
+                  Nhận 250 Tín chỉ Khởi đầu
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Quick Program Policy Card */}
-        <Card className="p-6 flex flex-col justify-between border-slate-200/70 shadow-[0_4px_20px_-4px_rgba(15,23,42,0.03)] bg-white rounded-2xl">
-          <div className="space-y-2.5">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Coins className="size-4 text-brand-600" /> Quy định & Bảo vệ Giá trị
-            </h3>
-            <ul className="text-xs text-slate-600 space-y-2 leading-relaxed">
-              <li className="flex items-start gap-1.5">
-                <span className="text-emerald-500 font-bold">✓</span>
-                Tín chỉ được ghi nhận bất biến trong Sổ cái giao dịch (Transaction Ledger).
+        <Card className="p-6 flex flex-col justify-between border-slate-200/80 shadow-2xs bg-white rounded-xl">
+          <div className="space-y-3">
+            <h2 className="font-bold text-xs uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Coins className="size-4 text-teal-600" aria-hidden /> Quy định Sổ cái
+            </h2>
+            <ul className="text-xs text-slate-600 space-y-2.5 leading-relaxed">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0 mt-0.5" aria-hidden />
+                <span className="line-clamp-2">Mọi giao dịch được ghi nhận minh bạch trong sổ cái cá nhân.</span>
               </li>
-              <li className="flex items-start gap-1.5">
-                <span className="text-emerald-500 font-bold">✓</span>
-                Hoàn trả 100% tín chỉ nếu yêu cầu đổi thưởng bị từ chối hoặc hết suất.
-              </li>
-              <li className="flex items-start gap-1.5">
-                <span className="text-amber-500 font-bold">⚠️</span>
-                Tín chỉ gắn liền danh tính chuyên gia, không thể chuyển nhượng hoặc mua bán chợ đen.
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0 mt-0.5" aria-hidden />
+                <span className="line-clamp-2">Hoàn trả 100% tín chỉ nếu yêu cầu đổi thưởng bị từ chối.</span>
               </li>
             </ul>
           </div>
-          <div className="pt-3.5 border-t border-slate-100">
+          <div className="pt-4 border-t border-slate-100 flex flex-col gap-1.5 text-xs">
+            <a
+              href="/consultations"
+              className="inline-flex items-center gap-1 font-bold text-teal-700 hover:underline"
+            >
+              Đọc ca / Hỏi bác sĩ ngay →
+            </a>
             <a
               href="/contributions"
-              className="inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:text-brand-800 hover:underline"
+              className="inline-flex items-center gap-1 font-bold text-[#162B47] hover:underline"
             >
-              Gửi bài viết để tích lũy thêm tín chỉ →
+              Nộp bài tích lũy CME →
             </a>
           </div>
         </Card>
@@ -293,7 +387,7 @@ export function RewardsPage() {
               />
             </Card>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2">
               {filteredCatalog.map((item) => {
                 const catConfig = REWARD_CATEGORY_CONFIG[item.category];
                 const IconComponent = catConfig?.icon ?? Gift;
@@ -302,7 +396,7 @@ export function RewardsPage() {
                 const isLockedMonetary = item.isMonetary && !item.payoutEnabled;
 
                 return (
-                  <Card key={item.id} className="p-5 flex flex-col justify-between space-y-4 border-slate-200 shadow-2xs hover:border-slate-300 transition-all">
+                  <Card key={item.id} className="p-6 flex flex-col justify-between space-y-4 border-slate-200 shadow-2xs hover:border-slate-300 transition-all">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${catConfig?.colorClass}`}>
@@ -315,7 +409,7 @@ export function RewardsPage() {
 
                       <div>
                         <h3 className="font-bold text-sm text-slate-900 leading-snug">{item.name}</h3>
-                        <p className="text-xs text-slate-600 mt-1 line-clamp-3 leading-relaxed">{item.description}</p>
+                        <p className="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
                       </div>
 
                       {item.terms && (
@@ -385,10 +479,11 @@ export function RewardsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 block">
+                  <label htmlFor="reward-redeem-note" className="text-xs font-bold text-slate-700 block">
                     Ghi chú / Thông tin nhận quyền lợi (VD: Email nhận vé, link tài khoản học tập):
                   </label>
                   <Textarea
+                    id="reward-redeem-note"
                     rows={3}
                     value={userNote}
                     onChange={(e) => setUserNote(e.target.value)}
@@ -448,20 +543,24 @@ export function RewardsPage() {
                 <tbody className="divide-y divide-slate-100">
                   {transactions.map((tx) => {
                     const isPositive = tx.amount > 0;
+                    const typeMeta = TRANSACTION_TYPE_LABELS[tx.type] ?? {
+                      label: tx.type,
+                      className: 'bg-slate-100 text-slate-700 border-slate-200',
+                    };
                     return (
                       <tr key={tx.id} className="hover:bg-slate-50/50">
-                        <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap">
+                        <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap tabular-nums">
                           {new Date(tx.createdAt).toLocaleString('vi-VN')}
                         </td>
-                        <td className="py-2.5 px-4">
-                          <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                            {tx.type}
+                        <td className="py-2.5 px-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-bold ${typeMeta.className}`}>
+                            {typeMeta.label}
                           </span>
                         </td>
                         <td className="py-2.5 px-4 text-slate-800 font-medium">
                           {tx.description}
                         </td>
-                        <td className="py-2.5 px-4 text-right whitespace-nowrap font-bold">
+                        <td className="py-2.5 px-4 text-right whitespace-nowrap font-bold font-mono tabular-nums">
                           <span className={isPositive ? 'text-emerald-600' : 'text-red-600'}>
                             {isPositive ? `+${tx.amount}` : tx.amount}
                           </span>

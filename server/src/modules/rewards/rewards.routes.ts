@@ -31,3 +31,9 @@ rewardsRouter.get('/my-redemptions', async (req, res) => {
   const redemptions = await rewardsService.getUserRedemptions(auth.userId);
   res.json({ redemptions });
 });
+
+rewardsRouter.post('/claim-onboarding-grant', async (req, res) => {
+  const auth = getAuth(req);
+  const result = await rewardsService.claimOnboardingGrant(auth.userId);
+  res.json(result);
+});

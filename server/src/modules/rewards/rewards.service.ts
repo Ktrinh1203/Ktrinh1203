@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { AppError, badRequest, notFound } from '../../lib/errors.js';
 import { assertVerifiedProfessional } from '../contributions/contributions.service.js';
@@ -8,6 +9,24 @@ import type {
   ReviewRedemptionInput,
   UpdateRewardCatalogInput,
 } from './rewards.schemas.js';
+
+const ONBOARDING_GRANT_AMOUNT = 250;
+
+function formatWalletDto(wallet: {
+  id: string;
+  balance: number;
+  totalEarned: number;
+  totalSpent: number;
+  updatedAt: Date;
+}) {
+  return {
+    id: wallet.id,
+    balance: wallet.balance,
+    totalEarned: wallet.totalEarned,
+    totalSpent: wallet.totalSpent,
+    updatedAt: wallet.updatedAt,
+  };
+}
 
 export async function getOrCreateUserWallet(userId: string) {
   return prisma.creditWallet.upsert({
@@ -32,15 +51,73 @@ export async function getUserWalletWithHistory(userId: string) {
   });
 
   return {
-    wallet: {
-      id: wallet.id,
-      balance: wallet.balance,
-      totalEarned: wallet.totalEarned,
-      totalSpent: wallet.totalSpent,
-      updatedAt: wallet.updatedAt,
-    },
+    wallet: formatWalletDto(wallet),
     transactions,
   };
+}
+
+export async function claimOnboardingGrant(userId: string) {
+  const idempotencyKey = `starter-grant:${userId}`;
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const existingTx = await tx.creditTransaction.findUnique({
+        where: { idempotencyKey },
+      });
+
+      const wallet = await tx.creditWallet.upsert({
+        where: { userId },
+        create: {
+          userId,
+          balance: existingTx ? 0 : ONBOARDING_GRANT_AMOUNT,
+          totalEarned: existingTx ? 0 : ONBOARDING_GRANT_AMOUNT,
+          totalSpent: 0,
+        },
+        update: existingTx
+          ? {}
+          : {
+              balance: { increment: ONBOARDING_GRANT_AMOUNT },
+              totalEarned: { increment: ONBOARDING_GRANT_AMOUNT },
+            },
+      });
+
+      if (existingTx) {
+        return {
+          granted: false,
+          amount: 0,
+          wallet: formatWalletDto(wallet),
+        };
+      }
+
+      await tx.creditTransaction.create({
+        data: {
+          walletId: wallet.id,
+          amount: ONBOARDING_GRANT_AMOUNT,
+          type: 'STARTER_GRANT',
+          referenceId: userId,
+          idempotencyKey,
+          description: `Cấp tín chỉ khởi đầu hệ sinh thái NeuroLink (+${ONBOARDING_GRANT_AMOUNT} tín chỉ)`,
+          actorId: userId,
+        },
+      });
+
+      return {
+        granted: true,
+        amount: ONBOARDING_GRANT_AMOUNT,
+        wallet: formatWalletDto(wallet),
+      };
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      const wallet = await getOrCreateUserWallet(userId);
+      return {
+        granted: false,
+        amount: 0,
+        wallet: formatWalletDto(wallet),
+      };
+    }
+    throw err;
+  }
 }
 
 export async function getActiveRewardCatalog(category?: string) {

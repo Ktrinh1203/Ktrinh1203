@@ -335,7 +335,7 @@ export function CommunitiesPage() {
               </h1>
               <span className="inline-flex items-center gap-1 rounded bg-[#2C6865] px-2 py-0.5 text-[11px] font-semibold text-teal-50 border border-teal-400/30">
                 <ShieldCheck className="size-3 text-teal-200" />
-                Sermo & ResearchGate Specialty Boards
+                Hội đồng Chuyên khoa & Nghiên cứu NeuroLink
               </span>
             </div>
             <p className="text-xs text-slate-300 max-w-3xl">
@@ -488,7 +488,7 @@ export function CommunitiesPage() {
           <div className="flex items-center justify-between border-b border-slate-200 pb-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#162B47] flex items-center gap-1.5">
               <Stethoscope className="size-4 text-[#2B4C7E]" />
-              Quy chuẩn Hội chẩn Lâm sàng (Sermo Protocol)
+              Quy chuẩn Hội chẩn Lâm sàng (PHI Anonymized Protocol)
             </h3>
             <span className="font-mono text-[11px] text-slate-500">SOP-CLIN-2026</span>
           </div>
@@ -501,7 +501,7 @@ export function CommunitiesPage() {
           <div className="flex items-center justify-between border-b border-slate-200 pb-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#162B47] flex items-center gap-1.5">
               <FlaskConical className="size-4 text-[#2C6865]" />
-              Hợp tác Dữ liệu EEG Đa trung tâm (ResearchGate Hub)
+              Hợp tác Dữ liệu EEG Đa trung tâm (NeuroLink Research Hub)
             </h3>
             <span className="font-mono text-[11px] text-slate-500">CONSENT-VERIFIED</span>
           </div>

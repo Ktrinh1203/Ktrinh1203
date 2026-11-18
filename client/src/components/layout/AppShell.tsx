@@ -22,12 +22,18 @@ import {
   AlertCircle,
   ShieldCheck,
   ChevronDown,
+  ExternalLink,
+  HelpCircle,
+  X,
+  ArrowRight,
   type LucideIcon,
 } from 'lucide-react';
 import { Avatar, cn } from '../ui';
 import { useAuth } from '../../features/auth/AuthContext';
 import { ACCOUNT_ROLE_LABELS, useMode } from '../../context/ModeContext';
 import { notificationsApi, messagesApi } from '../../api/endpoints';
+import { ChatPopupProvider, useChatPopup } from '../../features/messages/ChatPopupContext';
+import { ChatPopupDock } from '../../features/messages/ChatPopupDock';
 
 export interface NavItem {
   to: string;
@@ -50,24 +56,32 @@ export function Logo({
       to={isProfessional ? '/dashboard' : '/feed'}
       className={cn('group inline-flex items-center gap-2.5 select-none', className)}
     >
+      <img
+        src="/logo.svg"
+        alt="NeuroLink Logo"
+        width={34}
+        height={34}
+        className="size-8.5 shrink-0"
+      />
       <div className="flex flex-col items-start">
         <span
           className={cn(
-            'text-2xl leading-none font-black tracking-[-0.045em]',
-            inverted ? 'text-white' : 'text-slate-800',
+            'text-[21px] leading-none font-extrabold tracking-[-0.04em]',
+            inverted ? 'text-white' : 'text-[#111827]',
           )}
         >
-          neurolink
+          neuro<span className={inverted ? 'text-emerald-300' : 'text-[#16A34A]'}>link</span>
         </span>
         <svg
           viewBox="0 0 112 12"
           fill="none"
+          aria-hidden="true"
           className={cn(
-            'w-[96px] h-[11px] -mt-0.5 overflow-visible',
-            inverted ? 'text-teal-300' : isProfessional ? 'text-brand-600' : 'text-teal-600',
+            'w-[88px] h-[10px] -mt-0.5 overflow-visible',
+            inverted ? 'text-emerald-300' : 'text-[#16A34A]',
           )}
           stroke="currentColor"
-          strokeWidth="2.6"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
@@ -79,22 +93,6 @@ export function Logo({
           />
         </svg>
       </div>
-      {isProfessional ? (
-        <span
-          className={cn(
-            'hidden sm:inline-flex items-center rounded px-1.5 py-0.5 text-[9.5px] font-extrabold uppercase tracking-wider border whitespace-nowrap shrink-0',
-            inverted
-              ? 'bg-white/10 text-teal-200 border-white/20'
-              : 'bg-brand-50 text-brand-700 border-brand-200/80',
-          )}
-        >
-          CLINICAL & BCI
-        </span>
-      ) : (
-        <span className="hidden sm:inline-flex items-center rounded bg-sky-50 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-sky-800 border border-sky-200/80 whitespace-nowrap shrink-0">
-          Health & Brain
-        </span>
-      )}
     </Link>
   );
 }
@@ -130,14 +128,14 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
 
   if (!user) {
     return (
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="flex items-center gap-2">
         <Link
           to="/login"
           className={cn(
-            'rounded-md px-3 py-1.5 text-xs font-bold transition-all border shrink-0',
+            'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border shrink-0',
             inverted
               ? 'border-white/20 text-white hover:bg-white/10'
-              : 'border-slate-200 text-slate-700 hover:text-teal-800 hover:bg-slate-100',
+              : 'border-[#E6E4DF] text-[#141413] hover:bg-[#EFECE6]',
           )}
         >
           Đăng nhập
@@ -145,10 +143,10 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
         <Link
           to="/register"
           className={cn(
-            'rounded-md px-3 py-1.5 text-xs font-bold transition-all shadow-2xs shrink-0',
+            'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors shrink-0',
             inverted
-              ? 'bg-teal-400 text-slate-950 hover:bg-teal-300'
-              : 'bg-teal-700 text-white hover:bg-teal-800',
+              ? 'bg-white text-[#141413] hover:bg-white/90'
+              : 'bg-[#141413] text-white hover:bg-[#292927]',
           )}
         >
           Đăng ký
@@ -158,7 +156,7 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
   }
 
   const item =
-    'group flex w-full items-center gap-2.5 px-3.5 py-2 text-xs sm:text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium';
+    'group flex w-full items-center gap-2.5 px-3.5 py-2 text-xs text-[#262624] hover:bg-[#F3F2EE] transition-colors font-medium';
 
   return (
     <div className="relative" ref={ref}>
@@ -166,71 +164,48 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex items-center gap-2 rounded-full sm:rounded-md p-1 sm:px-2.5 sm:py-1 transition-all focus:outline-none border border-transparent select-none shrink-0',
+          'flex items-center gap-2 rounded-lg px-1.5 py-1 transition-colors focus-visible:outline-none select-none shrink-0',
           inverted
-            ? 'hover:bg-white/10 hover:border-white/20 text-white'
-            : 'hover:bg-slate-100 hover:border-slate-200 text-slate-800',
+            ? 'text-white hover:bg-white/10'
+            : 'text-[#141413] hover:bg-[#EFECE6]',
         )}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Menu tài khoản"
       >
-        <Avatar name={user.displayName} src={user.avatarUrl} size="sm" />
-        <div className="hidden md:flex flex-col items-start text-left leading-tight">
-          <span className="text-xs font-bold max-w-[120px] truncate">{user.displayName}</span>
-          <span className={cn('text-[10px] font-medium', inverted ? 'text-teal-300' : 'text-slate-500')}>
-            {isProfessional ? 'Chuyên gia' : 'Thành viên'}
-          </span>
-        </div>
+        <Avatar name={user.displayName} src={user.avatarUrl} size="xs" />
+        <span className="hidden xl:block text-xs font-medium max-w-[110px] truncate">
+          {user.displayName}
+        </span>
         <ChevronDown
           className={cn(
             'size-3.5 transition-transform duration-150 hidden sm:block',
             open && 'rotate-180',
-            inverted ? 'text-slate-300' : 'text-slate-400',
+            inverted ? 'text-white/60' : 'text-[#6E6D68]',
           )}
         />
       </button>
+
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-68 overflow-hidden rounded-lg border border-slate-200/90 bg-white py-1.5 shadow-lg animate-in fade-in zoom-in-95 duration-100 text-slate-800"
+          className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-[#E6E4DF] bg-white py-1 shadow-md text-[#141413]"
         >
-          <div className="border-b border-slate-100 bg-slate-50/70 px-4 py-3">
-            <p className="truncate text-sm font-semibold text-slate-900">{user.displayName}</p>
-            <p className="truncate text-xs text-slate-500">@{user.username}</p>
-            <p className="mt-1 truncate text-[11px] font-semibold text-slate-600">
-              {ACCOUNT_ROLE_LABELS[accountRole]}
+          <div className="border-b border-[#E6E4DF] bg-[#FAF9F6] px-3.5 py-2.5">
+            <p className="truncate text-sm font-semibold text-[#141413]">{user.displayName}</p>
+            <p className="truncate text-xs text-[#6E6D68]">
+              @{user.username} · {ACCOUNT_ROLE_LABELS[accountRole]}
             </p>
-            <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-              <span
-                className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold border ${
-                  isProfessional
-                    ? 'bg-brand-50 text-brand-700 border-brand-200'
-                    : 'bg-teal-50 text-teal-700 border-teal-200'
-                }`}
-              >
+            <div className="mt-1.5 flex items-center gap-1.5 flex-wrap text-[11px] text-[#575652]">
+              <span className="font-medium text-[#1B4332]">
                 {isProfessional ? 'Chế độ Chuyên gia' : 'Chế độ Thành viên'}
               </span>
-              {verificationStatus === 'VERIFIED' && (
-                <span className="inline-flex items-center rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                  Đã xác minh
-                </span>
-              )}
-              {verificationStatus === 'PENDING' && (
-                <span className="inline-flex items-center rounded bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200">
-                  Chờ xét duyệt
-                </span>
-              )}
+              {verificationStatus === 'VERIFIED' && <span>· Đã xác minh</span>}
+              {verificationStatus === 'PENDING' && <span>· Chờ xét duyệt</span>}
               {verificationStatus === 'REJECTED' && (
-                <span className="inline-flex items-center rounded bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700 border border-red-200">
-                  Cần nộp lại
-                </span>
+                <span className="text-[#B91C1C]">· Cần nộp lại</span>
               )}
-              {user.role === 'ADMIN' && (
-                <span className="inline-flex items-center rounded bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700 border border-purple-200">
-                  Quản trị viên
-                </span>
-              )}
+              {user.role === 'ADMIN' && <span>· Quản trị viên</span>}
             </div>
           </div>
 
@@ -238,7 +213,7 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
             {canAccessProfessionalMode ? (
               <button
                 type="button"
-                className={cn(item, 'bg-slate-50/60 font-semibold text-brand-700 hover:bg-brand-50')}
+                className={cn(item, 'font-semibold text-[#1B4332]')}
                 onClick={() => {
                   toggleMode();
                   setOpen(false);
@@ -246,11 +221,11 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
               >
                 {isProfessional ? (
                   <>
-                    <UserIcon className="size-4 text-teal-600" /> Chuyển sang Chế độ Thành viên
+                    <UserIcon className="size-4 text-[#6E6D68]" /> Chuyển sang Chế độ Thành viên
                   </>
                 ) : (
                   <>
-                    <Stethoscope className="size-4 text-brand-600" /> Chuyển sang Chế độ Chuyên gia
+                    <Stethoscope className="size-4 text-[#1B4332]" /> Chuyển sang Chế độ Chuyên gia
                   </>
                 )}
               </button>
@@ -258,93 +233,131 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
               <Link
                 role="menuitem"
                 to="/settings?resubmit=true#verification-center"
-                className={cn(item, 'bg-red-50/60 font-semibold text-red-700 hover:bg-red-50')}
+                className={cn(item, 'font-semibold text-[#B91C1C]')}
                 onClick={() => setOpen(false)}
               >
-                <AlertCircle className="size-4 text-red-600" /> Nộp lại Hồ sơ Minh chứng
+                <AlertCircle className="size-4 text-[#B91C1C]" /> Nộp lại Hồ sơ Minh chứng
               </Link>
             ) : enableVerificationCenter ? (
               <Link
                 role="menuitem"
                 to="/settings#verification-center"
-                className={cn(item, 'bg-amber-50/60 font-semibold text-amber-800 hover:bg-amber-50')}
+                className={item}
                 onClick={() => setOpen(false)}
               >
-                <Clock className="size-4 text-amber-600" /> Trung tâm Xác minh (Đang chờ duyệt)
+                <Clock className="size-4 text-[#6E6D68]" /> Trung tâm Xác minh (Chờ duyệt)
               </Link>
             ) : (
               <Link
                 role="menuitem"
                 to="/settings#verification-center"
-                className={cn(item, 'bg-slate-50/60 font-semibold text-brand-700 hover:bg-brand-50')}
+                className={item}
                 onClick={() => setOpen(false)}
               >
-                <ShieldCheck className="size-4 text-brand-600" /> Đăng ký Xác minh Chuyên gia
+                <ShieldCheck className="size-4 text-[#6E6D68]" /> Đăng ký Xác minh Chuyên gia
               </Link>
             )}
-            <Link role="menuitem" to={`/u/${user.username}`} className={item} onClick={() => setOpen(false)}>
-              <UserIcon className="size-4 text-slate-400 group-hover:text-slate-600 transition-colors" />{' '}
+
+            <Link
+              role="menuitem"
+              to={`/u/${user.username}`}
+              className={item}
+              onClick={() => setOpen(false)}
+            >
+              <UserIcon className="size-4 text-[#6E6D68]" />
               {isProfessional ? 'Hồ sơ Chuyên môn' : 'Trang cá nhân'}
             </Link>
+
             {isProfessional ? (
               <>
                 <Link role="menuitem" to="/dashboard" className={item} onClick={() => setOpen(false)}>
-                  <LayoutDashboard className="size-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> Tổng quan Chuyên môn
+                  <LayoutDashboard className="size-4 text-[#6E6D68]" /> Tổng quan Chuyên môn
                 </Link>
                 <Link role="menuitem" to="/contributions" className={item} onClick={() => setOpen(false)}>
-                  <Award className="size-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> Research Hub & Đóng góp
+                  <Award className="size-4 text-[#6E6D68]" /> Nghiên cứu &amp; CME
                 </Link>
                 <Link role="menuitem" to="/eeg-hub?view=workspace" className={item} onClick={() => setOpen(false)}>
-                  <Activity className="size-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> EEG Workspace
+                  <Activity className="size-4 text-[#6E6D68]" /> Trạm qEEG
+                </Link>
+                <a
+                  role="menuitem"
+                  href="/clinical-workstation?mode=professional"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={item}
+                  onClick={() => setOpen(false)}
+                >
+                  <ExternalLink className="size-4 text-[#6E6D68]" /> Trạm qEEG Cortical
+                </a>
+                <Link role="menuitem" to="/consultations?tab=queue" className={item} onClick={() => setOpen(false)}>
+                  <Stethoscope className="size-4 text-[#6E6D68]" /> Đọc ca Từ xa
                 </Link>
                 <Link role="menuitem" to="/rewards" className={item} onClick={() => setOpen(false)}>
-                  <Gift className="size-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> Ví tín chỉ Honoraria & CME
+                  <Gift className="size-4 text-[#6E6D68]" /> Ví thù lao &amp; CME
                 </Link>
-                <div className="my-1 border-t border-slate-100" />
+                <div className="my-1 border-t border-[#E6E4DF]" />
                 <Link role="menuitem" to="/my-health" className={item} onClick={() => setOpen(false)}>
-                  <Heart className="size-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> Sức khỏe cá nhân (My Health)
+                  <Heart className="size-4 text-[#6E6D68]" /> Sức khỏe cá nhân
                 </Link>
                 <Link role="menuitem" to="/eeg-hub?view=personal" className={item} onClick={() => setOpen(false)}>
-                  <Brain className="size-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> Bản ghi My EEG cá nhân
+                  <Brain className="size-4 text-[#6E6D68]" /> Bản ghi EEG cá nhân
                 </Link>
               </>
             ) : (
               <>
                 <Link role="menuitem" to="/my-health" className={item} onClick={() => setOpen(false)}>
-                  <Heart className="size-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> Sức khỏe của tôi
+                  <Heart className="size-4 text-[#6E6D68]" /> Sức khỏe của tôi
                 </Link>
                 <Link role="menuitem" to="/eeg-hub?view=personal" className={item} onClick={() => setOpen(false)}>
-                  <Brain className="size-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> Dữ liệu EEG cá nhân
+                  <Brain className="size-4 text-[#6E6D68]" /> Dữ liệu EEG cá nhân
+                </Link>
+                <Link role="menuitem" to="/consultations" className={item} onClick={() => setOpen(false)}>
+                  <Stethoscope className="size-4 text-[#6E6D68]" /> Tư vấn Sóng não
+                </Link>
+                <a
+                  role="menuitem"
+                  href="/clinical-workstation?mode=general"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={item}
+                  onClick={() => setOpen(false)}
+                >
+                  <ExternalLink className="size-4 text-[#6E6D68]" /> Trạm qEEG Cortical
+                </a>
+                <Link role="menuitem" to="/rewards" className={item} onClick={() => setOpen(false)}>
+                  <Gift className="size-4 text-[#6E6D68]" /> Ví Tín chỉ &amp; Quyền lợi
                 </Link>
                 <Link role="menuitem" to="/communities" className={item} onClick={() => setOpen(false)}>
-                  <Users className="size-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> Cộng đồng hỗ trợ
+                  <Users className="size-4 text-[#6E6D68]" /> Cộng đồng hỗ trợ
                 </Link>
                 <Link role="menuitem" to="/messages" className={item} onClick={() => setOpen(false)}>
-                  <MessageCircle className="size-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> Tin nhắn trao đổi
+                  <MessageCircle className="size-4 text-[#6E6D68]" /> Tin nhắn
                 </Link>
               </>
             )}
+
             <Link role="menuitem" to="/settings" className={item} onClick={() => setOpen(false)}>
-              <Settings className="size-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> Cài đặt tài khoản
+              <Settings className="size-4 text-[#6E6D68]" /> Cài đặt tài khoản
             </Link>
             {user.role === 'ADMIN' && (
               <Link role="menuitem" to="/admin" className={item} onClick={() => setOpen(false)}>
-                <Shield className="size-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> Quản trị hệ thống
+                <Shield className="size-4 text-[#6E6D68]" /> Quản trị hệ thống
               </Link>
             )}
           </div>
-          <div className="border-t border-slate-100 pt-1">
+
+          <div className="border-t border-[#E6E4DF] pt-1">
             <button
               role="menuitem"
               type="button"
-              className={cn(item, 'text-red-600 hover:bg-red-50/80')}
+              className={cn(item, 'text-[#B91C1C] hover:bg-[#FEF2F2]')}
               onClick={async () => {
                 setOpen(false);
                 await logout();
                 navigate('/login', { replace: true });
               }}
             >
-              <LogOut className="size-4 text-red-500" /> Đăng xuất
+              <LogOut className="size-4 text-[#B91C1C]" /> Đăng xuất
             </button>
           </div>
         </div>
@@ -353,8 +366,9 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
   );
 }
 
-export function AppShell() {
-  const { user, logout } = useAuth();
+function AppShellContent() {
+  const { user } = useAuth();
+  const { isOpen, togglePopup, openInbox } = useChatPopup();
   const {
     setMode,
     isProfessional,
@@ -367,11 +381,20 @@ export function AppShell() {
   } = useMode();
   const navigate = useNavigate();
   const [globalSearch, setGlobalSearch] = useState('');
+  const [showGuideModal, setShowGuideModal] = useState(false);
+
+  useEffect(() => {
+    if (!showGuideModal) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowGuideModal(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [showGuideModal]);
 
   const rejectedProfile = user?.professionalProfiles?.find((p) => p.verificationStatus === 'REJECTED');
   const pendingProfile = user?.professionalProfiles?.find((p) => p.verificationStatus === 'PENDING');
 
-  // Polling for notification badges
   const { data: notifData } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => notificationsApi.getAll(1),
@@ -396,688 +419,309 @@ export function AppShell() {
     }
   };
 
-  // Dynamic Navigation Items for Mobile Bottom Navigation
-  const navItems: NavItem[] = isProfessional
+  // Left Architectural Navigation Rail items
+  const sidebarItems: NavItem[] = isProfessional
     ? [
         { to: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
+        { to: '/eeg-hub?view=workspace', label: 'Trạm qEEG', icon: Activity },
+        { to: '/consultations?tab=queue', label: 'Ca chờ đọc', icon: Stethoscope },
         { to: '/feed', label: 'Bảng tin', icon: Home },
-        { to: '/contributions', label: 'Research', icon: Award },
-        { to: '/eeg-hub?view=workspace', label: 'EEG', icon: Activity },
+        { to: '/contributions', label: 'Nghiên cứu', icon: Award },
+        { to: '/messages', label: 'Tin nhắn', icon: MessageCircle, badge: unreadConvs },
+        { to: '/rewards', label: 'Ví thù lao', icon: Gift },
+      ]
+    : [
+        { to: '/feed', label: 'Bảng tin', icon: Home },
+        { to: '/eeg-hub', label: 'Đo sóng não', icon: Activity },
+        { to: '/consultations', label: 'Hỏi bác sĩ', icon: Stethoscope },
+        { to: '/my-health', label: 'Nhật ký', icon: Heart },
+        { to: '/communities', label: 'Cộng đồng', icon: Users },
+        { to: '/messages', label: 'Tin nhắn', icon: MessageCircle, badge: unreadConvs },
+        { to: '/rewards', label: 'Tín chỉ', icon: Gift },
+      ];
+
+  // Mobile Bottom Nav items (5 monochrome tabs)
+  const mobileNavItems: NavItem[] = isProfessional
+    ? [
+        { to: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
+        { to: '/consultations?tab=queue', label: 'Ca chờ', icon: Stethoscope },
+        { to: '/eeg-hub?view=workspace', label: 'Trạm qEEG', icon: Activity },
+        { to: '/feed', label: 'Bảng tin', icon: Home },
         { to: '/messages', label: 'Tin nhắn', icon: MessageCircle, badge: unreadConvs },
       ]
     : [
-        { to: '/feed', label: 'Trang chủ', icon: Home },
-        { to: '/search', label: 'Khám phá', icon: Search },
+        { to: '/feed', label: 'Bảng tin', icon: Home },
+        { to: '/eeg-hub', label: 'Đo sóng', icon: Activity },
+        { to: '/consultations', label: 'Hỏi BS', icon: Stethoscope },
+        { to: '/my-health', label: 'Nhật ký', icon: Heart },
         { to: '/communities', label: 'Cộng đồng', icon: Users },
-        { to: '/my-health', label: 'Sức khỏe', icon: Heart },
-        { to: '/messages', label: 'Tin nhắn', icon: MessageCircle, badge: unreadConvs },
       ];
+
+  const iconBtnClass = isProfessional
+    ? 'relative flex size-8.5 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-colors'
+    : 'relative flex size-8.5 items-center justify-center rounded-lg text-[#4B5563] hover:bg-[#ECFDF3] hover:text-[#15803D] transition-colors';
 
   return (
     <div
       data-mode={isProfessional ? 'professional' : 'general'}
-      className={cn(
-        'min-h-screen pb-20 md:pb-10 relative overflow-x-hidden transition-colors',
-        isProfessional ? 'bg-[#F1F5F9] text-slate-800' : 'bg-[#F8FAFB] text-slate-700',
-      )}
+      className="min-h-screen pb-18 md:pb-10 bg-[#F5FAF7] text-[#111827]"
     >
-      {/* ===================================================================== */}
-      {/* MODE A: GENERAL MODE HEADER (Friendly, White & Soft Neutral, Teal/Sky) */}
-      {/* ===================================================================== */}
-      {!isProfessional ? (
-        <header className="sticky top-0 z-40 border-b border-slate-200/80 border-t-2 border-t-teal-600 bg-white">
-          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-3 sm:px-6">
-            <div className="flex items-center gap-3 lg:gap-5">
-              <Logo isProfessional={false} />
+      {/* Top Sticky Header */}
+      <header
+        className={cn(
+          'h-14 sticky top-0 z-40 border-t-2 border-t-[#16A34A]',
+          isProfessional
+            ? 'bg-[#14532D] text-white border-b border-[#052E16]'
+            : 'bg-white/95 backdrop-blur-md border-b border-[#DCE6DF]',
+        )}
+      >
+        <div className="mx-auto flex h-14 max-w-[1220px] items-center justify-between gap-4 px-4 sm:px-6">
+          <div className="flex items-center gap-3 shrink-0">
+            <Logo inverted={isProfessional} isProfessional={isProfessional} />
+          </div>
 
-              {/* Mode Switcher or Verification Status Pill */}
-              {canAccessProfessionalMode ? (
-                <div className="hidden sm:flex items-center rounded-md border border-teal-200/80 bg-teal-50/50 p-0.5 text-xs font-semibold whitespace-nowrap shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setMode('general')}
-                    className={cn(
-                      'flex items-center gap-1.5 px-2.5 py-1 rounded transition-all select-none whitespace-nowrap',
-                      isGeneral
-                        ? 'bg-white text-teal-900 shadow-2xs font-bold border border-teal-200/60'
-                        : 'text-slate-500 hover:text-slate-800',
-                    )}
-                  >
-                    <UserIcon className="size-3.5 text-teal-600 shrink-0" />
-                    <span>Thành viên</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMode('professional')}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded text-slate-600 hover:text-brand-700 transition-all select-none whitespace-nowrap"
-                  >
-                    <Stethoscope className="size-3.5 text-brand-600 shrink-0" />
-                    <span>Chuyên gia</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="hidden sm:flex items-center gap-1.5 rounded-md border border-teal-200/70 bg-teal-50/40 p-0.5 text-xs font-semibold whitespace-nowrap shrink-0">
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-white text-teal-900 shadow-2xs font-bold select-none whitespace-nowrap">
-                    <UserIcon className="size-3.5 text-teal-600 shrink-0" />
-                    <span>Thành viên</span>
-                  </span>
-                  {enableResubmission ? (
-                    <Link
-                      to="/settings?resubmit=true#verification-center"
-                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors font-bold whitespace-nowrap"
-                    >
-                      <AlertCircle className="size-3.5 text-red-600 shrink-0" />
-                      <span>Nộp lại Hồ sơ</span>
-                    </Link>
-                  ) : enableVerificationCenter ? (
-                    <Link
-                      to="/settings#verification-center"
-                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition-colors font-bold whitespace-nowrap"
-                    >
-                      <Clock className="size-3.5 text-amber-600 shrink-0" />
-                      <span>Chờ duyệt CCHN/ORCID</span>
-                    </Link>
-                  ) : null}
-                </div>
-              )}
-            </div>
-
-            {/* Search Input */}
-            <form onSubmit={handleGlobalSearch} className="hidden md:flex flex-1 max-w-sm mx-2">
+          <div className="flex items-center gap-2 shrink-0">
+            <form onSubmit={handleGlobalSearch} className="hidden sm:block w-56 lg:w-64 mr-1">
               <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                <Search
+                  className={cn(
+                    'absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5',
+                    isProfessional ? 'text-white/50' : 'text-[#8A8882]',
+                  )}
+                  aria-hidden
+                />
                 <input
                   type="text"
-                  placeholder="Tìm kiến thức sức khỏe, bác sĩ, bệnh án..."
+                  placeholder={isProfessional ? 'Tra cứu ca, CCHN...' : 'Tìm kiếm...'}
+                  aria-label="Tìm kiếm toàn trang"
                   value={globalSearch}
                   onChange={(e) => setGlobalSearch(e.target.value)}
-                  className="w-full rounded-md border border-slate-200 bg-slate-50/80 pl-9 pr-3 py-1.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 transition-colors hover:border-teal-300 focus:bg-white focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  className={cn(
+                    'w-full rounded-lg border pl-8.5 pr-3 py-1.5 text-xs focus:outline-none transition-colors',
+                    isProfessional
+                      ? 'border-white/15 bg-white/10 text-white placeholder:text-white/50 focus:border-white/40'
+                      : 'border-[#E2E0D8] bg-white text-[#141413] placeholder:text-[#8A8882] focus:border-[#1B4332]',
+                  )}
                 />
               </div>
             </form>
 
-            {/* Right Actions */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {canAccessProfessionalMode && (
-                <button
-                  type="button"
-                  onClick={() => setMode('professional')}
-                  aria-label="Đổi chế độ"
-                  className="sm:hidden flex size-9 items-center justify-center rounded-md border border-slate-200 text-slate-700 hover:bg-slate-100 transition-colors"
-                >
-                  <UserIcon className="size-4 text-teal-600" />
-                </button>
-              )}
+            <Link to="/search" aria-label="Tìm kiếm" className={cn(iconBtnClass, 'sm:hidden')}>
+              <Search className="size-4.5" aria-hidden />
+            </Link>
 
-              <Link
-                to="/search"
-                aria-label="Tìm kiếm"
-                className="md:hidden flex size-9 items-center justify-center rounded-md text-slate-700 hover:bg-slate-100 transition-colors"
-              >
-                <Search className="size-5" />
-              </Link>
-
-              <Link
-                to="/messages"
-                aria-label="Tin nhắn"
-                className="relative flex size-9 items-center justify-center rounded-md text-slate-600 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-              >
-                <MessageCircle className="size-5" />
-                {Boolean(unreadConvs && unreadConvs > 0) && (
-                  <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-bold text-white">
-                    {unreadConvs}
-                  </span>
-                )}
-              </Link>
-
-              <Link
-                to="/notifications"
-                aria-label="Thông báo"
-                className="relative flex size-9 items-center justify-center rounded-md text-slate-600 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-              >
-                <Bell className="size-5" />
-                {Boolean(unreadNotifs && unreadNotifs > 0) && (
-                  <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-sky-600 px-1 text-[10px] font-bold text-white">
-                    {unreadNotifs}
-                  </span>
-                )}
-              </Link>
-
-              <Link
-                to="/feed"
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-md bg-teal-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-800 transition-colors shadow-2xs ml-1 whitespace-nowrap shrink-0"
-              >
-                <span>+ Tạo bài viết</span>
-              </Link>
-
-              <div className="h-5 w-px bg-slate-200 mx-1 hidden sm:block" />
-              <UserMenu inverted={false} />
-              {user && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await logout();
-                    navigate('/login', { replace: true });
-                  }}
-                  title="Đăng xuất khỏi tài khoản"
-                  className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-slate-200/90 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors shadow-2xs shrink-0 select-none"
-                  aria-label="Đăng xuất"
-                >
-                  <LogOut className="size-3.5 text-slate-500" />
-                  <span>Đăng xuất</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Tier 2: General Mode Navigation Strip (Visible across Desktop, Tablet, and Mobile) */}
-          <div className="border-t border-slate-200/80 bg-white">
-            <div className="mx-auto flex h-10 max-w-7xl items-center justify-between px-3 sm:px-6 text-xs">
-              <nav
-                className="flex items-center gap-1 overflow-x-auto h-full"
-                aria-label="Điều hướng thành viên"
-              >
-                <NavLink
-                  to="/feed"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2.5 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-teal-600 text-teal-800 bg-teal-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <Home className="size-3.5 text-teal-600 shrink-0" />
-                  <span>Trang chủ</span>
-                </NavLink>
-                <NavLink
-                  to="/search"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2.5 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-teal-600 text-teal-800 bg-teal-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <Search className="size-3.5 text-teal-600 shrink-0" />
-                  <span>Khám phá</span>
-                </NavLink>
-                <NavLink
-                  to="/communities"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2.5 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-teal-600 text-teal-800 bg-teal-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <Users className="size-3.5 text-teal-600 shrink-0" />
-                  <span>Cộng đồng</span>
-                </NavLink>
-                <NavLink
-                  to="/my-health"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2.5 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-teal-600 text-teal-800 bg-teal-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <Heart className="size-3.5 text-rose-500 shrink-0" />
-                  <span>Sức khỏe của tôi</span>
-                </NavLink>
-                <NavLink
-                  to="/eeg-hub?view=personal"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2.5 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-sky-600 text-sky-800 bg-sky-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <Brain className="size-3.5 text-sky-600 shrink-0" />
-                  <span>My EEG</span>
-                </NavLink>
-                <NavLink
-                  to="/messages"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2.5 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-teal-600 text-teal-800 bg-teal-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <MessageCircle className="size-3.5 text-teal-600 shrink-0" />
-                  <span>Tin nhắn</span>
-                </NavLink>
-                {user && (
-                  <NavLink
-                    to={`/u/${user.username}`}
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center gap-1.5 h-full px-2.5 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                        isActive
-                          ? 'border-teal-600 text-teal-800 bg-teal-50/40 font-bold'
-                          : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                      )
-                    }
-                  >
-                    <UserIcon className="size-3.5 text-teal-600 shrink-0" />
-                    <span>Hồ sơ</span>
-                  </NavLink>
-                )}
-                {user?.role === 'ADMIN' && (
-                  <NavLink
-                    to="/admin"
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center gap-1.5 h-full px-2.5 border-b-2 font-bold transition-colors whitespace-nowrap shrink-0',
-                        isActive
-                          ? 'border-purple-600 text-purple-800 bg-purple-50/60'
-                          : 'border-transparent text-purple-700 hover:bg-purple-50/50',
-                      )
-                    }
-                  >
-                    <Shield className="size-3.5 text-purple-600 shrink-0" />
-                    <span>Quản trị</span>
-                  </NavLink>
-                )}
-              </nav>
-
-              <div className="flex items-center gap-2 text-[11px] text-teal-700 font-semibold whitespace-nowrap shrink-0">
-                <span className="hidden sm:inline">Chăm sóc Sức khỏe & Nghiên cứu Não bộ</span>
-              </div>
-            </div>
-          </div>
-        </header>
-      ) : (
-        /* ===================================================================== */
-        /* MODE B: PROFESSIONAL MODE HEADER (Two-Tier Navy & Structured Sub-Nav) */
-        /* ===================================================================== */
-        <header className="sticky top-0 z-40 shadow-2xs">
-          {/* Tier 1: Navy Blue Clinical & Research Command Bar */}
-          <div className="bg-[#162B47] text-white border-b border-[#0F1E32]">
-            <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-3 sm:px-6">
-              <div className="flex items-center gap-4 lg:gap-5">
-                <Logo inverted isProfessional />
-
-                {/* Mode Switcher in Navy Header */}
-                {canAccessProfessionalMode && (
-                  <div className="hidden sm:flex items-center rounded-md border border-white/15 bg-[#0F1E32]/80 p-0.5 text-xs font-semibold">
-                    <button
-                      type="button"
-                      onClick={() => setMode('general')}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded text-slate-300 hover:text-white transition-all select-none"
-                      title="Chuyển sang Chế độ Thành viên"
-                    >
-                      <UserIcon className="size-3.5 text-teal-300" />
-                      <span>Thành viên</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMode('professional')}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#2B4C7E] text-white shadow-2xs font-bold border border-white/15 transition-all select-none"
-                      title="Đang ở Chế độ Chuyên gia"
-                    >
-                      <Stethoscope className="size-3.5 text-teal-300" />
-                      <span>Chuyên gia</span>
-                    </button>
-                  </div>
-                )}
-
-                <div className="hidden xl:flex items-center gap-2 text-[11px] text-slate-300 border-l border-white/15 pl-4">
-                  <ShieldCheck className="size-3.5 text-teal-300 shrink-0" />
-                  <span className="font-medium truncate max-w-[220px]">
-                    {ACCOUNT_ROLE_LABELS[accountRole]} · Đã xác minh
-                  </span>
-                </div>
-              </div>
-
-              {/* Clinical & Research Search Input */}
-              <form onSubmit={handleGlobalSearch} className="hidden md:flex flex-1 max-w-md mx-2">
-                <div className="relative w-full">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-slate-300" />
-                  <input
-                    type="text"
-                    placeholder="Tra cứu ca lâm sàng, mã CCHN/ORCID, đạo trình EEG, chuyên gia..."
-                    value={globalSearch}
-                    onChange={(e) => setGlobalSearch(e.target.value)}
-                    className="w-full rounded-md border border-white/15 bg-[#0F1E32]/75 pl-9 pr-3 py-1.5 text-xs text-white placeholder:text-slate-400 transition-colors hover:border-white/25 focus:bg-[#0F1E32] focus:border-teal-400 focus:outline-none"
-                  />
-                </div>
-              </form>
-
-              {/* Right Command Actions */}
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                {canAccessProfessionalMode && (
-                  <button
-                    type="button"
-                    onClick={() => setMode('general')}
-                    aria-label="Đổi chế độ"
-                    className="sm:hidden flex size-8 items-center justify-center rounded-md border border-white/20 text-white hover:bg-white/10 transition-colors"
-                  >
-                    <Stethoscope className="size-4 text-teal-300" />
-                  </button>
-                )}
-
-                <Link
-                  to="/search"
-                  aria-label="Tìm kiếm"
-                  className="md:hidden flex size-8 items-center justify-center rounded-md text-slate-200 hover:bg-white/10 transition-colors"
-                >
-                  <Search className="size-4.5" />
-                </Link>
-
-                <Link
-                  to="/messages"
-                  aria-label="Tin nhắn chuyên môn"
-                  className="relative flex size-8 items-center justify-center rounded-md text-slate-200 hover:bg-white/10 hover:text-white transition-colors"
-                >
-                  <MessageCircle className="size-4.5" />
-                  {Boolean(unreadConvs && unreadConvs > 0) && (
-                    <span className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-teal-500 px-1 text-[10px] font-bold text-slate-950">
-                      {unreadConvs}
-                    </span>
-                  )}
-                </Link>
-
-                <Link
-                  to="/notifications"
-                  aria-label="Thông báo"
-                  className="relative flex size-8 items-center justify-center rounded-md text-slate-200 hover:bg-white/10 hover:text-white transition-colors"
-                >
-                  <Bell className="size-4.5" />
-                  {Boolean(unreadNotifs && unreadNotifs > 0) && (
-                    <span className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-slate-950">
-                      {unreadNotifs}
-                    </span>
-                  )}
-                </Link>
-
-                <Link
-                  to="/contributions"
-                  className="hidden sm:inline-flex items-center gap-1.5 rounded-md bg-[#2C6865] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#214F4D] border border-teal-400/30 transition-colors ml-1"
-                >
-                  <span>+ Công bố ca bệnh</span>
-                </Link>
-
-                <div className="h-4 w-px bg-white/15 mx-1 hidden sm:block" />
-                <UserMenu inverted />
-                {user && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await logout();
-                      navigate('/login', { replace: true });
-                    }}
-                    title="Đăng xuất khỏi tài khoản"
-                    className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:text-red-300 hover:bg-red-950/40 hover:border-red-400/40 transition-colors shrink-0 select-none"
-                    aria-label="Đăng xuất"
-                  >
-                    <LogOut className="size-3.5 text-slate-300" />
-                    <span>Đăng xuất</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Tier 2: Structured Clinical & Research Sub-Navigation Strip (Visible across Desktop, Tablet, and Mobile) */}
-          <div className="bg-white border-b border-slate-200/90">
-            <div className="mx-auto flex h-10 max-w-7xl items-center justify-between px-3 sm:px-6 text-xs">
-              <nav className="flex items-center gap-0.5 h-full overflow-x-auto" aria-label="Điều hướng chuyên gia">
-                <NavLink
-                  to="/dashboard"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-brand-600 text-brand-700 bg-brand-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <LayoutDashboard className="size-3.5 text-brand-600 shrink-0" />
-                  <span>Tổng quan</span>
-                </NavLink>
-                <NavLink
-                  to="/feed"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-brand-600 text-brand-700 bg-brand-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <span>Bảng tin Chuyên môn</span>
-                </NavLink>
-                <NavLink
-                  to="/search"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-brand-600 text-brand-700 bg-brand-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <span>Danh bạ Chuyên gia</span>
-                </NavLink>
-                <NavLink
-                  to="/communities"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-brand-600 text-brand-700 bg-brand-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <span>Hội đồng Chuyên khoa</span>
-                </NavLink>
-                <NavLink
-                  to="/contributions"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-brand-600 text-brand-700 bg-brand-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <Award className="size-3.5 text-accent-600 shrink-0" />
-                  <span>Research Hub</span>
-                </NavLink>
-                <NavLink
-                  to="/eeg-hub?view=workspace"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-brand-600 text-brand-700 bg-brand-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <Activity className="size-3.5 text-brand-600 shrink-0" />
-                  <span>EEG Workspace</span>
-                </NavLink>
-                <NavLink
-                  to="/messages"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-brand-600 text-brand-700 bg-brand-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <MessageCircle className="size-3.5 text-brand-600 shrink-0" />
-                  <span>Tin nhắn</span>
-                </NavLink>
-                <NavLink
-                  to="/rewards"
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 h-full px-2 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                      isActive
-                        ? 'border-brand-600 text-brand-700 bg-brand-50/40 font-bold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                    )
-                  }
-                >
-                  <Gift className="size-3.5 text-brand-600 shrink-0" />
-                  <span>Tín chỉ & Honoraria</span>
-                </NavLink>
-                {user && (
-                  <NavLink
-                    to={`/u/${user.username}`}
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center gap-1.5 h-full px-2 border-b-2 font-semibold transition-colors whitespace-nowrap shrink-0',
-                        isActive
-                          ? 'border-brand-600 text-brand-700 bg-brand-50/40 font-bold'
-                          : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                      )
-                    }
-                  >
-                    <span>Hồ sơ Chuyên gia</span>
-                  </NavLink>
-                )}
-                {user?.role === 'ADMIN' && (
-                  <NavLink
-                    to="/admin"
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center gap-1.5 h-full px-2 border-b-2 font-bold transition-colors whitespace-nowrap shrink-0',
-                        isActive
-                          ? 'border-purple-600 text-purple-800 bg-purple-50/60'
-                          : 'border-transparent text-purple-700 hover:bg-purple-50/50',
-                      )
-                    }
-                  >
-                    <Shield className="size-3.5 text-purple-600 shrink-0" />
-                    <span>Quản trị</span>
-                  </NavLink>
-                )}
-              </nav>
-
-              <div className="hidden 2xl:flex items-center gap-2 text-[11px] font-mono text-slate-500 whitespace-nowrap shrink-0">
-                <span>ICD-10 / 10-20 EEG</span>
-                <span className="text-slate-300">|</span>
-                <span className="text-brand-700 font-semibold">PHI Anonymized</span>
-              </div>
-            </div>
-          </div>
-        </header>
-      )}
-
-      {/* Main Content Area */}
-      <main
-        className={cn(
-          'mx-auto px-3 sm:px-6 space-y-4',
-          isProfessional ? 'max-w-7xl py-5' : 'max-w-6xl py-6',
-        )}
-      >
-        {/* Phase 3 Automatic Role Resolution Banner for Pending / Rejected Verification */}
-        {!canAccessProfessionalMode && verificationStatus === 'PENDING' && enableVerificationCenter && (
-          <div className="rounded-lg border border-amber-300 bg-amber-50/90 px-4 py-3 text-xs text-amber-950 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-start sm:items-center gap-2.5">
-              <Clock className="size-4 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
-              <div>
-                <span className="font-bold">
-                  Phân giải Trải nghiệm Tự động: Chế độ Thành viên (GENERAL_MODE)
+            <button type="button" onClick={togglePopup} aria-label="Tin nhắn" className={iconBtnClass}>
+              <MessageCircle className="size-4.5" aria-hidden />
+              {Boolean(unreadConvs && unreadConvs > 0) && (
+                <span className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-[#B91C1C] text-[10px] font-semibold text-white">
+                  {unreadConvs}
                 </span>
-                <span className="hidden sm:inline"> · </span>
-                <p className="sm:inline text-amber-900">
-                  Hồ sơ <strong>{pendingProfile?.title || ACCOUNT_ROLE_LABELS[accountRole]}</strong> của bạn đang ở trạng thái <strong>PENDING</strong> (Chờ Quản trị viên phê duyệt). Chế độ Chuyên gia sẽ tự động kích hoạt ngay sau khi minh chứng được duyệt.
+              )}
+            </button>
+
+            <Link to="/notifications" aria-label="Thông báo" className={iconBtnClass}>
+              <Bell className="size-4.5" aria-hidden />
+              {Boolean(unreadNotifs && unreadNotifs > 0) && (
+                <span className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-[#B91C1C] text-[10px] font-semibold text-white">
+                  {unreadNotifs}
+                </span>
+              )}
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setShowGuideModal(true)}
+              aria-label="Hướng dẫn nhanh"
+              title="Hướng dẫn nhanh"
+              className={iconBtnClass}
+            >
+              <HelpCircle className="size-4.5" aria-hidden />
+            </button>
+
+            {canAccessProfessionalMode ? (
+              <button
+                type="button"
+                onClick={() => setMode(isGeneral ? 'professional' : 'general')}
+                className={cn(
+                  'hidden sm:inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap shrink-0',
+                  isProfessional
+                    ? 'text-white/80 hover:bg-white/10 hover:text-white'
+                    : 'text-[#575652] hover:bg-[#EFECE6] hover:text-[#141413]',
+                )}
+              >
+                {isProfessional ? 'Thành viên' : 'Chuyên gia'}
+              </button>
+            ) : enableResubmission ? (
+              <Link
+                to="/settings?resubmit=true#verification-center"
+                className="hidden sm:inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-medium text-[#B91C1C] hover:bg-[#EFECE6] transition-colors whitespace-nowrap shrink-0"
+              >
+                Nộp lại hồ sơ
+              </Link>
+            ) : enableVerificationCenter ? (
+              <Link
+                to="/settings#verification-center"
+                className="hidden sm:inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-medium text-[#575652] hover:bg-[#EFECE6] hover:text-[#141413] transition-colors whitespace-nowrap shrink-0"
+              >
+                Chờ duyệt
+              </Link>
+            ) : null}
+
+            <UserMenu inverted={isProfessional} />
+          </div>
+        </div>
+      </header>
+
+      {/* 3-Column Architectural Body */}
+      <div className="mx-auto max-w-[1220px] px-4 sm:px-6 py-6 flex gap-7 items-start">
+        {/* Left Architectural Navigation Rail */}
+        <aside
+          aria-label="Điều hướng chính"
+          className="hidden md:flex flex-col w-[208px] shrink-0 sticky top-[76px] self-start pr-4 border-r border-[#DCE6DF]"
+        >
+          <nav className="flex flex-col gap-0.5">
+            {sidebarItems.map(({ to, label, icon: Icon, badge }) =>
+              to === '/messages' ? (
+                <button
+                  key={to}
+                  type="button"
+                  onClick={openInbox}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-[14px] transition-colors',
+                    isOpen
+                      ? 'font-semibold text-[#15803D] bg-[#ECFDF3]'
+                      : 'font-normal text-[#4B5563] hover:text-[#111827] hover:bg-[#EAF4EE]',
+                  )}
+                >
+                  <Icon
+                    className={cn('size-4 shrink-0', isOpen ? 'text-[#16A34A]' : 'text-[#6B7280]')}
+                    aria-hidden
+                  />
+                  <span className="truncate flex-1">{label}</span>
+                  {Boolean(badge && badge > 0) && (
+                    <span className="rounded-full bg-[#DCFCE7] px-1.5 py-0.2 text-[11px] font-semibold text-[#15803D] tabular-nums">
+                      {badge}
+                    </span>
+                  )}
+                </button>
+              ) : (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-3 rounded-lg px-2.5 py-2 text-[14px] transition-colors',
+                      isActive
+                        ? 'font-semibold text-[#15803D] bg-[#ECFDF3]'
+                        : 'font-normal text-[#4B5563] hover:text-[#111827] hover:bg-[#EAF4EE]',
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Icon
+                        className={cn(
+                          'size-4 shrink-0',
+                          isActive ? 'text-[#16A34A]' : 'text-[#6B7280]',
+                        )}
+                        aria-hidden
+                      />
+                      <span className="truncate flex-1">{label}</span>
+                      {Boolean(badge && badge > 0) && (
+                        <span className="rounded-full bg-[#DCFCE7] px-1.5 py-0.2 text-[11px] font-semibold text-[#15803D] tabular-nums">
+                          {badge}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              ),
+            )}
+          </nav>
+
+          <Link
+            to={isProfessional ? '/consultations?tab=queue' : '/eeg-hub'}
+            className="mt-3 flex items-center justify-center gap-1.5 rounded-lg bg-[#16A34A] px-3 py-2 text-xs font-semibold text-white hover:bg-[#15803D] transition-colors"
+          >
+            <Activity className="size-3.5 shrink-0" aria-hidden />
+            <span>{isProfessional ? 'Ca chờ đọc' : 'Đo sóng não'}</span>
+          </Link>
+
+          {user && (
+            <Link
+              to={`/u/${user.username}`}
+              className="mt-4 pt-4 border-t border-[#E6E4DF] flex items-center gap-2.5 px-2 text-xs text-[#575652] hover:text-[#141413] transition-colors"
+            >
+              <Avatar name={user.displayName} src={user.avatarUrl} size="xs" />
+              <div className="min-w-0">
+                <p className="truncate font-medium text-[#141413]">{user.displayName}</p>
+                <p className="truncate text-[11px] text-[#8A8882]">@{user.username}</p>
+              </div>
+            </Link>
+          )}
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="min-w-0 flex-1 space-y-4">
+          {!canAccessProfessionalMode && verificationStatus === 'PENDING' && enableVerificationCenter && (
+            <div className="rounded-xl border border-[#E6E4DF] bg-white px-4 py-3 text-xs text-[#262624] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start sm:items-center gap-2">
+                <Clock className="size-4 text-[#6E6D68] shrink-0 mt-0.5 sm:mt-0" aria-hidden />
+                <p>
+                  Hồ sơ <strong>{pendingProfile?.title || ACCOUNT_ROLE_LABELS[accountRole]}</strong> đang chờ phê duyệt. Chế độ Chuyên gia sẽ mở sau khi xác minh hoàn tất.
                 </p>
               </div>
+              <Link
+                to="/settings#verification-center"
+                className="text-xs font-semibold text-[#1B4332] hover:underline shrink-0"
+              >
+                Trung tâm xác minh →
+              </Link>
             </div>
-            <Link
-              to="/settings#verification-center"
-              className="inline-flex items-center justify-center gap-1.5 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700 transition-colors shrink-0"
-            >
-              <ShieldCheck className="size-3.5" /> Mở Trung tâm Xác minh
-            </Link>
-          </div>
-        )}
+          )}
 
-        {!canAccessProfessionalMode && verificationStatus === 'REJECTED' && enableResubmission && (
-          <div className="rounded-lg border border-red-300 bg-red-50/90 px-4 py-3 text-xs text-red-950 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-start sm:items-center gap-2.5">
-              <AlertCircle className="size-4 text-red-600 shrink-0 mt-0.5 sm:mt-0" />
-              <div>
-                <span className="font-bold">
-                  Phân giải Trải nghiệm Tự động: Chế độ Thành viên (GENERAL_MODE) — Cần nộp lại hồ sơ
-                </span>
-                <p className="text-red-900 mt-0.5">
-                  Hồ sơ <strong>{rejectedProfile?.title || ACCOUNT_ROLE_LABELS[accountRole]}</strong> ở trạng thái <strong>REJECTED</strong>
+          {!canAccessProfessionalMode && verificationStatus === 'REJECTED' && enableResubmission && (
+            <div className="rounded-xl border border-[#E6E4DF] bg-white px-4 py-3 text-xs text-[#262624] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start sm:items-center gap-2">
+                <AlertCircle className="size-4 text-[#B91C1C] shrink-0 mt-0.5 sm:mt-0" aria-hidden />
+                <p>
+                  Hồ sơ <strong>{rejectedProfile?.title || ACCOUNT_ROLE_LABELS[accountRole]}</strong> cần nộp lại
                   {rejectedProfile?.verificationNote ? `: "${rejectedProfile.verificationNote}"` : '.'}
                 </p>
               </div>
+              <Link
+                to="/settings?resubmit=true#verification-center"
+                className="text-xs font-semibold text-[#B91C1C] hover:underline shrink-0"
+              >
+                Nộp lại hồ sơ →
+              </Link>
             </div>
-            <Link
-              to="/settings?resubmit=true#verification-center"
-              className="inline-flex items-center justify-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 transition-colors shrink-0"
-            >
-              <ShieldCheck className="size-3.5" /> Nộp lại Minh chứng
-            </Link>
-          </div>
-        )}
+          )}
 
-        <Outlet />
-      </main>
+          <Outlet />
+        </main>
+      </div>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Nav */}
       <nav
-        className={cn(
-          'fixed inset-x-0 bottom-0 z-40 flex h-16 items-stretch border-t md:hidden shadow-lg',
-          isProfessional ? 'border-slate-300 bg-white' : 'border-slate-200 bg-white',
-        )}
+        className="fixed inset-x-0 bottom-0 z-40 flex h-14 items-stretch border-t border-[#DCE6DF] bg-white md:hidden"
         aria-label="Điều hướng di động"
       >
-        {navItems.map(({ to, label, icon: Icon, badge }) => (
+        {mobileNavItems.map(({ to, label, icon: Icon, badge }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) =>
               cn(
-                'relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium transition-colors',
-                isActive
-                  ? isProfessional
-                    ? 'text-brand-700 font-bold'
-                    : 'text-teal-700 font-semibold'
-                  : 'text-slate-500 hover:text-slate-900',
+                'relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] transition-colors',
+                isActive ? 'text-[#16A34A] font-semibold' : 'text-[#6B7280] font-normal hover:text-[#111827]',
               )
             }
           >
             <div className="relative">
-              <Icon className="size-5" aria-hidden />
+              <Icon className="size-4.5" aria-hidden />
               {Boolean(badge && badge > 0) && (
-                <span
-                  className={cn(
-                    'absolute -top-1 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white shadow-xs',
-                    isProfessional ? 'bg-brand-600' : 'bg-teal-600',
-                  )}
-                >
+                <span className="absolute -top-1 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-[#B91C1C] px-1 text-[9px] font-semibold text-white">
                   {badge}
                 </span>
               )}
@@ -1085,26 +729,121 @@ export function AppShell() {
             <span className="truncate max-w-[64px]">{label}</span>
           </NavLink>
         ))}
-
-        {user && (
-          <NavLink
-            to={`/u/${user.username}`}
-            className={({ isActive }) =>
-              cn(
-                'relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium transition-colors',
-                isActive
-                  ? isProfessional
-                    ? 'text-brand-700 font-bold'
-                    : 'text-teal-700 font-semibold'
-                  : 'text-slate-500 hover:text-slate-900',
-              )
-            }
-          >
-            <Avatar name={user.displayName} src={user.avatarUrl} size="xs" />
-            <span>Hồ sơ</span>
-          </NavLink>
-        )}
       </nav>
+
+      {/* Quick Guide Modal */}
+      {showGuideModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setShowGuideModal(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="guide-modal-title"
+            className="w-full max-w-2xl rounded-xl border border-[#E6E4DF] bg-white shadow-lg overflow-hidden text-[#141413]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-4 border-b border-[#E6E4DF] bg-[#FAF9F6] px-5 py-3.5">
+              <h2 id="guide-modal-title" className="text-sm font-semibold text-[#141413]">
+                Hướng dẫn nhanh
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowGuideModal(false)}
+                aria-label="Đóng hướng dẫn"
+                className="flex size-7 shrink-0 items-center justify-center rounded-md text-[#6E6D68] hover:bg-[#EFECE6] hover:text-[#141413] transition-colors"
+              >
+                <X className="size-4" aria-hidden />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  {
+                    title: '1. Đo sóng não',
+                    to: '/eeg-hub',
+                    desc: 'Xem mẫu thử hoặc tải file .csv.',
+                    Icon: Activity,
+                  },
+                  {
+                    title: '2. Hỏi Bác sĩ',
+                    to: '/consultations?ask=1',
+                    desc: 'Gửi triệu chứng kèm bản đo sóng não.',
+                    Icon: Stethoscope,
+                  },
+                  {
+                    title: '3. Nhật ký',
+                    to: '/my-health',
+                    desc: 'Chấm giấc ngủ & xem lịch hôm nay.',
+                    Icon: Heart,
+                  },
+                ].map(({ title, to, desc, Icon }) => (
+                  <button
+                    key={to}
+                    type="button"
+                    onClick={() => {
+                      navigate(to);
+                      setShowGuideModal(false);
+                    }}
+                    className="group flex flex-col justify-between rounded-xl border border-[#E6E4DF] bg-white p-3.5 text-left hover:border-[#1B4332] transition-colors"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-[#141413]">{title}</h3>
+                        <Icon className="size-4 text-[#6E6D68] shrink-0" aria-hidden />
+                      </div>
+                      <p className="text-xs text-[#575652]">{desc}</p>
+                    </div>
+                    <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#1B4332]">
+                      <span>Mở</span>
+                      <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="rounded-lg border border-[#E6E4DF] bg-[#FAF9F6] px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="text-xs text-[#575652]">
+                  <strong className="text-[#141413]">Bác sĩ / Nghiên cứu: </strong>
+                  Chuyển chế độ Chuyên gia ở góc phải màn hình.
+                </p>
+                <div className="flex items-center gap-2 shrink-0">
+                  {canAccessProfessionalMode && !isProfessional && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('professional');
+                        setShowGuideModal(false);
+                      }}
+                      className="rounded-lg bg-[#141413] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#292927] transition-colors whitespace-nowrap"
+                    >
+                      Chuyển sang Chuyên gia
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowGuideModal(false)}
+                    className="rounded-lg border border-[#E6E4DF] bg-white px-3 py-1.5 text-xs font-medium text-[#575652] hover:bg-[#F3F2EE] transition-colors whitespace-nowrap"
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      <ChatPopupDock />
     </div>
+  );
+}
+
+export function AppShell() {
+  return (
+    <ChatPopupProvider>
+      <AppShellContent />
+    </ChatPopupProvider>
   );
 }

@@ -3,7 +3,6 @@ import { Link, useSearchParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Award,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
   RotateCcw,
@@ -156,7 +155,7 @@ export function ContributionsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      {/* Header Banner - Research Hub (Reference: ResearchGate & Sermo) */}
+      {/* Header Banner - Research Hub */}
       <section className="rounded-lg border border-slate-300 bg-white shadow-2xs overflow-hidden">
         <div className="bg-[#162B47] p-6 sm:p-7 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="max-w-2xl space-y-2">
@@ -165,7 +164,7 @@ export function ContributionsPage() {
                 Trung tâm Nghiên cứu Khoa học & Đóng góp Chuyên môn
               </h1>
               <span className="inline-flex items-center gap-1.5 rounded bg-[#2C6865] px-2.5 py-0.5 text-[11px] font-bold text-teal-50 border border-teal-400/30">
-                <Sparkles className="size-3 text-amber-300" /> ResearchGate & Sermo Peer Review
+                <Award className="size-3 text-amber-300" /> Hội đồng Bình duyệt Đồng cấp CME
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">

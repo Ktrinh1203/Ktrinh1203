@@ -1,22 +1,53 @@
-# NeuroLink - Project Context & Design System State
+# NeuroLink — Project Context & Unified System Architecture
 
 ## Overview
-- **Project:** NeuroLink (`PBL4_Web`)
-- **Domain:** Healthcare & Neuroscience Professional Social Platform
-- **Design Specification:** `docs/DESIGN_SPECIFICATION.md` (v2.0)
-- **Primary Design Reference:** Sermo (`https://www.sermo.com/`)
-- **Secondary References:** Figure 1, Doximity, ResearchGate, PatientsLikeMe
-- **Design Philosophy:** Hybrid Design Direction (Social Media + Professional Network + Healthcare Dashboard)
+- **Project:** NeuroLink (`PBL4_Web` Unified Platform)
+- **Domain:** Healthcare & Neuroscience Social Network, Quantitative EEG (qEEG) Workstation, Neural Network Training Database, and 4-Pillar Startup Ecosystem
+- **Strategy & Business Model:** [docs/STARTUP_STRATEGY_BMC.md](./STARTUP_STRATEGY_BMC.md)
+- **Architectural Mental Model:** [docs/MENTAL_MODEL.md](./MENTAL_MODEL.md)
+- **Design Specification:** [docs/DESIGN_SPECIFICATION.md](./DESIGN_SPECIFICATION.md) (Dual-Mode UI: General `#f8fafb` + `#0d9488` Teal vs Professional `#162b47` Navy + `#f1f5f9` Canvas + `#2c6865` Teal; Plus Jakarta Sans + JetBrains Mono)
 
-## 10-Stage Incremental Architecture & End-to-End Live Data Wiring (`GENERAL_MODE` vs `PROFESSIONAL_MODE`)
-Both `GENERAL_MODE` and `PROFESSIONAL_MODE` operate within a single React 19 SPA (`client/`) and a single Express 5 + Prisma 6.19 backend (`server/`) backed by one PostgreSQL 16 database (`data/db`):
-1. **Account Role & Verification Resolution:** Deterministic backend resolver (`server/src/modules/users/experience.resolver.ts`) and frontend `ModeContext.tsx` resolving `GENERAL_MODE` vs `PROFESSIONAL_MODE` (`DOCTOR`, `HEALTHCARE_WORKER`, `RESEARCHER`, `RESEARCH_STUDENT` when `VERIFIED`), with `enableVerificationCenter` (`PENDING`) and `enableResubmission` (`REJECTED`).
-2. **Shared Design System:** Scoped design tokens (`client/src/index.css`) and reusable shared UI primitives (`client/src/components/ui/index.tsx`: `Button`, `Card`, `Badge`, `Avatar`, `VerifiedBadge`, `Input`, `Textarea`, `Tabs`, `TelemetryStrip`, `DataTableContainer`, `EmptyState`, `ErrorBanner`, `Spinner`).
-3. **General Mode Layout & Navigation (`AppShell.tsx`):** Single-row clean white header (`#FFFFFF`) on Desktop + responsive secondary horizontal navigation strip on Tablet (`768px`) and Mobile (`375px`) providing 1-click access to all 7 required General Mode modules (`Trang chủ`, `Khám phá`, `Cộng đồng`, `Sức khỏe của tôi`, `My EEG`, `Tin nhắn`, `Hồ sơ`).
-4. **Professional Mode Layout & Navigation (`AppShell.tsx`, `ProfessionalDashboardPage.tsx`):** Two-tier Navy (`#162B47`) & Clinical Slate command bar with all 9 required Professional Mode tabs (`Tổng quan`, `Bảng tin Chuyên môn`, `Danh bạ Chuyên gia`, `Hội đồng Chuyên khoa`, `Research Hub`, `EEG Workspace`, `Tin nhắn`, `Tín chỉ & Honoraria`, `Hồ sơ Chuyên gia`, plus `Quản trị` for Admins) visible across Desktop, Tablet, and Mobile. Personal health (`My Health`) and personal EEG (`My EEG`) remain accessible via `UserMenu`.
-5. **Shared Social Feed & Explore (`FeedPage.tsx`, `PostCard.tsx`, `SearchPage.tsx`):** Shared post creation, specialty filtering, likes, comments, follows, content moderation reporting (`reportsApi.create` in `PostCard.tsx`), professional Research Hub nomination shortcut (`+Nộp Research Hub` for `isProfessional && canEdit`), and unified Explore (`Posts`, `Professionals`, `Communities`).
-6. **Profile & Verification Integration (`ProfilePage.tsx`, `SettingsPage.tsx`):** General Mode displays Personal Info, Interests (`Chủ đề Quan tâm`), Posts, and Community Activity (`Hoạt động Cộng đồng`). Professional Mode displays Professional Credentials (`DataTableContainer` with `Mã CCHN / ORCID`), Verification Status, Academic Background, and Publications & Contributions (`DataTableContainer` connected to `contributionsApi.getMyContributions()`).
-7. **Research Hub (`ContributionsPage.tsx`, `contributions.routes.ts`):** Connected to `/api/contributions/publications`, `/api/contributions/my`, `/api/contributions/eligible-posts`, and `/api/search?category=professionals`. Preserves 100% of peer-review submission, resubmission, withdrawal, and 5-criteria review scoring.
-8. **EEG Workspace & My EEG (`EEGHubPage.tsx`, `eeg-access.routes.ts`):** Working EEG dataset creation (`POST /api/eeg-datasets`), CSV export (`handleExportDataset`), personal EEG dataset management (`GET /api/eeg-datasets/my`), Data-Owner Consent grant/revoke (`POST/DELETE /api/eeg-datasets/:id/consent`), and authorized clinical/research EEG Workspace (`GET /api/eeg-datasets/workspace`).
-9. **Credits (`RewardsPage.tsx`, `rewards.routes.ts`):** Credit wallet (`/api/rewards/wallet`), category filter pills (`Monetary Rewards` vs `Professional Benefits`), `Lịch sử Đóng góp` (`/api/contributions/my`), `Lịch sử Giao dịch`, and `Quyền lợi Đã đổi` (`/api/rewards/my-redemptions` & `POST /api/rewards/redeem`).
-10. **Messaging, Route Protection & Responsive Verification (`MessagesPage.tsx`, `guards.tsx`, `full_system_verification.test.ts`):** Cross-mode direct messaging (`/api/conversations`), frontend route guards (`RequireAuth`, `RequireVerifiedProfessional`, `RequireAdmin`), independent backend authorization guards (`assertVerifiedProfessional`, `requireAdmin`, `getDatasetByIdWithConsentCheck`), and 50/50 passing backend integration tests across 8 test suites.
+---
+
+## Unified Mega-Server Architecture & 1-Command Startup
+
+All platform layers operate as one cohesive stack orchestrated by [start_unified_server.py](../start_unified_server.py) and [start.bat](../start.bat):
+
+1. **PostgreSQL 16 (`127.0.0.1:5432`):** Reuses an already-listening local cluster or spawns `npm run db:start -w server` (`server/scripts/pg-daemon.ts`), executes `npx prisma migrate deploy` inside `server/`, and inspects the `User` row count to automatically run `npm run db:seed -w server` on a fresh database.
+2. **Python FastAPI qEEG Service (`127.0.0.1:8001`):** Runs `uvicorn app:app --host 127.0.0.1 --port 8001` inside `qeeg_service/` (`QEEG_PORT=8001`), loading `stroke_3class_production_model.joblib`, `hospital_grade_n1_benchmark_results.json`, and `ads1299_500hz_sample.csv`. If `uvicorn`/`fastapi` is absent in the Python environment, the launcher emits a warning and continues smoothly because Express falls back to `qeeg-dsp.engine.ts`.
+3. **Express 5 API Gateway (`127.0.0.1:4000`):** Proxies `/api/qeeg/*` to `QEEG_SERVICE_URL` (`http://127.0.0.1:8001`) with a 1500 ms timeout and deterministic TypeScript DSP fallback (`ts_dsp_fallback`), serves `qeeg_service/static/index.html` at `/clinical-workstation`, and hosts all social, Neural DB, and 4-pillar REST endpoints.
+4. **Vite React 19 SPA (`127.0.0.1:5173`):** Proxies `/api`, `/uploads`, and `/clinical-workstation` to `http://127.0.0.1:4000` (`client/vite.config.ts`) so browser cookies and CSRF headers remain strictly first-party.
+
+---
+
+## Clinical Taxonomy, qEEG Pipeline & Neural Network DB
+
+### 1. Four Clinical Categories (`ClinicalCategory` enum)
+- `VASCULAR_STROKE`: Acute ischemic stroke (LVO) vs intracerebral hemorrhage (ICH) triage with mandatory `CM[2,1] = 0` tPA lockout guard (`HOLD tPA / MANDATORY CT` prior to thrombolysis).
+- `EPILEPSY_ICU`: Focal slowing and paroxysmal epileptiform discharges in temporal/ICU monitoring.
+- `SLEEP_COGNITIVE`: Slow-wave N3 sleep mimics, cognitive fatigue (`TAR`), and relaxed occipital Alpha baseline.
+- `HARDWARE_BCI`: Raw 6-channel 24-bit TI ADS1299 recordings at 500 Hz (`F3, F4, C3, C4, O1, O2`) and motor imagery signals.
+
+### 2. Quantitative qEEG Studio & Standalone Workstation
+- **Backend Proxy & TS Fallback (`server/src/modules/qeeg/`):** `qeeg.routes.ts` and `qeeg-dsp.engine.ts` (zero-phase IIR bandpass/50 Hz notch + CAR, Welch Hann FFT PSD, DAR/TAR/BSI/PRI/wPLI, 19-ch spherical geodesic topomap, 80-dim `featureVector80`, PDF 1.4 fallback) expose `/api/qeeg/health`, `/api/qeeg/cases` (6 built-in scenarios: `case_ischemia_lvo`, `case_ich_hemorrhage`, `case_epilepsy_temporal`, `case_sleep_fatigue_n3`, `case_healthy_alpha`, `case_ads1299_hardware`), `/api/qeeg/analyze-case`, `/api/qeeg/analyze-csv`, `/api/qeeg/export-pdf-summary` (1-page ReportLab clinical Vietnamese PDF or minimal PDF fallback), and `POST /api/qeeg/save-to-platform`.
+- **Frontend qEEG Components (`client/src/features/eeg/`, `client/src/pages/EEGHubPage.tsx`):** `BrainWaveformViewer.tsx` (multi-channel paper grid, 25/50/100 uV gain, raw vs filtered toggle, calibration bracket), `CorticalTopomap2D.tsx` (19-channel 10-20 scalp topomap + hemispheric BSI breakdown), `QeegStudioPanel.tsx`, `PhysiologicalTrendChart.tsx`, `eegLabels.ts`, and Dual-Mode `qeeg_service/static/index.html` served at `/clinical-workstation`.
+
+### 3. Neural Network Training Database (`NeuralTrainingSample` & `/api/neural-db/*`)
+- **Labels (`NeuralLabel` enum):** `CONTROL` (0), `ISCHEMIC_STROKE` (1), `HEMORRHAGIC_STROKE` (2), `EPILEPTIFORM_SLOWING` (3), `COGNITIVE_FATIGUE` (4).
+- **Splits (`DatasetSplit` enum):** `TRAIN`, `VALIDATION`, `TEST`, `EXTERNAL_HOLDOUT`.
+- **Pipeline & Governance:** Stores deterministic 80-dimensional `featureVectorJson`, physiological biomarkers (`dar`, `bsi`, `tar`, `pri`, `wpli`, `signalQualityScore`, `tpaLockoutTriggered`), and `waveformPreviewJson`. Enforces `deidentifiedConfirmed === true` on ingestion (`POST /api/neural-db/samples`), restricts expert labeling (`PATCH /api/neural-db/samples/:id/verify`) via `assertVerifiedProfessional`, and exports structured CSV/JSONL (`GET /api/neural-db/export?format=csv|jsonl`) via `NeuralDatabasePanel.tsx`.
+
+---
+
+## Four Startup Pillars (Customer Relationships & Economic Engine)
+
+1. **Pillar 1 — Personal Assistance (`ConsultationTicket`, `ConsultationReply`, `/consultations`, `/api/consultations`):** Qanda-style remote overtime triage connecting general users and frontline clinics with verified junior/resident doctors (`bs_noitru_khang`), neurologists (`dr_minh`), and neuroscientists (`prof_lan`). Supports atomic `CONSULTATION_ESCROW` on creation, automatic `urgentRedFlag` 115 alert detection (`bsi >= 0.22`, `dar >= 3.2`, or acute stroke keywords), peer claim (`POST /:id/claim`), structured 3-part clinical guidance replies (`waveAnalysisText`, `clinicalGuidanceText`, `recommendedFollowUp`), and requester acceptance (`POST /:id/accept/:replyId`) transferring `CONSULTATION_EARNING`.
+2. **Pillar 2 — Co-creation & Data Bank (`DataBankListing`, `DataBankPurchase`, `/api/databank`, `DataBankMarketplacePanel.tsx`):** Marketplace for de-identified multi-center EEG datasets across the 4 clinical categories. Public listings expose summary `previewMetricsJson` while redacting `payloadCsvJson` until purchase (`POST /api/databank/:id/purchase`), which atomically debits `DATABANK_PURCHASE`, credits author `DATABANK_ROYALTY`, records `DataBankPurchase`, and increments `downloadsCount`.
+3. **Pillar 3 — Self-Services (`HealthCheckIn`, `WorkingPlanBlock`, `/my-health`, `/api/self-service`):** Longitudinal personal EEG/health tracker (`PhysiologicalTrendChart.tsx` across `focusScore`, `fatigueIndexTar`, `hemisphericBsi`, `sleepHours`) paired with daily work-recovery scheduling (`DEEP_WORK`, `LIGHT_ADMIN`, `NEURO_RECOVERY`, `SLEEP_TARGET`, `CLINICAL_CHECK`) and granular Data-Owner Consent (`eegDatasetsApi.grantConsent` / `revokeConsent`).
+4. **Pillar 4 — Community & Doctor Popularity (`Post`, `Contribution`, `/api/community-insights/spotlight`):** Academic feed (`FeedPage.tsx`) featuring 4-category filters and a verified specialist spotlight widget ranked by real database `impactScore` (public posts, likes, followers, accepted consultations, Data Bank listings and downloads). Supported by a 1-time idempotent `+250` `STARTER_GRANT` (`POST /api/rewards/claim-onboarding-grant`) and append-only `CreditWallet` / `CreditTransaction` ledger with `payoutEnabled = false` anti-cash-drain enforcement.
+
+---
+
+## Core Existing Modules & Access Control
+- **Mode & Role Resolution:** Deterministic backend `experience.resolver.ts` and frontend `ModeContext.tsx` separating `GENERAL_MODE` (`hoa_health`) from `PROFESSIONAL_MODE` (`dr_minh`, `prof_lan`, `bs_noitru_khang`) alongside `PENDING` (`tuan_bme`) and `REJECTED` verification workflows.
+- **Social, Messaging & Research Hub:** Cursor-paginated feed, 1-on-1 direct messaging (`directKey` 403 participant guard), notifications with `dedupeKey`, moderation reporting, 6-state credential dossier review with SHA-256 + OCR checks, and 5-criteria Research Hub peer review.

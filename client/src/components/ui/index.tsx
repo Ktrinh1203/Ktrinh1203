@@ -10,20 +10,20 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline' | 'accen
 type Size = 'xs' | 'sm' | 'md' | 'lg';
 
 const variantClasses: Record<Variant, string> = {
-  primary: 'bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 shadow-xs hover:shadow-sm disabled:bg-brand-300 font-semibold tracking-wide',
-  dark: 'bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950 shadow-xs hover:shadow-sm disabled:bg-slate-300 font-semibold',
-  secondary: 'bg-brand-50 text-brand-800 hover:bg-brand-100 active:bg-brand-200/60 border border-brand-200/70 disabled:opacity-60 font-semibold',
-  accent: 'bg-accent-600 text-white hover:bg-accent-700 active:bg-accent-800 shadow-xs hover:shadow-sm disabled:bg-accent-300 font-semibold',
-  outline: 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-2xs disabled:opacity-60 font-medium',
-  ghost: 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 disabled:opacity-60 font-medium',
-  danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-xs disabled:bg-red-300 font-semibold',
+  primary: 'bg-[#16A34A] text-white hover:bg-[#15803D] active:bg-[#166534] disabled:opacity-50 font-semibold',
+  dark: 'bg-[#14532D] text-white hover:bg-[#166534] active:bg-[#052E16] disabled:opacity-50 font-semibold',
+  secondary: 'bg-[#ECFDF3] text-[#15803D] hover:bg-[#DCFCE7] border border-[#BBF7D0] disabled:opacity-50 font-semibold',
+  accent: 'bg-[#16A34A] text-white hover:bg-[#15803D] active:bg-[#166534] disabled:opacity-50 font-semibold',
+  outline: 'border border-[#D5E2D9] bg-white text-[#1F2937] hover:bg-[#F3F9F5] hover:border-[#16A34A]/50 disabled:opacity-50 font-medium',
+  ghost: 'text-[#4B5563] hover:bg-[#ECFDF3] hover:text-[#15803D] disabled:opacity-50 font-medium',
+  danger: 'bg-[#DC2626] text-white hover:bg-[#B91C1C] disabled:opacity-50 font-semibold',
 };
 
 const sizeClasses: Record<Size, string> = {
-  xs: 'h-7 px-3 text-xs gap-1.5 rounded-md',
-  sm: 'h-8.5 px-3.5 text-xs sm:text-sm gap-1.5 rounded-md',
-  md: 'h-10 px-5 text-sm gap-2 rounded-md',
-  lg: 'h-11 px-6 text-base gap-2.5 rounded-md',
+  xs: 'h-7.5 px-2.5 text-xs gap-1.5 rounded-md',
+  sm: 'h-8.5 px-3.5 text-xs sm:text-sm gap-1.5 rounded-lg',
+  md: 'h-9.5 px-4 text-sm gap-2 rounded-lg',
+  lg: 'h-11 px-5 text-sm sm:text-base gap-2 rounded-lg',
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -86,7 +86,7 @@ export function Field({ label, error, hint, htmlFor, children }: FieldWrapperPro
 }
 
 const inputBase =
-  'block w-full rounded-lg border bg-slate-50/60 px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:bg-slate-50 disabled:cursor-not-allowed';
+  'block w-full rounded-lg border bg-white px-3.5 text-sm text-[#141413] placeholder:text-[#8A8882] transition-colors focus:outline-none focus:ring-2 focus:ring-[#1B4332]/15 disabled:bg-[#F5F4F0] disabled:cursor-not-allowed';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   invalid?: boolean;
@@ -147,7 +147,7 @@ export function Card({
     <div
       id={id}
       className={cn(
-        'rounded-lg border border-slate-200/80 bg-white shadow-xs transition-colors',
+        'rounded-xl border border-[#DCE6DF] bg-white',
         className,
       )}
     >
@@ -226,6 +226,22 @@ const AVATAR_SIZES = {
   xl: 'size-24 text-2xl',
 };
 
+const AVATAR_TONES = [
+  'bg-[#DCFCE7] text-[#166534]',
+  'bg-[#E0F2FE] text-[#075985]',
+  'bg-[#D1FAE5] text-[#065F46]',
+  'bg-[#FEF3C7] text-[#92400E]',
+  'bg-[#E2E8F0] text-[#1E293B]',
+];
+
+function pickAvatarTone(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) {
+    hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  }
+  return AVATAR_TONES[hash % AVATAR_TONES.length];
+}
+
 export function Avatar({
   name,
   src,
@@ -245,21 +261,18 @@ export function Avatar({
     .join('');
 
   const base = cn(
-    'inline-flex shrink-0 items-center justify-center rounded-full font-semibold select-none ring-1 ring-slate-900/5',
+    'inline-flex shrink-0 items-center justify-center rounded-full font-semibold tracking-tight select-none border border-black/8',
     AVATAR_SIZES[size],
     className,
   );
 
   if (src) {
-    return <img src={src} alt={name} className={cn(base, 'object-cover')} />;
+    return <img src={src} alt={name} width={44} height={44} className={cn(base, 'object-cover')} />;
   }
 
   return (
     <span
-      className={cn(
-        base,
-        'bg-brand-50 text-brand-700 border border-brand-200/80 font-bold',
-      )}
+      className={cn(base, pickAvatarTone(name))}
       aria-label={name}
     >
       {initials || '?'}

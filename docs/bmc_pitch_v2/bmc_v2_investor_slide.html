@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuroLink EEG - Business Model Canvas v2.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #ffffff;
+      color: #111827;
+      padding: 16px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Slide Header (52px) */
+    .slide-header {
+      height: 52px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 4px;
+      border-bottom: 2px solid #111827;
+      padding-bottom: 6px;
+    }
+
+    .brand-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-title {
+      font-size: 21px;
+      font-weight: 900;
+      color: #111827;
+      letter-spacing: -0.2px;
+      text-transform: uppercase;
+    }
+
+    .brand-badge {
+      background: #111827;
+      color: #ffffff;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 2px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: #4b5563;
+      font-weight: 600;
+    }
+
+    .header-tags {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tag-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 2px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      background: #ffffff;
+      color: #111827;
+      border: 1px solid #111827;
+    }
+
+    /* The Master BMC Canvas Frame (984px) */
+    .bmc-container {
+      width: 100%;
+      height: 984px;
+      border: 2px solid #111827;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top Grid: 5 Columns (624px) */
+    .top-grid {
+      display: grid;
+      grid-template-columns: 1.02fr 1.05fr 1.15fr 1.02fr 1.06fr;
+      height: 624px;
+      border-bottom: 2px solid #111827;
+    }
+
+    .col-full {
+      height: 100%;
+      padding: 9px 12px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .col-split {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .cell-half {
+      flex: 1;
+      height: 312px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Dividers */
+    .border-r { border-right: 1.5px solid #111827; }
+    .border-b { border-bottom: 1.5px solid #111827; }
+
+    /* Block Header Styling */
+    .block-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e5e7eb;
+      flex-shrink: 0;
+    }
+
+    .block-title-box {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .block-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 2px;
+      background: #111827;
+      color: #ffffff;
+      font-size: 11.5px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .block-title {
+      font-size: 13px;
+      font-weight: 900;
+      color: #111827;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+    }
+
+    .block-subtitle {
+      font-size: 10px;
+      font-weight: 600;
+      color: #6b7280;
+      margin-left: 2px;
+    }
+
+    /* Block Content Area */
+    .block-content {
+      font-size: 10.8px;
+      line-height: 1.36;
+      color: #1f2937;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 4px;
+    }
+
+    .item-entry {
+      border-left: 2px solid #111827;
+      padding: 2px 0 2px 7px;
+    }
+
+    .item-head {
+      font-size: 11px;
+      font-weight: 800;
+      color: #111827;
+      margin-bottom: 1px;
+      line-height: 1.3;
+    }
+
+    .item-subtag {
+      font-size: 9.2px;
+      font-weight: 700;
+      color: #4b5563;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: 1px;
+    }
+
+    .item-body {
+      font-size: 10.4px;
+      color: #374151;
+      line-height: 1.32;
+    }
+
+    /* Bottom Grid: 2 Columns (Cost & Revenue) (292px) */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: 292px;
+      border-bottom: 2px solid #111827;
+    }
+
+    .bottom-cell {
+      padding: 7px 14px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bottom-content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      flex: 1;
+    }
+
+    .box-entry {
+      border: 1px solid #d1d5db;
+      border-radius: 2px;
+      padding: 5px 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 2px;
+    }
+
+    .box-entry-focus {
+      border: 1.5px solid #111827;
+    }
+
+    .box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1px;
+    }
+
+    .box-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #111827;
+    }
+
+    .box-metric {
+      font-size: 10.2px;
+      font-weight: 800;
+      color: #111827;
+      border: 1px solid #111827;
+      padding: 0 4px;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+
+    /* Footer: Sustainability & Policy Bar (68px) */
+    .sustainability-bar {
+      height: 68px;
+      background: #f9fafb;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .sus-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .sus-badge {
+      background: #111827;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 6px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sus-heading {
+      font-size: 11.8px;
+      font-weight: 900;
+      color: #111827;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+    }
+
+    .sus-cards-row {
+      display: flex;
+      gap: 8px;
+      flex: 1;
+      justify-content: flex-end;
+    }
+
+    .sus-card {
+      background: #ffffff;
+      border: 1px solid #111827;
+      border-radius: 2px;
+      padding: 4px 8px;
+      font-size: 10.2px;
+      line-height: 1.32;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 480px;
+    }
+
+    .sus-card-title {
+      font-weight: 800;
+      color: #111827;
+      white-space: nowrap;
+    }
+
+    .sus-card-body {
+      color: #374151;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Slide Header -->
+  <header class="slide-header">
+    <div class="brand-title-wrap">
+      <div class="brand-row">
+        <h1 class="brand-title">
+          BẢNG MÔ HÌNH KINH DOANH (BUSINESS MODEL CANVAS v2.0)
+        </h1>
+        <span class="brand-badge">CHUẨN OSTERWALDER (1 &rarr; 9)</span>
+      </div>
+      <p class="brand-subtitle">
+        Dự án NeuroLink EEG — Mô hình Động cơ Kép: B2B Pro Kit &amp; B2C Sleep &rarr; Sandbox Y tế | ĐH Bách Khoa – ĐH Đà Nẵng
+      </p>
+    </div>
+    <div class="header-tags">
+      <div class="tag-badge">
+        MÔ HÌNH ĐỘNG CƠ KÉP (B2B + B2C)
+      </div>
+      <div class="tag-badge">
+        DÒNG TIỀN DƯƠNG NGÀY 1
+      </div>
+      <div class="tag-badge">
+        SANDBOX NQ 136 / DISSC ĐÀ NẴNG
+      </div>
+    </div>
+  </header>
+
+  <!-- Master Canvas Frame -->
+  <main class="bmc-container">
+    
+    <!-- Top 5 Columns -->
+    <div class="top-grid">
+
+      <!-- Column 1: Block 8. ĐỐI TÁC CHÍNH -->
+      <section class="col-full border-r">
+        <div class="block-header">
+          <div class="block-title-box">
+            <span class="block-num">8</span>
+            <div>
+              <h2 class="block-title">ĐỐI TÁC CHÍNH</h2>
+              <span class="block-subtitle">Liên minh Thực chiến &amp; Động cơ Kép</span>
+            </div>
+          </div>
+        </div>
+        <div class="block-content">
+          <div class="item-entry">
+            <div class="item-subtag">Doanh thu Pha 1 (0 Vướng Phép Y tế)</div>
+            <div class="item-head">Khoa Y sinh / CNTT ĐH &amp; Wellness Resort</div>
+            <div class="item-body">
+              Các phòng Lab BCI tại ĐH Bách Khoa, ĐH Sư phạm Kỹ thuật; Trung tâm Tâm lý &amp; Wellness Resort cao cấp (Đà Nẵng &ndash; Hội An).
+            </div>
+          </div>
+
+          <div class="item-entry">
+            <div class="item-subtag">Đầu mối Chính sách &amp; Vốn mồi</div>
+            <div class="item-head">DISSC (Sở KH&amp;CN Đà Nẵng) &amp; Vườn ươm DNES</div>
+            <div class="item-body">
+              Cơ quan đầu mối thẩm định cơ chế Sandbox Nghị quyết 136/2024/QH15 và điều phối gói tài trợ không hoàn lại Nghị quyết 19/2026/NQ-HĐND.
+            </div>
+          </div>
+
+          <div class="item-entry">
+            <div class="item-subtag">Đối tác Lâm sàng Sandbox</div>
+            <div class="item-head">Hội Thầy thuốc Trẻ ĐN &amp; Bệnh viện Đà Nẵng</div>
+            <div class="item-body">
+              Đối tác nghiên cứu lâm sàng, đo đối chứng PSG và thông qua Hội đồng Đạo đức Y sinh chuẩn bị cấp phép Số lưu hành TBYT.
+            </div>
+          </div>
+
+          <div class="item-entry">
+            <div class="item-subtag">Sản xuất Phần cứng (Fabless)</div>
+            <div class="item-head">Xưởng Gia công Bo mạch EMS ISO 13485</div>
+            <div class="item-body">
+              Gia công SMT mạch 6 lớp ADS1299 và đúc khuôn điện cực khô công thái học theo tiêu chuẩn thiết bị y tế quốc tế, không chôn vốn cố định.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Column 2: Split (7. Hoạt động cốt lõi / 6. Tài sản cốt lõi) -->
+      <div class="col-split border-r">
+        
+        <!-- Block 7. HOẠT ĐỘNG CỐT LÕI -->
+        <section class="cell-half border-b">
+          <div class="block-header">
+            <div class="block-title-box">
+              <span class="block-num">7</span>
+              <div>
+                <h2 class="block-title">HOẠT ĐỘNG CỐT LÕI</h2>
+                <span class="block-subtitle">Fabless MedTech &amp; Song hành 2 Pha</span>
+              </div>
+            </div>
+          </div>
+          <div class="block-content">
+            <div class="item-entry">
+              <div class="item-subtag">Gia công Fabless &amp; B2B Kit</div>
+              <div class="item-head">Thuê ngoài EMS &amp; Cung cấp Lab ĐH</div>
+              <div class="item-body">
+                Gia công mạch chuẩn ISO 13485; cung ứng B2B Kit mở &amp; SDK cho Lab ĐH và Trung tâm Trị liệu Giấc ngủ (tạo doanh thu tức thì).
+              </div>
+            </div>
+
+            <div class="item-entry">
+              <div class="item-subtag">Vận hành B2C &amp; Thuật toán AI</div>
+              <div class="item-head">Học Baseline &amp; Sàn Đọc Biểu đồ</div>
+              <div class="item-body">
+                Vận hành kênh D2C thiết bị giấc ngủ; tinh chỉnh AI học đường nền 7 đêm đầu và điều phối chuyên gia đọc ca từ xa theo lượt.
+              </div>
+            </div>
+
+            <div class="item-entry">
+              <div class="item-subtag">Thử nghiệm Lâm sàng Sandbox</div>
+              <div class="item-head">Đo Đối chứng Viện &amp; Cấp phép TBYT</div>
+              <div class="item-body">
+                Đo đối chứng lâm sàng tại BV Đà Nẵng để hoàn thiện hồ sơ lâm sàng lấy Số lưu hành TBYT Bộ Y tế trong Sandbox NQ 136.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Block 6. TÀI SẢN CỐT LÕI -->
+        <section class="cell-half">
+          <div class="block-header">
+            <div class="block-title-box">
+              <span class="block-num">6</span>
+              <div>
+                <h2 class="block-title">TÀI SẢN CỐT LÕI</h2>
+                <span class="block-subtitle">Hào lũy Kỹ thuật &amp; Phần cứng Chạy thật</span>
+              </div>
+            </div>
+          </div>
+          <div class="block-content">
+            <div class="item-entry">
+              <div class="item-subtag">Phần cứng, Web &amp; RLHF Y khoa</div>
+              <div class="item-head">Mạch 6 Lớp ADS1299 &amp; Kho Neural DB Tự Lớn</div>
+              <div class="item-body">
+                Mạch 6 lớp (0 lỗi DRC) bán ngay B2B Kit + Web qEEG &amp; sổ cái CreditWallet thu nhãn bác sĩ với chi phí tiền mặt 0đ.
+              </div>
+            </div>
+
+            <div class="item-entry">
+              <div class="item-subtag">Thuật toán &amp; Ngoại kiểm Mù</div>
+              <div class="item-head">80 Feature &amp; UCLH N=28 (BAcc 73,33%)</div>
+              <div class="item-body">
+                Pipeline 80 đặc trưng bất biến độ lợi; kết quả ngoại kiểm mù UCLH (67,22% Zero-Calib Round 2) với khóa an toàn CM[2,1]=0.
+              </div>
+            </div>
+
+            <div class="item-entry">
+              <div class="item-subtag">Mạng lưới &amp; Hành lang</div>
+              <div class="item-head">Liên kết Lab ĐH, DISSC &amp; Thầy thuốc Trẻ</div>
+              <div class="item-body">
+                Mạng lưới Lab kỹ thuật &ndash; y dược, Trung tâm DISSC Sở KH&amp;CN, Hội Thầy thuốc Trẻ ĐN và hành lang Sandbox NQ 136.
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Column 3: Block 2. GIẢI PHÁP GIÁ TRỊ (Center) -->
+      <section class="col-full border-r">
+        <div class="block-header">
+          <div class="block-title-box">
+            <span class="block-num">2</span>
+            <div>
+              <h2 class="block-title">GIẢI PHÁP GIÁ TRỊ</h2>
+              <span class="block-subtitle">Giá trị Đa chiều: B2B Nghiên cứu &amp; B2C An tâm</span>
+            </div>
+          </div>
+        </div>
+        <div class="block-content">
+          <div class="item-entry">
+            <div class="item-subtag">Cho B2B Lab &amp; Wellness Resort (Pha 1)</div>
+            <div class="item-head">Kit Đo Đa kênh Mở &amp; Nền tảng Phân tích qEEG</div>
+            <div class="item-body">
+              Tiết kiệm 70% chi phí so với thiết bị nhập ngoại; mở toàn bộ SDK, API Python, Websocket và raw data 24-bit ADS1299 cho nghiên cứu.
+            </div>
+          </div>
+
+          <div class="item-entry">
+            <div class="item-subtag">Cho B2C Gia đình &amp; Cha mẹ (Pha 1)</div>
+            <div class="item-head">"Giấc Ngủ Ngon Xa Quê" (0 Thao tác)</div>
+            <div class="item-body">
+              Vòng tai êm ái tự đo khi ngủ; AI học nhịp não riêng, cảnh báo mất ngủ &amp; lệch pha ban đêm; con cái theo dõi an tâm từ xa.
+            </div>
+          </div>
+
+          <div class="item-entry">
+            <div class="item-subtag">Cho Bác sĩ &amp; Nhà Nghiên cứu (Pha 1&ndash;2)</div>
+            <div class="item-head">Free qEEG (RUO) Đổi Nhãn &amp; 150k / Ca</div>
+            <div class="item-body">
+              Miễn phí trạm đọc qEEG nghiên cứu (RUO); gán nhãn sóng não nhận Credit đổi dataset Data Bank &amp; ưu tiên nhận ca trả phí 150k/15p.
+            </div>
+          </div>
+
+          <div class="item-entry">
+            <div class="item-subtag">Cho Viện Nghiên cứu &amp; Hãng Dược (Pha 3)</div>
+            <div class="item-head">Kho Dữ liệu Sóng não Đời thực (RWE)</div>
+            <div class="item-body">
+              Chuỗi dữ liệu dọc đo tự nhiên tại nhà liên tục hàng trăm đêm, tiết kiệm ~80% chi phí thử nghiệm so với đo PSG nội viện.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Column 4: Split (4. Liên kết khách hàng / 3. Kênh tiếp cận) -->
+      <div class="col-split border-r">
+        
+        <!-- Block 4. LIÊN KẾT KHÁCH HÀNG -->
+        <section class="cell-half border-b">
+          <div class="block-header">
+            <div class="block-title-box">
+              <span class="block-num">4</span>
+              <div>
+                <h2 class="block-title">LIÊN KẾT KHÁCH HÀNG</h2>
+                <span class="block-subtitle">B2B SaaS Portal &amp; Khóa Sinh học B2C</span>
+              </div>
+            </div>
+          </div>
+          <div class="block-content">
+            <div class="item-entry">
+              <div class="item-subtag">Vòng lặp RLHF Bác sĩ &amp; B2B Portal</div>
+              <div class="item-head">Gán Nhãn Nhận Credit &amp; Báo cáo Resort</div>
+              <div class="item-body">
+                Bác sĩ (CCHN)/Researcher (ORCID) gán nhãn ca sạch (đồng thuận 2 người) tích Credit đổi Data Bank; Resort có báo cáo Co-branding.
+              </div>
+            </div>
+
+            <div class="item-entry">
+              <div class="item-subtag">Khóa Sinh học B2C &amp; Vòng lặp Gia đình</div>
+              <div class="item-head">Personal Baseline 7 Đêm &amp; App 3 Đầu cầu</div>
+              <div class="item-body">
+                AI học đường chuẩn riêng (đổi máy mất dữ liệu cá nhân hóa); bản tin sáng gửi 2&ndash;3 người con nhắc nhở cha mẹ đeo máy đều đặn.
+              </div>
+            </div>
+
+            <div class="item-entry">
+              <div class="item-subtag">Tư vấn Chuyên gia On-Demand</div>
+              <div class="item-head">Hội chẩn Theo Lượt Trong 2 Giờ</div>
+              <div class="item-body">
+                Kết nối bác sĩ/chuyên gia giải thích biểu đồ sóng não trong 2 giờ khi người dùng yêu cầu hoặc khi phát hiện cờ bất thường.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Block 3. KÊNH TIẾP CẬN -->
+        <section class="cell-half">
+          <div class="block-header">
+            <div class="block-title-box">
+              <span class="block-num">3</span>
+              <div>
+                <h2 class="block-title">KÊNH TIẾP CẬN</h2>
+                <span class="block-subtitle">Lộ trình Vết dầu loang 3 Pha</span>
+              </div>
+            </div>
+          </div>
+          <div class="block-content">
+            <div class="item-entry">
+              <div class="item-subtag">Pha 1 (0–12 tháng - 0 Vướng Phép Y tế)</div>
+              <div class="item-head">B2B Trực tiếp Lab &amp; D2C Giấc ngủ</div>
+              <div class="item-body">
+                Bán trực tiếp Lab ĐH &amp; ký gửi Wellness Resort; kênh D2C Web/TikTok Shop &amp; gian hàng Parent's Day FPT Complex qua DUT Alumni.
+              </div>
+            </div>
+
+            <div class="item-entry">
+              <div class="item-subtag">Pha 2 (12–24 tháng - Sau Sandbox/TBYT)</div>
+              <div class="item-head">Neuro-Holter Phòng khám &amp; Nhà thuốc</div>
+              <div class="item-body">
+                Cho thuê đo ngắn hạn 3&ndash;5 đêm tại phòng khám tư; mở rộng phân phối thiết bị tại chuỗi nhà thuốc lớn (Long Châu, Pharmacity).
+              </div>
+            </div>
+
+            <div class="item-entry">
+              <div class="item-subtag">Pha 3 (24+ tháng)</div>
+              <div class="item-head">Cổng RWE B2B Quốc tế &amp; Bảo hiểm</div>
+              <div class="item-body">
+                Cổng cấp phép dữ liệu nghiên cứu bảo mật cho viện BCI, hãng dược phẩm toàn cầu và đối tác bảo hiểm sức khỏe.
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Column 5: Block 1. KHÁCH HÀNG MỤC TIÊU -->
+      <section class="col-full">
+        <div class="block-header">
+          <div class="block-title-box">
+            <span class="block-num">1</span>
+            <div>
+              <h2 class="block-title">KHÁCH HÀNG MỤC TIÊU</h2>
+              <span class="block-subtitle">Phân kỳ 3 Pha: B2B Thu ngay &amp; B2C Báo hiếu</span>
+            </div>
+          </div>
+        </div>
+        <div class="block-content">
+          <!-- Định lượng Thị trường & Insight Nỗi đau -->
+          <div class="box-entry box-entry-focus" style="background: #f9fafb; padding: 4px 6px; margin-bottom: 2px;">
+            <div class="box-header" style="margin-bottom: 2px;">
+              <span class="box-title" style="font-size: 10px;">QUY MÔ THỊ TRƯỜNG &amp; INSIGHT (BOTTOM-UP)</span>
+              <span class="box-metric" style="font-size: 9px;">TAM 16.200 TỶ</span>
+            </div>
+            <div class="item-body" style="font-size: 9.6px; line-height: 1.28; margin-bottom: 2px;">
+              <strong>Nỗi đau:</strong> &gt;10tr người VN mất ngủ (30% người lớn); 14,8&ndash;16tr người cao tuổi; 200k ca đột quỵ/năm (76,8% lỡ giờ vàng); &gt;220 resort 4&ndash;5 sao ĐN&ndash;Hội An &amp; &gt;65 khoa ĐH Kỹ thuật&ndash;Y sinh.
+            </div>
+            <div class="item-body" style="font-size: 9.6px; line-height: 1.28; color: #111827;">
+              <strong>Quy mô:</strong> <strong>TAM:</strong> 16.200 tỷ | <strong>SAM:</strong> 1.680 tỷ (450k hộ + ĐH/Resort) | <strong>SOM 24T:</strong> 56,5 tỷ (Năm 1: 5,48 tỷ &mdash; 80 Kit, 20 Resort, 1.200 hộ B2C).
+            </div>
+          </div>
+
+          <div class="item-entry">
+            <div class="item-subtag">Nhóm 1: B2B Doanh thu Ngay (Pha 1)</div>
+            <div class="item-head">Lab Nghiên cứu ĐH &amp; Wellness Resort</div>
+            <div class="item-body">
+              Lab Y sinh / BCI / AI Thần kinh tại các trường ĐH Kỹ thuật &ndash; Y Dược; Trung tâm Phục hồi, Thiền định, Wellness Resort cao cấp (Đà Nẵng &ndash; Hội An).
+            </div>
+          </div>
+
+          <div class="item-entry">
+            <div class="item-subtag">Nhóm 2: B2C Giấc ngủ &amp; Sức khỏe (Pha 1)</div>
+            <div class="item-head">Con cái 25–40 tuổi &amp; Cha mẹ ở Quê (55+)</div>
+            <div class="item-body">
+              Kỹ sư, chuyên viên xa quê mua quà an tâm cho cha mẹ; người già mất ngủ, cao huyết áp cần theo dõi giấc ngủ êm ái 0 thao tác.
+            </div>
+          </div>
+
+          <div class="item-entry">
+            <div class="item-subtag">Nhóm 3: B2B2C Y tế (Pha 2)</div>
+            <div class="item-head">Bác sĩ Thần kinh &amp; Phòng khám Tư</div>
+            <div class="item-body">
+              Bác sĩ Nội thần kinh, Tim mạch tại Đà Nẵng kê đơn đo điện não Neuro-Holter 3&ndash;5 đêm tại nhà và nhận thù lao đọc ca 150k/lượt.
+            </div>
+          </div>
+
+          <div class="item-entry">
+            <div class="item-subtag">Nhóm 4: B2B Data Buyer (Pha 3)</div>
+            <div class="item-head">Viện Nghiên cứu BCI &amp; Hãng Dược</div>
+            <div class="item-body">
+              Các viện nghiên cứu giao diện não &ndash; máy tính, các hãng dược phẩm quốc tế cần bộ dữ liệu sóng não thực địa dọc thời gian (RWE thu ngoại tệ).
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Bottom 2 Columns: Cost Structure & Revenue Streams (292px) -->
+    <div class="bottom-grid">
+      
+      <!-- Block 9. CÁC KHOẢN PHẢI CHI -->
+      <section class="bottom-cell border-r">
+        <div class="block-header">
+          <div class="block-title-box">
+            <span class="block-num">9</span>
+            <div>
+              <h2 class="block-title">CÁC KHOẢN PHẢI CHI (COST STRUCTURE)</h2>
+              <span class="block-subtitle">Biến đổi hóa Chi phí &ndash; Lấy Ngắn Nuôi Dài, 0đ Lương cứng Chuyên gia</span>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-content-grid">
+          
+          <div class="box-entry">
+            <div class="box-header">
+              <span class="box-title">1. Giá vốn B2B Pro Kit (COGS)</span>
+              <span class="box-metric">~2.200.000đ/bộ</span>
+            </div>
+            <div class="item-body">
+              Bo mạch 6 lớp ADS1299 đo 8 kênh 24-bit, vỏ nhôm CNC anot hóa, cáp điện cực nghiên cứu mạ vàng (bán 8.9tr &rarr; lãi gộp ~75%).
+            </div>
+          </div>
+
+          <div class="box-entry">
+            <div class="box-header">
+              <span class="box-title">2. Giá vốn B2C Sleep Device</span>
+              <span class="box-metric">~1.150.000đ/bộ</span>
+            </div>
+            <div class="item-body">
+              Chip AFE sinh học tối ưu, cụm điện cực khô vùng tai, pin Lithium chống cháy nổ và vỏ đúc khuôn công thái học (lô thương mại).
+            </div>
+          </div>
+
+          <div class="box-entry">
+            <div class="box-header">
+              <span class="box-title">3. Chuyên gia, Gán nhãn &amp; Cloud</span>
+              <span class="box-metric">0đ Lương &amp; 0đ Mua Nhãn</span>
+            </div>
+            <div class="item-body">
+              0đ lương cứng (chỉ chia 150k khi có ca trả phí 199k); 0đ tiền mặt mua nhãn AI nhờ thưởng Credit nội bộ; Cloud &sim;6.000đ/hộ/tháng.
+            </div>
+          </div>
+
+          <div class="box-entry">
+            <div class="box-header">
+              <span class="box-title">4. Kiểm định TBYT &amp; Lâm sàng</span>
+              <span class="box-metric">Nuôi bằng Lãi B2B + NQ 19</span>
+            </div>
+            <div class="item-body">
+              Chi phí đo đối chứng và hồ sơ cấp phép TBYT được tự nuôi sống bằng dòng tiền lãi B2B Pro Kit và vốn mồi không hoàn lại NQ 19 Đà Nẵng.
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Block 5. CÁC NGUỒN THU TIỀN VỀ -->
+      <section class="bottom-cell">
+        <div class="block-header">
+          <div class="block-title-box">
+            <span class="block-num">5</span>
+            <div>
+              <h2 class="block-title">CÁC NGUỒN THU TIỀN VỀ (REVENUE STREAMS)</h2>
+              <span class="block-subtitle">4 Động cơ Doanh thu Đa tầng &ndash; Dòng tiền B2B tức thì &amp; Thuê bao B2C bền vững</span>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-content-grid">
+          
+          <div class="box-entry box-entry-focus">
+            <div class="box-header">
+              <span class="box-title">1. B2B Pro Kit &amp; Resort SaaS</span>
+              <span class="box-metric">8,9tr/bộ (Lãi ~75%)</span>
+            </div>
+            <div class="item-body">
+              Bán Kit R&amp;D/Wellness 8.900.000đ (lãi gộp 6,7tr/bộ) + Thuê bao SaaS nền tảng phân tích cho Wellness Resort 1.500.000đ/tháng (biên ~92%).
+            </div>
+          </div>
+
+          <div class="box-entry box-entry-focus">
+            <div class="box-header">
+              <span class="box-title">2. B2C Thiết bị Giấc ngủ (Bán/Cọc)</span>
+              <span class="box-metric">2,49tr (Cọc 1,5tr)</span>
+            </div>
+            <div class="item-body">
+              Bán đứt 2.490.000đ/bộ (lãi gộp ~54%) hoặc Cọc dùng thử 30 ngày 1.500.000đ (cao hơn COGS 1.150k &rarr; không bao giờ âm vốn lưu động).
+            </div>
+          </div>
+
+          <div class="box-entry box-entry-focus">
+            <div class="box-header">
+              <span class="box-title">3. Thuê bao AI &amp; Vật tư / Phí Sàn</span>
+              <span class="box-metric">99k/tháng (Biên ~90%)</span>
+            </div>
+            <div class="item-body">
+              Gói AI Gia đình 99.000đ/tháng (Cloud ~6k) + Đệm điện cực thay mới 149.000đ/quý + Phí sàn tư vấn 199.000đ/lượt (sàn giữ 49k, chuyên gia 150k).
+            </div>
+          </div>
+
+          <div class="box-entry box-entry-focus">
+            <div class="box-header">
+              <span class="box-title">4. Cấp phép Dữ liệu RWE B2B</span>
+              <span class="box-metric">3.000–10.000 USD</span>
+            </div>
+            <div class="item-body">
+              Cung cấp các gói dữ liệu sóng não khử định danh đo tự nhiên hàng trăm đêm cho Viện BCI &amp; Hãng Dược quốc tế (Pha 3 thu ngoại tệ).
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Footer Bar: Sustainability & Policy -->
+    <footer class="sustainability-bar">
+      <div class="sus-title-group">
+        <span class="sus-badge">CHÂN BẢNG</span>
+        <h3 class="sus-heading">TÍNH BỀN VỮNG &amp; ĐÒN BẨY CHÍNH SÁCH ĐÀ NẴNG</h3>
+      </div>
+      <div class="sus-cards-row">
+        <div class="sus-card">
+          <div>
+            <span class="sus-card-title">Pháp lý 2 Bước Không Bị Chặn:</span>
+            <span class="sus-card-body">Pha 1 bán hợp pháp B2B Research Kit &amp; B2C Wellness Sleep (NĐ 98 &amp; 07) &rarr; Pha 2 qua đầu mối DISSC Sở KH&amp;CN triển khai Sandbox NQ 136 BV Đà Nẵng cấp phép TBYT cảnh báo đột quỵ.</span>
+          </div>
+        </div>
+
+        <div class="sus-card">
+          <div>
+            <span class="sus-card-title">Tài trợ Công NQ 19/2026/NQ-HĐND:</span>
+            <span class="sus-card-body">Hỗ trợ không hoàn lại đến 2 Tỷ VNĐ giải ngân theo các mốc nghiệm thu kỹ thuật, bảo toàn vốn chủ sở hữu ban đầu.</span>
+          </div>
+        </div>
+
+        <div class="sus-card" style="max-width: 250px;">
+          <div>
+            <span class="sus-card-title">Ưu đãi Thuế NQ 136:</span>
+            <span class="sus-card-body">Miễn 100% thuế TNDN trong 5 năm đầu cho doanh nghiệp khởi nghiệp đổi mới sáng tạo tại Đà Nẵng.</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+  </main>
+
+</body>
+</html>

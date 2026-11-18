@@ -1,19 +1,30 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import {
   Activity,
+  ArrowUpRight,
   Award,
   BookOpen,
   ChevronRight,
+  Coins,
+  Database,
   FileSpreadsheet,
   Gift,
   Plus,
   ShieldCheck,
   Stethoscope,
 } from 'lucide-react';
-import { Button, Card, DataTableContainer } from '../components/ui';
+import { Alert, Button, Card, DataTableContainer } from '../components/ui';
 import { useAuth } from '../features/auth/AuthContext';
-import { rewardsApi, contributionsApi, eegDatasetsApi, postsApi } from '../api/endpoints';
+import {
+  rewardsApi,
+  contributionsApi,
+  eegDatasetsApi,
+  postsApi,
+  consultationsApi,
+} from '../api/endpoints';
+import { errorMessage } from '../api/client';
 
 const CLINICAL_CONSULTATION_QUEUE = [
   {
@@ -69,6 +80,8 @@ const RESEARCH_PROJECTS_LEDGER = [
 
 export function ProfessionalDashboardPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [grantFeedback, setGrantFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
   const { data: walletData, isLoading: loadingWallet } = useQuery({
     queryKey: ['rewards', 'wallet'],
@@ -95,7 +108,39 @@ export function ProfessionalDashboardPage() {
     queryFn: () => postsApi.getFeed('community'),
   });
 
+  const { data: queueData } = useQuery({
+    queryKey: ['consultations', 'dashboard-queue'],
+    queryFn: () => consultationsApi.list({ scope: 'queue' }),
+  });
+
+  const claimGrantMutation = useMutation({
+    mutationFn: () => rewardsApi.claimOnboardingGrant(),
+    onSuccess: (res) => {
+      setGrantFeedback({
+        tone: 'success',
+        text: res.granted
+          ? `Đã kích hoạt +${res.amount} Tín chỉ Khởi đầu vào ví.`
+          : 'Tài khoản đã nhận gói tín chỉ khởi đầu trước đó.',
+      });
+      void queryClient.invalidateQueries({ queryKey: ['rewards', 'wallet'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
+    },
+    onError: (err) => setGrantFeedback({ tone: 'error', text: errorMessage(err) }),
+  });
+
   const wallet = walletData?.wallet;
+  const transactions = walletData?.transactions ?? [];
+  const hasClaimedStarterGrant = transactions.some((tx) => tx.type === 'STARTER_GRANT');
+  const cmeEarned = transactions
+    .filter((tx) => tx.type === 'CONTRIBUTION_REWARD' && tx.amount > 0)
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  const consultationEarned = transactions
+    .filter((tx) => tx.type === 'CONSULTATION_EARNING' && tx.amount > 0)
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  const dataBankRoyaltyEarned = transactions
+    .filter((tx) => tx.type === 'DATABANK_ROYALTY' && tx.amount > 0)
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  const openQueueCount = (queueData?.tickets ?? []).filter((t) => t.status === 'OPEN').length;
   const balance = wallet?.balance ?? 0;
   const totalEarned = wallet?.totalEarned ?? 0;
   const verifiedProfile = user?.professionalProfiles?.find((p) => p.verificationStatus === 'VERIFIED');
@@ -123,31 +168,41 @@ export function ProfessionalDashboardPage() {
   const consultationRows = [...liveCases, ...liveFeedCases, ...CLINICAL_CONSULTATION_QUEUE].slice(0, 5);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Structured Command Header + Unified Clinical Telemetry Ledger Strip */}
       <div className="overflow-hidden rounded-md border border-slate-300/90 bg-white shadow-2xs">
-        <div className="bg-[#162B47] px-6 py-5 text-white flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="bg-[#162B47] p-6 text-white flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-                Trung tâm Điều hành Lâm sàng & Nghiên cứu Thần kinh
+                Trung tâm Chuyên khoa & Nghiên cứu
               </h1>
               <span className="inline-flex items-center gap-1 rounded bg-teal-500/20 border border-teal-400/40 px-2 py-0.5 text-[11px] font-bold text-teal-200">
                 <ShieldCheck className="size-3.5 text-teal-300" />
                 <span>{verifiedProfile?.licenseOrOrcidNumber || 'CCHN / ORCID Đã Xác Minh'}</span>
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-200 max-w-3xl">
+            <p className="text-xs sm:text-sm text-slate-200 max-w-3xl line-clamp-2">
               {verifiedProfile?.title || 'Chuyên gia Y tế & Nghiên cứu'} {user?.displayName} ·{' '}
-              {verifiedProfile?.institution || 'Hội đồng Chuyên môn NeuroLink'} · Chuyên khoa:{' '}
+              {verifiedProfile?.institution || 'Hội đồng Chuyên môn NeuroLink'} ·{' '}
               <strong className="text-white">{verifiedProfile?.specialty || 'Thần kinh học & BCI'}</strong>
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <Link to="/consultations?tab=queue">
+              <Button size="sm" variant="accent" icon={<Stethoscope className="size-3.5" />}>
+                Đọc ca Từ xa {openQueueCount > 0 ? `(${openQueueCount})` : ''}
+              </Button>
+            </Link>
             <Link to="/contributions">
-              <Button size="sm" variant="accent" icon={<Plus className="size-3.5" />}>
-                Công bố Ca bệnh / Nghiên cứu
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-white/10 text-white border-white/25 hover:bg-white/20"
+                icon={<Plus className="size-3.5" />}
+              >
+                Công bố Ca bệnh
               </Button>
             </Link>
             <Link to="/eeg-hub?view=workspace">
@@ -163,21 +218,41 @@ export function ProfessionalDashboardPage() {
           </div>
         </div>
 
-        {/* Unified 4-Column Tabular Telemetry Bar (Replaces generic floating KPI cards) */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 bg-slate-50/70 text-xs tabular-nums">
-          <div className="px-5 py-3.5 flex items-center justify-between">
-            <div>
-              <span className="block text-[11px] font-semibold text-slate-500">
-                Số dư Tín chỉ CME Khả dụng
-              </span>
-              <span className="mt-0.5 block text-xl font-black text-slate-900">
-                {loadingWallet ? '...' : `${balance} CME`}
-              </span>
-              <span className="text-[11px] text-slate-500">Tổng tích lũy: {totalEarned} CME</span>
+        {/* Unified 4-Column Tabular Telemetry Bar */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 bg-slate-50/70 text-xs tabular-nums">
+          <div className="px-5 py-3.5 space-y-1.5">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <span className="block text-[11px] font-semibold text-slate-500">
+                  Số dư Tín chỉ & Honoraria
+                </span>
+                <span className="mt-0.5 block text-xl font-black text-slate-900">
+                  {loadingWallet ? '...' : `${balance} tín chỉ`}
+                </span>
+                <span className="text-[11px] text-slate-500">Tổng tích lũy: {totalEarned}</span>
+              </div>
+              <Link to="/rewards" className="text-xs font-bold text-brand-700 hover:underline shrink-0">
+                Sổ cái →
+              </Link>
             </div>
-            <Link to="/rewards" className="text-xs font-bold text-brand-700 hover:underline">
-              Sổ cái →
-            </Link>
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10.5px] font-mono text-slate-600 pt-1 border-t border-slate-200/70">
+              <span>CME: +{cmeEarned}</span>
+              <span className="text-emerald-700 font-semibold">Tư vấn: +{consultationEarned}</span>
+              <span className="text-sky-700 font-semibold">DataBank: +{dataBankRoyaltyEarned}</span>
+            </div>
+            {!loadingWallet && wallet && balance === 0 && !hasClaimedStarterGrant && (
+              <Button
+                type="button"
+                size="xs"
+                variant="accent"
+                className="w-full mt-1"
+                loading={claimGrantMutation.isPending}
+                onClick={() => claimGrantMutation.mutate()}
+                icon={<Coins className="size-3" />}
+              >
+                Nhận 250 Tín chỉ Khởi đầu
+              </Button>
+            )}
           </div>
 
           <div className="px-5 py-3.5 flex items-center justify-between">
@@ -235,14 +310,16 @@ export function ProfessionalDashboardPage() {
         </div>
       </div>
 
+      {grantFeedback && <Alert tone={grantFeedback.tone}>{grantFeedback.text}</Alert>}
+
       {/* Main Workspace Grid: Data Tables & Detailed Information Panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left 8 Columns: Structured Clinical & Research Data Tables */}
-        <div className="lg:col-span-8 space-y-5">
+        <div className="lg:col-span-8 space-y-6">
           {/* DATA TABLE 1: Clinical Case Consultation & Peer Review Table */}
           <DataTableContainer
-            title="Bảng Theo dõi Ca bệnh Lâm sàng & Phản biện Đồng cấp (Peer Review)"
-            subtitle="Danh mục các ca bệnh khó và báo cáo tín hiệu thần kinh đang mở hội chẩn chuyên khoa"
+            title="Ca bệnh Lâm sàng & Phản biện CME"
+            subtitle="Các ca thảo luận chuyên khoa đang mở"
             icon={<Stethoscope className="size-4 text-brand-600" />}
             action={
               <Link to="/feed">
@@ -272,7 +349,7 @@ export function ProfessionalDashboardPage() {
                       <td className="py-3 px-4 align-top">
                         <Link
                           to="/feed"
-                          className="font-bold text-slate-900 hover:text-brand-600 leading-snug block"
+                          className="font-bold text-slate-900 hover:text-brand-600 leading-snug line-clamp-2"
                         >
                           {row.title}
                         </Link>
@@ -299,8 +376,8 @@ export function ProfessionalDashboardPage() {
 
           {/* DATA TABLE 2: Research Consortia & Pre-Clinical BCI Trials */}
           <DataTableContainer
-            title="Đề tài Nghiên cứu BCI & Hợp tác Đa trung tâm"
-            subtitle="Các dự án nghiên cứu thần kinh tính toán đang kêu gọi đồng tác giả lâm sàng"
+            title="Đề tài Nghiên cứu BCI & Đa trung tâm"
+            subtitle="Dự án nghiên cứu thần kinh học đang mở hợp tác"
             icon={<FileSpreadsheet className="size-4 text-accent-600" />}
             action={
               <Link to="/contributions">
@@ -331,7 +408,7 @@ export function ProfessionalDashboardPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4 align-top">
-                        <span className="font-bold text-slate-900 block leading-snug">
+                        <span className="font-bold text-slate-900 line-clamp-2 leading-snug">
                           {prj.title}
                         </span>
                         <span className="text-[11px] text-slate-500 mt-0.5 block">
@@ -354,7 +431,7 @@ export function ProfessionalDashboardPage() {
         </div>
 
         {/* Right 4 Columns: Detailed Information Panels (Authorized EEG Queue & Quick Operations) */}
-        <div className="lg:col-span-4 space-y-5">
+        <div className="lg:col-span-4 space-y-6">
           {/* Detailed Panel 1: Authorized EEG Datasets Queue */}
           <Card className="overflow-hidden border-slate-300/90 rounded-md shadow-2xs">
             <div className="bg-[#162B47] px-4 py-3 text-white flex items-center justify-between">
@@ -367,7 +444,7 @@ export function ProfessionalDashboardPage() {
               </span>
             </div>
 
-            <div className="p-4 space-y-3 divide-y divide-slate-200/80 text-xs">
+            <div className="p-6 space-y-3 divide-y divide-slate-200/80 text-xs">
               {(workspaceDatasets.length > 0
                 ? workspaceDatasets
                 : [
@@ -398,7 +475,7 @@ export function ProfessionalDashboardPage() {
                       Chủ sở hữu: @{rec.ownerUsername}
                     </span>
                   </div>
-                  <p className="text-slate-700 font-medium leading-snug">{rec.title}</p>
+                  <p className="text-slate-700 font-medium leading-snug line-clamp-2">{rec.title}</p>
                   <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
                     <span>
                       {rec.channelsCount} kênh · {rec.samplingRate}
@@ -423,6 +500,38 @@ export function ProfessionalDashboardPage() {
               </h2>
             </div>
             <div className="p-2 divide-y divide-slate-100 text-xs font-medium">
+              <Link
+                to="/consultations?tab=queue"
+                className="flex items-center justify-between p-2.5 hover:bg-slate-50 text-slate-800 transition-colors"
+              >
+                <span className="flex items-center gap-2.5">
+                  <Stethoscope className="size-4 text-teal-600" />
+                  <span>Hàng đợi Đọc ca Sóng não Từ xa</span>
+                </span>
+                <ChevronRight className="size-3.5 text-slate-400" />
+              </Link>
+              <a
+                href="/clinical-workstation?mode=professional"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-2.5 hover:bg-slate-50 text-slate-800 transition-colors"
+              >
+                <span className="flex items-center gap-2.5">
+                  <Activity className="size-4 text-brand-600" />
+                  <span>Trạm Điện não Định lượng qEEG Cortical</span>
+                </span>
+                <ArrowUpRight className="size-3.5 text-slate-400" />
+              </a>
+              <Link
+                to="/eeg-hub?tab=databank"
+                className="flex items-center justify-between p-2.5 hover:bg-slate-50 text-slate-800 transition-colors"
+              >
+                <span className="flex items-center gap-2.5">
+                  <Database className="size-4 text-sky-600" />
+                  <span>Kho Dữ liệu Data Bank & Neural DB</span>
+                </span>
+                <ChevronRight className="size-3.5 text-slate-400" />
+              </Link>
               <Link
                 to="/contributions"
                 className="flex items-center justify-between p-2.5 hover:bg-slate-50 text-slate-800 transition-colors"

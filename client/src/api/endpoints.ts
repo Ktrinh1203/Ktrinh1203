@@ -152,6 +152,11 @@ export const rewardsApi = {
     ),
   getMyRedemptions: () =>
     api<{ redemptions: import('./types').RewardRedemptionItem[] }>('/rewards/my-redemptions'),
+  claimOnboardingGrant: () =>
+    api<{ granted: boolean; amount: number; wallet: import('./types').CreditWalletItem }>(
+      '/rewards/claim-onboarding-grant',
+      { method: 'POST' },
+    ),
 };
 
 export const adminRewardsApi = {
@@ -313,4 +318,238 @@ export const communitiesApi = {
       { method: 'DELETE' },
     ),
 };
+
+export const qeegApi = {
+  health: () =>
+    api<{ status: string; engineSource: string; categories: import('./types').ClinicalCategory[] }>(
+      '/qeeg/health',
+    ),
+  getCases: () =>
+    api<{ cases: import('./types').QeegCaseItem[] }>('/qeeg/cases'),
+  analyzeCase: (body: {
+    caseId: string;
+    timeWindowSec?: number;
+    notch50Hz?: boolean;
+    fastScore?: number;
+  }) =>
+    api<import('./types').QeegAnalysisResult>('/qeeg/analyze-case', {
+      method: 'POST',
+      body,
+    }),
+  analyzeCsv: (body: {
+    filename: string;
+    csvText: string;
+    samplingRateHz?: number;
+    clinicalCategory?: import('./types').ClinicalCategory;
+  }) =>
+    api<import('./types').QeegAnalysisResult>('/qeeg/analyze-csv', {
+      method: 'POST',
+      body,
+    }),
+  saveToPlatform: (body: {
+    title: string;
+    clinicalCategory: import('./types').ClinicalCategory;
+    groundTruthLabel: import('./types').NeuralLabel;
+    split?: import('./types').DatasetSplit;
+    subjectCode?: string;
+    clinicalNote?: string;
+    deidentifiedConfirmed: boolean;
+    analysis: import('./types').QeegAnalysisResult;
+  }) =>
+    api<{
+      dataset: import('./types').EegDatasetRecord;
+      sample: import('./types').NeuralTrainingSampleItem;
+    }>('/qeeg/save-to-platform', {
+      method: 'POST',
+      body,
+    }),
+};
+
+export const neuralDbApi = {
+  getStats: () =>
+    api<import('./types').NeuralDbStats>('/neural-db/stats'),
+  listSamples: (query?: {
+    clinicalCategory?: string;
+    groundTruthLabel?: string;
+    split?: string;
+    verifiedOnly?: boolean;
+  }) =>
+    api<{ samples: import('./types').NeuralTrainingSampleItem[] }>('/neural-db/samples', {
+      query,
+    }),
+  createSample: (body: {
+    datasetId?: string;
+    subjectCode: string;
+    clinicalCategory: import('./types').ClinicalCategory;
+    groundTruthLabel: import('./types').NeuralLabel;
+    split?: import('./types').DatasetSplit;
+    samplingRateHz?: number;
+    channelsCount?: number;
+    montage?: string;
+    signalQualityScore?: number;
+    dar: number;
+    bsi: number;
+    tar: number;
+    pri?: number;
+    wpli?: number;
+    tpaLockoutTriggered?: boolean;
+    spectralBands: import('./types').QeegBandPowers;
+    featureVector: number[];
+    waveformPreview: {
+      time: number[];
+      channels: string[];
+      filtered: Record<string, number[]>;
+    };
+    deidentifiedConfirmed: boolean;
+  }) =>
+    api<{ sample: import('./types').NeuralTrainingSampleItem }>('/neural-db/samples', {
+      method: 'POST',
+      body,
+    }),
+  verifySample: (id: string, body?: { groundTruthLabel?: import('./types').NeuralLabel; split?: import('./types').DatasetSplit }) =>
+    api<{ sample: import('./types').NeuralTrainingSampleItem }>(
+      `/neural-db/samples/${encodeURIComponent(id)}/verify`,
+      { method: 'PATCH', body: body ?? {} },
+    ),
+  exportUrl: (format: 'csv' | 'jsonl', query?: { clinicalCategory?: string; split?: string }) => {
+    const params = new URLSearchParams({ format });
+    if (query?.clinicalCategory) params.set('clinicalCategory', query.clinicalCategory);
+    if (query?.split) params.set('split', query.split);
+    return `/api/neural-db/export?${params.toString()}`;
+  },
+};
+
+export const consultationsApi = {
+  list: (query?: { scope?: 'all' | 'mine' | 'queue'; clinicalCategory?: string; status?: string }) =>
+    api<{ tickets: import('./types').ConsultationTicketItem[] }>('/consultations', { query }),
+  create: (body: {
+    title: string;
+    symptomSummary: string;
+    clinicalCategory: import('./types').ClinicalCategory;
+    bountyCredits: number;
+    datasetId?: string;
+    neuralSampleId?: string;
+  }) =>
+    api<{ ticket: import('./types').ConsultationTicketItem; remainingBalance: number }>(
+      '/consultations',
+      { method: 'POST', body },
+    ),
+  claim: (id: string) =>
+    api<{ ticket: import('./types').ConsultationTicketItem }>(
+      `/consultations/${encodeURIComponent(id)}/claim`,
+      { method: 'POST' },
+    ),
+  reply: (
+    id: string,
+    body: {
+      waveAnalysisText: string;
+      clinicalGuidanceText: string;
+      recommendedFollowUp: string;
+    },
+  ) =>
+    api<{ reply: import('./types').ConsultationReplyItem; ticket: import('./types').ConsultationTicketItem }>(
+      `/consultations/${encodeURIComponent(id)}/replies`,
+      { method: 'POST', body },
+    ),
+  acceptReply: (id: string, replyId: string, rating?: number) =>
+    api<{ ticket: import('./types').ConsultationTicketItem }>(
+      `/consultations/${encodeURIComponent(id)}/accept/${encodeURIComponent(replyId)}`,
+      { method: 'POST', body: { rating } },
+    ),
+};
+
+export const dataBankApi = {
+  list: (query?: { clinicalCategory?: string; q?: string }) =>
+    api<{ listings: import('./types').DataBankListingItem[] }>('/databank', { query }),
+  getById: (id: string) =>
+    api<{ listing: import('./types').DataBankListingItem }>(`/databank/${encodeURIComponent(id)}`),
+  create: (body: {
+    datasetId?: string;
+    title: string;
+    summary: string;
+    clinicalCategory: import('./types').ClinicalCategory;
+    methodologyNote: string;
+    sampleCount: number;
+    channelsSpec: string;
+    samplingRateHz: number;
+    priceCredits: number;
+    previewMetrics: {
+      meanDar: number;
+      meanBsi: number;
+      meanTar: number;
+      meanWpli: number;
+      dominantBand: string;
+    };
+    payloadCsv: string;
+  }) =>
+    api<{ listing: import('./types').DataBankListingItem }>('/databank', {
+      method: 'POST',
+      body,
+    }),
+  purchase: (id: string) =>
+    api<{ listing: import('./types').DataBankListingItem; remainingBalance: number }>(
+      `/databank/${encodeURIComponent(id)}/purchase`,
+      { method: 'POST' },
+    ),
+};
+
+export const selfServiceApi = {
+  getOverview: () =>
+    api<{
+      checkIns: import('./types').HealthCheckInItem[];
+      workPlan: import('./types').WorkingPlanBlockItem[];
+    }>('/self-service/overview'),
+  addCheckIn: (body: {
+    neuralSampleId?: string;
+    focusScore: number;
+    fatigueIndexTar: number;
+    hemisphericBsi: number;
+    alphaPeakHz: number;
+    sleepHours: number;
+    stressLevel: number;
+    notes: string;
+  }) =>
+    api<{ checkIn: import('./types').HealthCheckInItem }>('/self-service/check-ins', {
+      method: 'POST',
+      body,
+    }),
+  addWorkBlock: (body: {
+    dayOfWeek: string;
+    timeSlot: string;
+    title: string;
+    blockType: import('./types').WorkBlockType;
+    eegRationale: string;
+  }) =>
+    api<{ block: import('./types').WorkingPlanBlockItem }>('/self-service/work-plan', {
+      method: 'POST',
+      body,
+    }),
+  updateWorkBlock: (
+    id: string,
+    body: Partial<{
+      dayOfWeek: string;
+      timeSlot: string;
+      title: string;
+      blockType: import('./types').WorkBlockType;
+      eegRationale: string;
+      completed: boolean;
+    }>,
+  ) =>
+    api<{ block: import('./types').WorkingPlanBlockItem }>(
+      `/self-service/work-plan/${encodeURIComponent(id)}`,
+      { method: 'PATCH', body },
+    ),
+  deleteWorkBlock: (id: string) =>
+    api<void>(`/self-service/work-plan/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }),
+};
+
+export const communityInsightsApi = {
+  getSpotlight: () =>
+    api<{ professionals: import('./types').CommunitySpotlightProfessional[] }>(
+      '/community-insights/spotlight',
+    ),
+};
+
 

@@ -1,0 +1,3055 @@
+{
+  "timestamp": 1794889642.7484999,
+  "total_runtime_seconds": 774.5790519714355,
+  "winner_paradigm": "X2",
+  "experiment_1_5fold_cv": {
+    "X1": {
+      "oof_bacc_3state": 0.7586298571368603,
+      "oof_acc_3state": 0.7730496453900709,
+      "oof_macro_f1": 0.7652525258695778,
+      "oof_gate1_norm_vs_abn": {
+        "bacc": 0.7825280648830424,
+        "acc": 0.8085106382978723,
+        "sensitivity": 0.8664259927797834,
+        "specificity": 0.6986301369863014,
+        "auroc": 0.8742891053854903,
+        "tp": 240,
+        "tn": 102,
+        "fp": 44,
+        "fn": 37
+      },
+      "oof_gate2_stroke_vs_non": {
+        "bacc": 0.8141133557800224,
+        "acc": 0.8817966903073287,
+        "sensitivity": 0.6868686868686869,
+        "specificity": 0.941358024691358,
+        "auroc": 0.9255518144407032,
+        "tp": 68,
+        "tn": 305,
+        "fp": 19,
+        "fn": 31
+      },
+      "oof_stage2_mimic_vs_stroke": {
+        "bacc": 0.8916695040290545,
+        "acc": 0.9097472924187726,
+        "sensitivity": 0.8282828282828283,
+        "specificity": 0.9550561797752809,
+        "auroc": 0.9678810577686981,
+        "tp": 82,
+        "tn": 170,
+        "fp": 8,
+        "fn": 17
+      },
+      "fold_metrics": [
+        {
+          "fold": 1,
+          "bacc_3state": 0.7799220272904482,
+          "acc_3state": 0.788235294117647,
+          "macro_f1": 0.7924505991170906,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.8484848484848485,
+            "acc": 0.8235294117647058,
+            "sensitivity": 0.7636363636363637,
+            "specificity": 0.9333333333333333,
+            "auroc": 0.903030303030303,
+            "tp": 42,
+            "tn": 28,
+            "fp": 2,
+            "fn": 13
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.8640350877192983,
+            "acc": 0.8470588235294118,
+            "sensitivity": 0.8947368421052632,
+            "specificity": 0.8333333333333334,
+            "auroc": 0.9561403508771928,
+            "tp": 17,
+            "tn": 55,
+            "fp": 11,
+            "fn": 2
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.8932748538011696,
+            "acc": 0.9090909090909091,
+            "sensitivity": 0.8421052631578947,
+            "specificity": 0.9444444444444444,
+            "auroc": 0.9429824561403509,
+            "tp": 16,
+            "tn": 34,
+            "fp": 2,
+            "fn": 3
+          }
+        },
+        {
+          "fold": 2,
+          "bacc_3state": 0.7462324393358877,
+          "acc_3state": 0.7764705882352941,
+          "macro_f1": 0.7554131054131054,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.8066502463054187,
+            "acc": 0.8,
+            "sensitivity": 0.7857142857142857,
+            "specificity": 0.8275862068965517,
+            "auroc": 0.8719211822660097,
+            "tp": 44,
+            "tn": 24,
+            "fp": 5,
+            "fn": 12
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.8711538461538462,
+            "acc": 0.8823529411764706,
+            "sensitivity": 0.85,
+            "specificity": 0.8923076923076924,
+            "auroc": 0.9461538461538461,
+            "tp": 17,
+            "tn": 58,
+            "fp": 7,
+            "fn": 3
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.9472222222222222,
+            "acc": 0.9464285714285714,
+            "sensitivity": 0.95,
+            "specificity": 0.9444444444444444,
+            "auroc": 0.9736111111111112,
+            "tp": 19,
+            "tn": 34,
+            "fp": 2,
+            "fn": 1
+          }
+        },
+        {
+          "fold": 3,
+          "bacc_3state": 0.7754515599343185,
+          "acc_3state": 0.7738095238095238,
+          "macro_f1": 0.7838739360478492,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.7946708463949843,
+            "acc": 0.7738095238095238,
+            "sensitivity": 0.7272727272727273,
+            "specificity": 0.8620689655172413,
+            "auroc": 0.8526645768025078,
+            "tp": 40,
+            "tn": 25,
+            "fp": 4,
+            "fn": 15
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.7578125,
+            "acc": 0.7619047619047619,
+            "sensitivity": 0.75,
+            "specificity": 0.765625,
+            "auroc": 0.88359375,
+            "tp": 15,
+            "tn": 49,
+            "fp": 15,
+            "fn": 5
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.9607142857142856,
+            "acc": 0.9636363636363636,
+            "sensitivity": 0.95,
+            "specificity": 0.9714285714285714,
+            "auroc": 0.9885714285714285,
+            "tp": 19,
+            "tn": 34,
+            "fp": 1,
+            "fn": 1
+          }
+        },
+        {
+          "fold": 4,
+          "bacc_3state": 0.7210727969348659,
+          "acc_3state": 0.7294117647058823,
+          "macro_f1": 0.7219602265638646,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.7875615763546798,
+            "acc": 0.7529411764705882,
+            "sensitivity": 0.6785714285714286,
+            "specificity": 0.896551724137931,
+            "auroc": 0.8626847290640394,
+            "tp": 38,
+            "tn": 26,
+            "fp": 3,
+            "fn": 18
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.8480769230769231,
+            "acc": 0.8470588235294118,
+            "sensitivity": 0.85,
+            "specificity": 0.8461538461538461,
+            "auroc": 0.9392307692307692,
+            "tp": 17,
+            "tn": 55,
+            "fp": 10,
+            "fn": 3
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.9194444444444444,
+            "acc": 0.9107142857142857,
+            "sensitivity": 0.95,
+            "specificity": 0.8888888888888888,
+            "auroc": 0.9791666666666667,
+            "tp": 19,
+            "tn": 32,
+            "fp": 4,
+            "fn": 1
+          }
+        },
+        {
+          "fold": 5,
+          "bacc_3state": 0.7711001642036125,
+          "acc_3state": 0.7976190476190477,
+          "macro_f1": 0.7744396939312194,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.8592476489028213,
+            "acc": 0.8690476190476191,
+            "sensitivity": 0.8909090909090909,
+            "specificity": 0.8275862068965517,
+            "auroc": 0.8877742946708463,
+            "tp": 49,
+            "tn": 24,
+            "fp": 5,
+            "fn": 6
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.83125,
+            "acc": 0.8214285714285714,
+            "sensitivity": 0.85,
+            "specificity": 0.8125,
+            "auroc": 0.90078125,
+            "tp": 17,
+            "tn": 52,
+            "fp": 12,
+            "fn": 3
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.8821428571428571,
+            "acc": 0.8909090909090909,
+            "sensitivity": 0.85,
+            "specificity": 0.9142857142857143,
+            "auroc": 0.9671428571428571,
+            "tp": 17,
+            "tn": 32,
+            "fp": 3,
+            "fn": 3
+          }
+        }
+      ]
+    },
+    "X2": {
+      "oof_bacc_3state": 0.7930891698784572,
+      "oof_acc_3state": 0.7943262411347518,
+      "oof_macro_f1": 0.7920236193795073,
+      "oof_gate1_norm_vs_abn": {
+        "bacc": 0.7953488947134167,
+        "acc": 0.8274231678486997,
+        "sensitivity": 0.8989169675090253,
+        "specificity": 0.6917808219178082,
+        "auroc": 0.8922654665941349,
+        "tp": 249,
+        "tn": 101,
+        "fp": 45,
+        "fn": 28
+      },
+      "oof_gate2_stroke_vs_non": {
+        "bacc": 0.8860830527497194,
+        "acc": 0.900709219858156,
+        "sensitivity": 0.8585858585858586,
+        "specificity": 0.9135802469135802,
+        "auroc": 0.9431350542461653,
+        "tp": 85,
+        "tn": 296,
+        "fp": 28,
+        "fn": 14
+      },
+      "oof_stage2_mimic_vs_stroke": {
+        "bacc": 0.9214050618545,
+        "acc": 0.927797833935018,
+        "sensitivity": 0.898989898989899,
+        "specificity": 0.9438202247191011,
+        "auroc": 0.9677108160254227,
+        "tp": 89,
+        "tn": 168,
+        "fp": 10,
+        "fn": 10
+      },
+      "fold_metrics": [
+        {
+          "fold": 1,
+          "bacc_3state": 0.844541910331384,
+          "acc_3state": 0.8352941176470589,
+          "macro_f1": 0.8432532945266392,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.8621212121212121,
+            "acc": 0.8705882352941177,
+            "sensitivity": 0.8909090909090909,
+            "specificity": 0.8333333333333334,
+            "auroc": 0.906060606060606,
+            "tp": 49,
+            "tn": 25,
+            "fp": 5,
+            "fn": 6
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.9246411483253589,
+            "acc": 0.9411764705882353,
+            "sensitivity": 0.8947368421052632,
+            "specificity": 0.9545454545454546,
+            "auroc": 0.9649122807017545,
+            "tp": 17,
+            "tn": 63,
+            "fp": 3,
+            "fn": 2
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.9057017543859649,
+            "acc": 0.9090909090909091,
+            "sensitivity": 0.8947368421052632,
+            "specificity": 0.9166666666666666,
+            "auroc": 0.9488304093567252,
+            "tp": 17,
+            "tn": 33,
+            "fp": 3,
+            "fn": 2
+          }
+        },
+        {
+          "fold": 2,
+          "bacc_3state": 0.8043422733077904,
+          "acc_3state": 0.8117647058823529,
+          "macro_f1": 0.8079487179487179,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.8091133004926109,
+            "acc": 0.8470588235294118,
+            "sensitivity": 0.9285714285714286,
+            "specificity": 0.6896551724137931,
+            "auroc": 0.9261083743842364,
+            "tp": 52,
+            "tn": 20,
+            "fp": 9,
+            "fn": 4
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.9365384615384615,
+            "acc": 0.9294117647058824,
+            "sensitivity": 0.95,
+            "specificity": 0.9230769230769231,
+            "auroc": 0.963076923076923,
+            "tp": 19,
+            "tn": 60,
+            "fp": 5,
+            "fn": 1
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.961111111111111,
+            "acc": 0.9642857142857143,
+            "sensitivity": 0.95,
+            "specificity": 0.9722222222222222,
+            "auroc": 0.9736111111111111,
+            "tp": 19,
+            "tn": 35,
+            "fp": 1,
+            "fn": 1
+          }
+        },
+        {
+          "fold": 3,
+          "bacc_3state": 0.7120689655172413,
+          "acc_3state": 0.7142857142857143,
+          "macro_f1": 0.7054704928820197,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.7385579937304074,
+            "acc": 0.7857142857142857,
+            "sensitivity": 0.8909090909090909,
+            "specificity": 0.5862068965517241,
+            "auroc": 0.8407523510971787,
+            "tp": 49,
+            "tn": 17,
+            "fp": 12,
+            "fn": 6
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.7671875,
+            "acc": 0.75,
+            "sensitivity": 0.8,
+            "specificity": 0.734375,
+            "auroc": 0.89609375,
+            "tp": 16,
+            "tn": 47,
+            "fp": 17,
+            "fn": 4
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.9107142857142857,
+            "acc": 0.9272727272727272,
+            "sensitivity": 0.85,
+            "specificity": 0.9714285714285714,
+            "auroc": 0.9714285714285715,
+            "tp": 17,
+            "tn": 34,
+            "fp": 1,
+            "fn": 3
+          }
+        },
+        {
+          "fold": 4,
+          "bacc_3state": 0.7995530012771392,
+          "acc_3state": 0.8,
+          "macro_f1": 0.7982260236002218,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.7995689655172413,
+            "acc": 0.8235294117647058,
+            "sensitivity": 0.875,
+            "specificity": 0.7241379310344828,
+            "auroc": 0.8879310344827586,
+            "tp": 49,
+            "tn": 21,
+            "fp": 8,
+            "fn": 7
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.8557692307692308,
+            "acc": 0.8588235294117647,
+            "sensitivity": 0.85,
+            "specificity": 0.8615384615384616,
+            "auroc": 0.9492307692307691,
+            "tp": 17,
+            "tn": 56,
+            "fp": 9,
+            "fn": 3
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.9222222222222223,
+            "acc": 0.9285714285714286,
+            "sensitivity": 0.9,
+            "specificity": 0.9444444444444444,
+            "auroc": 0.9791666666666667,
+            "tp": 18,
+            "tn": 34,
+            "fp": 2,
+            "fn": 2
+          }
+        },
+        {
+          "fold": 5,
+          "bacc_3state": 0.805254515599343,
+          "acc_3state": 0.8095238095238095,
+          "macro_f1": 0.8063492063492065,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.7648902821316614,
+            "acc": 0.8095238095238095,
+            "sensitivity": 0.9090909090909091,
+            "specificity": 0.6206896551724138,
+            "auroc": 0.9084639498432602,
+            "tp": 50,
+            "tn": 18,
+            "fp": 11,
+            "fn": 5
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.8765625,
+            "acc": 0.9166666666666666,
+            "sensitivity": 0.8,
+            "specificity": 0.953125,
+            "auroc": 0.95703125,
+            "tp": 16,
+            "tn": 61,
+            "fp": 3,
+            "fn": 4
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.9071428571428571,
+            "acc": 0.9090909090909091,
+            "sensitivity": 0.9,
+            "specificity": 0.9142857142857143,
+            "auroc": 0.9657142857142857,
+            "tp": 18,
+            "tn": 32,
+            "fp": 3,
+            "fn": 2
+          }
+        }
+      ]
+    },
+    "X3": {
+      "oof_bacc_3state": 0.7545707446430857,
+      "oof_acc_3state": 0.7588652482269503,
+      "oof_macro_f1": 0.7532229573307879,
+      "oof_gate1_norm_vs_abn": {
+        "bacc": 0.7967830473270363,
+        "acc": 0.8250591016548463,
+        "sensitivity": 0.8880866425992779,
+        "specificity": 0.7054794520547946,
+        "auroc": 0.8894466149052965,
+        "tp": 246,
+        "tn": 103,
+        "fp": 43,
+        "fn": 31
+      },
+      "oof_gate2_stroke_vs_non": {
+        "bacc": 0.8674242424242424,
+        "acc": 0.8936170212765957,
+        "sensitivity": 0.8181818181818182,
+        "specificity": 0.9166666666666666,
+        "auroc": 0.9411709689487467,
+        "tp": 81,
+        "tn": 297,
+        "fp": 27,
+        "fn": 18
+      },
+      "oof_stage2_mimic_vs_stroke": {
+        "bacc": 0.9286970831914652,
+        "acc": 0.9314079422382672,
+        "sensitivity": 0.9191919191919192,
+        "specificity": 0.9382022471910112,
+        "auroc": 0.9694132334581773,
+        "tp": 91,
+        "tn": 167,
+        "fp": 11,
+        "fn": 8
+      },
+      "fold_metrics": [
+        {
+          "fold": 1,
+          "bacc_3state": 0.8038986354775828,
+          "acc_3state": 0.8,
+          "macro_f1": 0.8092101135579397,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.8393939393939394,
+            "acc": 0.8117647058823529,
+            "sensitivity": 0.7454545454545455,
+            "specificity": 0.9333333333333333,
+            "auroc": 0.9145454545454546,
+            "tp": 41,
+            "tn": 28,
+            "fp": 2,
+            "fn": 14
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.9094896331738437,
+            "acc": 0.9176470588235294,
+            "sensitivity": 0.8947368421052632,
+            "specificity": 0.9242424242424242,
+            "auroc": 0.9649122807017545,
+            "tp": 17,
+            "tn": 61,
+            "fp": 5,
+            "fn": 2
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.9057017543859649,
+            "acc": 0.9090909090909091,
+            "sensitivity": 0.8947368421052632,
+            "specificity": 0.9166666666666666,
+            "auroc": 0.9473684210526316,
+            "tp": 17,
+            "tn": 33,
+            "fp": 3,
+            "fn": 2
+          }
+        },
+        {
+          "fold": 2,
+          "bacc_3state": 0.7795657726692209,
+          "acc_3state": 0.8,
+          "macro_f1": 0.7886243386243387,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.7894088669950738,
+            "acc": 0.788235294117647,
+            "sensitivity": 0.7857142857142857,
+            "specificity": 0.7931034482758621,
+            "auroc": 0.9070197044334976,
+            "tp": 44,
+            "tn": 23,
+            "fp": 6,
+            "fn": 12
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.9134615384615384,
+            "acc": 0.8941176470588236,
+            "sensitivity": 0.95,
+            "specificity": 0.8769230769230769,
+            "auroc": 0.9546153846153846,
+            "tp": 19,
+            "tn": 57,
+            "fp": 8,
+            "fn": 1
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.9472222222222222,
+            "acc": 0.9464285714285714,
+            "sensitivity": 0.95,
+            "specificity": 0.9444444444444444,
+            "auroc": 0.973611111111111,
+            "tp": 19,
+            "tn": 34,
+            "fp": 2,
+            "fn": 1
+          }
+        },
+        {
+          "fold": 3,
+          "bacc_3state": 0.6779146141215108,
+          "acc_3state": 0.6666666666666666,
+          "macro_f1": 0.6661368240610878,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.7520376175548589,
+            "acc": 0.75,
+            "sensitivity": 0.7454545454545455,
+            "specificity": 0.7586206896551724,
+            "auroc": 0.8501567398119122,
+            "tp": 41,
+            "tn": 22,
+            "fp": 7,
+            "fn": 14
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.790625,
+            "acc": 0.7857142857142857,
+            "sensitivity": 0.8,
+            "specificity": 0.78125,
+            "auroc": 0.896875,
+            "tp": 16,
+            "tn": 50,
+            "fp": 14,
+            "fn": 4
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.9035714285714285,
+            "acc": 0.8909090909090909,
+            "sensitivity": 0.95,
+            "specificity": 0.8571428571428571,
+            "auroc": 0.9828571428571429,
+            "tp": 19,
+            "tn": 30,
+            "fp": 5,
+            "fn": 1
+          }
+        },
+        {
+          "fold": 4,
+          "bacc_3state": 0.7336526181353767,
+          "acc_3state": 0.7294117647058823,
+          "macro_f1": 0.7269841269841271,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.770320197044335,
+            "acc": 0.7411764705882353,
+            "sensitivity": 0.6785714285714286,
+            "specificity": 0.8620689655172413,
+            "auroc": 0.8854679802955665,
+            "tp": 38,
+            "tn": 25,
+            "fp": 4,
+            "fn": 18
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.8807692307692307,
+            "acc": 0.8705882352941177,
+            "sensitivity": 0.9,
+            "specificity": 0.8615384615384616,
+            "auroc": 0.9507692307692308,
+            "tp": 18,
+            "tn": 56,
+            "fp": 9,
+            "fn": 2
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.9055555555555556,
+            "acc": 0.8928571428571429,
+            "sensitivity": 0.95,
+            "specificity": 0.8611111111111112,
+            "auroc": 0.9777777777777777,
+            "tp": 19,
+            "tn": 31,
+            "fp": 5,
+            "fn": 1
+          }
+        },
+        {
+          "fold": 5,
+          "bacc_3state": 0.7782430213464696,
+          "acc_3state": 0.7976190476190477,
+          "macro_f1": 0.7791229486144741,
+          "gate1_norm_vs_abn": {
+            "bacc": 0.831974921630094,
+            "acc": 0.8333333333333334,
+            "sensitivity": 0.8363636363636363,
+            "specificity": 0.8275862068965517,
+            "auroc": 0.9015673981191223,
+            "tp": 46,
+            "tn": 24,
+            "fp": 5,
+            "fn": 9
+          },
+          "gate2_stroke_vs_non": {
+            "bacc": 0.8796875,
+            "acc": 0.8690476190476191,
+            "sensitivity": 0.9,
+            "specificity": 0.859375,
+            "auroc": 0.94375,
+            "tp": 18,
+            "tn": 55,
+            "fp": 9,
+            "fn": 2
+          },
+          "stage2_mimic_vs_stroke": {
+            "bacc": 0.8928571428571428,
+            "acc": 0.8909090909090909,
+            "sensitivity": 0.9,
+            "specificity": 0.8857142857142857,
+            "auroc": 0.9714285714285713,
+            "tp": 18,
+            "tn": 31,
+            "fp": 4,
+            "fn": 2
+          }
+        }
+      ]
+    }
+  },
+  "experiment_2_blind_uclh_n1_zero_calib": {
+    "X1": {
+      "present_class_bacc": 0.8166666666666667,
+      "binary_auroc": 0.8722222222222223,
+      "bacc_3state": 0.8166666666666667,
+      "acc_3state": 0.8214285714285714,
+      "macro_f1": 0.8095238095238095,
+      "healthy_spec": 0.8,
+      "n_healthy_correct": 8,
+      "stroke_recall": 0.8333333333333334,
+      "n_stroke_correct": 15,
+      "is_recall": 1.0,
+      "n_is_correct": 10,
+      "ich_recall": 0.625,
+      "n_ich_correct": 5,
+      "gate1_norm_vs_abn": {
+        "bacc": 0.8166666666666667,
+        "acc": 0.8214285714285714,
+        "sensitivity": 0.8333333333333334,
+        "specificity": 0.8,
+        "auroc": 0.8722222222222223,
+        "tp": 15,
+        "tn": 8,
+        "fp": 2,
+        "fn": 3
+      },
+      "gate2_stroke_vs_non": {
+        "bacc": 0.8166666666666667,
+        "acc": 0.8214285714285714,
+        "sensitivity": 0.8333333333333334,
+        "specificity": 0.8,
+        "auroc": 0.8722222222222223,
+        "tp": 15,
+        "tn": 8,
+        "fp": 2,
+        "fn": 3
+      },
+      "small_ich": {
+        "P5": {
+          "subject_id": "uclh_P5",
+          "clean_id": "P5",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4615184440329987,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5384815559670013,
+          "prob_stroke_vs_normal": 0.5384815559664627,
+          "correct": true
+        },
+        "P17": {
+          "subject_id": "uclh_P17",
+          "clean_id": "P17",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.40694463337598263,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5930553666240174,
+          "prob_stroke_vs_normal": 0.5930553666234243,
+          "correct": true
+        },
+        "P20": {
+          "subject_id": "uclh_P20",
+          "clean_id": "P20",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5326550978179323,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.46734490218206765,
+          "prob_stroke_vs_normal": 0.46734490218160024,
+          "correct": false
+        }
+      },
+      "p23": {
+        "subject_id": "uclh_P23",
+        "clean_id": "P23",
+        "true_type": "ICH",
+        "true_class": 2,
+        "pred_class": 0,
+        "pred_abnormal": 0,
+        "pred_stroke": 0,
+        "prob_normal": 0.6206427735760452,
+        "prob_abnormal": 0.0,
+        "prob_stroke": 0.37935722642395475,
+        "prob_stroke_vs_normal": 0.3793572264235754,
+        "correct": false
+      },
+      "patient_evals": [
+        {
+          "subject_id": "uclh_P1",
+          "clean_id": "P1",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.48323181868268084,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5167681813173192,
+          "prob_stroke_vs_normal": 0.5167681813168024,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P11",
+          "clean_id": "P11",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.33150658615422535,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.6684934138457747,
+          "prob_stroke_vs_normal": 0.6684934138451061,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P12",
+          "clean_id": "P12",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4905819316960922,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5094180683039078,
+          "prob_stroke_vs_normal": 0.5094180683033983,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P15",
+          "clean_id": "P15",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4925931023600332,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5074068976399668,
+          "prob_stroke_vs_normal": 0.5074068976394593,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P16",
+          "clean_id": "P16",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.48302514042249245,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5169748595775076,
+          "prob_stroke_vs_normal": 0.5169748595769905,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P17",
+          "clean_id": "P17",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.40694463337598263,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5930553666240174,
+          "prob_stroke_vs_normal": 0.5930553666234243,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P18",
+          "clean_id": "P18",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4137144204660159,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5862855795339841,
+          "prob_stroke_vs_normal": 0.5862855795333978,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P19",
+          "clean_id": "P19",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4740281552901,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5259718447099,
+          "prob_stroke_vs_normal": 0.525971844709374,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P20",
+          "clean_id": "P20",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5326550978179323,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.46734490218206765,
+          "prob_stroke_vs_normal": 0.46734490218160024,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_P23",
+          "clean_id": "P23",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.6206427735760452,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.37935722642395475,
+          "prob_stroke_vs_normal": 0.3793572264235754,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_P24",
+          "clean_id": "P24",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4514535937454054,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5485464062545946,
+          "prob_stroke_vs_normal": 0.548546406254046,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P25",
+          "clean_id": "P25",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.44684186794185143,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5531581320581486,
+          "prob_stroke_vs_normal": 0.5531581320575953,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P26",
+          "clean_id": "P26",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.35509659274768135,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.6449034072523187,
+          "prob_stroke_vs_normal": 0.6449034072516737,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P3",
+          "clean_id": "P3",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.3328651831282341,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.6671348168717659,
+          "prob_stroke_vs_normal": 0.6671348168710987,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P4",
+          "clean_id": "P4",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4286123945485538,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5713876054514462,
+          "prob_stroke_vs_normal": 0.5713876054508747,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P5",
+          "clean_id": "P5",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4615184440329987,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5384815559670013,
+          "prob_stroke_vs_normal": 0.5384815559664627,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P6",
+          "clean_id": "P6",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5267495582600832,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.47325044173991687,
+          "prob_stroke_vs_normal": 0.4732504417394436,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_P9",
+          "clean_id": "P9",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.49131934191383475,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5086806580861652,
+          "prob_stroke_vs_normal": 0.5086806580856565,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S1",
+          "clean_id": "S1",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4962679696951148,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5037320303048852,
+          "prob_stroke_vs_normal": 0.5037320303043814,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_S10",
+          "clean_id": "S10",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.6227692050887759,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.37723079491122413,
+          "prob_stroke_vs_normal": 0.3772307949108469,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S2",
+          "clean_id": "S2",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5998315341168621,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.40016846588313787,
+          "prob_stroke_vs_normal": 0.4001684658827377,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S3",
+          "clean_id": "S3",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5017847035074123,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.4982152964925876,
+          "prob_stroke_vs_normal": 0.49821529649208934,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S4",
+          "clean_id": "S4",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.542100833490238,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.45789916650976203,
+          "prob_stroke_vs_normal": 0.45789916650930407,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S5",
+          "clean_id": "S5",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5682208643677609,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.4317791356322391,
+          "prob_stroke_vs_normal": 0.43177913563180725,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S6",
+          "clean_id": "S6",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5011739146441956,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.49882608535580447,
+          "prob_stroke_vs_normal": 0.4988260853553056,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S7",
+          "clean_id": "S7",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4635381668243824,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5364618331756176,
+          "prob_stroke_vs_normal": 0.5364618331750811,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_S8",
+          "clean_id": "S8",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5626848622714204,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.43731513772857955,
+          "prob_stroke_vs_normal": 0.4373151377281422,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S9",
+          "clean_id": "S9",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5431554689560942,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.45684453104390577,
+          "prob_stroke_vs_normal": 0.45684453104344885,
+          "correct": true
+        }
+      ]
+    },
+    "X2": {
+      "present_class_bacc": 0.8166666666666667,
+      "binary_auroc": 0.8722222222222223,
+      "bacc_3state": 0.8166666666666667,
+      "acc_3state": 0.8214285714285714,
+      "macro_f1": 0.8095238095238095,
+      "healthy_spec": 0.8,
+      "n_healthy_correct": 8,
+      "stroke_recall": 0.8333333333333334,
+      "n_stroke_correct": 15,
+      "is_recall": 1.0,
+      "n_is_correct": 10,
+      "ich_recall": 0.625,
+      "n_ich_correct": 5,
+      "gate1_norm_vs_abn": {
+        "bacc": 0.8166666666666667,
+        "acc": 0.8214285714285714,
+        "sensitivity": 0.8333333333333334,
+        "specificity": 0.8,
+        "auroc": 0.8722222222222223,
+        "tp": 15,
+        "tn": 8,
+        "fp": 2,
+        "fn": 3
+      },
+      "gate2_stroke_vs_non": {
+        "bacc": 0.8166666666666667,
+        "acc": 0.8214285714285714,
+        "sensitivity": 0.8333333333333334,
+        "specificity": 0.8,
+        "auroc": 0.8722222222222223,
+        "tp": 15,
+        "tn": 8,
+        "fp": 2,
+        "fn": 3
+      },
+      "small_ich": {
+        "P5": {
+          "subject_id": "uclh_P5",
+          "clean_id": "P5",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4615184440329987,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5384815559670013,
+          "prob_stroke_vs_normal": 0.5384815559664627,
+          "correct": true
+        },
+        "P17": {
+          "subject_id": "uclh_P17",
+          "clean_id": "P17",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.40694463337598263,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5930553666240174,
+          "prob_stroke_vs_normal": 0.5930553666234243,
+          "correct": true
+        },
+        "P20": {
+          "subject_id": "uclh_P20",
+          "clean_id": "P20",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5326550978179323,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.46734490218206765,
+          "prob_stroke_vs_normal": 0.46734490218160024,
+          "correct": false
+        }
+      },
+      "p23": {
+        "subject_id": "uclh_P23",
+        "clean_id": "P23",
+        "true_type": "ICH",
+        "true_class": 2,
+        "pred_class": 0,
+        "pred_abnormal": 0,
+        "pred_stroke": 0,
+        "prob_normal": 0.6206427735760452,
+        "prob_abnormal": 0.0,
+        "prob_stroke": 0.37935722642395475,
+        "prob_stroke_vs_normal": 0.3793572264235754,
+        "correct": false
+      },
+      "patient_evals": [
+        {
+          "subject_id": "uclh_P1",
+          "clean_id": "P1",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.48323181868268084,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5167681813173192,
+          "prob_stroke_vs_normal": 0.5167681813168024,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P11",
+          "clean_id": "P11",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.33150658615422535,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.6684934138457747,
+          "prob_stroke_vs_normal": 0.6684934138451061,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P12",
+          "clean_id": "P12",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4905819316960922,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5094180683039078,
+          "prob_stroke_vs_normal": 0.5094180683033983,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P15",
+          "clean_id": "P15",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4925931023600332,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5074068976399668,
+          "prob_stroke_vs_normal": 0.5074068976394593,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P16",
+          "clean_id": "P16",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.48302514042249245,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5169748595775076,
+          "prob_stroke_vs_normal": 0.5169748595769905,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P17",
+          "clean_id": "P17",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.40694463337598263,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5930553666240174,
+          "prob_stroke_vs_normal": 0.5930553666234243,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P18",
+          "clean_id": "P18",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4137144204660159,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5862855795339841,
+          "prob_stroke_vs_normal": 0.5862855795333978,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P19",
+          "clean_id": "P19",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4740281552901,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5259718447099,
+          "prob_stroke_vs_normal": 0.525971844709374,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P20",
+          "clean_id": "P20",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5326550978179323,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.46734490218206765,
+          "prob_stroke_vs_normal": 0.46734490218160024,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_P23",
+          "clean_id": "P23",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.6206427735760452,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.37935722642395475,
+          "prob_stroke_vs_normal": 0.3793572264235754,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_P24",
+          "clean_id": "P24",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4514535937454054,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5485464062545946,
+          "prob_stroke_vs_normal": 0.548546406254046,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P25",
+          "clean_id": "P25",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.44684186794185143,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5531581320581486,
+          "prob_stroke_vs_normal": 0.5531581320575953,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P26",
+          "clean_id": "P26",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.35509659274768135,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.6449034072523187,
+          "prob_stroke_vs_normal": 0.6449034072516737,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P3",
+          "clean_id": "P3",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.3328651831282341,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.6671348168717659,
+          "prob_stroke_vs_normal": 0.6671348168710987,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P4",
+          "clean_id": "P4",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4286123945485538,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5713876054514462,
+          "prob_stroke_vs_normal": 0.5713876054508747,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P5",
+          "clean_id": "P5",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4615184440329987,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5384815559670013,
+          "prob_stroke_vs_normal": 0.5384815559664627,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P6",
+          "clean_id": "P6",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5267495582600832,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.47325044173991687,
+          "prob_stroke_vs_normal": 0.4732504417394436,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_P9",
+          "clean_id": "P9",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.49131934191383475,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5086806580861652,
+          "prob_stroke_vs_normal": 0.5086806580856565,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S1",
+          "clean_id": "S1",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4962679696951148,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5037320303048852,
+          "prob_stroke_vs_normal": 0.5037320303043814,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_S10",
+          "clean_id": "S10",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.6227692050887759,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.37723079491122413,
+          "prob_stroke_vs_normal": 0.3772307949108469,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S2",
+          "clean_id": "S2",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5998315341168621,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.40016846588313787,
+          "prob_stroke_vs_normal": 0.4001684658827377,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S3",
+          "clean_id": "S3",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5017847035074123,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.4982152964925876,
+          "prob_stroke_vs_normal": 0.49821529649208934,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S4",
+          "clean_id": "S4",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.542100833490238,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.45789916650976203,
+          "prob_stroke_vs_normal": 0.45789916650930407,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S5",
+          "clean_id": "S5",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5682208643677609,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.4317791356322391,
+          "prob_stroke_vs_normal": 0.43177913563180725,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S6",
+          "clean_id": "S6",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5011739146441956,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.49882608535580447,
+          "prob_stroke_vs_normal": 0.4988260853553056,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S7",
+          "clean_id": "S7",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4635381668243824,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5364618331756176,
+          "prob_stroke_vs_normal": 0.5364618331750811,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_S8",
+          "clean_id": "S8",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5626848622714204,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.43731513772857955,
+          "prob_stroke_vs_normal": 0.4373151377281422,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S9",
+          "clean_id": "S9",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5431554689560942,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.45684453104390577,
+          "prob_stroke_vs_normal": 0.45684453104344885,
+          "correct": true
+        }
+      ]
+    },
+    "X3": {
+      "present_class_bacc": 0.8166666666666667,
+      "binary_auroc": 0.8722222222222223,
+      "bacc_3state": 0.8166666666666667,
+      "acc_3state": 0.8214285714285714,
+      "macro_f1": 0.8095238095238095,
+      "healthy_spec": 0.8,
+      "n_healthy_correct": 8,
+      "stroke_recall": 0.8333333333333334,
+      "n_stroke_correct": 15,
+      "is_recall": 1.0,
+      "n_is_correct": 10,
+      "ich_recall": 0.625,
+      "n_ich_correct": 5,
+      "gate1_norm_vs_abn": {
+        "bacc": 0.8166666666666667,
+        "acc": 0.8214285714285714,
+        "sensitivity": 0.8333333333333334,
+        "specificity": 0.8,
+        "auroc": 0.8722222222222223,
+        "tp": 15,
+        "tn": 8,
+        "fp": 2,
+        "fn": 3
+      },
+      "gate2_stroke_vs_non": {
+        "bacc": 0.8166666666666667,
+        "acc": 0.8214285714285714,
+        "sensitivity": 0.8333333333333334,
+        "specificity": 0.8,
+        "auroc": 0.8722222222222223,
+        "tp": 15,
+        "tn": 8,
+        "fp": 2,
+        "fn": 3
+      },
+      "small_ich": {
+        "P5": {
+          "subject_id": "uclh_P5",
+          "clean_id": "P5",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4615184440329987,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5384815559670013,
+          "prob_stroke_vs_normal": 0.5384815559664627,
+          "correct": true
+        },
+        "P17": {
+          "subject_id": "uclh_P17",
+          "clean_id": "P17",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.40694463337598263,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5930553666240174,
+          "prob_stroke_vs_normal": 0.5930553666234243,
+          "correct": true
+        },
+        "P20": {
+          "subject_id": "uclh_P20",
+          "clean_id": "P20",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5326550978179323,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.46734490218206765,
+          "prob_stroke_vs_normal": 0.46734490218160024,
+          "correct": false
+        }
+      },
+      "p23": {
+        "subject_id": "uclh_P23",
+        "clean_id": "P23",
+        "true_type": "ICH",
+        "true_class": 2,
+        "pred_class": 0,
+        "pred_abnormal": 0,
+        "pred_stroke": 0,
+        "prob_normal": 0.6206427735760452,
+        "prob_abnormal": 0.0,
+        "prob_stroke": 0.37935722642395475,
+        "prob_stroke_vs_normal": 0.3793572264235754,
+        "correct": false
+      },
+      "patient_evals": [
+        {
+          "subject_id": "uclh_P1",
+          "clean_id": "P1",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.48323181868268084,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5167681813173192,
+          "prob_stroke_vs_normal": 0.5167681813168024,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P11",
+          "clean_id": "P11",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.33150658615422535,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.6684934138457747,
+          "prob_stroke_vs_normal": 0.6684934138451061,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P12",
+          "clean_id": "P12",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4905819316960922,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5094180683039078,
+          "prob_stroke_vs_normal": 0.5094180683033983,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P15",
+          "clean_id": "P15",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4925931023600332,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5074068976399668,
+          "prob_stroke_vs_normal": 0.5074068976394593,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P16",
+          "clean_id": "P16",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.48302514042249245,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5169748595775076,
+          "prob_stroke_vs_normal": 0.5169748595769905,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P17",
+          "clean_id": "P17",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.40694463337598263,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5930553666240174,
+          "prob_stroke_vs_normal": 0.5930553666234243,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P18",
+          "clean_id": "P18",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4137144204660159,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5862855795339841,
+          "prob_stroke_vs_normal": 0.5862855795333978,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P19",
+          "clean_id": "P19",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4740281552901,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5259718447099,
+          "prob_stroke_vs_normal": 0.525971844709374,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P20",
+          "clean_id": "P20",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5326550978179323,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.46734490218206765,
+          "prob_stroke_vs_normal": 0.46734490218160024,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_P23",
+          "clean_id": "P23",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.6206427735760452,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.37935722642395475,
+          "prob_stroke_vs_normal": 0.3793572264235754,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_P24",
+          "clean_id": "P24",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4514535937454054,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5485464062545946,
+          "prob_stroke_vs_normal": 0.548546406254046,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P25",
+          "clean_id": "P25",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.44684186794185143,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5531581320581486,
+          "prob_stroke_vs_normal": 0.5531581320575953,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P26",
+          "clean_id": "P26",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.35509659274768135,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.6449034072523187,
+          "prob_stroke_vs_normal": 0.6449034072516737,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P3",
+          "clean_id": "P3",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.3328651831282341,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.6671348168717659,
+          "prob_stroke_vs_normal": 0.6671348168710987,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P4",
+          "clean_id": "P4",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4286123945485538,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5713876054514462,
+          "prob_stroke_vs_normal": 0.5713876054508747,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P5",
+          "clean_id": "P5",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4615184440329987,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5384815559670013,
+          "prob_stroke_vs_normal": 0.5384815559664627,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_P6",
+          "clean_id": "P6",
+          "true_type": "ICH",
+          "true_class": 2,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5267495582600832,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.47325044173991687,
+          "prob_stroke_vs_normal": 0.4732504417394436,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_P9",
+          "clean_id": "P9",
+          "true_type": "IS",
+          "true_class": 2,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.49131934191383475,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5086806580861652,
+          "prob_stroke_vs_normal": 0.5086806580856565,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S1",
+          "clean_id": "S1",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4962679696951148,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5037320303048852,
+          "prob_stroke_vs_normal": 0.5037320303043814,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_S10",
+          "clean_id": "S10",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.6227692050887759,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.37723079491122413,
+          "prob_stroke_vs_normal": 0.3772307949108469,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S2",
+          "clean_id": "S2",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5998315341168621,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.40016846588313787,
+          "prob_stroke_vs_normal": 0.4001684658827377,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S3",
+          "clean_id": "S3",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5017847035074123,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.4982152964925876,
+          "prob_stroke_vs_normal": 0.49821529649208934,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S4",
+          "clean_id": "S4",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.542100833490238,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.45789916650976203,
+          "prob_stroke_vs_normal": 0.45789916650930407,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S5",
+          "clean_id": "S5",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5682208643677609,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.4317791356322391,
+          "prob_stroke_vs_normal": 0.43177913563180725,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S6",
+          "clean_id": "S6",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5011739146441956,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.49882608535580447,
+          "prob_stroke_vs_normal": 0.4988260853553056,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S7",
+          "clean_id": "S7",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 2,
+          "pred_abnormal": 1,
+          "pred_stroke": 1,
+          "prob_normal": 0.4635381668243824,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.5364618331756176,
+          "prob_stroke_vs_normal": 0.5364618331750811,
+          "correct": false
+        },
+        {
+          "subject_id": "uclh_S8",
+          "clean_id": "S8",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5626848622714204,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.43731513772857955,
+          "prob_stroke_vs_normal": 0.4373151377281422,
+          "correct": true
+        },
+        {
+          "subject_id": "uclh_S9",
+          "clean_id": "S9",
+          "true_type": "Healthy",
+          "true_class": 0,
+          "pred_class": 0,
+          "pred_abnormal": 0,
+          "pred_stroke": 0,
+          "prob_normal": 0.5431554689560942,
+          "prob_abnormal": 0.0,
+          "prob_stroke": 0.45684453104390577,
+          "prob_stroke_vs_normal": 0.45684453104344885,
+          "correct": true
+        }
+      ]
+    }
+  },
+  "experiment_3_multicenter_lodo": {
+    "paradigm": "X3",
+    "mean_lodo_bacc": 0.48640109540088994,
+    "mean_lodo_acc": 0.42166522905884607,
+    "per_center": {
+      "ds004504": {
+        "n_subjects": 88,
+        "classes_present": [
+          0,
+          1
+        ],
+        "present_class_bacc": 0.68468731735827,
+        "bacc": 0.68468731735827,
+        "acc": 0.6477272727272727,
+        "class_recalls": {
+          "0": 0.7931034482758621,
+          "1": 0.576271186440678
+        }
+      },
+      "ds007801": {
+        "n_subjects": 36,
+        "classes_present": [
+          0,
+          2
+        ],
+        "present_class_bacc": 0.46875,
+        "bacc": 0.46875,
+        "acc": 0.25,
+        "class_recalls": {
+          "0": 0.75,
+          "2": 0.1875
+        }
+      },
+      "figshare": {
+        "n_subjects": 47,
+        "classes_present": [
+          2
+        ],
+        "present_class_bacc": 0.425531914893617,
+        "bacc": 0.425531914893617,
+        "acc": 0.425531914893617,
+        "class_recalls": {
+          "2": 0.425531914893617
+        }
+      },
+      "hefmi": {
+        "n_subjects": 37,
+        "classes_present": [
+          0,
+          2
+        ],
+        "present_class_bacc": 0.49117647058823527,
+        "bacc": 0.49117647058823527,
+        "acc": 0.4594594594594595,
+        "class_recalls": {
+          "0": 0.8823529411764706,
+          "2": 0.1
+        }
+      },
+      "physionet": {
+        "n_subjects": 50,
+        "classes_present": [
+          0
+        ],
+        "present_class_bacc": 0.62,
+        "bacc": 0.62,
+        "acc": 0.62,
+        "class_recalls": {
+          "0": 0.62
+        }
+      },
+      "tuh_corpus": {
+        "n_subjects": 165,
+        "classes_present": [
+          0,
+          1
+        ],
+        "present_class_bacc": 0.22826086956521738,
+        "bacc": 0.22826086956521738,
+        "acc": 0.12727272727272726,
+        "class_recalls": {
+          "0": 0.45652173913043476,
+          "1": 0.0
+        }
+      }
+    },
+    "mean_lodo_bacc_x2": 0.4513327703179346,
+    "few_shot_control_onboarding": {
+      "mean_zero_calib_bacc_on_eval": 0.43371850548818125,
+      "mean_few_shot_bacc_on_eval": 0.4703142042610072,
+      "mean_delta_bacc": 0.036595698772825924,
+      "per_center": {
+        "ds004504": {
+          "n_calib": 5,
+          "n_eval": 83,
+          "classes_eval": [
+            0,
+            1
+          ],
+          "zero_calib_bacc_on_eval": 0.661723163841808,
+          "zero_calib_acc_on_eval": 0.5542168674698795,
+          "few_shot_bacc_on_eval": 0.6779661016949152,
+          "few_shot_acc_on_eval": 0.5421686746987951,
+          "delta_bacc": 0.016242937853107264,
+          "class_recalls": {
+            "0": 1.0,
+            "1": 0.3559322033898305
+          }
+        },
+        "ds007801": {
+          "n_calib": 2,
+          "n_eval": 34,
+          "classes_eval": [
+            0,
+            2
+          ],
+          "zero_calib_bacc_on_eval": 0.359375,
+          "zero_calib_acc_on_eval": 0.23529411764705882,
+          "few_shot_bacc_on_eval": 0.359375,
+          "few_shot_acc_on_eval": 0.23529411764705882,
+          "delta_bacc": 0.0,
+          "class_recalls": {
+            "0": 0.5,
+            "2": 0.21875
+          }
+        },
+        "hefmi": {
+          "n_calib": 5,
+          "n_eval": 32,
+          "classes_eval": [
+            0,
+            2
+          ],
+          "zero_calib_bacc_on_eval": 0.4083333333333333,
+          "zero_calib_acc_on_eval": 0.34375,
+          "few_shot_bacc_on_eval": 0.48333333333333334,
+          "few_shot_acc_on_eval": 0.375,
+          "delta_bacc": 0.07500000000000001,
+          "class_recalls": {
+            "0": 0.9166666666666666,
+            "2": 0.05
+          }
+        },
+        "physionet": {
+          "n_calib": 5,
+          "n_eval": 45,
+          "classes_eval": [
+            0
+          ],
+          "zero_calib_bacc_on_eval": 0.4666666666666667,
+          "zero_calib_acc_on_eval": 0.4666666666666667,
+          "few_shot_bacc_on_eval": 0.4444444444444444,
+          "few_shot_acc_on_eval": 0.4444444444444444,
+          "delta_bacc": -0.022222222222222254,
+          "class_recalls": {
+            "0": 0.4444444444444444
+          }
+        },
+        "tuh_corpus": {
+          "n_calib": 5,
+          "n_eval": 160,
+          "classes_eval": [
+            0,
+            1
+          ],
+          "zero_calib_bacc_on_eval": 0.2724943635990982,
+          "zero_calib_acc_on_eval": 0.14375,
+          "few_shot_bacc_on_eval": 0.3864521418323427,
+          "few_shot_acc_on_eval": 0.20625,
+          "delta_bacc": 0.11395777823324454,
+          "class_recalls": {
+            "0": 0.7560975609756098,
+            "1": 0.01680672268907563
+          }
+        }
+      }
+    },
+    "lodo_by_paradigm": {
+      "X2": {
+        "paradigm": "X2",
+        "mean_lodo_bacc": 0.4513327703179346,
+        "mean_lodo_acc": 0.379324319483894,
+        "per_center": {
+          "ds004504": {
+            "n_subjects": 88,
+            "classes_present": [
+              0,
+              1
+            ],
+            "present_class_bacc": 0.668907071887785,
+            "bacc": 0.668907071887785,
+            "acc": 0.5795454545454546,
+            "class_recalls": {
+              "0": 0.9310344827586207,
+              "1": 0.4067796610169492
+            }
+          },
+          "ds007801": {
+            "n_subjects": 36,
+            "classes_present": [
+              0,
+              2
+            ],
+            "present_class_bacc": 0.484375,
+            "bacc": 0.484375,
+            "acc": 0.2777777777777778,
+            "class_recalls": {
+              "0": 0.75,
+              "2": 0.21875
+            }
+          },
+          "figshare": {
+            "n_subjects": 47,
+            "classes_present": [
+              2
+            ],
+            "present_class_bacc": 0.3617021276595745,
+            "bacc": 0.3617021276595745,
+            "acc": 0.3617021276595745,
+            "class_recalls": {
+              "2": 0.3617021276595745
+            }
+          },
+          "hefmi": {
+            "n_subjects": 37,
+            "classes_present": [
+              0,
+              2
+            ],
+            "present_class_bacc": 0.42794117647058827,
+            "bacc": 0.42794117647058827,
+            "acc": 0.40540540540540543,
+            "class_recalls": {
+              "0": 0.7058823529411765,
+              "2": 0.15
+            }
+          },
+          "physionet": {
+            "n_subjects": 50,
+            "classes_present": [
+              0
+            ],
+            "present_class_bacc": 0.5,
+            "bacc": 0.5,
+            "acc": 0.5,
+            "class_recalls": {
+              "0": 0.5
+            }
+          },
+          "tuh_corpus": {
+            "n_subjects": 165,
+            "classes_present": [
+              0,
+              1
+            ],
+            "present_class_bacc": 0.2650712458896602,
+            "bacc": 0.2650712458896602,
+            "acc": 0.15151515151515152,
+            "class_recalls": {
+              "0": 0.5217391304347826,
+              "1": 0.008403361344537815
+            }
+          }
+        },
+        "few_shot_control_onboarding": {
+          "mean_zero_calib_bacc_on_eval": 0.43371850548818125,
+          "mean_few_shot_bacc_on_eval": 0.4703142042610072,
+          "mean_delta_bacc": 0.036595698772825924,
+          "per_center": {
+            "ds004504": {
+              "n_calib": 5,
+              "n_eval": 83,
+              "classes_eval": [
+                0,
+                1
+              ],
+              "zero_calib_bacc_on_eval": 0.661723163841808,
+              "zero_calib_acc_on_eval": 0.5542168674698795,
+              "few_shot_bacc_on_eval": 0.6779661016949152,
+              "few_shot_acc_on_eval": 0.5421686746987951,
+              "delta_bacc": 0.016242937853107264,
+              "class_recalls": {
+                "0": 1.0,
+                "1": 0.3559322033898305
+              }
+            },
+            "ds007801": {
+              "n_calib": 2,
+              "n_eval": 34,
+              "classes_eval": [
+                0,
+                2
+              ],
+              "zero_calib_bacc_on_eval": 0.359375,
+              "zero_calib_acc_on_eval": 0.23529411764705882,
+              "few_shot_bacc_on_eval": 0.359375,
+              "few_shot_acc_on_eval": 0.23529411764705882,
+              "delta_bacc": 0.0,
+              "class_recalls": {
+                "0": 0.5,
+                "2": 0.21875
+              }
+            },
+            "hefmi": {
+              "n_calib": 5,
+              "n_eval": 32,
+              "classes_eval": [
+                0,
+                2
+              ],
+              "zero_calib_bacc_on_eval": 0.4083333333333333,
+              "zero_calib_acc_on_eval": 0.34375,
+              "few_shot_bacc_on_eval": 0.48333333333333334,
+              "few_shot_acc_on_eval": 0.375,
+              "delta_bacc": 0.07500000000000001,
+              "class_recalls": {
+                "0": 0.9166666666666666,
+                "2": 0.05
+              }
+            },
+            "physionet": {
+              "n_calib": 5,
+              "n_eval": 45,
+              "classes_eval": [
+                0
+              ],
+              "zero_calib_bacc_on_eval": 0.4666666666666667,
+              "zero_calib_acc_on_eval": 0.4666666666666667,
+              "few_shot_bacc_on_eval": 0.4444444444444444,
+              "few_shot_acc_on_eval": 0.4444444444444444,
+              "delta_bacc": -0.022222222222222254,
+              "class_recalls": {
+                "0": 0.4444444444444444
+              }
+            },
+            "tuh_corpus": {
+              "n_calib": 5,
+              "n_eval": 160,
+              "classes_eval": [
+                0,
+                1
+              ],
+              "zero_calib_bacc_on_eval": 0.2724943635990982,
+              "zero_calib_acc_on_eval": 0.14375,
+              "few_shot_bacc_on_eval": 0.3864521418323427,
+              "few_shot_acc_on_eval": 0.20625,
+              "delta_bacc": 0.11395777823324454,
+              "class_recalls": {
+                "0": 0.7560975609756098,
+                "1": 0.01680672268907563
+              }
+            }
+          }
+        }
+      },
+      "X3": {
+        "paradigm": "X3",
+        "mean_lodo_bacc": 0.48640109540088994,
+        "mean_lodo_acc": 0.42166522905884607,
+        "per_center": {
+          "ds004504": {
+            "n_subjects": 88,
+            "classes_present": [
+              0,
+              1
+            ],
+            "present_class_bacc": 0.68468731735827,
+            "bacc": 0.68468731735827,
+            "acc": 0.6477272727272727,
+            "class_recalls": {
+              "0": 0.7931034482758621,
+              "1": 0.576271186440678
+            }
+          },
+          "ds007801": {
+            "n_subjects": 36,
+            "classes_present": [
+              0,
+              2
+            ],
+            "present_class_bacc": 0.46875,
+            "bacc": 0.46875,
+            "acc": 0.25,
+            "class_recalls": {
+              "0": 0.75,
+              "2": 0.1875
+            }
+          },
+          "figshare": {
+            "n_subjects": 47,
+            "classes_present": [
+              2
+            ],
+            "present_class_bacc": 0.425531914893617,
+            "bacc": 0.425531914893617,
+            "acc": 0.425531914893617,
+            "class_recalls": {
+              "2": 0.425531914893617
+            }
+          },
+          "hefmi": {
+            "n_subjects": 37,
+            "classes_present": [
+              0,
+              2
+            ],
+            "present_class_bacc": 0.49117647058823527,
+            "bacc": 0.49117647058823527,
+            "acc": 0.4594594594594595,
+            "class_recalls": {
+              "0": 0.8823529411764706,
+              "2": 0.1
+            }
+          },
+          "physionet": {
+            "n_subjects": 50,
+            "classes_present": [
+              0
+            ],
+            "present_class_bacc": 0.62,
+            "bacc": 0.62,
+            "acc": 0.62,
+            "class_recalls": {
+              "0": 0.62
+            }
+          },
+          "tuh_corpus": {
+            "n_subjects": 165,
+            "classes_present": [
+              0,
+              1
+            ],
+            "present_class_bacc": 0.22826086956521738,
+            "bacc": 0.22826086956521738,
+            "acc": 0.12727272727272726,
+            "class_recalls": {
+              "0": 0.45652173913043476,
+              "1": 0.0
+            }
+          }
+        },
+        "few_shot_control_onboarding": {
+          "mean_zero_calib_bacc_on_eval": 0.47210205089339025,
+          "mean_few_shot_bacc_on_eval": 0.55286751871756,
+          "mean_delta_bacc": 0.08076546782416977,
+          "per_center": {
+            "ds004504": {
+              "n_calib": 5,
+              "n_eval": 83,
+              "classes_eval": [
+                0,
+                1
+              ],
+              "zero_calib_bacc_on_eval": 0.6839689265536724,
+              "zero_calib_acc_on_eval": 0.6385542168674698,
+              "few_shot_bacc_on_eval": 0.6747881355932204,
+              "few_shot_acc_on_eval": 0.5903614457831325,
+              "delta_bacc": -0.00918079096045199,
+              "class_recalls": {
+                "0": 0.875,
+                "1": 0.4745762711864407
+              }
+            },
+            "ds007801": {
+              "n_calib": 2,
+              "n_eval": 34,
+              "classes_eval": [
+                0,
+                2
+              ],
+              "zero_calib_bacc_on_eval": 0.34375,
+              "zero_calib_acc_on_eval": 0.20588235294117646,
+              "few_shot_bacc_on_eval": 0.59375,
+              "few_shot_acc_on_eval": 0.23529411764705882,
+              "delta_bacc": 0.25,
+              "class_recalls": {
+                "0": 1.0,
+                "2": 0.1875
+              }
+            },
+            "hefmi": {
+              "n_calib": 5,
+              "n_eval": 32,
+              "classes_eval": [
+                0,
+                2
+              ],
+              "zero_calib_bacc_on_eval": 0.4666666666666667,
+              "zero_calib_acc_on_eval": 0.375,
+              "few_shot_bacc_on_eval": 0.48333333333333334,
+              "few_shot_acc_on_eval": 0.375,
+              "delta_bacc": 0.016666666666666663,
+              "class_recalls": {
+                "0": 0.9166666666666666,
+                "2": 0.05
+              }
+            },
+            "physionet": {
+              "n_calib": 5,
+              "n_eval": 45,
+              "classes_eval": [
+                0
+              ],
+              "zero_calib_bacc_on_eval": 0.6222222222222222,
+              "zero_calib_acc_on_eval": 0.6222222222222222,
+              "few_shot_bacc_on_eval": 0.6222222222222222,
+              "few_shot_acc_on_eval": 0.6222222222222222,
+              "delta_bacc": 0.0,
+              "class_recalls": {
+                "0": 0.6222222222222222
+              }
+            },
+            "tuh_corpus": {
+              "n_calib": 5,
+              "n_eval": 160,
+              "classes_eval": [
+                0,
+                1
+              ],
+              "zero_calib_bacc_on_eval": 0.24390243902439024,
+              "zero_calib_acc_on_eval": 0.125,
+              "few_shot_bacc_on_eval": 0.3902439024390244,
+              "few_shot_acc_on_eval": 0.2,
+              "delta_bacc": 0.14634146341463417,
+              "class_recalls": {
+                "0": 0.7804878048780488,
+                "1": 0.0
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "experiment_4_fault_stress_tests": {
+    "s1_gain_invariance": {
+      "pass": true,
+      "single_row_pass": true,
+      "multiepoch_pass": true,
+      "max_prob_diff_50x": 1.3877787807814457e-17,
+      "max_prob_diff_001x": 2.220446049250313e-16,
+      "max_feat_diff_multiepoch_50x": 9.325873406851315e-15,
+      "max_feat_diff_multiepoch_001x": 9.547918011776346e-15,
+      "max_prob_diff_multiepoch_50x": 1.5265566588595902e-16,
+      "max_prob_diff_multiepoch_001x": 1.1102230246251565e-16
+    },
+    "s2_healing": {
+      "pass": true,
+      "max_prob_diff_1bad": 0.005651035401298965,
+      "max_prob_diff_2bad": 0.04444153548738794,
+      "status_1bad": "DEGRADED_AUTO_HEALED",
+      "status_2bad": "DEGRADED_AUTO_HEALED"
+    },
+    "s3_safe_block": {
+      "pass": true,
+      "status": "REJECT_UNUSABLE_SIGNAL_RECHECK_ELECTRODES",
+      "decision": "BLOCKED_UNUSABLE_SIGNAL",
+      "bad_channels_detected": [
+        "F3",
+        "F4",
+        "C3",
+        "C4",
+        "P3",
+        "P4"
+      ]
+    }
+  },
+  "experiment_5_stroke_subtyping_and_tpa_lockout": {
+    "train_cv_metrics": {
+      "cv_auroc": 0.9639240506329114,
+      "cv_bacc_at_05": 0.8933544303797468,
+      "cv_ich_recall_under_lockout": 1.0,
+      "cv_cm_ich_cleared_for_tpa": 0,
+      "tau_ich_veto": 0.22271244542369442,
+      "tau_is_ood_high": 1.1119250874586135,
+      "tau_is_diffuse_low": 0.3919905851756606
+    },
+    "uclh_blind_metrics": {
+      "uclh_auroc": 0.7125,
+      "uclh_n_is": 10,
+      "uclh_n_ich": 8,
+      "uclh_ich_locked_out": 8,
+      "uclh_ich_cleared_for_tpa": 0,
+      "uclh_small_ich_locked_out": {
+        "P17": {
+          "locked_out": true,
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT",
+          "p_ich": 0.0017780441259189984,
+          "asym_score": 0.7888718346416166,
+          "direct_veto": false,
+          "ood_guard": false,
+          "naive_tpa_cleared": true
+        },
+        "P20": {
+          "locked_out": true,
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT",
+          "p_ich": 0.0037770741871963436,
+          "asym_score": 1.0258925232568432,
+          "direct_veto": false,
+          "ood_guard": false,
+          "naive_tpa_cleared": true
+        },
+        "P5": {
+          "locked_out": true,
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT",
+          "p_ich": 0.002219419128549748,
+          "asym_score": 0.8141948277905875,
+          "direct_veto": false,
+          "ood_guard": false,
+          "naive_tpa_cleared": true
+        }
+      },
+      "uclh_per_subject": [
+        {
+          "subject_id": "uclh_P1",
+          "clean_id": "P1",
+          "true_subtype": "IS",
+          "class_label": 1,
+          "p_ich": 0.0022568747028204623,
+          "asym_score": 0.8989810481801427,
+          "direct_veto": false,
+          "ood_guard": false,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": true,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P11",
+          "clean_id": "P11",
+          "true_subtype": "ICH",
+          "class_label": 2,
+          "p_ich": 0.002326929149084441,
+          "asym_score": 0.664569453570091,
+          "direct_veto": false,
+          "ood_guard": false,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": true,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P12",
+          "clean_id": "P12",
+          "true_subtype": "IS",
+          "class_label": 1,
+          "p_ich": 0.0019923959398466225,
+          "asym_score": 1.1282751086924794,
+          "direct_veto": false,
+          "ood_guard": true,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": false,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P15",
+          "clean_id": "P15",
+          "true_subtype": "IS",
+          "class_label": 1,
+          "p_ich": 0.0018798936906579708,
+          "asym_score": 1.9569598321736357,
+          "direct_veto": false,
+          "ood_guard": true,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": false,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P16",
+          "clean_id": "P16",
+          "true_subtype": "IS",
+          "class_label": 1,
+          "p_ich": 0.0018143294486358706,
+          "asym_score": 1.5983853113793784,
+          "direct_veto": false,
+          "ood_guard": true,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": false,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P17",
+          "clean_id": "P17",
+          "true_subtype": "ICH",
+          "class_label": 2,
+          "p_ich": 0.0017780441259189984,
+          "asym_score": 0.7888718346416166,
+          "direct_veto": false,
+          "ood_guard": false,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": true,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P18",
+          "clean_id": "P18",
+          "true_subtype": "IS",
+          "class_label": 1,
+          "p_ich": 0.0018901173519028588,
+          "asym_score": 2.004656973438647,
+          "direct_veto": false,
+          "ood_guard": true,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": false,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P19",
+          "clean_id": "P19",
+          "true_subtype": "IS",
+          "class_label": 1,
+          "p_ich": 0.0019133504946485848,
+          "asym_score": 2.2623606058550596,
+          "direct_veto": false,
+          "ood_guard": true,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": false,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P20",
+          "clean_id": "P20",
+          "true_subtype": "ICH",
+          "class_label": 2,
+          "p_ich": 0.0037770741871963436,
+          "asym_score": 1.0258925232568432,
+          "direct_veto": false,
+          "ood_guard": false,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": true,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P23",
+          "clean_id": "P23",
+          "true_subtype": "ICH",
+          "class_label": 2,
+          "p_ich": 0.0022052894134263075,
+          "asym_score": 1.8911393813424593,
+          "direct_veto": false,
+          "ood_guard": true,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": false,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P24",
+          "clean_id": "P24",
+          "true_subtype": "ICH",
+          "class_label": 2,
+          "p_ich": 0.002870545798070535,
+          "asym_score": 1.221303534104921,
+          "direct_veto": false,
+          "ood_guard": true,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": false,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P25",
+          "clean_id": "P25",
+          "true_subtype": "IS",
+          "class_label": 1,
+          "p_ich": 0.0019752075730061222,
+          "asym_score": 2.5003020661071833,
+          "direct_veto": false,
+          "ood_guard": true,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": false,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P26",
+          "clean_id": "P26",
+          "true_subtype": "IS",
+          "class_label": 1,
+          "p_ich": 0.0018455312013425853,
+          "asym_score": 1.4050972863401001,
+          "direct_veto": false,
+          "ood_guard": true,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": false,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P3",
+          "clean_id": "P3",
+          "true_subtype": "ICH",
+          "class_label": 2,
+          "p_ich": 0.0017616596541446734,
+          "asym_score": 1.6737821273018751,
+          "direct_veto": false,
+          "ood_guard": true,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": false,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P4",
+          "clean_id": "P4",
+          "true_subtype": "IS",
+          "class_label": 1,
+          "p_ich": 0.0018280297229733397,
+          "asym_score": 0.8037263856846878,
+          "direct_veto": false,
+          "ood_guard": false,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": true,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P5",
+          "clean_id": "P5",
+          "true_subtype": "ICH",
+          "class_label": 2,
+          "p_ich": 0.002219419128549748,
+          "asym_score": 0.8141948277905875,
+          "direct_veto": false,
+          "ood_guard": false,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": true,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P6",
+          "clean_id": "P6",
+          "true_subtype": "ICH",
+          "class_label": 2,
+          "p_ich": 0.002024946628351597,
+          "asym_score": 0.8804355541566582,
+          "direct_veto": false,
+          "ood_guard": false,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": true,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        },
+        {
+          "subject_id": "uclh_P9",
+          "clean_id": "P9",
+          "true_subtype": "IS",
+          "class_label": 1,
+          "p_ich": 0.0020016244096165764,
+          "asym_score": 1.472256014553611,
+          "direct_veto": false,
+          "ood_guard": true,
+          "tpa_cleared": false,
+          "naive_tpa_cleared": false,
+          "subtype_label": "ACUTE_STROKE_STAGING_CT_REQUIRED",
+          "tpa_safety_status": "HOLD tPA / MANDATORY CT"
+        }
+      ],
+      "naive_threshold_audit": {
+        "uclh_naive_ich_cleared": 5,
+        "uclh_naive_ich_locked": 3,
+        "note": "Naive monotone thresholding fails on UCLH due to single-center HEFMI domain shift, proving why hospital lockout is mandatory."
+      }
+    }
+  },
+  "bundle_path": "D:\\PRJ_Personal\\acute_stroke_eeg\\models\\hospital_grade_n1_3state_bundle.joblib"
+}

@@ -355,7 +355,13 @@ export type CreditTransactionType =
   | 'REWARD_REDEMPTION'
   | 'ADMIN_ADJUSTMENT'
   | 'REWARD_REVERSAL'
-  | 'REFUND';
+  | 'REFUND'
+  | 'CONSULTATION_ESCROW'
+  | 'CONSULTATION_EARNING'
+  | 'CONSULTATION_REFUND'
+  | 'DATABANK_PURCHASE'
+  | 'DATABANK_ROYALTY'
+  | 'STARTER_GRANT';
 
 export type RewardCategory =
   | 'MONETARY_REWARD'
@@ -544,4 +550,263 @@ export interface CommunityItem {
   isVerifiedOnly: boolean;
   leadInstitution: string;
 }
+
+// ---------------------------------------------------------------------------
+// Unified qEEG Workstation, Neural Network DB & 4 Startup Pillars
+// ---------------------------------------------------------------------------
+
+export type ClinicalCategory =
+  | 'VASCULAR_STROKE'
+  | 'EPILEPSY_ICU'
+  | 'SLEEP_COGNITIVE'
+  | 'HARDWARE_BCI';
+
+export type NeuralLabel =
+  | 'CONTROL'
+  | 'ISCHEMIC_STROKE'
+  | 'HEMORRHAGIC_STROKE'
+  | 'EPILEPTIFORM_SLOWING'
+  | 'COGNITIVE_FATIGUE';
+
+export type DatasetSplit = 'TRAIN' | 'VALIDATION' | 'TEST' | 'EXTERNAL_HOLDOUT';
+
+export type ConsultationStatus = 'OPEN' | 'CLAIMED' | 'ANSWERED' | 'ACCEPTED' | 'CANCELLED';
+
+export type WorkBlockType =
+  | 'DEEP_WORK'
+  | 'LIGHT_ADMIN'
+  | 'NEURO_RECOVERY'
+  | 'SLEEP_TARGET'
+  | 'CLINICAL_CHECK';
+
+export interface QeegCaseItem {
+  id: string;
+  name: string;
+  subjectId: string;
+  clinicalCategory: ClinicalCategory;
+  groundTruthLabel: NeuralLabel;
+  clinicalPresentation: string;
+  trafficLight: 'green' | 'yellow' | 'red' | 'purple';
+  tpaStatus: 'ELIGIBLE' | 'ABSOLUTELY_CONTRAINDICATED' | 'NOT_APPLICABLE' | 'MONITORING';
+  badge: string;
+  samplingRateHz: number;
+  channelsCount: number;
+}
+
+export interface QeegTopomapNode {
+  name: string;
+  x: number;
+  y: number;
+  isPhysical: boolean;
+  value: number;
+  dar: number;
+}
+
+export interface QeegBandPowers {
+  delta: number;
+  theta: number;
+  alpha: number;
+  beta: number;
+}
+
+export interface QeegAnalysisResult {
+  status: 'SUCCESS';
+  engineSource: 'python_qeeg_service' | 'ts_dsp_fallback';
+  caseId: string;
+  clinicalCategory: ClinicalCategory;
+  classificationLabel: NeuralLabel;
+  classificationTitle: string;
+  trafficLight: 'green' | 'yellow' | 'red' | 'purple';
+  tpaBadge: string;
+  tpaCountdownMin: number;
+  safetyStatus: string;
+  decisionReason: string;
+  latencyMs: number;
+  samplingRateHz: number;
+  channelsCount: number;
+  montage: string;
+  biomarkers: {
+    meanDar: number;
+    meanTar: number;
+    meanBsi: number;
+    pri: number;
+    wpli: number;
+    alphaPeakHz: number;
+    signalQualityScore: number;
+    cusumAlarm: boolean;
+    tpaLockoutTriggered: boolean;
+  };
+  bandPowers: QeegBandPowers;
+  probabilities: {
+    control: number;
+    ischemic: number;
+    hemorrhagic: number;
+    epileptiform: number;
+    cognitiveFatigue: number;
+  };
+  featureVector80: number[];
+  waveforms: {
+    time: number[];
+    channels: string[];
+    raw: Record<string, number[]>;
+    filtered: Record<string, number[]>;
+  };
+  topomap: QeegTopomapNode[];
+  telemetryQr: string;
+}
+
+export interface NeuralTrainingSampleItem {
+  id: string;
+  datasetId: string | null;
+  uploaderId: string;
+  subjectCode: string;
+  clinicalCategory: ClinicalCategory;
+  groundTruthLabel: NeuralLabel;
+  split: DatasetSplit;
+  samplingRateHz: number;
+  channelsCount: number;
+  montage: string;
+  signalQualityScore: number;
+  dar: number;
+  bsi: number;
+  tar: number;
+  pri: number;
+  wpli: number;
+  tpaLockoutTriggered: boolean;
+  spectralBands: QeegBandPowers;
+  featureVector: number[];
+  waveformPreview: {
+    time: number[];
+    channels: string[];
+    filtered: Record<string, number[]>;
+  };
+  verifiedById: string | null;
+  deidentifiedConfirmed: boolean;
+  createdAt: string;
+  uploader?: UserSummary;
+  verifiedBy?: UserSummary | null;
+}
+
+export interface NeuralDbStats {
+  totalSamples: number;
+  verifiedSamples: number;
+  byLabel: Record<NeuralLabel, number>;
+  byCategory: Record<ClinicalCategory, number>;
+  bySplit: Record<DatasetSplit, number>;
+  averages: {
+    dar: number;
+    bsi: number;
+    tar: number;
+    wpli: number;
+  };
+}
+
+export interface DataBankListingItem {
+  id: string;
+  authorId: string;
+  datasetId: string | null;
+  title: string;
+  summary: string;
+  clinicalCategory: ClinicalCategory;
+  methodologyNote: string;
+  sampleCount: number;
+  channelsSpec: string;
+  samplingRateHz: number;
+  priceCredits: number;
+  downloadsCount: number;
+  previewMetrics: {
+    meanDar: number;
+    meanBsi: number;
+    meanTar: number;
+    meanWpli: number;
+    dominantBand: string;
+  };
+  hasAccess: boolean;
+  isAuthor: boolean;
+  payloadCsv?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  author: UserSummary;
+}
+
+export interface ConsultationReplyItem {
+  id: string;
+  ticketId: string;
+  responderId: string;
+  responderTier: string;
+  waveAnalysisText: string;
+  clinicalGuidanceText: string;
+  recommendedFollowUp: string;
+  rating: number | null;
+  isAccepted: boolean;
+  createdAt: string;
+  responder: UserSummary;
+}
+
+export interface ConsultationTicketItem {
+  id: string;
+  requesterId: string;
+  claimedById: string | null;
+  datasetId: string | null;
+  neuralSampleId: string | null;
+  title: string;
+  symptomSummary: string;
+  clinicalCategory: ClinicalCategory;
+  bountyCredits: number;
+  urgentRedFlag: boolean;
+  status: ConsultationStatus;
+  acceptedReplyId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  requester: UserSummary;
+  claimedBy: UserSummary | null;
+  neuralSample: NeuralTrainingSampleItem | null;
+  replies: ConsultationReplyItem[];
+}
+
+export interface HealthCheckInItem {
+  id: string;
+  userId: string;
+  neuralSampleId: string | null;
+  recordedDate: string;
+  focusScore: number;
+  fatigueIndexTar: number;
+  hemisphericBsi: number;
+  alphaPeakHz: number;
+  sleepHours: number;
+  stressLevel: number;
+  notes: string;
+  createdAt: string;
+}
+
+export interface WorkingPlanBlockItem {
+  id: string;
+  userId: string;
+  dayOfWeek: string;
+  timeSlot: string;
+  title: string;
+  blockType: WorkBlockType;
+  eegRationale: string;
+  completed: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CommunitySpotlightProfessional {
+  user: UserSummary & {
+    bio: string | null;
+    specialty: string;
+    institution: string | null;
+  };
+  metrics: {
+    publicPostsCount: number;
+    totalLikesReceived: number;
+    followersCount: number;
+    consultationsCompleted: number;
+    dataBankListingsCount: number;
+    dataBankDownloads: number;
+    impactScore: number;
+  };
+}
+
 

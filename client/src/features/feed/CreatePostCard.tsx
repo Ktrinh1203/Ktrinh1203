@@ -1,6 +1,6 @@
 import { useState, useRef, type FormEvent } from 'react';
-import { Image, X, Sparkles, Send, Tag, Shield } from 'lucide-react';
-import { Alert, Avatar, Button, Card, Textarea } from '../../components/ui';
+import { Image, X, Shield } from 'lucide-react';
+import { Alert, Avatar, Button, cn } from '../../components/ui';
 import { useAuth } from '../auth/AuthContext';
 import { postsApi } from '../../api/endpoints';
 import { errorMessage } from '../../api/client';
@@ -15,6 +15,7 @@ const TOPIC_PRESETS = [
 
 export function CreatePostCard({ onPostCreated }: { onPostCreated: () => void }) {
   const { user } = useAuth();
+  const [expanded, setExpanded] = useState(false);
   const [content, setContent] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -22,12 +23,20 @@ export function CreatePostCard({ onPostCreated }: { onPostCreated: () => void })
   const [error, setError] = useState<string | null>(null);
   const [showTopics, setShowTopics] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   if (!user) return null;
 
+  const openComposer = (focusTextarea = true) => {
+    setExpanded(true);
+    if (focusTextarea) {
+      setTimeout(() => textareaRef.current?.focus(), 0);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
-    const MAX_SIZE = 10 * 1024 * 1024; // 10MB per image
+    const MAX_SIZE = 10 * 1024 * 1024;
     const rawFiles = Array.from(e.target.files);
     const oversized = rawFiles.find((f) => f.size > MAX_SIZE);
     if (oversized) {
@@ -39,7 +48,7 @@ export function CreatePostCard({ onPostCreated }: { onPostCreated: () => void })
     const newFiles = [...selectedFiles, ...files].slice(0, 4);
     setSelectedFiles(newFiles);
 
-    // Generate previews
+    previews.forEach((url) => URL.revokeObjectURL(url));
     const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
     setPreviews(newPreviews);
   };
@@ -48,15 +57,23 @@ export function CreatePostCard({ onPostCreated }: { onPostCreated: () => void })
     if (previews[index]) {
       URL.revokeObjectURL(previews[index]);
     }
-    const updatedFiles = selectedFiles.filter((_, i) => i !== index);
-    setSelectedFiles(updatedFiles);
-    const updatedPreviews = previews.filter((_, i) => i !== index);
-    setPreviews(updatedPreviews);
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const addTopic = (tag: string) => {
     if (content.includes(tag)) return;
     setContent((prev) => (prev ? `${prev.trim()}\n${tag} ` : `${tag} `));
+  };
+
+  const resetComposer = () => {
+    previews.forEach((url) => URL.revokeObjectURL(url));
+    setContent('');
+    setSelectedFiles([]);
+    setPreviews([]);
+    setShowTopics(false);
+    setError(null);
+    setExpanded(false);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -76,11 +93,7 @@ export function CreatePostCard({ onPostCreated }: { onPostCreated: () => void })
       });
 
       await postsApi.create(formData);
-      previews.forEach((url) => URL.revokeObjectURL(url));
-      setContent('');
-      setSelectedFiles([]);
-      setPreviews([]);
-      setShowTopics(false);
+      resetComposer();
       onPostCreated();
     } catch (err) {
       setError(errorMessage(err));
@@ -93,26 +106,66 @@ export function CreatePostCard({ onPostCreated }: { onPostCreated: () => void })
   const isResearcher = user.professionalProfiles?.some((p) => p.type === 'RESEARCHER');
 
   const placeholderText = isDoctor
-    ? 'Chia sẻ ca lâm sàng, hướng dẫn chẩn đoán hoặc góc nhìn y khoa chuyên sâu...'
+    ? 'Chia sẻ ca lâm sàng, hướng dẫn chẩn đoán hoặc góc nhìn y khoa...'
     : isResearcher
-    ? 'Chia sẻ phát hiện nghiên cứu, công nghệ giao diện não - máy tính (BCI), hoặc tài liệu học thuật...'
-    : 'Đặt câu hỏi y khoa, chia sẻ hiểu biết hoặc thảo luận về sức khỏe não bộ...';
+      ? 'Chia sẻ phát hiện nghiên cứu, công nghệ BCI hoặc tài liệu học thuật...'
+      : 'Chia sẻ ghi chú, ca bệnh hoặc đặt câu hỏi...';
+
+  if (!expanded && !content && selectedFiles.length === 0) {
+    return (
+      <div className="px-4 sm:px-5 py-3.5">
+        <div className="flex items-center gap-3">
+          <Avatar name={user.displayName} src={user.avatarUrl} size="sm" />
+          <button
+            type="button"
+            onClick={() => openComposer(true)}
+            className="flex-1 min-w-0 text-left text-sm text-[#8A8882] hover:text-[#575652] py-1.5 truncate focus:outline-none"
+          >
+            Chia sẻ ghi chú, ca bệnh hoặc đặt câu hỏi...
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-[#6E6D68] hover:bg-[#EFF6F1] hover:text-[#15803D] transition-colors shrink-0"
+            aria-label="Đính kèm ảnh"
+          >
+            <Image className="size-4" aria-hidden />
+            <span>Ảnh</span>
+          </button>
+          <Button
+            type="button"
+            size="xs"
+            onClick={() => openComposer(true)}
+            className="shrink-0"
+          >
+            Đăng
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              handleFileChange(e);
+              setExpanded(true);
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Card className="p-4 sm:p-5 border-slate-200/80 shadow-xs rounded-lg">
+    <div className="px-4 sm:px-5 py-3.5">
       <form onSubmit={handleSubmit} className="space-y-3">
         {error && <Alert>{error}</Alert>}
 
-        {/* Inline Clinical Composer Layout: Avatar + Textarea */}
         <div className="flex items-start gap-3">
-          <Avatar
-            name={user.displayName}
-            src={user.avatarUrl}
-            size="md"
-            className="shrink-0 mt-0.5 ring-2 ring-slate-100"
-          />
+          <Avatar name={user.displayName} src={user.avatarUrl} size="sm" className="mt-0.5" />
           <div className="flex-1 min-w-0">
-            <Textarea
+            <textarea
+              ref={textareaRef}
               placeholder={placeholderText}
               rows={3}
               value={content}
@@ -123,30 +176,29 @@ export function CreatePostCard({ onPostCreated }: { onPostCreated: () => void })
                   if (content.trim() || selectedFiles.length > 0) {
                     void handleSubmit(e);
                   }
+                } else if (e.key === 'Escape' && !content.trim() && selectedFiles.length === 0) {
+                  setExpanded(false);
                 }
               }}
               maxLength={5000}
-              className="text-[14.5px] leading-relaxed resize-none border-slate-200/90 bg-slate-50/50 focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 rounded-lg"
+              className="w-full resize-none border-0 bg-transparent p-0 text-[15px] leading-relaxed text-[#141413] placeholder:text-[#8A8882] focus:outline-none focus:ring-0"
             />
           </div>
         </div>
 
-        {/* Topic Suggestion Chips */}
         {showTopics && (
-          <div className="flex flex-wrap items-center gap-1.5 pl-11 pt-0.5 animate-slide-up">
-            <span className="text-xs text-slate-500 font-medium mr-1 flex items-center gap-1">
-              <Sparkles className="size-3 text-brand-600" /> Chủ đề:
-            </span>
+          <div className="flex flex-wrap items-center gap-1.5 pl-12">
             {TOPIC_PRESETS.map((tag) => (
               <button
                 key={tag}
                 type="button"
                 onClick={() => addTopic(tag)}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                className={cn(
+                  'rounded-md px-2 py-0.5 text-xs transition-colors',
                   content.includes(tag)
-                    ? 'bg-brand-600 text-white shadow-2xs font-semibold'
-                    : 'bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-700'
-                }`}
+                    ? 'bg-[#16A34A] text-white font-medium'
+                    : 'border border-[#DCE6DF] bg-[#EFF6F1] text-[#374151] hover:bg-[#E2EFE6]',
+                )}
               >
                 {tag}
               </button>
@@ -154,41 +206,38 @@ export function CreatePostCard({ onPostCreated }: { onPostCreated: () => void })
           </div>
         )}
 
-        {/* Media Preview Gallery */}
         {previews.length > 0 && (
-          <div className="space-y-2 pl-11 pt-1">
+          <div className="space-y-2 pl-12">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {previews.map((src, idx) => (
                 <div
                   key={idx}
-                  className="group relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shadow-xs"
+                  className="group relative aspect-square rounded-lg overflow-hidden border border-[#DCE6DF] bg-[#F5FAF7]"
                 >
-                  <img src={src} alt="Đính kèm" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                  <img src={src} alt="Đính kèm" className="h-full w-full object-cover" />
                   <button
                     type="button"
                     onClick={() => removeFile(idx)}
-                    className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-slate-900/80 text-white shadow-sm hover:bg-red-600 transition-colors"
+                    className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-black/75 text-white hover:bg-black transition-colors"
                     aria-label="Xoá ảnh"
                   >
-                    <X className="size-3.5" />
+                    <X className="size-3.5" aria-hidden />
                   </button>
                 </div>
               ))}
             </div>
 
-            {/* PHI Patient Privacy Guardrail */}
-            <div className="flex items-center gap-2 rounded-lg bg-amber-50/90 border border-amber-200/80 px-3 py-2 text-xs text-amber-900 animate-slide-up">
-              <Shield className="size-4 text-amber-600 shrink-0" />
+            <div className="flex items-center gap-2 rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] px-3 py-2 text-xs text-[#575652]">
+              <Shield className="size-3.5 text-[#16A34A] shrink-0" aria-hidden />
               <span className="leading-tight">
-                <strong>Bảo mật Bệnh án (PHI):</strong> Hãy đảm bảo họ tên, mã bệnh nhân và khuôn mặt đã được che hoặc ẩn danh trước khi tải ảnh X-quang/MRI/EEG.
+                Hãy che họ tên, mã bệnh nhân và thông tin định danh trước khi tải ảnh y khoa.
               </span>
             </div>
           </div>
         )}
 
-        {/* Footer Toolbar */}
-        <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-2.5 sm:pl-11">
-          <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center justify-between gap-2 border-t border-[#DCE6DF] pt-2.5 pl-12">
+          <div className="flex items-center gap-2">
             <input
               ref={fileInputRef}
               type="file"
@@ -198,56 +247,58 @@ export function CreatePostCard({ onPostCreated }: { onPostCreated: () => void })
               onChange={handleFileChange}
               disabled={selectedFiles.length >= 4}
             />
-            <Button
+            <button
               type="button"
-              variant="outline"
-              size="sm"
               disabled={selectedFiles.length >= 4}
               onClick={() => fileInputRef.current?.click()}
-              className="text-xs text-slate-600 hover:text-slate-900 border-slate-200/90 rounded-md h-8 whitespace-nowrap px-2.5"
-              icon={<Image className="size-3.5 text-brand-600 shrink-0" />}
+              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-[#6E6D68] hover:bg-[#EFF6F1] hover:text-[#15803D] disabled:opacity-40 transition-colors"
             >
-              <span>Ảnh tư liệu</span>
+              <Image className="size-4" aria-hidden />
+              <span>Ảnh</span>
               {selectedFiles.length > 0 && (
-                <span className="ml-1 rounded bg-brand-50 px-1.5 text-[10px] font-bold text-brand-700 border border-brand-200">
-                  {selectedFiles.length}/4
-                </span>
+                <span className="text-[11px] text-[#8A8882]">{selectedFiles.length}/4</span>
               )}
-            </Button>
+            </button>
 
             <button
               type="button"
               onClick={() => setShowTopics((v) => !v)}
               aria-expanded={showTopics}
-              className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors h-8 whitespace-nowrap ${
+              className={cn(
+                'rounded-md px-2 py-1 text-xs font-medium transition-colors',
                 showTopics
-                  ? 'border-brand-300 bg-brand-50 text-brand-700'
-                  : 'border-slate-200/90 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-              title="Thêm hashtag chủ đề lâm sàng / nghiên cứu"
+                  ? 'bg-[#ECFDF3] text-[#15803D]'
+                  : 'text-[#6E6D68] hover:bg-[#EFF6F1] hover:text-[#15803D]',
+              )}
             >
-              <Tag className="size-3 text-brand-600 shrink-0" />
-              <span>Chủ đề</span>
+              #Chủ đề
             </button>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span className="hidden sm:inline text-[11px] text-slate-400 font-mono">
-              {content.length > 0 && `${content.length}/5000`}
-            </span>
+          <div className="flex items-center gap-2">
+            {content.length > 0 && (
+              <span className="hidden sm:inline text-[11px] text-[#8A8882] tabular-nums">
+                {content.length}/5000
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={resetComposer}
+              className="rounded-md px-2.5 py-1 text-xs font-medium text-[#6E6D68] hover:text-[#141413] transition-colors"
+            >
+              Hủy
+            </button>
             <Button
               type="submit"
-              size="sm"
+              size="xs"
               loading={submitting}
               disabled={!content.trim() && selectedFiles.length === 0}
-              className="px-3.5 sm:px-4 shadow-xs h-8 rounded-md bg-brand-600 hover:bg-brand-700 text-white font-semibold whitespace-nowrap"
-              icon={<Send className="size-3.5 shrink-0" />}
             >
-              Chia sẻ
+              Đăng
             </Button>
           </div>
         </div>
       </form>
-    </Card>
+    </div>
   );
 }

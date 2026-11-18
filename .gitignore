@@ -15,11 +15,20 @@ server/storage/
 storage/
 uploads/
 
-# Embedded Postgres data directory
+# Embedded Postgres data directory & Python/IDE caches
 server/data/
+data/
 server/uploads-test/
+.cocoindex_code/
+.venv/
+__pycache__/
+*.pyc
+qeeg_service/__pycache__/
+qeeg_service/src/__pycache__/
+qeeg_service/tests/__pycache__/
 
 .DS_Store
 Thumbs.db
 .impeccable/
+docs/verification_screenshots/
 *.zip

@@ -3,6 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import path from 'node:path';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { env } from './config/env.js';
 import { loadSession } from './middleware/auth.js';
 import { csrfProtection, CSRF_HEADER } from './middleware/csrf.js';
@@ -24,6 +26,24 @@ import { rewardsRouter } from './modules/rewards/rewards.routes.js';
 import { adminRewardsRouter } from './modules/rewards/admin-rewards.routes.js';
 import { eegDatasetsRouter } from './modules/eeg/eeg-access.routes.js';
 import { communitiesRouter } from './modules/communities/communities.routes.js';
+import { qeegRouter } from './modules/qeeg/qeeg.routes.js';
+import { neuralDbRouter } from './modules/neural-db/neural-db.routes.js';
+import { consultationsRouter } from './modules/consultations/consultations.routes.js';
+import { databankRouter } from './modules/databank/databank.routes.js';
+import { selfServiceRouter } from './modules/self-service/self-service.routes.js';
+import { communityInsightsRouter } from './modules/community-insights/community-insights.routes.js';
+
+const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
+const WORKSTATION_HTML_PATH = path.resolve(MODULE_DIR, '../../qeeg_service/static/index.html');
+const WORKSTATION_CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com",
+  "script-src-attr 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com",
+  "font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com",
+  "img-src 'self' data: blob:",
+  "connect-src 'self' http://127.0.0.1:* http://localhost:*",
+].join('; ');
 
 export function createApp() {
   const app = express();
@@ -56,11 +76,20 @@ export function createApp() {
       allowedHeaders: ['Content-Type', CSRF_HEADER],
     }),
   );
-  app.use(express.json({ limit: '100kb' }));
+  app.use(express.json({ limit: '2mb' }));
   app.use(cookieParser());
 
   // Static uploads directory
   app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR)));
+
+  app.get('/clinical-workstation', (_req, res) => {
+    res.setHeader('Content-Security-Policy', WORKSTATION_CSP);
+    if (!existsSync(WORKSTATION_HTML_PATH)) {
+      res.status(404).send('<h1>Trạm Điện Não Định Lượng qEEG chưa sẵn sàng.</h1>');
+      return;
+    }
+    res.sendFile(WORKSTATION_HTML_PATH);
+  });
 
   app.use(globalLimiter);
 
@@ -83,6 +112,12 @@ export function createApp() {
   app.use('/api/admin/rewards', adminRewardsRouter);
   app.use('/api/eeg-datasets', eegDatasetsRouter);
   app.use('/api/communities', communitiesRouter);
+  app.use('/api/qeeg', qeegRouter);
+  app.use('/api/neural-db', neuralDbRouter);
+  app.use('/api/consultations', consultationsRouter);
+  app.use('/api/databank', databankRouter);
+  app.use('/api/self-service', selfServiceRouter);
+  app.use('/api/community-insights', communityInsightsRouter);
   app.use('/api/admin', adminRouter);
 
   app.use('/api', notFoundHandler);

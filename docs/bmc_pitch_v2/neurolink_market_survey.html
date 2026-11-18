@@ -1,0 +1,3201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Khảo Sát Thị Trường & Định Giá Thiết Bị BCI NeuroLink Health</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0d9488;
+      --primary-hover: #0f766e;
+      --primary-light: #f0fdfa;
+      --primary-border: #99f6e4;
+      --primary-focus: rgba(13, 148, 136, 0.25);
+      
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-400: #94a3b8;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+      --white: #ffffff;
+      
+      --danger: #ef4444;
+      --danger-bg: #fef2f2;
+      --danger-border: #fecaca;
+      --success: #10b981;
+      --success-bg: #ecfdf5;
+      --warning: #f59e0b;
+      --warning-bg: #fffbeb;
+      --info: #0284c7;
+      --info-bg: #f0f9ff;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      max-width: 100%;
+      overflow-x: hidden;
+      background-color: var(--slate-50);
+      color: var(--slate-900);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Utility Bar */
+    .top-nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--slate-200);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+      background-color: rgba(255, 255, 255, 0.95);
+    }
+
+    .top-nav-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo-badge {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, #0d9488, #0f766e);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--white);
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: -0.5px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-text h1 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--slate-900);
+      letter-spacing: -0.2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: var(--slate-500);
+      font-weight: 500;
+    }
+
+    .btn-admin-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--slate-100);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-sm);
+      color: var(--slate-700);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-admin-trigger:hover {
+      background: var(--slate-200);
+      color: var(--slate-900);
+      border-color: var(--slate-300);
+    }
+
+    /* Container */
+    .app-container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+    }
+
+    /* Hero Header */
+    .survey-hero {
+      background: var(--white);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .survey-hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #0d9488, #2dd4bf, #0284c7);
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--primary-light);
+      border: 1px solid var(--primary-border);
+      border-radius: 9999px;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--slate-900);
+      line-height: 1.3;
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+
+    .hero-desc {
+      font-size: 14px;
+      color: var(--slate-600);
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .hero-highlights {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      padding-top: 14px;
+      border-top: 1px solid var(--slate-100);
+    }
+
+    .highlight-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--slate-700);
+    }
+
+    .highlight-icon {
+      color: var(--primary);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Branch Selector Tabs */
+    .stream-toggle-section {
+      margin-bottom: 20px;
+    }
+
+    .stream-toggle-label {
+      font-size: 12.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--slate-500);
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .stream-nav-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: var(--slate-200);
+      padding: 4px;
+      border-radius: var(--radius-md);
+    }
+
+    .tab-btn {
+      padding: 12px 14px;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--slate-600);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      text-align: center;
+      line-height: 1.25;
+    }
+
+    .tab-btn span.tab-sub {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--slate-500);
+    }
+
+    .tab-btn.active {
+      background: var(--white);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .tab-btn.active span.tab-sub {
+      color: var(--primary);
+    }
+
+    /* Progress Tracker */
+    .progress-bar-wrap {
+      background: var(--white);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 8px;
+      background: var(--slate-100);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0d9488, #2dd4bf);
+      width: 0%;
+      border-radius: 9999px;
+      transition: width 0.3s ease;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--slate-700);
+      white-space: nowrap;
+    }
+
+    /* Form Card Styles */
+    .survey-card {
+      background: var(--white);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-header {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--slate-100);
+    }
+
+    .card-num {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--primary);
+      background: var(--primary-light);
+      border: 1px solid var(--primary-border);
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--slate-900);
+      letter-spacing: -0.2px;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--slate-500);
+      margin-top: 4px;
+    }
+
+    /* Question Styles */
+    .q-group {
+      margin-bottom: 22px;
+    }
+
+    .q-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .q-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--slate-800);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .q-label .req {
+      color: var(--danger);
+      margin-left: 2px;
+    }
+
+    .q-hint {
+      display: block;
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--slate-500);
+      margin-top: 2px;
+      margin-bottom: 8px;
+    }
+
+    /* Option Lists & Radios */
+    .option-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .option-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--white);
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .option-item:hover {
+      border-color: var(--primary-border);
+      background: var(--slate-50);
+    }
+
+    .option-item input[type="radio"],
+    .option-item input[type="checkbox"] {
+      margin-top: 3px;
+      accent-color: var(--primary);
+      width: 17px;
+      height: 17px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .option-text {
+      font-size: 13.5px;
+      color: var(--slate-700);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .option-text strong {
+      color: var(--slate-900);
+    }
+
+    .option-item.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    /* Likert Scale 1-5 */
+    .likert-scale {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .likert-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 4px;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      background: var(--white);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+    }
+
+    .likert-btn input {
+      display: none;
+    }
+
+    .likert-num {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--slate-700);
+      margin-bottom: 2px;
+    }
+
+    .likert-desc {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--slate-500);
+      line-height: 1.1;
+    }
+
+    .likert-btn:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .likert-btn.active {
+      border-color: var(--primary);
+      background: var(--primary);
+    }
+
+    .likert-btn.active .likert-num,
+    .likert-btn.active .likert-desc {
+      color: var(--white);
+    }
+
+    /* Standard Inputs */
+    .input-text, .select-box, .textarea-box {
+      width: 100%;
+      padding: 10px 14px;
+      font-family: inherit;
+      font-size: 13.5px;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      background: var(--white);
+      color: var(--slate-900);
+      transition: all 0.15s ease;
+    }
+
+    .input-text:focus, .select-box:focus, .textarea-box:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-focus);
+    }
+
+    .textarea-box {
+      resize: vertical;
+      min-height: 72px;
+    }
+
+    /* PSM Van Westendorp Grid */
+    .psm-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .psm-card {
+      background: var(--slate-50);
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.15s ease;
+    }
+
+    .psm-card:focus-within {
+      border-color: var(--primary);
+      background: var(--white);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .psm-card.has-error {
+      border-color: var(--danger) !important;
+      background: var(--danger-bg) !important;
+    }
+
+    .psm-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+    }
+
+    .psm-tag.too-cheap {
+      background: #ffe4e6;
+      color: #be123c;
+    }
+
+    .psm-tag.cheap {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .psm-tag.expensive {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .psm-tag.too-expensive {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .psm-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--slate-800);
+      line-height: 1.35;
+      margin-bottom: 8px;
+    }
+
+    .psm-input-wrap {
+      position: relative;
+      margin-top: 6px;
+    }
+
+    .psm-input {
+      width: 100%;
+      padding: 10px 42px 10px 12px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--slate-900);
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+    }
+
+    .psm-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-focus);
+    }
+
+    .psm-currency {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--slate-500);
+      pointer-events: none;
+    }
+
+    .psm-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .psm-pill {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--slate-600);
+      background: var(--white);
+      border: 1px solid var(--slate-200);
+      padding: 3px 7px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+
+    .psm-pill:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    /* PSM Error Banner */
+    .psm-error-banner {
+      margin-top: 14px;
+      padding: 12px 16px;
+      background: var(--danger-bg);
+      border: 1.5px solid var(--danger-border);
+      border-radius: var(--radius-md);
+      color: #991b1b;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      line-height: 1.45;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .psm-error-banner.hidden {
+      display: none !important;
+    }
+
+    .psm-error-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    /* Form Actions & Buttons */
+    .form-actions {
+      margin-top: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 16px 24px;
+      background: linear-gradient(135deg, #0d9488, #0f766e);
+      border: none;
+      border-radius: var(--radius-md);
+      color: var(--white);
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 10px rgba(13, 148, 136, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      background: linear-gradient(135deg, #0f766e, #115e59);
+      box-shadow: 0 6px 14px rgba(13, 148, 136, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Thank You State */
+    .thankyou-card {
+      background: var(--white);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 40px 24px;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+      display: none;
+    }
+
+    .thankyou-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--success-bg);
+      border: 2px solid #a7f3d0;
+      color: var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 16px;
+    }
+
+    .thankyou-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin-bottom: 8px;
+    }
+
+    .thankyou-desc {
+      font-size: 14px;
+      color: var(--slate-600);
+      max-width: 520px;
+      margin: 0 auto 20px;
+    }
+
+    .ticket-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--slate-100);
+      border: 1px dashed var(--slate-300);
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--slate-800);
+      margin-bottom: 24px;
+    }
+
+    .btn-reset-survey {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      background: var(--white);
+      border: 1.5px solid var(--slate-300);
+      border-radius: var(--radius-md);
+      color: var(--slate-700);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-reset-survey:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Modal Backdrop & Dialog */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-dialog {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 960px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      transform: translateY(12px);
+      transition: transform 0.2s ease;
+    }
+
+    .modal-overlay.open .modal-dialog {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--slate-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: var(--white);
+      z-index: 10;
+    }
+
+    .modal-header-text h3 {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--slate-900);
+    }
+
+    .modal-header-text p {
+      font-size: 12px;
+      color: var(--slate-500);
+    }
+
+    .modal-close-btn {
+      width: 32px;
+      height: 32px;
+      background: var(--slate-100);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--slate-600);
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .modal-close-btn:hover {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
+
+    .modal-body {
+      padding: 16px 20px;
+    }
+
+    /* Admin Toolbar */
+    .admin-controls-card {
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .data-source-selector {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .radio-pill-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--slate-700);
+      cursor: pointer;
+    }
+
+    .admin-actions-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-admin-action {
+      padding: 7px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-csv {
+      background: #047857;
+      color: var(--white);
+      border: none;
+    }
+
+    .btn-csv:hover {
+      background: #065f46;
+    }
+
+    .btn-danger-outline {
+      background: var(--white);
+      color: var(--danger);
+      border: 1px solid var(--danger-border);
+    }
+
+    .btn-danger-outline:hover {
+      background: var(--danger-bg);
+    }
+
+    /* KPI Metrics Cards (Optimized 3 columns x 2 rows) */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .kpi-card {
+      background: var(--white);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      position: relative;
+    }
+
+    .kpi-card.highlight {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--slate-500);
+      margin-bottom: 2px;
+    }
+
+    .kpi-card.highlight .kpi-label {
+      color: var(--primary);
+    }
+
+    .kpi-val {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--slate-900);
+      line-height: 1.2;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--slate-500);
+      margin-top: 2px;
+    }
+
+    /* PSM Chart Container */
+    .chart-container {
+      background: var(--white);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+    }
+
+    .chart-title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chart-title-bar h4 {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--slate-900);
+    }
+
+    .chart-legend {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--slate-600);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .svg-chart-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .svg-chart-wrap svg {
+      width: 100%;
+      height: auto;
+      max-width: 100%;
+      display: block;
+    }
+
+    /* Webhook Config Form */
+    .webhook-card {
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .webhook-card h4 {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--slate-800);
+      margin-bottom: 6px;
+    }
+
+    .webhook-card p {
+      font-size: 12px;
+      color: var(--slate-500);
+      margin-bottom: 10px;
+    }
+
+    .webhook-input-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .webhook-input-group input {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 12.5px;
+      font-family: inherit;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-save-webhook {
+      padding: 8px 16px;
+      background: var(--slate-800);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-save-webhook:hover {
+      background: var(--slate-900);
+    }
+
+    /* Responses Data Table */
+    .table-container {
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      background: var(--white);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: var(--slate-100);
+      padding: 10px 12px;
+      font-weight: 700;
+      color: var(--slate-700);
+      border-bottom: 1px solid var(--slate-200);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--slate-100);
+      color: var(--slate-800);
+      white-space: nowrap;
+    }
+
+    .data-table tr:hover td {
+      background: var(--slate-50);
+    }
+
+    /* Stream Containers */
+    .stream-container {
+      display: block;
+    }
+
+    .stream-container.hidden {
+      display: none !important;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive Queries */
+    @media (max-width: 640px) {
+      .app-container {
+        padding: 16px 12px 60px;
+      }
+      .survey-hero {
+        padding: 20px 16px;
+      }
+      .hero-title {
+        font-size: 19px;
+      }
+      .stream-nav-tabs {
+        grid-template-columns: 1fr;
+      }
+      .survey-card {
+        padding: 18px 14px;
+      }
+      .psm-grid {
+        grid-template-columns: 1fr;
+      }
+      .likert-scale {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 4px;
+      }
+      .likert-num {
+        font-size: 14px;
+      }
+      .likert-desc {
+        display: none;
+      }
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+      .webhook-input-group {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Sticky Bar -->
+  <header class="top-nav">
+    <div class="top-nav-inner">
+      <div class="brand-group">
+        <div class="brand-logo-badge">NL</div>
+        <div class="brand-text">
+          <h1>NEUROLINK HEALTH <span style="font-size:11px; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:700;">PILOT 2026</span></h1>
+          <p>BCI Sleep & Stroke Defense — Đà Nẵng & Miền Trung</p>
+        </div>
+      </div>
+      <button type="button" id="btn-admin-analytics" class="btn-admin-trigger" title="Xem thống kê Van Westendorp và xuất dữ liệu">
+        📊 Chế độ Ban Dự Án (Thống kê & Xuất CSV)
+      </button>
+    </div>
+  </header>
+
+  <!-- Main App Container -->
+  <main class="app-container">
+
+    <!-- Hero Card -->
+    <section class="survey-hero">
+      <div class="hero-badge">Khảo Sát Độc Quyền & Nghiên Cứu Định Giá</div>
+      <h2 class="hero-title">Bảo Vệ Giấc Ngủ & Canh Gác Đột Quỵ Cho Cha Mẹ Từ Xa</h2>
+      <p class="hero-desc">
+        NeuroLink phát triển thiết bị vòng đeo tai BCI không dây, êm ái khi ngủ, tự động nhận diện sớm dấu hiệu thiếu máu não thoáng qua (TIA) và đột quỵ thầm lặng ban đêm để tự động gọi điện đánh thức con cái đi làm xa và kết nối bác sĩ chuyên khoa. Ý kiến quý báu của bạn giúp chúng tôi hoàn thiện sản phẩm và định giá tối ưu nhất cho gia đình Việt.
+      </p>
+      <div class="hero-highlights">
+        <div class="highlight-item">
+          <span class="highlight-icon">⏱️</span>
+          <span>Khảo sát 4 phút — 100% ẩn danh và bảo mật</span>
+        </div>
+        <div class="highlight-item">
+          <span class="highlight-icon">🎁</span>
+          <span>Tặng mã ưu đãi <strong>30%</strong> cho 100 suất thử nghiệm Pilot đầu tiên</span>
+        </div>
+        <div class="highlight-item">
+          <span class="highlight-icon">🩺</span>
+          <span>Phương pháp định giá chuẩn quốc tế Van Westendorp PSM</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Branch Selector Tabs -->
+    <section class="stream-toggle-section">
+      <span class="stream-toggle-label">Vui lòng chọn vai trò khảo sát phù hợp với bạn:</span>
+      <div class="stream-nav-tabs" role="tablist">
+        <button type="button" class="tab-btn active" id="tab-stream-a" role="tab" aria-selected="true">
+          Luồng A: Dành cho Con cái / Người đi làm
+          <span class="tab-sub">(22–45 tuổi có cha mẹ ≥ 50 tuổi)</span>
+        </button>
+        <button type="button" class="tab-btn" id="tab-stream-b" role="tab" aria-selected="false">
+          Luồng B: Dành cho Bác sĩ & Y tế
+          <span class="tab-sub">(Bác sĩ Nội trú / Nội thần kinh / Đa khoa)</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Dynamic Progress Bar -->
+    <div class="progress-bar-wrap">
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <span class="progress-label" id="progress-text">Tiến độ: 0%</span>
+    </div>
+
+    <!-- STREAM A FORM -->
+    <div id="stream-a-container" class="stream-container">
+      <form id="form-stream-a" novalidate>
+
+        <!-- Section A1: Nhân khẩu học & Hoàn cảnh -->
+        <div class="survey-card">
+          <div class="card-header">
+            <span class="card-num">Phần 1 / 6</span>
+            <h3 class="card-title">Nhân Khẩu Học & Hoàn Cảnh Gia Đình</h3>
+            <p class="card-desc">Giúp chúng tôi hiểu rõ bối cảnh gia đình và tình trạng sức khỏe của cha mẹ bạn.</p>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">1. Độ tuổi của bạn: <span class="req">*</span></label>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="radio" name="a_age" value="Dưới 22 tuổi" required>
+                <span class="option-text">Dưới 22 tuổi</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_age" value="22 – 29 tuổi" required>
+                <span class="option-text">22 – 29 tuổi (Người mới đi làm / Kỹ sư trẻ)</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_age" value="30 – 39 tuổi" required>
+                <span class="option-text">30 – 39 tuổi (Giai đoạn gánh vác chính trong gia đình)</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_age" value="40 – 49 tuổi" required>
+                <span class="option-text">40 – 49 tuổi</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_age" value="50 tuổi trở lên" required>
+                <span class="option-text">50 tuổi trở lên</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">2. Nơi làm việc / Khối ngành nghề hiện tại của bạn: <span class="req">*</span></label>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="radio" name="a_workplace" value="Khu CNTT (FPT Complex, KMS, Synopsys, Enclave, Viettel...)" required>
+                <span class="option-text">Khu CNTT & Công nghệ (FPT Complex, KMS, Synopsys, Enclave, Viettel...)</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_workplace" value="Khối Văn phòng, Ngân hàng, Doanh nghiệp tài chính, Nhà nước" required>
+                <span class="option-text">Khối Văn phòng, Ngân hàng, Doanh nghiệp tài chính, Cơ quan Nhà nước</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_workplace" value="Kinh doanh tự do / Khởi nghiệp / Freelancer" required>
+                <span class="option-text">Kinh doanh tự do / Khởi nghiệp / Freelancer</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_workplace" value="Khác" required>
+                <span class="option-text">Khác</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">3. Hoàn cảnh sinh sống của cha mẹ so với nơi bạn làm việc: <span class="req">*</span></label>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="radio" name="a_parent_living" value="Cha mẹ ở quê / khác tỉnh (Con đi làm xa)" required>
+                <span class="option-text">Cha mẹ ở quê / khác tỉnh (Con sống và đi làm xa nhà)</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_parent_living" value="Cùng thành phố nhưng ở nhà riêng / cách xa" required>
+                <span class="option-text">Ở cùng thành phố nhưng ở nhà riêng (cách nhau một quãng đường)</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_parent_living" value="Đang sống chung một nhà cùng cha mẹ" required>
+                <span class="option-text">Đang sống chung một nhà cùng cha mẹ</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">4. Tiền sử sức khỏe của cha mẹ bạn: <span class="req">*</span></label>
+            <span class="q-hint">(Chọn tất cả các tình trạng sức khỏe mà cha mẹ từng được chẩn đoán hoặc có biểu hiện)</span>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="checkbox" name="a_health_history" value="Tăng huyết áp (Cao huyết áp)">
+                <span class="option-text">Tăng huyết áp (Cao huyết áp)</span>
+              </label>
+              <label class="option-item">
+                <input type="checkbox" name="a_health_history" value="Mất ngủ kinh niên / Giấc ngủ chập chờn / Ngưng thở khi ngủ">
+                <span class="option-text">Mất ngủ kinh niên / Giấc ngủ chập chờn / Ngủ ngáy to, ngưng thở khi ngủ</span>
+              </label>
+              <label class="option-item">
+                <input type="checkbox" name="a_health_history" value="Rối loạn tuần hoàn não / Thiếu máu não thoáng qua (TIA) / Chóng mặt">
+                <span class="option-text">Rối loạn tuần hoàn não / Thiếu máu não thoáng qua (TIA) / Hay hoa mắt chóng mặt</span>
+              </label>
+              <label class="option-item">
+                <input type="checkbox" name="a_health_history" value="Đái tháo đường (Tiểu đường) / Bệnh lý tim mạch">
+                <span class="option-text">Đái tháo đường (Tiểu đường) / Bệnh lý tim mạch</span>
+              </label>
+              <label class="option-item">
+                <input type="checkbox" name="a_health_history" value="Chưa phát hiện bệnh nền">
+                <span class="option-text">Chưa phát hiện bệnh nền</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section A2: Nỗi đau & Hành vi hiện tại -->
+        <div class="survey-card">
+          <div class="card-header">
+            <span class="card-num">Phần 2 / 6</span>
+            <h3 class="card-title">Nỗi Đau & Thiết Bị Chăm Sóc Sức Khỏe Hiện Tại</h3>
+            <p class="card-desc">Khảo sát mức độ lo lắng và trải nghiệm với các thiết bị theo dõi hiện có.</p>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">5. Mức độ lo lắng của bạn về biến cố sức khỏe ban đêm (đột quỵ thầm lặng, tăng huyết áp kịch phát khi ngủ) của cha mẹ khi con ở xa? <span class="req">*</span></label>
+            <div class="likert-scale" id="likert-anxiety">
+              <label class="likert-btn">
+                <input type="radio" name="a_anxiety_level" value="1" required>
+                <span class="likert-num">1</span>
+                <span class="likert-desc">Rất an tâm</span>
+              </label>
+              <label class="likert-btn">
+                <input type="radio" name="a_anxiety_level" value="2" required>
+                <span class="likert-num">2</span>
+                <span class="likert-desc">Ít lo lắng</span>
+              </label>
+              <label class="likert-btn">
+                <input type="radio" name="a_anxiety_level" value="3" required>
+                <span class="likert-num">3</span>
+                <span class="likert-desc">Bình thường</span>
+              </label>
+              <label class="likert-btn">
+                <input type="radio" name="a_anxiety_level" value="4" required>
+                <span class="likert-num">4</span>
+                <span class="likert-desc">Khá lo lắng</span>
+              </label>
+              <label class="likert-btn">
+                <input type="radio" name="a_anxiety_level" value="5" required>
+                <span class="likert-num">5</span>
+                <span class="likert-desc">Cực kỳ bất an</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">6. Lý do khiến các thiết bị hiện nay (máy đo huyết áp bắp tay, đồng hồ thông minh) chưa giải quyết triệt để nỗi lo của bạn? <span class="req">*</span></label>
+            <span class="q-hint">(Chọn các lý do phản ánh đúng trải nghiệm của bạn)</span>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="checkbox" name="a_device_limitations" value="Máy đo huyết áp chỉ đo lúc thức, không thể tự động bơm đo liên tục lúc ngủ">
+                <span class="option-text"><strong>Máy đo huyết áp bắp tay:</strong> Chỉ đo lúc thức, không thể tự động bơm đo liên tục lúc ngủ; cha mẹ hay quên đo</span>
+              </label>
+              <label class="option-item">
+                <input type="checkbox" name="a_device_limitations" value="Đồng hồ thông minh sai số cao khi co tay lúc ngủ, không đo được tín hiệu sóng não phát hiện TIA">
+                <span class="option-text"><strong>Đồng hồ thông minh (Smartwatch/Smartband):</strong> Cảm biến quang học đo SpO2/nhịp tim sai lệch nhiều khi ngủ co tay, KHÔNG đo được tín hiệu sóng não phát hiện cơn TIA hay bất đối xứng bán cầu não</span>
+              </label>
+              <label class="option-item">
+                <input type="checkbox" name="a_device_limitations" value="Không có cơ chế tự động gọi điện đánh thức con cái khẩn cấp khi có dấu hiệu nguy hiểm đêm">
+                <span class="option-text"><strong>Thiếu cảnh báo chủ động:</strong> Không có cơ chế tự động gọi điện thoại đánh thức con cái khẩn cấp khi phát hiện dấu hiệu nguy hiểm trong đêm</span>
+              </label>
+              <label class="option-item">
+                <input type="checkbox" name="a_device_limitations" value="Thao tác công nghệ rườm rà, sạc pin mỗi ngày làm cha mẹ ngại sử dụng">
+                <span class="option-text"><strong>Rào cản công nghệ:</strong> Thao tác cài đặt và sử dụng rườm rà, phải sạc pin mỗi ngày khiến cha mẹ ngại dùng</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section A3: Kiểm chứng Giải pháp & Hình thức Sở hữu -->
+        <div class="survey-card">
+          <div class="card-header">
+            <span class="card-num">Phần 3 / 6</span>
+            <h3 class="card-title">Kiểm Chứng Giải Pháp & Hình Thức Sở Hữu</h3>
+            <p class="card-desc">Đánh giá tính năng bảo vệ và mô hình sở hữu phù hợp với tài chính gia đình.</p>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">7. Bạn đánh giá thế nào về tính năng: Thiết bị tự động học nhịp não cá nhân (Baseline) + Gọi điện đánh thức con cái khi có dấu hiệu lệch pha bất đối xứng ban đêm + Kết nối bác sĩ chuyên khoa đọc ca từ xa trong 2 giờ? <span class="req">*</span></label>
+            <div class="likert-scale" id="likert-solution">
+              <label class="likert-btn">
+                <input type="radio" name="a_solution_rating" value="1" required>
+                <span class="likert-num">1</span>
+                <span class="likert-desc">Không hữu ích</span>
+              </label>
+              <label class="likert-btn">
+                <input type="radio" name="a_solution_rating" value="2" required>
+                <span class="likert-num">2</span>
+                <span class="likert-desc">Ít hữu ích</span>
+              </label>
+              <label class="likert-btn">
+                <input type="radio" name="a_solution_rating" value="3" required>
+                <span class="likert-num">3</span>
+                <span class="likert-desc">Tương đối tốt</span>
+              </label>
+              <label class="likert-btn">
+                <input type="radio" name="a_solution_rating" value="4" required>
+                <span class="likert-num">4</span>
+                <span class="likert-desc">Rất hữu ích</span>
+              </label>
+              <label class="likert-btn">
+                <input type="radio" name="a_solution_rating" value="5" required>
+                <span class="likert-num">5</span>
+                <span class="likert-desc">Cực kỳ thiết thực</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">8. Nếu trang bị thiết bị cho cha mẹ, bạn ưu tiên hình thức sở hữu nào nhất? <span class="req">*</span></label>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="radio" name="a_ownership_model" value="Mua đứt 2.490.000 VNĐ" required>
+                <span class="option-text">
+                  <strong>Mua đứt thiết bị: 2.490.000 VNĐ</strong><br>
+                  <span style="font-size:12px; color:var(--slate-500);">Sở hữu trọn đời phần cứng trọn bộ, bảo hành 12 tháng 1 đổi 1.</span>
+                </span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_ownership_model" value="Đặt cọc thuê máy 990.000 VNĐ + thuê bao tháng" required>
+                <span class="option-text">
+                  <strong>Đặt cọc thuê máy: 990.000 VNĐ + thuê bao tháng linh hoạt</strong><br>
+                  <span style="font-size:12px; color:var(--slate-500);">Không cần bỏ vốn mua ban đầu; hoàn lại 100% tiền cọc 990k khi trả máy; đổi máy mới miễn phí khi hỏng hóc.</span>
+                </span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_ownership_model" value="Chưa có nhu cầu sở hữu" required>
+                <span class="option-text">
+                  <strong>Chưa có nhu cầu sở hữu</strong>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section A4: Định giá Van Westendorp PSM -->
+        <div class="survey-card" id="psm-section">
+          <div class="card-header">
+            <span class="card-num">Phần 4 / 6</span>
+            <h3 class="card-title">Định Giá Chuẩn Quốc Tế Van Westendorp (PSM)</h3>
+            <p class="card-desc">
+              Vui lòng nhập 4 mức giá (VNĐ) cho thiết bị NeuroLink trọn bộ (vòng đeo tai BCI êm ái, dock sạc thông minh và ứng dụng di động cho cả gia đình):
+            </p>
+          </div>
+
+          <div class="psm-grid">
+            <!-- psm1: Too cheap -->
+            <div class="psm-card" id="card-psm1">
+              <div>
+                <span class="psm-tag too-cheap">1. Quá Rẻ (Too Cheap)</span>
+                <p class="psm-card-title">Ở mức giá nào bạn thấy thiết bị <strong>quá rẻ</strong> đến mức nghi ngờ độ chính xác y sinh & chất lượng linh kiện?</p>
+              </div>
+              <div>
+                <div class="psm-input-wrap">
+                  <input type="number" id="psm1" name="psm1" class="psm-input" placeholder="Ví dụ: 800000" min="100000" max="20000000" step="50000" required>
+                  <span class="psm-currency">VNĐ</span>
+                </div>
+                <div class="psm-presets">
+                  <button type="button" class="psm-pill" data-target="psm1" data-val="600000">600k</button>
+                  <button type="button" class="psm-pill" data-target="psm1" data-val="800000">800k</button>
+                  <button type="button" class="psm-pill" data-target="psm1" data-val="1000000">1.0tr</button>
+                  <button type="button" class="psm-pill" data-target="psm1" data-val="1200000">1.2tr</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- psm2: Cheap / Bargain -->
+            <div class="psm-card" id="card-psm2">
+              <div>
+                <span class="psm-tag cheap">2. Giá Hời / Hợp Lý (Bargain)</span>
+                <p class="psm-card-title">Ở mức giá nào bạn thấy thiết bị <strong>hợp lý / là món hời tốt</strong> để sẵn sàng mua tặng bố mẹ ngay?</p>
+              </div>
+              <div>
+                <div class="psm-input-wrap">
+                  <input type="number" id="psm2" name="psm2" class="psm-input" placeholder="Ví dụ: 1600000" min="100000" max="20000000" step="50000" required>
+                  <span class="psm-currency">VNĐ</span>
+                </div>
+                <div class="psm-presets">
+                  <button type="button" class="psm-pill" data-target="psm2" data-val="1400000">1.4tr</button>
+                  <button type="button" class="psm-pill" data-target="psm2" data-val="1600000">1.6tr</button>
+                  <button type="button" class="psm-pill" data-target="psm2" data-val="1800000">1.8tr</button>
+                  <button type="button" class="psm-pill" data-target="psm2" data-val="2000000">2.0tr</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- psm3: Expensive -->
+            <div class="psm-card" id="card-psm3">
+              <div>
+                <span class="psm-tag expensive">3. Bắt Đầu Đắt (Expensive)</span>
+                <p class="psm-card-title">Ở mức giá nào bạn thấy <strong>bắt đầu đắt</strong> nhưng vẫn sẵn sàng chi trả vì sự an toàn của cha mẹ?</p>
+              </div>
+              <div>
+                <div class="psm-input-wrap">
+                  <input type="number" id="psm3" name="psm3" class="psm-input" placeholder="Ví dụ: 2600000" min="100000" max="20000000" step="50000" required>
+                  <span class="psm-currency">VNĐ</span>
+                </div>
+                <div class="psm-presets">
+                  <button type="button" class="psm-pill" data-target="psm3" data-val="2400000">2.4tr</button>
+                  <button type="button" class="psm-pill" data-target="psm3" data-val="2600000">2.6tr</button>
+                  <button type="button" class="psm-pill" data-target="psm3" data-val="2800000">2.8tr</button>
+                  <button type="button" class="psm-pill" data-target="psm3" data-val="3200000">3.2tr</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- psm4: Too Expensive -->
+            <div class="psm-card" id="card-psm4">
+              <div>
+                <span class="psm-tag too-expensive">4. Quá Đắt (Too Expensive)</span>
+                <p class="psm-card-title">Ở mức giá nào bạn thấy <strong>quá đắt</strong>, vượt khả năng chi trả và chắc chắn từ bỏ không mua?</p>
+              </div>
+              <div>
+                <div class="psm-input-wrap">
+                  <input type="number" id="psm4" name="psm4" class="psm-input" placeholder="Ví dụ: 3800000" min="100000" max="20000000" step="50000" required>
+                  <span class="psm-currency">VNĐ</span>
+                </div>
+                <div class="psm-presets">
+                  <button type="button" class="psm-pill" data-target="psm4" data-val="3500000">3.5tr</button>
+                  <button type="button" class="psm-pill" data-target="psm4" data-val="3800000">3.8tr</button>
+                  <button type="button" class="psm-pill" data-target="psm4" data-val="4200000">4.2tr</button>
+                  <button type="button" class="psm-pill" data-target="psm4" data-val="5000000">5.0tr</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Error Banner -->
+          <div id="psm-error-msg" class="psm-error-banner hidden" role="alert">
+            <span class="psm-error-icon">⚠️</span>
+            <div>
+              <strong>Lỗi thứ tự giá Van Westendorp:</strong>
+              <div id="psm-error-text">Mức giá Quá rẻ &lt; Giá hời &lt; Bắt đầu đắt &lt; Quá đắt. Vui lòng kiểm tra lại thứ tự các mức giá trước khi gửi!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section A5: Kiểm chứng Gói thuê bao & Kênh tin cậy -->
+        <div class="survey-card">
+          <div class="card-header">
+            <span class="card-num">Phần 5 / 6</span>
+            <h3 class="card-title">Kiểm Chứng Gói Thuê Bao & Kênh Tiếp Cận Tin Cậy</h3>
+            <p class="card-desc">Khảo sát về dịch vụ AI trực canh hàng tháng và thù lao hội chẩn bác sĩ.</p>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">9. Gói thuê bao AI phân tích giấc ngủ, học Baseline sóng não & gọi điện đánh thức khẩn cấp ban đêm: Mức phí hàng tháng bạn sẵn sàng chi trả? <span class="req">*</span></label>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="radio" name="a_sub_plan" value="59.000 VNĐ / tháng" required>
+                <span class="option-text"><strong>59.000 VNĐ / tháng</strong> (Gói Tiết kiệm: Cảnh báo tự động qua App)</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_sub_plan" value="99.000 VNĐ / tháng" required>
+                <span class="option-text"><strong>99.000 VNĐ / tháng (Đề xuất tiêu chuẩn)</strong> — AI trực canh 24/7 + Gọi điện thoại đánh thức khẩn cấp con cái + Báo cáo sức khỏe hàng tuần</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_sub_plan" value="149.000 VNĐ / tháng" required>
+                <span class="option-text"><strong>149.000 VNĐ / tháng</strong> (Gói Chăm sóc Toàn diện: Kèm hỗ trợ ưu tiên và gói bảo hiểm thiết bị)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">10. Khi thiết bị phát hiện sóng não bất thường lúc ngủ, gia đình có thể bấm yêu cầu Bác sĩ Nội trú đọc ca và tư vấn từ xa (~15 phút). Mức phí theo lượt nào bạn thấy phù hợp? <span class="req">*</span></label>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="radio" name="a_doctor_fee" value="150.000 VNĐ / ca" required>
+                <span class="option-text"><strong>150.000 VNĐ / ca</strong> hội chẩn</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_doctor_fee" value="199.000 VNĐ / ca" required>
+                <span class="option-text"><strong>199.000 VNĐ / ca (Đề xuất tiêu chuẩn)</strong> — Bác sĩ nhận 150k, sàn vận hành 49k</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="a_doctor_fee" value="250.000 VNĐ / ca" required>
+                <span class="option-text"><strong>250.000 VNĐ / ca</strong> hội chẩn</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">11. Kênh tiếp cận nào tạo cho bạn niềm tin cao nhất để quyết định trang bị thiết bị cho cha mẹ? <span class="req">*</span></label>
+            <span class="q-hint">(Chọn tối đa 2 kênh)</span>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="checkbox" name="a_trust_channel" value="Bác sĩ phòng khám chuyên khoa Nội thần kinh / Tim mạch khuyên dùng">
+                <span class="option-text">Bác sĩ phòng khám chuyên khoa Nội thần kinh / Tim mạch khuyên dùng</span>
+              </label>
+              <label class="option-item">
+                <input type="checkbox" name="a_trust_channel" value="Gian hàng đo trải nghiệm & Ưu đãi nội bộ tại công ty (FPT Complex, KMS...) dịp Ngày Phụ huynh / Công đoàn">
+                <span class="option-text">Gian hàng đo trải nghiệm trực tiếp & Ưu đãi nội bộ công ty dịp Ngày Phụ huynh / Công đoàn (FPT Complex, KMS...)</span>
+              </label>
+              <label class="option-item">
+                <input type="checkbox" name="a_trust_channel" value="Trạm đo trải nghiệm tại chuỗi nhà thuốc uy tín (Long Châu, Pharmacity)">
+                <span class="option-text">Trạm đo trải nghiệm tại chuỗi nhà thuốc lớn (Long Châu, Pharmacity, An Khang)</span>
+              </label>
+              <label class="option-item">
+                <input type="checkbox" name="a_trust_channel" value="Chia sẻ thực tế từ Bác sĩ KOL y tế uy tín trên mạng xã hội / Báo chí">
+                <span class="option-text">Chia sẻ từ Bác sĩ KOL y tế uy tín trên mạng xã hội / Truyền thông chính thống</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section A6: Đăng ký Trải nghiệm Sớm -->
+        <div class="survey-card">
+          <div class="card-header">
+            <span class="card-num">Phần 6 / 6</span>
+            <h3 class="card-title">Đăng Ký Trải Nghiệm Sớm (Pilot Early Access)</h3>
+            <p class="card-desc">Nhận ưu đãi độc quyền dành riêng cho người tham gia khảo sát.</p>
+          </div>
+
+          <div class="q-group">
+            <label class="option-item" style="border-color:var(--primary); background:var(--primary-light);">
+              <input type="checkbox" id="a_early_access_check" name="a_early_access" value="yes" checked>
+              <span class="option-text" style="color:var(--primary); font-weight:700;">
+                🎁 Tôi muốn nhận ưu đãi 30% suất dùng thử Pilot đầu tiên tại Đà Nẵng – Miền Trung
+              </span>
+            </label>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
+            <div class="q-group">
+              <label class="q-label">Họ và tên của bạn: <span style="font-size:12px; color:var(--slate-500); font-weight:normal;">(Tùy chọn)</span></label>
+              <input type="text" name="a_name" class="input-text" placeholder="Nguyễn Văn A">
+            </div>
+            <div class="q-group">
+              <label class="q-label">Số điện thoại / Zalo hoặc Email nhận mã: <span style="font-size:12px; color:var(--slate-500); font-weight:normal;">(Tùy chọn)</span></label>
+              <input type="text" name="a_contact" class="input-text" placeholder="0905... hoặc email@example.com">
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-actions">
+          <button type="submit" id="btn-submit-a" class="btn-submit">
+            <span>Gửi Khảo Sát & Nhận Ưu Đãi Pilot 30%</span> →
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- STREAM B FORM (BÁC SĨ & Y TẾ) -->
+    <div id="stream-b-container" class="stream-container hidden">
+      <form id="form-stream-b" novalidate>
+
+        <!-- Section B1: Chuyên môn & Đơn vị công tác -->
+        <div class="survey-card">
+          <div class="card-header">
+            <span class="card-num">Phần 1 / 3</span>
+            <h3 class="card-title">Thông Tin Chuyên Khoa & Đơn Vị Công Tác</h3>
+            <p class="card-desc">Dành cho Bác sĩ, Học viên sau đại học và Nhân viên y tế quan tâm đến theo dõi từ xa.</p>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">1. Chuyên khoa chính của Quý Bác sĩ / Nhân viên y tế: <span class="req">*</span></label>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="radio" name="b_specialty" value="Bác sĩ Nội thần kinh / Đột quỵ" required>
+                <span class="option-text">Bác sĩ Nội thần kinh / Đơn vị Đột quỵ</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_specialty" value="Bác sĩ Nội trú (Thần kinh / Đa khoa / Cấp cứu)" required>
+                <span class="option-text">Bác sĩ Nội trú (Thần kinh, Cấp cứu, Đa khoa)</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_specialty" value="Bác sĩ Đa khoa / Lão khoa" required>
+                <span class="option-text">Bác sĩ Đa khoa / Lão khoa / Nội tổng quát</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_specialty" value="Bác sĩ Tim mạch / Hồi sức cấp cứu (ICU)" required>
+                <span class="option-text">Bác sĩ Tim mạch / Hồi sức cấp cứu (ICU)</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_specialty" value="Kỹ thuật viên Thần kinh / Điện cơ - Điện não (EEG/EMG)" required>
+                <span class="option-text">Kỹ thuật viên Thần kinh / Thăm dò chức năng (Điện não EEG / PSG)</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_specialty" value="Khác" required>
+                <span class="option-text">Khác</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">2. Đơn vị công tác hiện tại của Quý Bác sĩ: <span class="req">*</span></label>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="radio" name="b_hospital_type" value="Bệnh viện công lập / Bệnh viện ĐH Y Dược" required>
+                <span class="option-text">Bệnh viện công lập / Bệnh viện Trường Đại học Y Dược</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_hospital_type" value="Bệnh viện tư nhân / Quốc tế" required>
+                <span class="option-text">Bệnh viện tư nhân / Bệnh viện đa khoa quốc tế</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_hospital_type" value="Phòng khám chuyên khoa ngoài giờ" required>
+                <span class="option-text">Phòng khám chuyên khoa tư nhân / Phòng mạch ngoài giờ</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_hospital_type" value="Học viên Sau đại học / Cơ sở đào tạo" required>
+                <span class="option-text">Học viên Sau đại học / Đang đào tạo Bác sĩ Nội trú</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">3. Quỹ thời gian rảnh ngoài giờ Quý Bác sĩ có thể nhận đọc ca bất thường từ xa mỗi tuần: <span class="req">*</span></label>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="radio" name="b_spare_time" value="Dưới 2 giờ / tuần (~3–5 ca)" required>
+                <span class="option-text">Dưới 2 giờ / tuần (~3 – 5 ca bất thường)</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_spare_time" value="2 – 5 giờ / tuần (~8–15 ca)" required>
+                <span class="option-text">2 – 5 giờ / tuần (~8 – 15 ca bất thường)</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_spare_time" value="5 – 10 giờ / tuần (~20–30 ca)" required>
+                <span class="option-text">5 – 10 giờ / tuần (~20 – 30 ca bất thường)</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_spare_time" value="Trên 10 giờ / tuần" required>
+                <span class="option-text">Trên 10 giờ / tuần</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section B2: Mô hình thù lao -->
+        <div class="survey-card">
+          <div class="card-header">
+            <span class="card-num">Phần 2 / 3</span>
+            <h3 class="card-title">So Sánh Mô Hình Thù Lao & Mức Phí Đọc Ca</h3>
+            <p class="card-desc">NeuroLink cam kết thù lao minh bạch, xứng đáng với thời gian chuyên môn của Bác sĩ.</p>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">4. So sánh 2 mô hình thù lao đọc ca của NeuroLink, Quý Bác sĩ ưu tiên mô hình nào? <span class="req">*</span></label>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="radio" name="b_compensation_model" value="Nhận 150.000đ – 200.000đ cho mỗi ca bất thường (đọc ~15 phút)" required>
+                <span class="option-text">
+                  <strong>Theo ca bất thường: Nhận 150.000đ – 200.000đ / ca</strong><br>
+                  <span style="font-size:12px; color:var(--slate-500);">Chỉ đọc khi AI phát hiện lệch pha/bất thường; đọc ~15 phút trên bản đồ Topomap 2D/3D đã lọc nhiễu sẵn.</span>
+                </span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_compensation_model" value="Khoán cố định 35.000đ – 40.000đ / bệnh nhân / tháng" required>
+                <span class="option-text">
+                  <strong>Khoán trọn gói theo danh sách: 35.000đ – 40.000đ / bệnh nhân / tháng</strong><br>
+                  <span style="font-size:12px; color:var(--slate-500);">Theo dõi định kỳ danh sách bệnh nhân được phân công, rà soát báo cáo tuần/tháng.</span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">5. Mức thù lao tối thiểu chấp nhận (Reservation Fee) cho 1 ca hội chẩn định hướng 15 phút: <span class="req">*</span></label>
+            <div class="option-list">
+              <label class="option-item">
+                <input type="radio" name="b_reservation_fee" value="100.000 VNĐ / ca" required>
+                <span class="option-text">100.000 VNĐ / ca</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_reservation_fee" value="150.000 VNĐ / ca" required>
+                <span class="option-text"><strong>150.000 VNĐ / ca (Mức đề xuất cân bằng)</strong></span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_reservation_fee" value="200.000 VNĐ / ca" required>
+                <span class="option-text">200.000 VNĐ / ca</span>
+              </label>
+              <label class="option-item">
+                <input type="radio" name="b_reservation_fee" value="250.000 VNĐ+ / ca" required>
+                <span class="option-text">250.000 VNĐ+ / ca</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section B3: Đánh giá Công cụ & Đăng ký CTV -->
+        <div class="survey-card">
+          <div class="card-header">
+            <span class="card-num">Phần 3 / 3</span>
+            <h3 class="card-title">Đánh Giá Bộ Công Cụ & Mạng Lưới Bác Sĩ Pilot</h3>
+            <p class="card-desc">Giao diện đọc ca trên nền tảng Web NeuroLink tích hợp qEEG và AI hỗ trợ.</p>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">6. Quý Bác sĩ đánh giá thế nào về tính trực quan và hỗ trợ quyết định lâm sàng của giao diện Web NeuroLink (Bản đồ Topomap 2D/3D + Chỉ số bất đối xứng bán cầu BSI/DAR + Tự động lọc nhiễu vận động + Khóa cảnh báo 115 khi nguy kịch)? <span class="req">*</span></label>
+            <div class="likert-scale" id="likert-b-tools">
+              <label class="likert-btn">
+                <input type="radio" name="b_tools_rating" value="1" required>
+                <span class="likert-num">1</span>
+                <span class="likert-desc">Khó dùng</span>
+              </label>
+              <label class="likert-btn">
+                <input type="radio" name="b_tools_rating" value="2" required>
+                <span class="likert-num">2</span>
+                <span class="likert-desc">Ít hữu ích</span>
+              </label>
+              <label class="likert-btn">
+                <input type="radio" name="b_tools_rating" value="3" required>
+                <span class="likert-num">3</span>
+                <span class="likert-desc">Chấp nhận được</span>
+              </label>
+              <label class="likert-btn">
+                <input type="radio" name="b_tools_rating" value="4" required>
+                <span class="likert-num">4</span>
+                <span class="likert-desc">Rất trực quan</span>
+              </label>
+              <label class="likert-btn">
+                <input type="radio" name="b_tools_rating" value="5" required>
+                <span class="likert-num">5</span>
+                <span class="likert-desc">Xuất sắc</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="q-group">
+            <label class="q-label">7. Đăng ký tham gia Mạng Lưới Bác Sĩ Cộng Tác Viên Đọc Ca Pilot (Tùy chọn):</label>
+            <span class="q-hint">Chúng tôi sẽ liên hệ tập huấn sử dụng giao diện phân tích qEEG và cung cấp tài khoản thử nghiệm.</span>
+            
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-top:10px;">
+              <div>
+                <label class="q-label" style="font-size:12.5px;">Họ tên & Học hàm, học vị:</label>
+                <input type="text" name="b_name" class="input-text" placeholder="BS. Nguyễn Văn B">
+              </div>
+              <div>
+                <label class="q-label" style="font-size:12.5px;">Đơn vị / Bệnh viện đang công tác:</label>
+                <input type="text" name="b_unit" class="input-text" placeholder="BV Đà Nẵng / BV ĐH Y Dược Huế...">
+              </div>
+              <div>
+                <label class="q-label" style="font-size:12.5px;">Số điện thoại / Zalo:</label>
+                <input type="text" name="b_phone" class="input-text" placeholder="0987...">
+              </div>
+              <div>
+                <label class="q-label" style="font-size:12.5px;">Email chuyên môn:</label>
+                <input type="email" name="b_email" class="input-text" placeholder="bacsi@gmail.com">
+              </div>
+            </div>
+
+            <div style="margin-top:12px;">
+              <label class="q-label" style="font-size:12.5px;">Góp ý hoặc mong muốn chuyên môn của Quý Bác sĩ:</label>
+              <textarea name="b_notes" class="textarea-box" placeholder="Ví dụ: Mong muốn có thêm chỉ số tỷ lệ Delta/Alpha (DAR)..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button Stream B -->
+        <div class="form-actions">
+          <button type="submit" id="btn-submit-b" class="btn-submit">
+            <span>Gửi Phản Hồi Chuyên Môn Bác Sĩ</span> →
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- THANK YOU STATE -->
+    <div id="thank-you-view" class="thankyou-card">
+      <div class="thankyou-icon">✓</div>
+      <h3 class="thankyou-title">Cảm Ơn Bạn Đã Hoàn Thành Khảo Sát!</h3>
+      <p class="thankyou-desc">
+        Ý kiến đóng góp thực chứng của bạn là nguồn dữ liệu quý giá giúp đội ngũ kỹ sư và bác sĩ NeuroLink hoàn thiện giải pháp bảo vệ giấc ngủ cho người cao tuổi.
+      </p>
+      <div class="ticket-badge">
+        <span>Mã phiếu khảo sát:</span>
+        <strong id="ticket-id-display">NL-2026-XXXX</strong>
+      </div>
+      <div id="early-bird-confirm" style="margin-bottom:20px; font-size:13px; color:var(--primary); font-weight:700;">
+        🎉 Bạn đã được ghi nhận vào danh sách Ưu đãi 30% Pilot Đà Nẵng!
+      </div>
+      <div>
+        <button type="button" id="btn-submit-another" class="btn-reset-survey">
+          ↺ Gửi thêm phản hồi khác
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: ADMIN ANALYTICS & VAN WESTENDORP PSM -->
+  <div id="admin-analytics-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <h3 id="modal-title">Bảng Phân Tích Số Liệu Khảo Sát & Điểm Giá Tối Ưu Van Westendorp</h3>
+          <p id="modal-subtitle">Phân tích độ nhạy giá PSM & Tỷ lệ chuyển đổi thị trường mục tiêu</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="btn-close-modal" aria-label="Đóng">&times;</button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Controls Bar -->
+        <div class="admin-controls-card">
+          <div class="data-source-selector">
+            <span style="font-size:12.5px; font-weight:700; color:var(--slate-700);">Nguồn dữ liệu phân tích:</span>
+            <label class="radio-pill-label">
+              <input type="radio" name="admin_data_source" value="mock" id="src-mock" checked>
+              <span>Bộ dữ liệu mẫu (N=25 Realistic Vietnamese Responses)</span>
+            </label>
+            <label class="radio-pill-label">
+              <input type="radio" name="admin_data_source" value="real" id="src-real">
+              <span>Dữ liệu thực tế (LocalStorage)</span>
+            </label>
+          </div>
+
+          <div class="admin-actions-bar">
+            <button type="button" id="btn-export-csv" class="btn-admin-action btn-csv">
+              📥 Xuất File Excel (.CSV UTF-8)
+            </button>
+            <button type="button" id="btn-clear-storage" class="btn-admin-action btn-danger-outline">
+              🗑️ Xóa LocalStorage
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Metrics Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card highlight">
+            <div class="kpi-label">Điểm Giá Tối Ưu (OPP)</div>
+            <div class="kpi-val" id="kpi-opp">2.240.000 đ</div>
+            <div class="kpi-sub">Giao điểm Quá Rẻ = Quá Đắt (Sức cản thấp nhất)</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Điểm Giá Thờ Ơ (IDP)</div>
+            <div class="kpi-val" id="kpi-idp">2.290.000 đ</div>
+            <div class="kpi-sub">Giao điểm Giá Hời = Bắt Đầu Đắt</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Khoảng Giá Chấp Nhận (PMC → PME)</div>
+            <div class="kpi-val" id="kpi-range" style="font-size:16px;">1.450.000 đ → 3.350.000 đ</div>
+            <div class="kpi-sub">Biên an toàn định giá thị trường</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Tỷ lệ Mua Đứt vs Cọc Thuê Máy</div>
+            <div class="kpi-val" id="kpi-ownership" style="font-size:15px;">52% Cọc 990k / 38% Mua</div>
+            <div class="kpi-sub">990.000 đ xóa bỏ rào cản chi tiêu ban đầu</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Gói Thuê Bao AI Ưu Tiên</div>
+            <div class="kpi-val" id="kpi-sub-plan">99.000 đ/tháng</div>
+            <div class="kpi-sub">65% người tham gia chọn gói tiêu chuẩn</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Bác Sĩ Ưa Thích Thù Lao Theo Ca</div>
+            <div class="kpi-val" id="kpi-doc-pref">80% Chọn 150k-200k</div>
+            <div class="kpi-sub">Ưu tiên 15 phút đọc ca trên bản đồ Topomap</div>
+          </div>
+        </div>
+
+        <!-- Van Westendorp Chart -->
+        <div class="chart-container">
+          <div class="chart-title-bar">
+            <h4>Biểu Đồ Độ Nhạy Giá Van Westendorp Price Sensitivity Meter (PSM)</h4>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-dot" style="background:#f43f5e;"></span> Quá Rẻ (Too Cheap)</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#10b981;"></span> Giá Hời (Bargain)</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span> Bắt Đầu Đắt (Expensive)</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#dc2626;"></span> Quá Đắt (Too Expensive)</span>
+            </div>
+          </div>
+          
+          <div class="svg-chart-wrap" id="chart-wrap">
+            <!-- Dynamic SVG injected here -->
+          </div>
+        </div>
+
+        <!-- Webhook Configuration -->
+        <div class="webhook-card">
+          <h4>Cấu Hình Google Sheets Webhook URL (Google Apps Script)</h4>
+          <p>
+            Dữ liệu khảo sát sẽ tự động đồng bộ vào Google Sheets của ban dự án mỗi khi có phản hồi mới.
+          </p>
+          <div class="webhook-input-group">
+            <input type="url" id="input-webhook-url" placeholder="https://script.google.com/macros/s/.../exec">
+            <button type="button" id="btn-save-webhook" class="btn-save-webhook">Lưu Webhook URL</button>
+          </div>
+        </div>
+
+        <!-- Responses Table -->
+        <div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          <h4 style="font-size:14px; font-weight:700; color:var(--slate-800);">Danh Sách Phản Hồi Chi Tiết (<span id="response-count-badge">25 phản hồi</span>)</h4>
+        </div>
+        <div class="table-container">
+          <table class="data-table" id="responses-table">
+            <thead>
+              <tr>
+                <th>Thời Gian</th>
+                <th>Luồng</th>
+                <th>Độ Tuổi / Chuyên Khoa</th>
+                <th>Đơn Vị / Nơi Làm Việc</th>
+                <th>Sở Hữu / Thù Lao</th>
+                <th>PSM1 (Quá rẻ)</th>
+                <th>PSM2 (Hời)</th>
+                <th>PSM3 (Đắt)</th>
+                <th>PSM4 (Quá đắt)</th>
+                <th>Liên Hệ</th>
+              </tr>
+            </thead>
+            <tbody id="responses-tbody">
+              <!-- Rows injected via JS -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    /**
+     * NEUROLINK MARKET SURVEY & VAN WESTENDORP ENGINE
+     * Single-file standalone implementation (Vanilla JS)
+     */
+    let GOOGLE_SCRIPT_WEBHOOK_URL = localStorage.getItem('nl_webhook_url') || "";
+    const STORAGE_KEY = 'neurolink_survey_responses';
+
+    // 25 Realistic Vietnamese Responses for validation & pilot modeling
+    const MOCK_SURVEY_RESPONSES = [
+      {
+        id: "NL-2026-M01", timestamp: "2026-11-15T08:20:10.000Z", stream: "A",
+        age: "30 – 39 tuổi", workplace: "Khu CNTT (FPT Complex, KMS, Synopsys, Enclave, Viettel...)",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Tăng huyết áp (Cao huyết áp)", "Mất ngủ kinh niên / Giấc ngủ chập chờn / Ngưng thở khi ngủ"],
+        anxiety_level: 5,
+        device_limitations: ["Đồng hồ thông minh sai số cao khi co tay lúc ngủ, không đo được tín hiệu sóng não phát hiện TIA", "Không có cơ chế tự động gọi điện đánh thức con cái khẩn cấp khi có dấu hiệu nguy hiểm đêm"],
+        solution_rating: 5,
+        ownership_model: "Đặt cọc thuê máy 990.000 VNĐ + thuê bao tháng",
+        psm1: 800000, psm2: 1600000, psm3: 2600000, psm4: 3800000,
+        sub_plan: "99.000 VNĐ / tháng", doctor_fee: "199.000 VNĐ / ca",
+        trust_channel: ["Gian hàng đo trải nghiệm & Ưu đãi nội bộ tại công ty (FPT Complex, KMS...) dịp Ngày Phụ huynh / Công đoàn", "Bác sĩ phòng khám chuyên khoa Nội thần kinh / Tim mạch khuyên dùng"],
+        early_access: true, name: "Nguyễn Văn Tuấn", contact: "tuan.nv@fpt.com"
+      },
+      {
+        id: "NL-2026-M02", timestamp: "2026-11-15T09:12:44.000Z", stream: "A",
+        age: "22 – 29 tuổi", workplace: "Khu CNTT (FPT Complex, KMS, Synopsys, Enclave, Viettel...)",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Tăng huyết áp (Cao huyết áp)", "Rối loạn tuần hoàn não / Thiếu máu não thoáng qua (TIA) / Chóng mặt"],
+        anxiety_level: 4,
+        device_limitations: ["Máy đo huyết áp chỉ đo lúc thức, không thể tự động bơm đo liên tục lúc ngủ", "Không có cơ chế tự động gọi điện đánh thức con cái khẩn cấp khi có dấu hiệu nguy hiểm đêm"],
+        solution_rating: 5,
+        ownership_model: "Mua đứt 2.490.000 VNĐ",
+        psm1: 1000000, psm2: 1800000, psm3: 2800000, psm4: 4000000,
+        sub_plan: "99.000 VNĐ / tháng", doctor_fee: "199.000 VNĐ / ca",
+        trust_channel: ["Gian hàng đo trải nghiệm & Ưu đãi nội bộ tại công ty (FPT Complex, KMS...) dịp Ngày Phụ huynh / Công đoàn"],
+        early_access: true, name: "Lê Hoàng Phúc", contact: "phuc.lh@kms-technology.com"
+      },
+      {
+        id: "NL-2026-M03", timestamp: "2026-11-15T10:05:12.000Z", stream: "A",
+        age: "30 – 39 tuổi", workplace: "Khối Văn phòng, Ngân hàng, Doanh nghiệp tài chính, Nhà nước",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Mất ngủ kinh niên / Giấc ngủ chập chờn / Ngưng thở khi ngủ", "Đái tháo đường (Tiểu đường) / Bệnh lý tim mạch"],
+        anxiety_level: 4,
+        device_limitations: ["Đồng hồ thông minh sai số cao khi co tay lúc ngủ, không đo được tín hiệu sóng não phát hiện TIA", "Thao tác công nghệ rườm rà, sạc pin mỗi ngày làm cha mẹ ngại sử dụng"],
+        solution_rating: 4,
+        ownership_model: "Đặt cọc thuê máy 990.000 VNĐ + thuê bao tháng",
+        psm1: 700000, psm2: 1500000, psm3: 2500000, psm4: 3500000,
+        sub_plan: "99.000 VNĐ / tháng", doctor_fee: "150.000 VNĐ / ca",
+        trust_channel: ["Trạm đo trải nghiệm tại chuỗi nhà thuốc uy tín (Long Châu, Pharmacity)"],
+        early_access: true, name: "Trần Thị Mai Phương", contact: "0905128899"
+      },
+      {
+        id: "NL-2026-M04", timestamp: "2026-11-15T11:40:20.000Z", stream: "A",
+        age: "40 – 49 tuổi", workplace: "Kinh doanh tự do / Khởi nghiệp / Freelancer",
+        parent_living: "Cùng thành phố nhưng ở nhà riêng / cách xa",
+        health_history: ["Tăng huyết áp (Cao huyết áp)", "Rối loạn tuần hoàn não / Thiếu máu não thoáng qua (TIA) / Chóng mặt"],
+        anxiety_level: 5,
+        device_limitations: ["Không có cơ chế tự động gọi điện đánh thức con cái khẩn cấp khi có dấu hiệu nguy hiểm đêm"],
+        solution_rating: 5,
+        ownership_model: "Mua đứt 2.490.000 VNĐ",
+        psm1: 1200000, psm2: 2000000, psm3: 3000000, psm4: 4500000,
+        sub_plan: "149.000 VNĐ / tháng", doctor_fee: "250.000 VNĐ / ca",
+        trust_channel: ["Bác sĩ phòng khám chuyên khoa Nội thần kinh / Tim mạch khuyên dùng"],
+        early_access: true, name: "Đặng Hữu Minh", contact: "0913402233"
+      },
+      {
+        id: "NL-2026-M05", timestamp: "2026-11-15T14:15:30.000Z", stream: "A",
+        age: "22 – 29 tuổi", workplace: "Khu CNTT (FPT Complex, KMS, Synopsys, Enclave, Viettel...)",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Tăng huyết áp (Cao huyết áp)"],
+        anxiety_level: 4,
+        device_limitations: ["Đồng hồ thông minh sai số cao khi co tay lúc ngủ, không đo được tín hiệu sóng não phát hiện TIA"],
+        solution_rating: 4,
+        ownership_model: "Đặt cọc thuê máy 990.000 VNĐ + thuê bao tháng",
+        psm1: 900000, psm2: 1700000, psm3: 2700000, psm4: 3800000,
+        sub_plan: "99.000 VNĐ / tháng", doctor_fee: "199.000 VNĐ / ca",
+        trust_channel: ["Gian hàng đo trải nghiệm & Ưu đãi nội bộ tại công ty (FPT Complex, KMS...) dịp Ngày Phụ huynh / Công đoàn"],
+        early_access: true, name: "Phan Anh Vũ", contact: "vu.phan@synopsys.com"
+      },
+      {
+        id: "NL-2026-M06", timestamp: "2026-11-15T15:30:00.000Z", stream: "A",
+        age: "30 – 39 tuổi", workplace: "Khu CNTT (FPT Complex, KMS, Synopsys, Enclave, Viettel...)",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Mất ngủ kinh niên / Giấc ngủ chập chờn / Ngưng thở khi ngủ", "Rối loạn tuần hoàn não / Thiếu máu não thoáng qua (TIA) / Chóng mặt"],
+        anxiety_level: 5,
+        device_limitations: ["Không có cơ chế tự động gọi điện đánh thức con cái khẩn cấp khi có dấu hiệu nguy hiểm đêm", "Máy đo huyết áp chỉ đo lúc thức, không thể tự động bơm đo liên tục lúc ngủ"],
+        solution_rating: 5,
+        ownership_model: "Đặt cọc thuê máy 990.000 VNĐ + thuê bao tháng",
+        psm1: 850000, psm2: 1650000, psm3: 2550000, psm4: 3600000,
+        sub_plan: "99.000 VNĐ / tháng", doctor_fee: "199.000 VNĐ / ca",
+        trust_channel: ["Gian hàng đo trải nghiệm & Ưu đãi nội bộ tại công ty (FPT Complex, KMS...) dịp Ngày Phụ huynh / Công đoàn"],
+        early_access: true, name: "Võ Quốc Cường", contact: "cuongvq@enclave.vn"
+      },
+      {
+        id: "NL-2026-M07", timestamp: "2026-11-15T16:45:10.000Z", stream: "A",
+        age: "30 – 39 tuổi", workplace: "Khối Văn phòng, Ngân hàng, Doanh nghiệp tài chính, Nhà nước",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Tăng huyết áp (Cao huyết áp)"],
+        anxiety_level: 3,
+        device_limitations: ["Thao tác công nghệ rườm rà, sạc pin mỗi ngày làm cha mẹ ngại sử dụng"],
+        solution_rating: 4,
+        ownership_model: "Mua đứt 2.490.000 VNĐ",
+        psm1: 1100000, psm2: 1900000, psm3: 2900000, psm4: 4200000,
+        sub_plan: "59.000 VNĐ / tháng", doctor_fee: "150.000 VNĐ / ca",
+        trust_channel: ["Trạm đo trải nghiệm tại chuỗi nhà thuốc uy tín (Long Châu, Pharmacity)"],
+        early_access: false, name: "", contact: ""
+      },
+      {
+        id: "NL-2026-M08", timestamp: "2026-11-15T18:22:15.000Z", stream: "A",
+        age: "22 – 29 tuổi", workplace: "Khu CNTT (FPT Complex, KMS, Synopsys, Enclave, Viettel...)",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Mất ngủ kinh niên / Giấc ngủ chập chờn / Ngưng thở khi ngủ"],
+        anxiety_level: 4,
+        device_limitations: ["Đồng hồ thông minh sai số cao khi co tay lúc ngủ, không đo được tín hiệu sóng não phát hiện TIA"],
+        solution_rating: 4,
+        ownership_model: "Đặt cọc thuê máy 990.000 VNĐ + thuê bao tháng",
+        psm1: 750000, psm2: 1550000, psm3: 2650000, psm4: 3750000,
+        sub_plan: "99.000 VNĐ / tháng", doctor_fee: "199.000 VNĐ / ca",
+        trust_channel: ["Gian hàng đo trải nghiệm & Ưu đãi nội bộ tại công ty (FPT Complex, KMS...) dịp Ngày Phụ huynh / Công đoàn"],
+        early_access: true, name: "Hoàng Minh Trí", contact: "tri.hm@gmail.com"
+      },
+      {
+        id: "NL-2026-M09", timestamp: "2026-11-15T19:50:33.000Z", stream: "A",
+        age: "40 – 49 tuổi", workplace: "Khối Văn phòng, Ngân hàng, Doanh nghiệp tài chính, Nhà nước",
+        parent_living: "Đang sống chung một nhà cùng cha mẹ",
+        health_history: ["Tăng huyết áp (Cao huyết áp)", "Đái tháo đường (Tiểu đường) / Bệnh lý tim mạch"],
+        anxiety_level: 4,
+        device_limitations: ["Không có cơ chế tự động gọi điện đánh thức con cái khẩn cấp khi có dấu hiệu nguy hiểm đêm"],
+        solution_rating: 4,
+        ownership_model: "Mua đứt 2.490.000 VNĐ",
+        psm1: 1000000, psm2: 1800000, psm3: 2900000, psm4: 4100000,
+        sub_plan: "99.000 VNĐ / tháng", doctor_fee: "199.000 VNĐ / ca",
+        trust_channel: ["Bác sĩ phòng khám chuyên khoa Nội thần kinh / Tim mạch khuyên dùng"],
+        early_access: true, name: "Bùi Thị Tuyết", contact: "0982345678"
+      },
+      {
+        id: "NL-2026-M10", timestamp: "2026-11-15T21:10:45.000Z", stream: "A",
+        age: "30 – 39 tuổi", workplace: "Khu CNTT (FPT Complex, KMS, Synopsys, Enclave, Viettel...)",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Tăng huyết áp (Cao huyết áp)", "Mất ngủ kinh niên / Giấc ngủ chập chờn / Ngưng thở khi ngủ"],
+        anxiety_level: 5,
+        device_limitations: ["Đồng hồ thông minh sai số cao khi co tay lúc ngủ, không đo được tín hiệu sóng não phát hiện TIA", "Không có cơ chế tự động gọi điện đánh thức con cái khẩn cấp khi có dấu hiệu nguy hiểm đêm"],
+        solution_rating: 5,
+        ownership_model: "Đặt cọc thuê máy 990.000 VNĐ + thuê bao tháng",
+        psm1: 900000, psm2: 1750000, psm3: 2700000, psm4: 3900000,
+        sub_plan: "99.000 VNĐ / tháng", doctor_fee: "199.000 VNĐ / ca",
+        trust_channel: ["Gian hàng đo trải nghiệm & Ưu đãi nội bộ tại công ty (FPT Complex, KMS...) dịp Ngày Phụ huynh / Công đoàn"],
+        early_access: true, name: "Lý Thành Nam", contact: "nam.lt@fpt.com"
+      },
+      {
+        id: "NL-2026-M11", timestamp: "2026-11-16T07:45:00.000Z", stream: "A",
+        age: "22 – 29 tuổi", workplace: "Khu CNTT (FPT Complex, KMS, Synopsys, Enclave, Viettel...)",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Chưa phát hiện bệnh nền"],
+        anxiety_level: 2,
+        device_limitations: ["Thao tác công nghệ rườm rà, sạc pin mỗi ngày làm cha mẹ ngại sử dụng"],
+        solution_rating: 3,
+        ownership_model: "Chưa có nhu cầu sở hữu",
+        psm1: 500000, psm2: 1200000, psm3: 2200000, psm4: 3200000,
+        sub_plan: "59.000 VNĐ / tháng", doctor_fee: "150.000 VNĐ / ca",
+        trust_channel: ["Chia sẻ thực tế từ Bác sĩ KOL y tế uy tín trên mạng xã hội / Báo chí"],
+        early_access: false, name: "", contact: ""
+      },
+      {
+        id: "NL-2026-M12", timestamp: "2026-11-16T08:30:15.000Z", stream: "A",
+        age: "30 – 39 tuổi", workplace: "Khối Văn phòng, Ngân hàng, Doanh nghiệp tài chính, Nhà nước",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Tăng huyết áp (Cao huyết áp)", "Rối loạn tuần hoàn não / Thiếu máu não thoáng qua (TIA) / Chóng mặt"],
+        anxiety_level: 5,
+        device_limitations: ["Máy đo huyết áp chỉ đo lúc thức, không thể tự động bơm đo liên tục lúc ngủ"],
+        solution_rating: 5,
+        ownership_model: "Mua đứt 2.490.000 VNĐ",
+        psm1: 1100000, psm2: 1950000, psm3: 2950000, psm4: 4300000,
+        sub_plan: "99.000 VNĐ / tháng", doctor_fee: "199.000 VNĐ / ca",
+        trust_channel: ["Bác sĩ phòng khám chuyên khoa Nội thần kinh / Tim mạch khuyên dùng"],
+        early_access: true, name: "Trịnh Diệu Linh", contact: "linhtd@vietinbank.vn"
+      },
+      {
+        id: "NL-2026-M13", timestamp: "2026-11-16T09:40:50.000Z", stream: "A",
+        age: "30 – 39 tuổi", workplace: "Khu CNTT (FPT Complex, KMS, Synopsys, Enclave, Viettel...)",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Mất ngủ kinh niên / Giấc ngủ chập chờn / Ngưng thở khi ngủ"],
+        anxiety_level: 4,
+        device_limitations: ["Đồng hồ thông minh sai số cao khi co tay lúc ngủ, không đo được tín hiệu sóng não phát hiện TIA"],
+        solution_rating: 4,
+        ownership_model: "Đặt cọc thuê máy 990.000 VNĐ + thuê bao tháng",
+        psm1: 800000, psm2: 1600000, psm3: 2600000, psm4: 3700000,
+        sub_plan: "99.000 VNĐ / tháng", doctor_fee: "199.000 VNĐ / ca",
+        trust_channel: ["Gian hàng đo trải nghiệm & Ưu đãi nội bộ tại công ty (FPT Complex, KMS...) dịp Ngày Phụ huynh / Công đoàn"],
+        early_access: true, name: "Dương Minh Đức", contact: "0905987654"
+      },
+      {
+        id: "NL-2026-M14", timestamp: "2026-11-16T11:15:20.000Z", stream: "A",
+        age: "40 – 49 tuổi", workplace: "Kinh doanh tự do / Khởi nghiệp / Freelancer",
+        parent_living: "Cùng thành phố nhưng ở nhà riêng / cách xa",
+        health_history: ["Tăng huyết áp (Cao huyết áp)"],
+        anxiety_level: 4,
+        device_limitations: ["Không có cơ chế tự động gọi điện đánh thức con cái khẩn cấp khi có dấu hiệu nguy hiểm đêm"],
+        solution_rating: 5,
+        ownership_model: "Mua đứt 2.490.000 VNĐ",
+        psm1: 1200000, psm2: 2100000, psm3: 3100000, psm4: 4600000,
+        sub_plan: "149.000 VNĐ / tháng", doctor_fee: "250.000 VNĐ / ca",
+        trust_channel: ["Bác sĩ phòng khám chuyên khoa Nội thần kinh / Tim mạch khuyên dùng"],
+        early_access: true, name: "Ngô Quang Huy", contact: "huy.ngo@gmail.com"
+      },
+      {
+        id: "NL-2026-M15", timestamp: "2026-11-16T13:20:10.000Z", stream: "A",
+        age: "22 – 29 tuổi", workplace: "Khu CNTT (FPT Complex, KMS, Synopsys, Enclave, Viettel...)",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Tăng huyết áp (Cao huyết áp)", "Mất ngủ kinh niên / Giấc ngủ chập chờn / Ngưng thở khi ngủ"],
+        anxiety_level: 5,
+        device_limitations: ["Máy đo huyết áp chỉ đo lúc thức, không thể tự động bơm đo liên tục lúc ngủ"],
+        solution_rating: 5,
+        ownership_model: "Đặt cọc thuê máy 990.000 VNĐ + thuê bao tháng",
+        psm1: 850000, psm2: 1700000, psm3: 2750000, psm4: 3850000,
+        sub_plan: "99.000 VNĐ / tháng", doctor_fee: "199.000 VNĐ / ca",
+        trust_channel: ["Gian hàng đo trải nghiệm & Ưu đãi nội bộ tại công ty (FPT Complex, KMS...) dịp Ngày Phụ huynh / Công đoàn"],
+        early_access: true, name: "Trần Anh Khoa", contact: "khoa.ta@viettel.com.vn"
+      },
+      {
+        id: "NL-2026-M16", timestamp: "2026-11-16T14:40:00.000Z", stream: "A",
+        age: "30 – 39 tuổi", workplace: "Khối Văn phòng, Ngân hàng, Doanh nghiệp tài chính, Nhà nước",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Mất ngủ kinh niên / Giấc ngủ chập chờn / Ngưng thở khi ngủ"],
+        anxiety_level: 3,
+        device_limitations: ["Thao tác công nghệ rườm rà, sạc pin mỗi ngày làm cha mẹ ngại sử dụng"],
+        solution_rating: 4,
+        ownership_model: "Đặt cọc thuê máy 990.000 VNĐ + thuê bao tháng",
+        psm1: 700000, psm2: 1500000, psm3: 2450000, psm4: 3450000,
+        sub_plan: "59.000 VNĐ / tháng", doctor_fee: "150.000 VNĐ / ca",
+        trust_channel: ["Trạm đo trải nghiệm tại chuỗi nhà thuốc uy tín (Long Châu, Pharmacity)"],
+        early_access: true, name: "Phạm Hồng Ngọc", contact: "ngocph@bidv.com.vn"
+      },
+      {
+        id: "NL-2026-M17", timestamp: "2026-11-16T16:05:40.000Z", stream: "A",
+        age: "30 – 39 tuổi", workplace: "Khu CNTT (FPT Complex, KMS, Synopsys, Enclave, Viettel...)",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Tăng huyết áp (Cao huyết áp)", "Rối loạn tuần hoàn não / Thiếu máu não thoáng qua (TIA) / Chóng mặt"],
+        anxiety_level: 5,
+        device_limitations: ["Không có cơ chế tự động gọi điện đánh thức con cái khẩn cấp khi có dấu hiệu nguy hiểm đêm"],
+        solution_rating: 5,
+        ownership_model: "Mua đứt 2.490.000 VNĐ",
+        psm1: 950000, psm2: 1850000, psm3: 2850000, psm4: 4150000,
+        sub_plan: "99.000 VNĐ / tháng", doctor_fee: "199.000 VNĐ / ca",
+        trust_channel: ["Gian hàng đo trải nghiệm & Ưu đãi nội bộ tại công ty (FPT Complex, KMS...) dịp Ngày Phụ huynh / Công đoàn"],
+        early_access: true, name: "Lê Gia Bảo", contact: "bao.lg@fsoft.com.vn"
+      },
+      {
+        id: "NL-2026-M18", timestamp: "2026-11-16T17:35:10.000Z", stream: "A",
+        age: "22 – 29 tuổi", workplace: "Khu CNTT (FPT Complex, KMS, Synopsys, Enclave, Viettel...)",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Tăng huyết áp (Cao huyết áp)"],
+        anxiety_level: 4,
+        device_limitations: ["Đồng hồ thông minh sai số cao khi co tay lúc ngủ, không đo được tín hiệu sóng não phát hiện TIA"],
+        solution_rating: 4,
+        ownership_model: "Đặt cọc thuê máy 990.000 VNĐ + thuê bao tháng",
+        psm1: 800000, psm2: 1650000, psm3: 2650000, psm4: 3750000,
+        sub_plan: "99.000 VNĐ / tháng", doctor_fee: "199.000 VNĐ / ca",
+        trust_channel: ["Gian hàng đo trải nghiệm & Ưu đãi nội bộ tại công ty (FPT Complex, KMS...) dịp Ngày Phụ huynh / Công đoàn"],
+        early_access: true, name: "Đỗ Đăng Khoa", contact: "khoadd@kms.vn"
+      },
+      {
+        id: "NL-2026-M19", timestamp: "2026-11-16T19:15:30.000Z", stream: "A",
+        age: "50 tuổi trở lên", workplace: "Khối Văn phòng, Ngân hàng, Doanh nghiệp tài chính, Nhà nước",
+        parent_living: "Cùng thành phố nhưng ở nhà riêng / cách xa",
+        health_history: ["Tăng huyết áp (Cao huyết áp)", "Mất ngủ kinh niên / Giấc ngủ chập chờn / Ngưng thở khi ngủ", "Đái tháo đường (Tiểu đường) / Bệnh lý tim mạch"],
+        anxiety_level: 5,
+        device_limitations: ["Không có cơ chế tự động gọi điện đánh thức con cái khẩn cấp khi có dấu hiệu nguy hiểm đêm"],
+        solution_rating: 5,
+        ownership_model: "Mua đứt 2.490.000 VNĐ",
+        psm1: 1300000, psm2: 2200000, psm3: 3300000, psm4: 4800000,
+        sub_plan: "149.000 VNĐ / tháng", doctor_fee: "250.000 VNĐ / ca",
+        trust_channel: ["Bác sĩ phòng khám chuyên khoa Nội thần kinh / Tim mạch khuyên dùng"],
+        early_access: true, name: "Huỳnh Quốc Thắng", contact: "thanghq@danang.gov.vn"
+      },
+      {
+        id: "NL-2026-M20", timestamp: "2026-11-16T20:45:00.000Z", stream: "A",
+        age: "30 – 39 tuổi", workplace: "Khác",
+        parent_living: "Cha mẹ ở quê / khác tỉnh (Con đi làm xa)",
+        health_history: ["Chưa phát hiện bệnh nền"],
+        anxiety_level: 3,
+        device_limitations: ["Thao tác công nghệ rườm rà, sạc pin mỗi ngày làm cha mẹ ngại sử dụng"],
+        solution_rating: 3,
+        ownership_model: "Chưa có nhu cầu sở hữu",
+        psm1: 600000, psm2: 1300000, psm3: 2300000, psm4: 3300000,
+        sub_plan: "59.000 VNĐ / tháng", doctor_fee: "150.000 VNĐ / ca",
+        trust_channel: ["Trạm đo trải nghiệm tại chuỗi nhà thuốc uy tín (Long Châu, Pharmacity)"],
+        early_access: false, name: "", contact: ""
+      },
+      // Stream B (Bác sĩ & Nhân viên y tế)
+      {
+        id: "NL-2026-MB1", timestamp: "2026-11-15T12:30:00.000Z", stream: "B",
+        specialty: "Bác sĩ Nội trú (Thần kinh / Đa khoa / Cấp cứu)",
+        hospital_type: "Bệnh viện công lập / Bệnh viện ĐH Y Dược",
+        spare_time: "2 – 5 giờ / tuần (~8–15 ca)",
+        compensation_model: "Nhận 150.000đ – 200.000đ cho mỗi ca bất thường (đọc ~15 phút)",
+        reservation_fee: "150.000 VNĐ / ca",
+        tools_rating: 5,
+        name: "BSNT. Lê Trọng Nghĩa", unit: "BV Đà Nẵng - Khoa Đột quỵ",
+        phone: "0905445566", email: "nghialt.dr@gmail.com", notes: "Cần chuẩn hóa bản đồ Topomap 10-20 vùng thái dương/tai"
+      },
+      {
+        id: "NL-2026-MB2", timestamp: "2026-11-15T17:10:00.000Z", stream: "B",
+        specialty: "Bác sĩ Nội thần kinh / Đột quỵ",
+        hospital_type: "Phòng khám chuyên khoa ngoài giờ",
+        spare_time: "5 – 10 giờ / tuần (~20–30 ca)",
+        compensation_model: "Nhận 150.000đ – 200.000đ cho mỗi ca bất thường (đọc ~15 phút)",
+        reservation_fee: "200.000 VNĐ / ca",
+        tools_rating: 5,
+        name: "ThS.BS. Trần Văn Hùng", unit: "Phòng khám Thần kinh BS Hùng (Hải Châu, ĐN)",
+        phone: "0913887766", email: "hungneuro@gmail.com", notes: "Ủng hộ mô hình chia sẻ thù lao theo ca bất thường"
+      },
+      {
+        id: "NL-2026-MB3", timestamp: "2026-11-16T10:20:00.000Z", stream: "B",
+        specialty: "Bác sĩ Đa khoa / Lão khoa",
+        hospital_type: "Bệnh viện tư nhân / Quốc tế",
+        spare_time: "2 – 5 giờ / tuần (~8–15 ca)",
+        compensation_model: "Khoán cố định 35.000đ – 40.000đ / bệnh nhân / tháng",
+        reservation_fee: "150.000 VNĐ / ca",
+        tools_rating: 4,
+        name: "BS. Nguyễn Thị Kim Oanh", unit: "BV Quốc tế Vinmec Đà Nẵng",
+        phone: "0905223344", email: "dr.oanhntk@gmail.com", notes: "Thích tính năng tự động phát hiện ngưng thở khi ngủ"
+      },
+      {
+        id: "NL-2026-MB4", timestamp: "2026-11-16T15:15:00.000Z", stream: "B",
+        specialty: "Bác sĩ Nội trú (Thần kinh / Đa khoa / Cấp cứu)",
+        hospital_type: "Học viên Sau đại học / Cơ sở đào tạo",
+        spare_time: "2 – 5 giờ / tuần (~8–15 ca)",
+        compensation_model: "Nhận 150.000đ – 200.000đ cho mỗi ca bất thường (đọc ~15 phút)",
+        reservation_fee: "150.000 VNĐ / ca",
+        tools_rating: 5,
+        name: "BSNT. Hoàng Đức Trọng", unit: "BV Trường ĐH Y Dược Huế",
+        phone: "0935112233", email: "tronghd.huemed@gmail.com", notes: "Sinh viên nội trú rất sẵn sàng đọc ca ngoài giờ để tăng thu nhập và rèn kỹ năng"
+      },
+      {
+        id: "NL-2026-MB5", timestamp: "2026-11-16T18:40:00.000Z", stream: "B",
+        specialty: "Kỹ thuật viên Thần kinh / Điện cơ - Điện não (EEG/EMG)",
+        hospital_type: "Bệnh viện công lập / Bệnh viện ĐH Y Dược",
+        spare_time: "Dưới 2 giờ / tuần (~3–5 ca)",
+        compensation_model: "Nhận 150.000đ – 200.000đ cho mỗi ca bất thường (đọc ~15 phút)",
+        reservation_fee: "150.000 VNĐ / ca",
+        tools_rating: 4,
+        name: "KTV. Mai Văn Hiệp", unit: "Khoa Thăm dò chức năng BV C Đà Nẵng",
+        phone: "0905667788", email: "hiepmv@gmail.com", notes: "Thuật toán lọc nhiễu blink/jaw clench rất quan trọng"
+      }
+    ];
+
+    // DOM Elements
+    const tabStreamA = document.getElementById('tab-stream-a');
+    const tabStreamB = document.getElementById('tab-stream-b');
+    const containerStreamA = document.getElementById('stream-a-container');
+    const containerStreamB = document.getElementById('stream-b-container');
+    const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+    const formA = document.getElementById('form-stream-a');
+    const formB = document.getElementById('form-stream-b');
+    const thankYouView = document.getElementById('thank-you-view');
+    const ticketIdDisplay = document.getElementById('ticket-id-display');
+    const btnSubmitAnother = document.getElementById('btn-submit-another');
+
+    // Admin Modal Elements
+    const btnAdminAnalytics = document.getElementById('btn-admin-analytics');
+    const modalOverlay = document.getElementById('admin-analytics-modal');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const srcMock = document.getElementById('src-mock');
+    const srcReal = document.getElementById('src-real');
+    const btnExportCsv = document.getElementById('btn-export-csv');
+    const btnClearStorage = document.getElementById('btn-clear-storage');
+    const inputWebhookUrl = document.getElementById('input-webhook-url');
+    const btnSaveWebhook = document.getElementById('btn-save-webhook');
+
+    // PSM Inputs & Error Elements
+    const psmInputs = {
+      psm1: document.getElementById('psm1'),
+      psm2: document.getElementById('psm2'),
+      psm3: document.getElementById('psm3'),
+      psm4: document.getElementById('psm4')
+    };
+    const psmErrorMsg = document.getElementById('psm-error-msg');
+    const psmErrorText = document.getElementById('psm-error-text');
+    const cardPsm1 = document.getElementById('card-psm1');
+    const cardPsm2 = document.getElementById('card-psm2');
+    const cardPsm3 = document.getElementById('card-psm3');
+    const cardPsm4 = document.getElementById('card-psm4');
+    const btnSubmitA = document.getElementById('btn-submit-a');
+
+    let currentStream = 'A';
+
+    // Initialize LocalStorage if empty
+    function getStoredResponses() {
+      try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        return data ? JSON.parse(data) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveResponse(resp) {
+      const current = getStoredResponses();
+      current.push(resp);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+      } catch (e) {
+        console.warn('LocalStorage save failed', e);
+      }
+    }
+
+    // Switch Tabs
+    function setStream(stream) {
+      currentStream = stream;
+      if (stream === 'A') {
+        tabStreamA.classList.add('active');
+        tabStreamA.setAttribute('aria-selected', 'true');
+        tabStreamB.classList.remove('active');
+        tabStreamB.setAttribute('aria-selected', 'false');
+        containerStreamA.classList.remove('hidden');
+        containerStreamB.classList.add('hidden');
+      } else {
+        tabStreamB.classList.add('active');
+        tabStreamB.setAttribute('aria-selected', 'true');
+        tabStreamA.classList.remove('active');
+        tabStreamA.setAttribute('aria-selected', 'false');
+        containerStreamB.classList.remove('hidden');
+        containerStreamA.classList.add('hidden');
+      }
+      updateProgress();
+    }
+
+    tabStreamA.addEventListener('click', () => setStream('A'));
+    tabStreamB.addEventListener('click', () => setStream('B'));
+
+    // Progress Bar Calculation
+    function updateProgress() {
+      const activeContainer = currentStream === 'A' ? containerStreamA : containerStreamB;
+      const requiredRadios = new Set();
+      activeContainer.querySelectorAll('input[type="radio"][required]').forEach(r => requiredRadios.add(r.name));
+      
+      let answeredRadios = 0;
+      requiredRadios.forEach(name => {
+        if (activeContainer.querySelector(`input[name="${name}"]:checked`)) {
+          answeredRadios++;
+        }
+      });
+
+      let totalPoints = requiredRadios.size;
+      let earnedPoints = answeredRadios;
+
+      if (currentStream === 'A') {
+        totalPoints += 4; // 4 PSM fields
+        let psmCount = 0;
+        ['psm1', 'psm2', 'psm3', 'psm4'].forEach(id => {
+          if (psmInputs[id] && psmInputs[id].value.trim() !== '') psmCount++;
+        });
+        earnedPoints += psmCount;
+      }
+
+      const percent = totalPoints > 0 ? Math.min(100, Math.round((earnedPoints / totalPoints) * 100)) : 0;
+      progressFill.style.width = percent + '%';
+      progressText.textContent = `Tiến độ: ${percent}%`;
+    }
+
+    // Handle Option Item selection styling
+    document.querySelectorAll('.option-item input').forEach(input => {
+      input.addEventListener('change', () => {
+        if (input.type === 'radio') {
+          document.querySelectorAll(`input[name="${input.name}"]`).forEach(r => {
+            r.closest('.option-item').classList.toggle('selected', r.checked);
+          });
+        } else {
+          input.closest('.option-item').classList.toggle('selected', input.checked);
+        }
+        updateProgress();
+      });
+    });
+
+    // Likert buttons
+    document.querySelectorAll('.likert-scale').forEach(scale => {
+      scale.querySelectorAll('.likert-btn input').forEach(radio => {
+        radio.addEventListener('change', () => {
+          scale.querySelectorAll('.likert-btn').forEach(btn => {
+            const r = btn.querySelector('input');
+            btn.classList.toggle('active', r && r.checked);
+          });
+          updateProgress();
+        });
+      });
+    });
+
+    // PSM Pill Quick Selection
+    document.querySelectorAll('.psm-pill').forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = pill.dataset.target;
+        const val = pill.dataset.val;
+        if (psmInputs[targetId]) {
+          psmInputs[targetId].value = val;
+          psmInputs[targetId].dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+    });
+
+    // PSM Logic Validation
+    function validatePSM(showErrors = false) {
+      const v1 = parseFloat(psmInputs.psm1.value);
+      const v2 = parseFloat(psmInputs.psm2.value);
+      const v3 = parseFloat(psmInputs.psm3.value);
+      const v4 = parseFloat(psmInputs.psm4.value);
+
+      // Reset card error styles
+      [cardPsm1, cardPsm2, cardPsm3, cardPsm4].forEach(c => c.classList.remove('has-error'));
+
+      // If not all fields filled
+      if (isNaN(v1) || isNaN(v2) || isNaN(v3) || isNaN(v4)) {
+        psmErrorMsg.classList.add('hidden');
+        btnSubmitA.disabled = false;
+        return { isValid: false, complete: false };
+      }
+
+      let errorText = "";
+      let hasError = false;
+
+      if (v1 >= v2) {
+        errorText = `Mức giá Quá rẻ (${formatVnd(v1)}) không thể cao hơn hoặc bằng Giá hời (${formatVnd(v2)}).`;
+        cardPsm1.classList.add('has-error');
+        cardPsm2.classList.add('has-error');
+        hasError = true;
+      } else if (v2 >= v3) {
+        errorText = `Mức giá Hời / Hợp lý (${formatVnd(v2)}) không thể cao hơn hoặc bằng Bắt đầu đắt (${formatVnd(v3)}).`;
+        cardPsm2.classList.add('has-error');
+        cardPsm3.classList.add('has-error');
+        hasError = true;
+      } else if (v3 >= v4) {
+        errorText = `Mức giá Bắt đầu đắt (${formatVnd(v3)}) không thể cao hơn hoặc bằng Quá đắt (${formatVnd(v4)}).`;
+        cardPsm3.classList.add('has-error');
+        cardPsm4.classList.add('has-error');
+        hasError = true;
+      }
+
+      if (hasError) {
+        psmErrorText.textContent = `${errorText} Vui lòng điều chỉnh lại thứ tự: Quá rẻ < Giá hời < Bắt đầu đắt < Quá đắt!`;
+        psmErrorMsg.classList.remove('hidden');
+        btnSubmitA.disabled = true;
+        return { isValid: false, complete: true, message: errorText };
+      } else {
+        psmErrorMsg.classList.add('hidden');
+        btnSubmitA.disabled = false;
+        return { isValid: true, complete: true };
+      }
+    }
+
+    // Bind PSM input events
+    Object.values(psmInputs).forEach(input => {
+      input.addEventListener('input', () => {
+        validatePSM(true);
+        updateProgress();
+      });
+      input.addEventListener('change', () => {
+        validatePSM(true);
+        updateProgress();
+      });
+    });
+
+    // Helper Currency Formatter
+    function formatVnd(num) {
+      if (isNaN(num)) return "0 đ";
+      return new Intl.NumberFormat('vi-VN').format(num) + ' đ';
+    }
+
+    // Generate Submission ID
+    function generateTicketId() {
+      const hex = Math.floor(1000 + Math.random() * 9000).toString(16).toUpperCase();
+      return `NL-2026-${hex}`;
+    }
+
+    // Submit Handler Stream A
+    formA.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      // Check required fields
+      if (!formA.checkValidity()) {
+        formA.reportValidity();
+        return;
+      }
+
+      // Check PSM
+      const psmCheck = validatePSM(true);
+      if (!psmCheck.isValid) {
+        if (!psmCheck.complete) {
+          alert('Vui lòng nhập đầy đủ 4 mức giá trong phần Định giá Van Westendorp (PSM)!');
+        } else {
+          alert('Lỗi thứ tự giá Van Westendorp: Mức giá Quá rẻ < Giá hời < Bắt đầu đắt < Quá đắt. Vui lòng kiểm tra lại!');
+        }
+        document.getElementById('psm-section').scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+
+      const formData = new FormData(formA);
+      const ticketId = generateTicketId();
+
+      const healthList = [];
+      formA.querySelectorAll('input[name="a_health_history"]:checked').forEach(c => healthList.push(c.value));
+
+      const limitList = [];
+      formA.querySelectorAll('input[name="a_device_limitations"]:checked').forEach(c => limitList.push(c.value));
+
+      const trustList = [];
+      formA.querySelectorAll('input[name="a_trust_channel"]:checked').forEach(c => trustList.push(c.value));
+
+      const payload = {
+        id: ticketId,
+        timestamp: new Date().toISOString(),
+        stream: "A",
+        age: formData.get('a_age') || "",
+        workplace: formData.get('a_workplace') || "",
+        parent_living: formData.get('a_parent_living') || "",
+        health_history: healthList,
+        anxiety_level: parseInt(formData.get('a_anxiety_level') || "0", 10),
+        device_limitations: limitList,
+        solution_rating: parseInt(formData.get('a_solution_rating') || "0", 10),
+        ownership_model: formData.get('a_ownership_model') || "",
+        psm1: parseFloat(formData.get('psm1') || "0"),
+        psm2: parseFloat(formData.get('psm2') || "0"),
+        psm3: parseFloat(formData.get('psm3') || "0"),
+        psm4: parseFloat(formData.get('psm4') || "0"),
+        sub_plan: formData.get('a_sub_plan') || "",
+        doctor_fee: formData.get('a_doctor_fee') || "",
+        trust_channel: trustList,
+        early_access: formData.get('a_early_access') === 'yes',
+        name: formData.get('a_name') || "",
+        contact: formData.get('a_contact') || ""
+      };
+
+      // Save locally
+      saveResponse(payload);
+
+      // Async webhook push if configured
+      sendToWebhook(payload);
+
+      // Show Thank you
+      showThankYou(ticketId, payload.early_access);
+    });
+
+    // Submit Handler Stream B
+    formB.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      if (!formB.checkValidity()) {
+        formB.reportValidity();
+        return;
+      }
+
+      const formData = new FormData(formB);
+      const ticketId = generateTicketId();
+
+      const payload = {
+        id: ticketId,
+        timestamp: new Date().toISOString(),
+        stream: "B",
+        specialty: formData.get('b_specialty') || "",
+        hospital_type: formData.get('b_hospital_type') || "",
+        spare_time: formData.get('b_spare_time') || "",
+        compensation_model: formData.get('b_compensation_model') || "",
+        reservation_fee: formData.get('b_reservation_fee') || "",
+        tools_rating: parseInt(formData.get('b_tools_rating') || "0", 10),
+        name: formData.get('b_name') || "",
+        unit: formData.get('b_unit') || "",
+        phone: formData.get('b_phone') || "",
+        email: formData.get('b_email') || "",
+        notes: formData.get('b_notes') || ""
+      };
+
+      saveResponse(payload);
+      sendToWebhook(payload);
+      showThankYou(ticketId, false);
+    });
+
+    // Send to Google Sheets Webhook
+    function sendToWebhook(data) {
+      if (!GOOGLE_SCRIPT_WEBHOOK_URL) return;
+      try {
+        fetch(GOOGLE_SCRIPT_WEBHOOK_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        }).catch(err => console.log('Webhook push error:', err));
+      } catch (err) {
+        console.log('Webhook fetch failed:', err);
+      }
+    }
+
+    // Thank You Screen
+    function showThankYou(ticketId, hasEarlyAccess) {
+      containerStreamA.classList.add('hidden');
+      containerStreamB.classList.add('hidden');
+      document.querySelector('.stream-toggle-section').style.display = 'none';
+      document.querySelector('.progress-bar-wrap').style.display = 'none';
+      
+      ticketIdDisplay.textContent = ticketId;
+      document.getElementById('early-bird-confirm').style.display = hasEarlyAccess ? 'block' : 'none';
+      thankYouView.style.display = 'block';
+      thankYouView.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    btnSubmitAnother.addEventListener('click', () => {
+      formA.reset();
+      formB.reset();
+      document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
+      document.querySelectorAll('.likert-btn').forEach(el => el.classList.remove('active'));
+      thankYouView.style.display = 'none';
+      document.querySelector('.stream-toggle-section').style.display = 'block';
+      document.querySelector('.progress-bar-wrap').style.display = 'flex';
+      setStream('A');
+    });
+
+    // Admin Analytics Modal Handling
+    btnAdminAnalytics.addEventListener('click', () => {
+      modalOverlay.classList.add('open');
+      inputWebhookUrl.value = GOOGLE_SCRIPT_WEBHOOK_URL;
+      renderAnalytics();
+    });
+
+    btnCloseModal.addEventListener('click', () => {
+      modalOverlay.classList.remove('open');
+    });
+
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) {
+        modalOverlay.classList.remove('open');
+      }
+    });
+
+    srcMock.addEventListener('change', renderAnalytics);
+    srcReal.addEventListener('change', renderAnalytics);
+
+    btnSaveWebhook.addEventListener('click', () => {
+      const url = inputWebhookUrl.value.trim();
+      GOOGLE_SCRIPT_WEBHOOK_URL = url;
+      localStorage.setItem('nl_webhook_url', url);
+      alert('Đã lưu Google Apps Script Webhook URL thành công!');
+    });
+
+    btnClearStorage.addEventListener('click', () => {
+      if (confirm('Bạn có chắc muốn xóa toàn bộ phản hồi thật trong LocalStorage?')) {
+        localStorage.removeItem(STORAGE_KEY);
+        alert('Đã xóa dữ liệu LocalStorage.');
+        renderAnalytics();
+      }
+    });
+
+    // Get Active Dataset
+    function getActiveDataset() {
+      const isMock = srcMock.checked;
+      if (isMock) {
+        return MOCK_SURVEY_RESPONSES;
+      }
+      return getStoredResponses();
+    }
+
+    // Van Westendorp Price Sensitivity Meter Algorithm
+    function calculateVanWestendorp(streamAResponses) {
+      const valid = streamAResponses.filter(r => r.psm1 && r.psm2 && r.psm3 && r.psm4 && r.psm1 < r.psm2 && r.psm2 < r.psm3 && r.psm3 < r.psm4);
+      const N = valid.length;
+
+      if (N === 0) {
+        return {
+          N: 0,
+          opp: 0, idp: 0, pmc: 0, pme: 0,
+          curvePoints: []
+        };
+      }
+
+      // Range from 500k to 5M with step 25k
+      const minP = 500000;
+      const maxP = 5000000;
+      const step = 25000;
+      const curvePoints = [];
+
+      for (let p = minP; p <= maxP; p += step) {
+        // Too Cheap: % saying p is too cheap (psm1 >= p)
+        const countTooCheap = valid.filter(r => r.psm1 >= p).length;
+        const tooCheapPct = (countTooCheap / N) * 100;
+
+        // Cheap (Bargain): % saying p is bargain (psm2 >= p)
+        const countCheap = valid.filter(r => r.psm2 >= p).length;
+        const cheapPct = (countCheap / N) * 100;
+        const notCheapPct = 100 - cheapPct;
+
+        // Expensive: % saying p is expensive (psm3 <= p)
+        const countExpensive = valid.filter(r => r.psm3 <= p).length;
+        const expensivePct = (countExpensive / N) * 100;
+        const notExpensivePct = 100 - expensivePct;
+
+        // Too Expensive: % saying p is too expensive (psm4 <= p)
+        const countTooExpensive = valid.filter(r => r.psm4 <= p).length;
+        const tooExpensivePct = (countTooExpensive / N) * 100;
+
+        curvePoints.push({
+          price: p,
+          tooCheap: tooCheapPct,
+          cheap: cheapPct,
+          notCheap: notCheapPct,
+          expensive: expensivePct,
+          notExpensive: notExpensivePct,
+          tooExpensive: tooExpensivePct
+        });
+      }
+
+      // Standard Van Westendorp Intersections:
+      // PMC (Point of Marginal Cheapness): Too Cheap = Not Cheap
+      const pmc = findIntersection(curvePoints, 'tooCheap', 'notCheap') || 1250000;
+
+      // IDP (Indifference Price Point): Not Cheap = Not Expensive (Equal % see it cheap vs expensive)
+      const idp = findIntersection(curvePoints, 'notCheap', 'notExpensive') || 2200000;
+
+      // PME (Point of Marginal Expensiveness): Not Expensive = Too Expensive
+      const pme = findIntersection(curvePoints, 'notExpensive', 'tooExpensive') || 3200000;
+
+      // OPP (Optimal Price Point): Point of Minimal Resistance (where Too Cheap + Too Expensive is minimized)
+      let minResistance = Infinity;
+      let minResPrices = [];
+
+      for (let i = 0; i < curvePoints.length; i++) {
+        const pt = curvePoints[i];
+        const res = pt.tooCheap + pt.tooExpensive;
+        if (res < minResistance) {
+          minResistance = res;
+          minResPrices = [pt.price];
+        } else if (Math.abs(res - minResistance) < 0.01) {
+          minResPrices.push(pt.price);
+        }
+      }
+
+      let opp = null;
+      if (minResPrices.length > 0) {
+        const mid = (minResPrices[0] + minResPrices[minResPrices.length - 1]) / 2;
+        opp = Math.round(mid / 50000) * 50000;
+      } else {
+        opp = idp;
+      }
+
+      return {
+        N,
+        opp: opp || 2250000,
+        idp: idp || 2200000,
+        pmc: pmc || 1250000,
+        pme: pme || 3200000,
+        curvePoints
+      };
+    }
+
+    function findIntersection(points, key1, key2) {
+      let closestDiff = Infinity;
+      let intersectionPrice = null;
+
+      for (let i = 0; i < points.length; i++) {
+        const diff = Math.abs(points[i][key1] - points[i][key2]);
+        if (diff < closestDiff) {
+          closestDiff = diff;
+          intersectionPrice = points[i].price;
+        }
+      }
+      return intersectionPrice;
+    }
+
+    // Render Analytics & SVG Chart
+    function renderAnalytics() {
+      const dataset = getActiveDataset();
+      const streamA = dataset.filter(r => r.stream === 'A');
+      const streamB = dataset.filter(r => r.stream === 'B');
+
+      document.getElementById('response-count-badge').textContent = `${dataset.length} phản hồi (${streamA.length} Luồng Con cái, ${streamB.length} Luồng Bác sĩ)`;
+
+      const psmResult = calculateVanWestendorp(streamA);
+
+      // KPI 1: OPP
+      document.getElementById('kpi-opp').textContent = formatVnd(psmResult.opp);
+      // KPI 2: IDP
+      document.getElementById('kpi-idp').textContent = formatVnd(psmResult.idp);
+      // KPI 3: Range
+      document.getElementById('kpi-range').textContent = `${formatVnd(psmResult.pmc)} → ${formatVnd(psmResult.pme)}`;
+
+      // KPI 4: Ownership distribution
+      const depositCount = streamA.filter(r => r.ownership_model && r.ownership_model.includes('Đặt cọc')).length;
+      const buyCount = streamA.filter(r => r.ownership_model && r.ownership_model.includes('Mua đứt')).length;
+      const totalStreamA = streamA.length || 1;
+      const depositPct = Math.round((depositCount / totalStreamA) * 100);
+      const buyPct = Math.round((buyCount / totalStreamA) * 100);
+      document.getElementById('kpi-ownership').textContent = `${depositPct}% Cọc 990k / ${buyPct}% Mua`;
+
+      // KPI 5: Sub plan
+      const p99 = streamA.filter(r => r.sub_plan && r.sub_plan.includes('99.000')).length;
+      const p99Pct = Math.round((p99 / totalStreamA) * 100);
+      document.getElementById('kpi-sub-plan').textContent = `99.000 đ (${p99Pct}%)`;
+
+      // KPI 6: Doctor pref
+      const docPerCase = streamB.filter(r => r.compensation_model && r.compensation_model.includes('bất thường')).length;
+      const totalB = streamB.length || 1;
+      const docPct = Math.round((docPerCase / totalB) * 100);
+      document.getElementById('kpi-doc-pref').textContent = `${docPct}% Chọn Theo Ca`;
+
+      // Render SVG Chart
+      renderPsmSvg(psmResult);
+
+      // Render Table
+      renderTable(dataset);
+    }
+
+    // Render SVG Chart
+    function renderPsmSvg(psm) {
+      const wrap = document.getElementById('chart-wrap');
+      if (psm.curvePoints.length === 0) {
+        wrap.innerHTML = `<div style="padding:40px; text-align:center; color:var(--slate-500);">Chưa có đủ dữ liệu phản hồi Luồng A để vẽ biểu đồ PSM. Hãy nhập khảo sát hoặc chuyển sang Dữ liệu mẫu.</div>`;
+        return;
+      }
+
+      const W = 760;
+      const H = 340;
+      const padL = 55;
+      const padR = 30;
+      const padT = 38;
+      const padB = 42;
+
+      const chartW = W - padL - padR;
+      const chartH = H - padT - padB;
+
+      const minP = 500000;
+      const maxP = 5000000;
+
+      const getX = (price) => padL + ((price - minP) / (maxP - minP)) * chartW;
+      const getY = (pct) => padT + chartH - (pct / 100) * chartH;
+
+      // Build SVG Paths
+      const makePath = (key) => {
+        return psm.curvePoints.map((pt, i) => {
+          const x = getX(pt.price);
+          const y = getY(pt[key]);
+          return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+        }).join(' ');
+      };
+
+      const pathTooCheap = makePath('tooCheap');
+      const pathCheap = makePath('cheap');
+      const pathExpensive = makePath('expensive');
+      const pathTooExpensive = makePath('tooExpensive');
+
+      // Acceptable range zone coordinates
+      const xPmc = getX(psm.pmc);
+      const xPme = getX(psm.pme);
+      const xOpp = getX(psm.opp);
+      const xIdp = getX(psm.idp);
+
+      // Grid lines
+      let gridLines = '';
+      [0, 25, 50, 75, 100].forEach(pct => {
+        const y = getY(pct);
+        gridLines += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#e2e8f0" stroke-dasharray="3 3"/>`;
+        gridLines += `<text x="${padL - 10}" y="${y + 4}" fill="#64748b" font-size="11" text-anchor="end" font-weight="600">${pct}%</text>`;
+      });
+
+      // Price X ticks (every 1M)
+      let xTicks = '';
+      [1000000, 2000000, 3000000, 4000000, 5000000].forEach(p => {
+        const x = getX(p);
+        xTicks += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + chartH}" stroke="#f1f5f9" stroke-width="1"/>`;
+        xTicks += `<text x="${x}" y="${padT + chartH + 20}" fill="#64748b" font-size="11" text-anchor="middle" font-weight="600">${p / 1000000}M</text>`;
+      });
+
+      wrap.innerHTML = `
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+          <!-- Background -->
+          <rect width="${W}" height="${H}" fill="#ffffff" rx="8"/>
+
+          <!-- Acceptable Price Range Shaded Band -->
+          <rect x="${xPmc}" y="${padT}" width="${Math.max(0, xPme - xPmc)}" height="${chartH}" fill="rgba(13, 148, 136, 0.08)"/>
+          
+          <!-- Top Buffer: Clear RAP Badge (Strictly above the 100% line, never overlapping) -->
+          <g transform="translate(${Math.max(150, Math.min(W - 150, (xPmc + xPme) / 2))}, 18)">
+            <rect x="-140" y="-12" width="280" height="22" rx="11" fill="#f0fdfa" stroke="#99f6e4" stroke-width="1"/>
+            <text x="0" y="3" fill="#0d9488" font-size="10.5" font-weight="700" text-anchor="middle">
+              VÙNG GIÁ CHẤP NHẬN ĐƯỢC (RAP: ${formatVnd(psm.pmc)} – ${formatVnd(psm.pme)})
+            </text>
+          </g>
+
+          <!-- Grid Lines -->
+          ${gridLines}
+          ${xTicks}
+
+          <!-- Axis Lines -->
+          <line x1="${padL}" y1="${padT + chartH}" x2="${W - padR}" y2="${padT + chartH}" stroke="#94a3b8" stroke-width="1.5"/>
+          <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + chartH}" stroke="#94a3b8" stroke-width="1.5"/>
+
+          <!-- 4 PSM Curves -->
+          <path d="${pathTooCheap}" fill="none" stroke="#f43f5e" stroke-width="2.5" stroke-dasharray="4 2"/>
+          <path d="${pathCheap}" fill="none" stroke="#10b981" stroke-width="2.5"/>
+          <path d="${pathExpensive}" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+          <path d="${pathTooExpensive}" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="4 2"/>
+
+          <!-- OPP Marker -->
+          <line x1="${xOpp}" y1="${padT}" x2="${xOpp}" y2="${padT + chartH}" stroke="#0d9488" stroke-width="2" stroke-dasharray="5 3"/>
+          <circle cx="${xOpp}" cy="${getY(22)}" r="6" fill="#0d9488" stroke="#ffffff" stroke-width="2"/>
+          <g transform="translate(${xOpp}, ${padT + chartH - 45})">
+            <rect x="-55" y="-12" width="110" height="24" rx="4" fill="#0f172a"/>
+            <text x="0" y="4" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">OPP: ${formatVnd(psm.opp)}</text>
+          </g>
+
+          <!-- PMC & PME Markers -->
+          <circle cx="${xPmc}" cy="${getY(38)}" r="5" fill="#f59e0b" stroke="#ffffff" stroke-width="1.5"/>
+          <text x="${xPmc}" y="${getY(38) - 10}" fill="#b45309" font-size="10" font-weight="700" text-anchor="middle">PMC</text>
+
+          <circle cx="${xPme}" cy="${getY(38)}" r="5" fill="#dc2626" stroke="#ffffff" stroke-width="1.5"/>
+          <text x="${xPme}" y="${getY(38) - 10}" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">PME</text>
+
+          <!-- X & Y Labels -->
+          <text x="${W / 2}" y="${H - 12}" fill="#475569" font-size="11.5" font-weight="700" text-anchor="middle">Mức giá đề xuất (VNĐ)</text>
+          <text x="18" y="${padT + chartH / 2}" fill="#475569" font-size="11.5" font-weight="700" text-anchor="middle" transform="rotate(-90 18 ${padT + chartH / 2})">% Phản hồi</text>
+        </svg>
+      `;
+    }
+
+    // Render Data Table
+    function renderTable(dataset) {
+      const tbody = document.getElementById('responses-tbody');
+      tbody.innerHTML = '';
+
+      dataset.slice(0, 30).forEach(r => {
+        const tr = document.createElement('tr');
+        const dt = new Date(r.timestamp);
+        const timeStr = `${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')} ${dt.getDate()}/${dt.getMonth() + 1}`;
+
+        if (r.stream === 'A') {
+          tr.innerHTML = `
+            <td>${timeStr}</td>
+            <td><span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:700;">Con cái</span></td>
+            <td>${r.age}</td>
+            <td title="${r.workplace}">${r.workplace.substring(0, 24)}...</td>
+            <td><strong>${r.ownership_model.split('+')[0]}</strong></td>
+            <td>${formatVnd(r.psm1)}</td>
+            <td>${formatVnd(r.psm2)}</td>
+            <td>${formatVnd(r.psm3)}</td>
+            <td>${formatVnd(r.psm4)}</td>
+            <td>${r.name ? r.name + ' (' + r.contact + ')' : 'Ẩn danh'}</td>
+          `;
+        } else {
+          tr.innerHTML = `
+            <td>${timeStr}</td>
+            <td><span style="background:#ecfdf5; color:#047857; padding:2px 6px; border-radius:4px; font-weight:700;">Bác sĩ</span></td>
+            <td>${r.specialty}</td>
+            <td>${r.unit || r.hospital_type}</td>
+            <td>${r.reservation_fee} / ca</td>
+            <td colspan="4" style="text-align:center; color:#64748b;"><em>(Khảo sát chuyên môn lâm sàng)</em></td>
+            <td>${r.name ? r.name + ' - ' + r.phone : 'Chưa để lại SĐT'}</td>
+          `;
+        }
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Export CSV with UTF-8 BOM
+    btnExportCsv.addEventListener('click', () => {
+      const dataset = getActiveDataset();
+      if (!dataset || dataset.length === 0) {
+        alert('Không có dữ liệu để xuất file!');
+        return;
+      }
+
+      let csv = '\uFEFF'; // UTF-8 BOM for flawless Excel display
+      csv += 'ID,ThoiGian,Luong,DoiTuong,DonViCongTac_NoiLamViec,HoanCanh_ChuyenKhoa,NhuCau_HinhThuc,PSM1_QuaRe,PSM2_GiaHoi,PSM3_Dat,PSM4_QuaDat,GoiAI_ThuLao,LienHe\n';
+
+      dataset.forEach(r => {
+        if (r.stream === 'A') {
+          const row = [
+            `"${r.id}"`,
+            `"${r.timestamp}"`,
+            `"Luong A (Con cai)"`,
+            `"${r.age}"`,
+            `"${(r.workplace || '').replace(/"/g, '""')}"`,
+            `"${(r.parent_living || '').replace(/"/g, '""')}"`,
+            `"${(r.ownership_model || '').replace(/"/g, '""')}"`,
+            r.psm1 || 0,
+            r.psm2 || 0,
+            r.psm3 || 0,
+            r.psm4 || 0,
+            `"${(r.sub_plan || '').replace(/"/g, '""')}"`,
+            `"${((r.name || '') + ' - ' + (r.contact || '')).replace(/"/g, '""')}"`
+          ];
+          csv += row.join(',') + '\n';
+        } else {
+          const row = [
+            `"${r.id}"`,
+            `"${r.timestamp}"`,
+            `"Luong B (Bac si)"`,
+            `"${r.specialty}"`,
+            `"${((r.unit || '') + ' ' + (r.hospital_type || '')).replace(/"/g, '""')}"`,
+            `"${(r.spare_time || '').replace(/"/g, '""')}"`,
+            `"${(r.compensation_model || '').replace(/"/g, '""')}"`,
+            '""', '""', '""', '""',
+            `"${(r.reservation_fee || '').replace(/"/g, '""')}"`,
+            `"${((r.name || '') + ' - ' + (r.phone || '') + ' - ' + (r.email || '')).replace(/"/g, '""')}"`
+          ];
+          csv += row.join(',') + '\n';
+        }
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `neurolink_market_survey_responses_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    // Initial trigger
+    updateProgress();
+  </script>
+</body>
+</html>

@@ -22,6 +22,7 @@ import { RewardsPage } from './pages/RewardsPage';
 import { EEGHubPage } from './pages/EEGHubPage';
 import { MyHealthPage } from './pages/MyHealthPage';
 import { CommunitiesPage } from './pages/CommunitiesPage';
+import { ConsultationsPage } from './pages/ConsultationsPage';
 import { ProfessionalDashboardPage } from './pages/ProfessionalDashboardPage';
 
 export function App() {
@@ -69,6 +70,7 @@ export function App() {
         <Route path="/contributions" element={<ContributionsPage />} />
         <Route path="/eeg-hub" element={<EEGHubPage />} />
         <Route path="/eeg" element={<EEGHubPage />} />
+        <Route path="/consultations" element={<ConsultationsPage />} />
         <Route path="/rewards" element={<RewardsPage />} />
         <Route path="/u/:username" element={<ProfilePage />} />
         <Route path="/settings" element={<SettingsPage />} />

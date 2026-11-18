@@ -9,7 +9,6 @@ import {
   MessageCircle,
   Building2,
   UserX,
-  Sparkles,
   ChevronRight,
   TrendingUp,
 } from 'lucide-react';
@@ -152,7 +151,7 @@ export function SearchPage() {
                 <span>Danh bạ Chuyên gia Lâm sàng & Nhà Nghiên cứu BCI</span>
               </h1>
               <p className="text-xs text-slate-300 mt-0.5">
-                Tra cứu đồng nghiệp theo chuyên khoa Thần kinh, đơn vị bệnh viện, mã CCHN/ORCID và thảo luận học thuật (Doximity Registry).
+                Tra cứu đồng nghiệp theo chuyên khoa Thần kinh, đơn vị bệnh viện, mã CCHN/ORCID và thảo luận học thuật (CCHN / ORCID Verified Registry).
               </p>
             </div>
             <span className="font-mono text-[11px] text-teal-200 bg-[#2C6865] px-2.5 py-1 rounded border border-teal-400/30 shrink-0">
@@ -163,8 +162,8 @@ export function SearchPage() {
       ) : (
         <div className="rounded-xl border border-teal-200/80 bg-white p-5 sm:p-6 shadow-2xs">
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            <Stethoscope className="size-5 text-teal-600 shrink-0" />
             <span>Khám phá Bác sĩ, Cộng đồng & Kiến thức Não bộ</span>
-            <Sparkles className="size-5 text-teal-600" />
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-1">
             Tìm kiếm bác sĩ chuyên khoa thần kinh đã xác minh, kết nối cộng đồng hỗ trợ người bệnh và đọc các bài viết sức khỏe dễ hiểu.
@@ -172,7 +171,7 @@ export function SearchPage() {
         </div>
       )}
 
-      {/* Search Form Card (Doximity & Facebook Clean Architecture) */}
+      {/* Search Form Card */}
       <Card className="p-4 sm:p-5 border-slate-200/90 shadow-xs space-y-3.5 rounded-xl">
         <form onSubmit={handleSearchSubmit} className="flex gap-2">
           <div className="relative flex-1">
@@ -296,8 +295,8 @@ export function SearchPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="flex size-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600 border border-amber-200">
-                  <Sparkles className="size-4" />
+                <div className="flex size-7 items-center justify-center rounded-lg bg-teal-50 text-teal-700 border border-teal-200">
+                  <Stethoscope className="size-4" />
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">Bác sĩ & Chuyên gia đề xuất cho bạn</h2>

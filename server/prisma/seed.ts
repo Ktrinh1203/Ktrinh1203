@@ -1,10 +1,20 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { PrismaClient, Role, VerificationStatus } from '@prisma/client';
+import {
+  ClinicalCategory,
+  ConsultationStatus,
+  DatasetSplit,
+  NeuralLabel,
+  PrismaClient,
+  Role,
+  VerificationStatus,
+  WorkBlockType,
+} from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { buildDocumentEvidenceDossier } from '../src/modules/verification/ocr.service.js';
 import { PRIVATE_VERIFICATION_DIR } from '../src/middleware/uploadVerification.js';
+import { analyzeCaseTs } from '../src/modules/qeeg/qeeg-dsp.engine.js';
 
 const prisma = new PrismaClient();
 
@@ -37,7 +47,14 @@ function saveSeedDoc(fileName: string, buffer: Buffer) {
 async function main() {
   console.log('[seed] Seeding demo data for PBL4_Web development...');
 
-  // Clean existing seed data safely
+  // Clean existing seed data safely (new startup & qEEG tables first)
+  await prisma.workingPlanBlock.deleteMany();
+  await prisma.healthCheckIn.deleteMany();
+  await prisma.consultationReply.deleteMany();
+  await prisma.consultationTicket.deleteMany();
+  await prisma.dataBankPurchase.deleteMany();
+  await prisma.dataBankListing.deleteMany();
+  await prisma.neuralTrainingSample.deleteMany();
   await prisma.rewardRedemption.deleteMany();
   await prisma.creditTransaction.deleteMany();
   await prisma.creditWallet.deleteMany();
@@ -185,6 +202,33 @@ async function main() {
           researchInterests: ['Kỹ thuật ghi Video-EEG', 'Khử nhiễu điện cực'],
           verificationStatus: VerificationStatus.REJECTED,
           verificationNote: 'Bản chụp CCHN bị lóa sáng che khuất số hiệu và dấu mộc. Vui lòng tải lại bản scan rõ nét.',
+        },
+      },
+    },
+    include: { professionalProfiles: true },
+  });
+
+  // 7. Junior / Resident Overtime Neurologist (Verified)
+  const residentDoctor = await prisma.user.create({
+    data: {
+      username: 'bs_noitru_khang',
+      email: 'khang.noitru@neurolink.test',
+      displayName: 'BS. Nội trú Lê Minh Khang',
+      bio: 'Bác sĩ Nội trú Thần kinh & Hồi sức Đột quỵ tại BV Đại học Y Dược TP.HCM. Nhận đọc băng ghi qEEG từ xa ngoài giờ và sàng lọc ca trực cấp cứu.',
+      passwordHash: commonPassword,
+      role: Role.USER,
+      professionalProfiles: {
+        create: {
+          type: 'HEALTHCARE_PROFESSIONAL',
+          title: 'Bác sĩ Nội trú Thần kinh (Ngoài giờ)',
+          specialty: 'Hồi sức Đột quỵ & Điện não đồ Cấp cứu',
+          institution: 'Bệnh viện Đại học Y Dược TP.HCM',
+          licenseOrOrcidNumber: '029418/HCM-CCHN',
+          researchInterests: ['qEEG Cấp cứu Đột quỵ', 'NCSE trong ICU', 'Đọc sóng não từ xa'],
+          verificationStatus: VerificationStatus.VERIFIED,
+          verificationNote: 'Đã xác minh CCHN 029418/HCM-CCHN và phân công trực nội trú Thần kinh',
+          verifiedById: admin.id,
+          verifiedAt: new Date(Date.now() - 86400000 * 2),
         },
       },
     },
@@ -452,6 +496,74 @@ async function main() {
     },
   });
 
+  // 5) Resident Doctor Khang (VERIFIED)
+  const docKhangPdf = saveSeedDoc(
+    'seed_bs_khang_cchn.pdf',
+    createSamplePdfBuffer([
+      'SO Y TE TP HO CHI MINH - CHUNG CHI HANH NGHE',
+      'Họ và tên: BS. Nội trú Lê Minh Khang',
+      'Số CCHN: 029418/HCM-CCHN',
+      'Chuyên khoa: Hồi sức Đột quỵ & Điện não đồ Cấp cứu',
+      'Đơn vị: Bệnh viện Đại học Y Dược TP.HCM',
+    ]),
+  );
+  const docKhangDossier = buildDocumentEvidenceDossier({
+    buffer: docKhangPdf.buffer,
+    documentType: 'MEDICAL_LICENSE',
+    profileType: 'HEALTHCARE_PROFESSIONAL',
+    claimedName: residentDoctor.displayName,
+    claimedSpecialty: 'Hồi sức Đột quỵ & Điện não đồ Cấp cứu',
+    claimedInstitution: 'Bệnh viện Đại học Y Dược TP.HCM',
+    claimedLicenseOrOrcid: '029418/HCM-CCHN',
+  });
+
+  await prisma.verificationRequest.create({
+    data: {
+      profileId: residentDoctor.professionalProfiles[0]!.id,
+      userId: residentDoctor.id,
+      status: 'VERIFIED',
+      claimedTitle: 'Bác sĩ Nội trú Thần kinh (Ngoài giờ)',
+      claimedSpecialty: 'Hồi sức Đột quỵ & Điện não đồ Cấp cứu',
+      claimedInstitution: 'Bệnh viện Đại học Y Dược TP.HCM',
+      licenseOrOrcidNumber: '029418/HCM-CCHN',
+      submissionNotes: 'Hồ sơ CCHN bác sĩ nội trú tham gia trực đọc qEEG ngoài giờ trên NeuroLink.',
+      reviewerId: admin.id,
+      reviewedAt: new Date(Date.now() - 86400000 * 2),
+      reviewNotes: 'Hồ sơ CCHN và đơn vị công tác BV ĐH Y Dược TP.HCM hợp lệ.',
+      documents: {
+        create: {
+          documentType: 'MEDICAL_LICENSE',
+          storagePath: docKhangPdf.storagePath,
+          fileName: 'CCHN_BS_Noi_Tru_Le_Minh_Khang.pdf',
+          mimeType: docKhangPdf.mimeType,
+          sizeBytes: docKhangPdf.sizeBytes,
+          sha256Hash: docKhangPdf.sha256Hash,
+          ocrData: docKhangDossier as any,
+        },
+      },
+      auditLogs: {
+        create: [
+          {
+            actorId: residentDoctor.id,
+            action: 'SUBMIT_REQUEST',
+            previousState: null,
+            newState: 'PENDING_REVIEW',
+            reason: 'Nộp hồ sơ xác minh Bác sĩ Nội trú đọc qEEG ngoài giờ',
+            ipAddress: '127.0.0.1',
+          },
+          {
+            actorId: admin.id,
+            action: 'ADMIN_APPROVE',
+            previousState: 'PENDING_REVIEW',
+            newState: 'VERIFIED',
+            reason: 'Đã xác minh CCHN 029418/HCM-CCHN',
+            ipAddress: '127.0.0.1',
+          },
+        ],
+      },
+    },
+  });
+
   void reqMinh;
 
   // Follow relationships
@@ -469,7 +581,8 @@ async function main() {
   const post1 = await prisma.post.create({
     data: {
       authorId: doctor.id,
-      content: `[Chia sẻ ca lâm sàng & Học thuật]\n\nPhân biệt hiện tượng co giật do tâm lý (PNES - Psychogenic Non-Epileptic Seizures) và cơn động kinh thực tổn qua quan sát lâm sàng và ghi đo điện não video liên tục (Video-EEG monitoring).\n\nTrong thực tế lâm sàng, có tới 20-30% bệnh nhân được chuyển đến các trung tâm động kinh chuyên sâu thực chất mắc PNES. Việc chẩn đoán nhầm dẫn đến điều trị thuốc kháng động kinh kéo dài không cần thiết.\n\nCác bạn đồng nghiệp có kinh nghiệm kết hợp test kích hoạt (provocative testing) trong các ca này xin cùng thảo luận!`,
+      content: `Phân biệt hiện tượng co giật do tâm lý (PNES - Psychogenic Non-Epileptic Seizures) và cơn động kinh thực tổn qua quan sát lâm sàng và ghi đo điện não video liên tục (Video-EEG monitoring).\n\nTrong thực tế lâm sàng, có tới 20-30% bệnh nhân được chuyển đến các trung tâm động kinh chuyên sâu thực chất mắc PNES. Việc chẩn đoán nhầm dẫn đến điều trị thuốc kháng động kinh kéo dài không cần thiết.\n\nCác bạn đồng nghiệp có kinh nghiệm kết hợp test kích hoạt (provocative testing) trong các ca này xin cùng thảo luận!`,
+      createdAt: new Date(Date.now() - 86400000 * 5),
     },
   });
 
@@ -477,6 +590,7 @@ async function main() {
     data: {
       authorId: researcher.id,
       content: `Nhóm nghiên cứu BCI của chúng tôi vừa hoàn thành thử nghiệm tiền lâm sàng về mô hình Spatial-Temporal Transformer để giải mã ý định vận động (Motor Imagery) từ các điện cực C3, Cz, C4.\n\nKết quả cho thấy độ chính xác phân loại 4 lớp chuyển động tay/chân đạt trên 86.4% với độ trễ xử lý dưới 50ms, mở ra triển vọng cho các thiết bị hỗ trợ phục hồi chức năng sau đột quỵ.\n\nSinh viên và các nhà nghiên cứu quan tâm có thể nhắn tin trao đổi về hướng hợp tác này!`,
+      createdAt: new Date(Date.now() - 86400000 * 3),
     },
   });
 
@@ -484,6 +598,7 @@ async function main() {
     data: {
       authorId: student.id,
       content: `Em đang tìm hiểu về thuật toán Common Spatial Pattern (CSP) kết hợp bộ lọc Filter Bank (FBCSP) trong tiền xử lý tín hiệu não. Cho em hỏi các thầy cô và anh chị có kinh nghiệm thường chọn dải tần số nào là tối ưu nhất cho dải mu (8-12Hz) và beta (16-24Hz) khi người dùng tưởng tượng nắm tay ạ?`,
+      createdAt: new Date(Date.now() - 86400000),
     },
   });
 
@@ -494,6 +609,7 @@ async function main() {
       authorId: researcher.id,
       content:
         'Cảm ơn BS Minh đã chia sẻ góc nhìn lâm sàng rất rõ nét. Bên nhóm nghiên cứu của tôi cũng đang tìm cách ứng dụng phát hiện bất đối xứng bán cầu để hỗ trợ phân loại sơ bộ trước khi bác sĩ đọc băng ghi dài.',
+      createdAt: new Date(Date.now() - 86400000 * 4),
     },
   });
 
@@ -503,6 +619,7 @@ async function main() {
       authorId: researcher.id,
       content:
         'Chào Tuấn, thông thường với FBCSP người ta chia thành các sub-band 4Hz chồng lấn nhẹ (ví dụ 4-8, 8-12, 12-16... đến 36-40Hz), sau đó dùng Mutual Information để tự động chọn lọc các dải có tính phân tách cao nhất.',
+      createdAt: new Date(Date.now() - 3600000 * 9),
     },
   });
 
@@ -512,6 +629,7 @@ async function main() {
       authorId: doctor.id,
       content:
         'Ngoài lý thuyết tín hiệu, trên lâm sàng sóng mu thường suy giảm mạnh (Event-Related Desynchronization - ERD) ngay trước khi cử động thật hoặc cử động tưởng tượng ở vùng vỏ não cảm giác - vận động đối bên.',
+      createdAt: new Date(Date.now() - 3600000 * 5),
     },
   });
 
@@ -653,23 +771,34 @@ async function main() {
   const walletMinh = await prisma.creditWallet.create({
     data: {
       userId: doctor.id,
-      balance: 300,
-      totalEarned: 300,
+      balance: 550,
+      totalEarned: 550,
       totalSpent: 0,
     },
   });
 
-  await prisma.creditTransaction.create({
-    data: {
-      walletId: walletMinh.id,
-      amount: 300,
-      type: 'CONTRIBUTION_REWARD',
-      referenceId: contribMinh.id,
-      idempotencyKey: `contribution-reward:${contribMinh.id}`,
-      description: 'Khen thưởng bài đóng góp học thuật/chuyên môn (HEALTHCARE_EDUCATION): +300 tín chỉ',
-      actorId: admin.id,
-      contributionId: contribMinh.id,
-    },
+  await prisma.creditTransaction.createMany({
+    data: [
+      {
+        walletId: walletMinh.id,
+        amount: 300,
+        type: 'CONTRIBUTION_REWARD',
+        referenceId: contribMinh.id,
+        idempotencyKey: `contribution-reward:${contribMinh.id}`,
+        description: 'Khen thưởng bài đóng góp học thuật/chuyên môn (HEALTHCARE_EDUCATION): +300 tín chỉ',
+        actorId: admin.id,
+        contributionId: contribMinh.id,
+      },
+      {
+        walletId: walletMinh.id,
+        amount: 250,
+        type: 'STARTER_GRANT',
+        referenceId: doctor.id,
+        idempotencyKey: `starter-grant:${doctor.id}`,
+        description: 'Cấp tín chỉ khởi đầu hệ sinh thái NeuroLink (+250 tín chỉ)',
+        actorId: doctor.id,
+      },
+    ],
   });
 
   // Researcher Lan Contribution (Post 2)
@@ -704,23 +833,799 @@ async function main() {
   const walletLan = await prisma.creditWallet.create({
     data: {
       userId: researcher.id,
-      balance: 450,
-      totalEarned: 450,
+      balance: 800,
+      totalEarned: 800,
       totalSpent: 0,
     },
   });
 
+  await prisma.creditTransaction.createMany({
+    data: [
+      {
+        walletId: walletLan.id,
+        amount: 450,
+        type: 'CONTRIBUTION_REWARD',
+        referenceId: contribLan.id,
+        idempotencyKey: `contribution-reward:${contribLan.id}`,
+        description: 'Khen thưởng bài đóng góp học thuật/chuyên môn (RESEARCH_CONTRIBUTION): +450 tín chỉ',
+        actorId: admin.id,
+        contributionId: contribLan.id,
+      },
+      {
+        walletId: walletLan.id,
+        amount: 250,
+        type: 'STARTER_GRANT',
+        referenceId: researcher.id,
+        idempotencyKey: `starter-grant:${researcher.id}`,
+        description: 'Cấp tín chỉ khởi đầu hệ sinh thái NeuroLink (+250 tín chỉ)',
+        actorId: researcher.id,
+      },
+    ],
+  });
+
+  // Seed post for residentDoctor + follows for Community Spotlight
+  const postKhang = await prisma.post.create({
+    data: {
+      authorId: residentDoctor.id,
+      content:
+        'Kinh nghiệm sàng lọc nhanh ngoài giờ tại phòng trực đột quỵ: khi bệnh nhân chưa kịp chuyển chụp CT sọ não, việc kiểm tra chỉ số DAR kết hợp bất đối xứng bán cầu BSI trên 6 đạo trình giúp ưu tiên kích hoạt báo động Code Stroke sớm hơn từ 12-18 phút.',
+      createdAt: new Date(Date.now() - 3600000 * 2),
+    },
+  });
+  await prisma.postLike.createMany({
+    data: [
+      { postId: postKhang.id, userId: doctor.id },
+      { postId: postKhang.id, userId: researcher.id },
+      { postId: postKhang.id, userId: generalUser.id },
+    ],
+  });
+  await prisma.follow.createMany({
+    data: [
+      { followerId: generalUser.id, followingId: residentDoctor.id },
+      { followerId: student.id, followingId: residentDoctor.id },
+    ],
+  });
+
+  // Starter Grants for Hoa, Tuan, KTV Linh, and BS Khang
+  const walletHoa = await prisma.creditWallet.create({
+    data: { userId: generalUser.id, balance: 190, totalEarned: 250, totalSpent: 60 },
+  });
   await prisma.creditTransaction.create({
     data: {
-      walletId: walletLan.id,
-      amount: 450,
-      type: 'CONTRIBUTION_REWARD',
-      referenceId: contribLan.id,
-      idempotencyKey: `contribution-reward:${contribLan.id}`,
-      description: 'Khen thưởng bài đóng góp học thuật/chuyên môn (RESEARCH_CONTRIBUTION): +450 tín chỉ',
-      actorId: admin.id,
-      contributionId: contribLan.id,
+      walletId: walletHoa.id,
+      amount: 250,
+      type: 'STARTER_GRANT',
+      referenceId: generalUser.id,
+      idempotencyKey: `starter-grant:${generalUser.id}`,
+      description: 'Cấp tín chỉ khởi đầu hệ sinh thái NeuroLink (+250 tín chỉ)',
+      actorId: generalUser.id,
     },
+  });
+
+  const walletTuan = await prisma.creditWallet.create({
+    data: { userId: student.id, balance: 70, totalEarned: 250, totalSpent: 180 },
+  });
+  await prisma.creditTransaction.create({
+    data: {
+      walletId: walletTuan.id,
+      amount: 250,
+      type: 'STARTER_GRANT',
+      referenceId: student.id,
+      idempotencyKey: `starter-grant:${student.id}`,
+      description: 'Cấp tín chỉ khởi đầu hệ sinh thái NeuroLink (+250 tín chỉ)',
+      actorId: student.id,
+    },
+  });
+
+  const walletLinh = await prisma.creditWallet.create({
+    data: { userId: healthcareWorker.id, balance: 175, totalEarned: 250, totalSpent: 75 },
+  });
+  await prisma.creditTransaction.create({
+    data: {
+      walletId: walletLinh.id,
+      amount: 250,
+      type: 'STARTER_GRANT',
+      referenceId: healthcareWorker.id,
+      idempotencyKey: `starter-grant:${healthcareWorker.id}`,
+      description: 'Cấp tín chỉ khởi đầu hệ sinh thái NeuroLink (+250 tín chỉ)',
+      actorId: healthcareWorker.id,
+    },
+  });
+
+  const walletKhang = await prisma.creditWallet.create({
+    data: { userId: residentDoctor.id, balance: 330, totalEarned: 330, totalSpent: 0 },
+  });
+  await prisma.creditTransaction.create({
+    data: {
+      walletId: walletKhang.id,
+      amount: 250,
+      type: 'STARTER_GRANT',
+      referenceId: residentDoctor.id,
+      idempotencyKey: `starter-grant:${residentDoctor.id}`,
+      description: 'Cấp tín chỉ khởi đầu hệ sinh thái NeuroLink (+250 tín chỉ)',
+      actorId: residentDoctor.id,
+    },
+  });
+
+  // ---------------------------------------------------------------------------
+  // Seed 12 NeuralTrainingSamples (covering all 5 labels & 4 categories)
+  // ---------------------------------------------------------------------------
+  console.log('[seed] Seeding 12 Neural Network DB samples...');
+  const baseAnalyses = {
+    ischemia: analyzeCaseTs({ caseId: 'case_ischemia_lvo', timeWindowSec: 6 })!,
+    ich: analyzeCaseTs({ caseId: 'case_ich_hemorrhage', timeWindowSec: 6 })!,
+    epilepsy: analyzeCaseTs({ caseId: 'case_epilepsy_temporal', timeWindowSec: 6 })!,
+    fatigue: analyzeCaseTs({ caseId: 'case_sleep_fatigue_n3', timeWindowSec: 6 })!,
+    healthy: analyzeCaseTs({ caseId: 'case_healthy_alpha', timeWindowSec: 6 })!,
+    hardware: analyzeCaseTs({ caseId: 'case_ads1299_hardware', timeWindowSec: 6 })!,
+  };
+
+  const sampleSpecs: {
+    subjectCode: string;
+    datasetId: string | null;
+    uploaderId: string;
+    verifiedById: string | null;
+    clinicalCategory: ClinicalCategory;
+    groundTruthLabel: NeuralLabel;
+    split: DatasetSplit;
+    analysis: NonNullable<ReturnType<typeof analyzeCaseTs>>;
+    darOverride?: number;
+    bsiOverride?: number;
+    tarOverride?: number;
+    tpaLockout?: boolean;
+  }[] = [
+    {
+      subjectCode: 'UCLH-P26-A1',
+      datasetId: 'rec-01',
+      uploaderId: doctor.id,
+      verifiedById: doctor.id,
+      clinicalCategory: ClinicalCategory.VASCULAR_STROKE,
+      groundTruthLabel: NeuralLabel.ISCHEMIC_STROKE,
+      split: DatasetSplit.EXTERNAL_HOLDOUT,
+      analysis: baseAnalyses.ischemia,
+      darOverride: 3.84,
+      bsiOverride: 0.312,
+    },
+    {
+      subjectCode: 'BM-STROKE-02',
+      datasetId: null,
+      uploaderId: residentDoctor.id,
+      verifiedById: doctor.id,
+      clinicalCategory: ClinicalCategory.VASCULAR_STROKE,
+      groundTruthLabel: NeuralLabel.ISCHEMIC_STROKE,
+      split: DatasetSplit.TRAIN,
+      analysis: baseAnalyses.ischemia,
+      darOverride: 3.45,
+      bsiOverride: 0.265,
+    },
+    {
+      subjectCode: 'UCLH-P11-ICH',
+      datasetId: null,
+      uploaderId: doctor.id,
+      verifiedById: doctor.id,
+      clinicalCategory: ClinicalCategory.VASCULAR_STROKE,
+      groundTruthLabel: NeuralLabel.HEMORRHAGIC_STROKE,
+      split: DatasetSplit.EXTERNAL_HOLDOUT,
+      analysis: baseAnalyses.ich,
+      darOverride: 4.92,
+      bsiOverride: 0.238,
+      tpaLockout: true,
+    },
+    {
+      subjectCode: 'UMP-ICH-04',
+      datasetId: null,
+      uploaderId: residentDoctor.id,
+      verifiedById: null,
+      clinicalCategory: ClinicalCategory.VASCULAR_STROKE,
+      groundTruthLabel: NeuralLabel.HEMORRHAGIC_STROKE,
+      split: DatasetSplit.VALIDATION,
+      analysis: baseAnalyses.ich,
+      darOverride: 4.41,
+      bsiOverride: 0.194,
+      tpaLockout: true,
+    },
+    {
+      subjectCode: 'BM-EPI-05',
+      datasetId: 'rec-02',
+      uploaderId: doctor.id,
+      verifiedById: doctor.id,
+      clinicalCategory: ClinicalCategory.EPILEPSY_ICU,
+      groundTruthLabel: NeuralLabel.EPILEPTIFORM_SLOWING,
+      split: DatasetSplit.TRAIN,
+      analysis: baseAnalyses.epilepsy,
+      darOverride: 2.38,
+      bsiOverride: 0.196,
+      tarOverride: 1.72,
+    },
+    {
+      subjectCode: 'ICU-NCSE-06',
+      datasetId: null,
+      uploaderId: residentDoctor.id,
+      verifiedById: doctor.id,
+      clinicalCategory: ClinicalCategory.EPILEPSY_ICU,
+      groundTruthLabel: NeuralLabel.EPILEPTIFORM_SLOWING,
+      split: DatasetSplit.TEST,
+      analysis: baseAnalyses.epilepsy,
+      darOverride: 2.64,
+      bsiOverride: 0.214,
+      tarOverride: 1.89,
+    },
+    {
+      subjectCode: 'ICU-POSTICTAL-07',
+      datasetId: null,
+      uploaderId: healthcareWorker.id,
+      verifiedById: null,
+      clinicalCategory: ClinicalCategory.EPILEPSY_ICU,
+      groundTruthLabel: NeuralLabel.EPILEPTIFORM_SLOWING,
+      split: DatasetSplit.VALIDATION,
+      analysis: baseAnalyses.epilepsy,
+      darOverride: 2.15,
+      bsiOverride: 0.171,
+    },
+    {
+      subjectCode: 'SLEEP-N3-08',
+      datasetId: 'rec-02',
+      uploaderId: generalUser.id,
+      verifiedById: doctor.id,
+      clinicalCategory: ClinicalCategory.SLEEP_COGNITIVE,
+      groundTruthLabel: NeuralLabel.COGNITIVE_FATIGUE,
+      split: DatasetSplit.TRAIN,
+      analysis: baseAnalyses.fatigue,
+      darOverride: 1.48,
+      bsiOverride: 0.052,
+      tarOverride: 1.94,
+    },
+    {
+      subjectCode: 'SHIFT-RES-09',
+      datasetId: null,
+      uploaderId: residentDoctor.id,
+      verifiedById: researcher.id,
+      clinicalCategory: ClinicalCategory.SLEEP_COGNITIVE,
+      groundTruthLabel: NeuralLabel.COGNITIVE_FATIGUE,
+      split: DatasetSplit.TEST,
+      analysis: baseAnalyses.fatigue,
+      darOverride: 1.32,
+      bsiOverride: 0.048,
+      tarOverride: 2.18,
+    },
+    {
+      subjectCode: 'UCLH-S8-CTRL',
+      datasetId: null,
+      uploaderId: researcher.id,
+      verifiedById: researcher.id,
+      clinicalCategory: ClinicalCategory.SLEEP_COGNITIVE,
+      groundTruthLabel: NeuralLabel.CONTROL,
+      split: DatasetSplit.EXTERNAL_HOLDOUT,
+      analysis: baseAnalyses.healthy,
+      darOverride: 0.62,
+      bsiOverride: 0.041,
+      tarOverride: 0.74,
+    },
+    {
+      subjectCode: 'ADS1299-MI-11',
+      datasetId: 'rec-03',
+      uploaderId: researcher.id,
+      verifiedById: researcher.id,
+      clinicalCategory: ClinicalCategory.HARDWARE_BCI,
+      groundTruthLabel: NeuralLabel.CONTROL,
+      split: DatasetSplit.TRAIN,
+      analysis: baseAnalyses.hardware,
+      darOverride: 0.78,
+      bsiOverride: 0.059,
+      tarOverride: 0.85,
+    },
+    {
+      subjectCode: 'ADS1299-FTG-12',
+      datasetId: null,
+      uploaderId: student.id,
+      verifiedById: null,
+      clinicalCategory: ClinicalCategory.HARDWARE_BCI,
+      groundTruthLabel: NeuralLabel.COGNITIVE_FATIGUE,
+      split: DatasetSplit.TRAIN,
+      analysis: baseAnalyses.fatigue,
+      darOverride: 1.54,
+      bsiOverride: 0.067,
+      tarOverride: 1.76,
+    },
+  ];
+
+  const createdSamples = [];
+  for (const spec of sampleSpecs) {
+    const sample = await prisma.neuralTrainingSample.create({
+      data: {
+        datasetId: spec.datasetId,
+        uploaderId: spec.uploaderId,
+        verifiedById: spec.verifiedById,
+        subjectCode: spec.subjectCode,
+        clinicalCategory: spec.clinicalCategory,
+        groundTruthLabel: spec.groundTruthLabel,
+        split: spec.split,
+        samplingRateHz: spec.analysis.samplingRateHz,
+        channelsCount: spec.analysis.channelsCount,
+        montage: spec.analysis.montage,
+        signalQualityScore: spec.analysis.biomarkers.signalQualityScore,
+        dar: spec.darOverride ?? spec.analysis.biomarkers.meanDar,
+        bsi: spec.bsiOverride ?? spec.analysis.biomarkers.meanBsi,
+        tar: spec.tarOverride ?? spec.analysis.biomarkers.meanTar,
+        pri: spec.analysis.biomarkers.pri,
+        wpli: spec.analysis.biomarkers.wpli,
+        tpaLockoutTriggered: spec.tpaLockout ?? spec.analysis.biomarkers.tpaLockoutTriggered,
+        spectralBandsJson: JSON.stringify(spec.analysis.bandPowers),
+        featureVectorJson: JSON.stringify(spec.analysis.featureVector80),
+        waveformPreviewJson: JSON.stringify({
+          time: spec.analysis.waveforms.time.slice(0, 120),
+          channels: spec.analysis.waveforms.channels,
+          filtered: Object.fromEntries(
+            Object.entries(spec.analysis.waveforms.filtered).map(([k, arr]) => [
+              k,
+              arr.slice(0, 120),
+            ]),
+          ),
+        }),
+        deidentifiedConfirmed: true,
+      },
+    });
+    createdSamples.push(sample);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Seed 5 DataBankListings (free + paid) & 1 purchase ledger
+  // ---------------------------------------------------------------------------
+  console.log('[seed] Seeding 5 DataBank listings...');
+  const sampleCsvHeader = 'timestamp_s,F3_uV,F4_uV,C3_uV,C4_uV,O1_uV,O2_uV\n';
+  const makeSampleCsv = (seedAmp: number) =>
+    sampleCsvHeader +
+    Array.from({ length: 16 }, (_, i) => {
+      const t = (i * 0.002).toFixed(3);
+      return `${t},${(seedAmp * Math.sin(i * 0.4)).toFixed(2)},${(seedAmp * 0.6 * Math.cos(i * 0.35)).toFixed(2)},${(seedAmp * 0.9 * Math.sin(i * 0.5)).toFixed(2)},${(seedAmp * 0.55 * Math.cos(i * 0.45)).toFixed(2)},${(12 * Math.sin(i * 0.8)).toFixed(2)},${(12.4 * Math.sin(i * 0.8 + 0.2)).toFixed(2)}`;
+    }).join('\n');
+
+  await prisma.dataBankListing.create({
+    data: {
+      authorId: doctor.id,
+      datasetId: 'rec-01',
+      title: 'Bộ mẫu Mở: Sóng Alpha Chuẩn & Giả Đột quỵ Ngủ sâu N3 (Đối chứng Miễn phí)',
+      summary:
+        'Tập dữ liệu mở giúp sinh viên Y khoa và kỹ sư BME phân biệt sóng chậm sinh lý trong pha ngủ sâu N3 với bất đối xứng bán cầu bệnh lý.',
+      clinicalCategory: ClinicalCategory.SLEEP_COGNITIVE,
+      methodologyNote:
+        'Ghi điện não 6 kênh F3-F4-C3-C4-O1-O2 ở 500 Hz, lọc thông dải 0.5-45 Hz, khử nhiễu lưới 50 Hz Notch và tái tham chiếu trung bình toàn cục (CAR).',
+      sampleCount: 18,
+      channelsSpec: '6 kênh 10-20 (F3, F4, C3, C4, O1, O2)',
+      samplingRateHz: 500,
+      priceCredits: 0,
+      downloadsCount: 42,
+      previewMetricsJson: JSON.stringify({
+        meanDar: 1.12,
+        meanBsi: 0.049,
+        meanTar: 1.45,
+        meanWpli: 0.41,
+        dominantBand: 'Alpha / Theta',
+      }),
+      payloadCsvJson: makeSampleCsv(18),
+    },
+  });
+
+  const paidBciListing = await prisma.dataBankListing.create({
+    data: {
+      authorId: researcher.id,
+      datasetId: 'rec-03',
+      title: 'Tập dữ liệu Chuẩn hóa Motor Imagery & SSVEP trên Mạch TI ADS1299 24-bit',
+      summary:
+        'Gồm 45 phiên ghi thực nghiệm từ bo mạch TI ADS1299 500 Hz kèm nhãn thời điểm mở/nhắm mắt và tưởng tượng vận động tay phải/trái.',
+      clinicalCategory: ClinicalCategory.HARDWARE_BCI,
+      methodologyNote:
+        'Thu thập trong buồng thí nghiệm chống nhiễu ĐHQG Hà Nội, hiệu chuẩn điện trở tiếp xúc < 10 kOhm, kiểm định tỷ lệ tín hiệu trên nhiễu (SNR >= 18 dB).',
+      sampleCount: 45,
+      channelsSpec: '8 kênh ADS1299 (F3, F4, C3, C4, O1, O2, Pz, Oz)',
+      samplingRateHz: 500,
+      priceCredits: 100,
+      downloadsCount: 15,
+      previewMetricsJson: JSON.stringify({
+        meanDar: 0.78,
+        meanBsi: 0.059,
+        meanTar: 0.85,
+        meanWpli: 0.37,
+        dominantBand: 'Mu / Beta (10-22 Hz)',
+      }),
+      payloadCsvJson: makeSampleCsv(24),
+    },
+  });
+
+  await prisma.dataBankListing.create({
+    data: {
+      authorId: doctor.id,
+      title: 'Cohort qEEG Đột quỵ Thiếu máu LVO & Ngoại kiểm Xuất huyết Não (N=28)',
+      summary:
+        'Tập đặc trưng 80 chiều và chuỗi thời gian đã khử danh tính dùng huấn luyện mô hình phân biệt Thiếu máu cục bộ vs Xuất huyết não cấp.',
+      clinicalCategory: ClinicalCategory.VASCULAR_STROKE,
+      methodologyNote:
+        'Đối chiếu nhãn vàng từ CT/MRI sọ não, tuân thủ cổng an toàn CM[2,1] = 0 không bỏ sót ca xuất huyết não chống chỉ định tiêu sợi huyết.',
+      sampleCount: 28,
+      channelsSpec: '6 kênh chuẩn tái tạo Spherical Splines 19 kênh',
+      samplingRateHz: 500,
+      priceCredits: 140,
+      downloadsCount: 9,
+      previewMetricsJson: JSON.stringify({
+        meanDar: 3.92,
+        meanBsi: 0.287,
+        meanTar: 1.68,
+        meanWpli: 0.29,
+        dominantBand: 'Delta (0.5-3.5 Hz)',
+      }),
+      payloadCsvJson: makeSampleCsv(42),
+    },
+  });
+
+  await prisma.dataBankListing.create({
+    data: {
+      authorId: residentDoctor.id,
+      datasetId: 'rec-02',
+      title: 'Bộ Băng ghi Nhọn - Sóng chậm Động kinh Thùy Thái dương & ICU NCSE',
+      summary:
+        'Tập các đoạn trích xuất 10 giây chứa phức hợp nhọn-chậm 3 Hz và sóng chậm kịch phát vùng thái dương phục vụ kiểm thử thuật toán phát hiện sớm tại ICU.',
+      clinicalCategory: ClinicalCategory.EPILEPSY_ICU,
+      methodologyNote:
+        'Ghi tại đơn vị Hồi sức Thần kinh BV ĐH Y Dược TP.HCM, hai bác sĩ nội trú và chuyên khoa II đọc mù độc lập đối chiếu.',
+      sampleCount: 24,
+      channelsSpec: '6 kênh lưỡng cực trán-thái dương-chẩm',
+      samplingRateHz: 500,
+      priceCredits: 90,
+      downloadsCount: 11,
+      previewMetricsJson: JSON.stringify({
+        meanDar: 2.41,
+        meanBsi: 0.198,
+        meanTar: 1.78,
+        meanWpli: 0.44,
+        dominantBand: 'Theta / Spike-Wave',
+      }),
+      payloadCsvJson: makeSampleCsv(31),
+    },
+  });
+
+  await prisma.dataBankListing.create({
+    data: {
+      authorId: researcher.id,
+      title: 'Mẫu Mở: Chuỗi Chỉ số Thức - Ngủ & Đánh giá Mệt mỏi Trực đêm',
+      summary:
+        'Dữ liệu mẫu miễn phí mô tả biến thiên TAR và đỉnh Alpha ở nhân viên y tế trước và sau ca trực kéo dài.',
+      clinicalCategory: ClinicalCategory.SLEEP_COGNITIVE,
+      methodologyNote:
+        'Đo lặp 5 phút mắt nhắm trước ca và sau 16 giờ trực liên tục.',
+      sampleCount: 12,
+      channelsSpec: '6 kênh (F3, F4, C3, C4, O1, O2)',
+      samplingRateHz: 250,
+      priceCredits: 0,
+      downloadsCount: 27,
+      previewMetricsJson: JSON.stringify({
+        meanDar: 1.35,
+        meanBsi: 0.055,
+        meanTar: 1.92,
+        meanWpli: 0.39,
+        dominantBand: 'Theta (4-8 Hz)',
+      }),
+      payloadCsvJson: makeSampleCsv(15),
+    },
+  });
+
+  // Seed 1 DataBankPurchase (tuan_bme purchased paidBciListing for 100 credits from prof_lan)
+  await prisma.dataBankPurchase.create({
+    data: {
+      listingId: paidBciListing.id,
+      buyerId: student.id,
+      creditsPaid: 100,
+    },
+  });
+  await prisma.creditTransaction.createMany({
+    data: [
+      {
+        walletId: walletTuan.id,
+        amount: -100,
+        type: 'DATABANK_PURCHASE',
+        referenceId: paidBciListing.id,
+        idempotencyKey: `databank-purchase:${paidBciListing.id}:${student.id}`,
+        description: `Mở khóa gói dữ liệu "${paidBciListing.title}" (-100 tín chỉ)`,
+        actorId: student.id,
+      },
+      {
+        walletId: walletLan.id,
+        amount: 100,
+        type: 'DATABANK_ROYALTY',
+        referenceId: paidBciListing.id,
+        idempotencyKey: `databank-royalty:${paidBciListing.id}:${student.id}`,
+        description: `Tác quyền Data Bank cho gói "${paidBciListing.title}" (+100 tín chỉ)`,
+        actorId: student.id,
+      },
+    ],
+  });
+
+  // ---------------------------------------------------------------------------
+  // Seed 4 ConsultationTickets (open + answered/accepted)
+  // ---------------------------------------------------------------------------
+  console.log('[seed] Seeding 4 Consultation tickets...');
+  const ischemicSample = createdSamples[0]!;
+  const fatigueSample = createdSamples[7]!;
+  const epilepsySample = createdSamples[4]!;
+  const hardwareSample = createdSamples[10]!;
+
+  // Ticket 1: OPEN urgent red flag (Hoa escrowed 60 credits)
+  const ticket1 = await prisma.consultationTicket.create({
+    data: {
+      requesterId: generalUser.id,
+      datasetId: 'rec-01',
+      neuralSampleId: ischemicSample.id,
+      title: 'Khẩn: Người nhà yếu nửa người phải, bản ghi qEEG có DAR 3.84 và BSI 0.312',
+      symptomSummary:
+        'Bệnh nhân 64 tuổi đột ngột nói khó và yếu tay chân phải cách đây 70 phút. Nhờ bác sĩ trực đọc nhanh bản đồ bất đối xứng và hướng dẫn bước xử trí trước khi vào chụp CT.',
+      clinicalCategory: ClinicalCategory.VASCULAR_STROKE,
+      bountyCredits: 60,
+      urgentRedFlag: true,
+      status: ConsultationStatus.OPEN,
+      createdAt: new Date(Date.now() - 3600000 * 2),
+    },
+  });
+  await prisma.creditTransaction.create({
+    data: {
+      walletId: walletHoa.id,
+      amount: -60,
+      type: 'CONSULTATION_ESCROW',
+      referenceId: ticket1.id,
+      idempotencyKey: `consultation-escrow:${ticket1.id}`,
+      description: `Ký quỹ tín chỉ tư vấn ca "${ticket1.title}" (-60 tín chỉ)`,
+      actorId: generalUser.id,
+    },
+  });
+
+  // Ticket 2: OPEN non-urgent BCI/Hardware ticket (Tuan, bounty 0)
+  await prisma.consultationTicket.create({
+    data: {
+      requesterId: student.id,
+      datasetId: 'rec-03',
+      neuralSampleId: hardwareSample.id,
+      title: 'Nhờ hiệu chỉnh phổ nhiễu 50 Hz trên bo mạch TI ADS1299 khi đo ngoài phòng lab',
+      symptomSummary:
+        'Khi đo tại ký túc xá không có lồng Faraday, kênh F3 xuất hiện đỉnh 50 Hz khá rõ làm lệch nhẹ chỉ số Beta. Nhờ thầy cô xem giúp bộ lọc Notch Q=30 hiện tại đã đủ sạch chưa.',
+      clinicalCategory: ClinicalCategory.HARDWARE_BCI,
+      bountyCredits: 0,
+      urgentRedFlag: false,
+      status: ConsultationStatus.OPEN,
+      createdAt: new Date(Date.now() - 3600000 * 9),
+    },
+  });
+
+  // Ticket 3: ANSWERED (awaiting requester acceptance, KTV Linh escrowed 75 credits, Dr. Minh answered)
+  const ticket3 = await prisma.consultationTicket.create({
+    data: {
+      requesterId: healthcareWorker.id,
+      claimedById: doctor.id,
+      datasetId: 'rec-02',
+      neuralSampleId: epilepsySample.id,
+      title: 'Hội chẩn băng ghi nghi ngờ phức hợp nhọn - sóng chậm 3 Hz thùy thái dương trái',
+      symptomSummary:
+        'Bệnh nhân nữ 29 tuổi sau cơn vắng ý thức kéo dài 40 giây, băng ghi 6 đạo trình có cụm sóng chậm nhịp 3 Hz vùng F3-C3. Xin ý kiến BS chuyên khoa về hướng theo dõi Video-EEG.',
+      clinicalCategory: ClinicalCategory.EPILEPSY_ICU,
+      bountyCredits: 75,
+      urgentRedFlag: false,
+      status: ConsultationStatus.ANSWERED,
+      createdAt: new Date(Date.now() - 86400000),
+    },
+  });
+  await prisma.creditTransaction.create({
+    data: {
+      walletId: walletLinh.id,
+      amount: -75,
+      type: 'CONSULTATION_ESCROW',
+      referenceId: ticket3.id,
+      idempotencyKey: `consultation-escrow:${ticket3.id}`,
+      description: `Ký quỹ tín chỉ tư vấn ca "${ticket3.title}" (-75 tín chỉ)`,
+      actorId: healthcareWorker.id,
+    },
+  });
+  await prisma.consultationReply.create({
+    data: {
+      ticketId: ticket3.id,
+      responderId: doctor.id,
+      responderTier: 'Bác sĩ Chuyên khoa II Thần kinh',
+      waveAnalysisText:
+        'Trên đoạn 10 giây ghi nhận cụm nhọn - sóng chậm đồng thì tần số ~3.1 Hz ưu thế tại F3/C3, TAR tăng lên 1.72 trong khi nhịp Alpha chẩm O1/O2 suy giảm tạm thời.',
+      clinicalGuidanceText:
+        'Đặc điểm phù hợp phóng điện dạng động kinh khu trú có xu hướng lan tỏa thứ phát, chưa thấy mẫu bất đối xứng Delta đơn thuần kiểu thiếu máu não.',
+      recommendedFollowUp:
+        'Đề xuất ghi Video-EEG 19 kênh đầy đủ kèm nghiệm pháp thở sâu và kích thích ánh sáng trong 24 giờ.',
+      isAccepted: false,
+      createdAt: new Date(Date.now() - 3600000 * 18),
+    },
+  });
+
+  // Ticket 4: ACCEPTED (Tuan escrowed 80 credits, BS Noi tru Khang answered & accepted -> +80 earning)
+  const ticket4 = await prisma.consultationTicket.create({
+    data: {
+      requesterId: student.id,
+      claimedById: residentDoctor.id,
+      neuralSampleId: fatigueSample.id,
+      title: 'Đánh giá chỉ số TAR = 1.94 và BSI = 0.052 sau thức khuya làm đồ án',
+      symptomSummary:
+        'Em đo thử bản ghi mắt nhắm lúc 2h sáng thấy sóng chậm tăng nhẹ, lo ngại có phải bất thường mạch máu não không hay chỉ là mệt mỏi nhận thức.',
+      clinicalCategory: ClinicalCategory.SLEEP_COGNITIVE,
+      bountyCredits: 80,
+      urgentRedFlag: false,
+      status: ConsultationStatus.ACCEPTED,
+      createdAt: new Date(Date.now() - 86400000 * 3),
+    },
+  });
+  const reply4 = await prisma.consultationReply.create({
+    data: {
+      ticketId: ticket4.id,
+      responderId: residentDoctor.id,
+      responderTier: 'Bác sĩ Nội trú Thần kinh (Ngoài giờ)',
+      waveAnalysisText:
+        'Chỉ số BSI = 0.052 nằm sâu dưới ngưỡng bất đối xứng (0.15), cho thấy sóng chậm Theta/Delta phân bố rất cân xứng hai bán cầu. Nhịp Alpha chẩm vẫn bảo tồn ở ~9.4 Hz.',
+      clinicalGuidanceText:
+        'Đây là biểu hiện sinh lý điển hình của buồn ngủ và suy giảm tỉnh táo do thiếu ngủ, hoàn toàn không có dấu hiệu thiếu máu não khu trú.',
+      recommendedFollowUp:
+        'Ưu tiên ngủ bù đủ 7.5 giờ, dời lịch tác vụ phân tích nặng sang khung giờ 08:30-11:00 sáng.',
+      rating: 5,
+      isAccepted: true,
+      createdAt: new Date(Date.now() - 86400000 * 2),
+    },
+  });
+  await prisma.consultationTicket.update({
+    where: { id: ticket4.id },
+    data: { acceptedReplyId: reply4.id },
+  });
+  await prisma.creditTransaction.createMany({
+    data: [
+      {
+        walletId: walletTuan.id,
+        amount: -80,
+        type: 'CONSULTATION_ESCROW',
+        referenceId: ticket4.id,
+        idempotencyKey: `consultation-escrow:${ticket4.id}`,
+        description: `Ký quỹ tín chỉ tư vấn ca "${ticket4.title}" (-80 tín chỉ)`,
+        actorId: student.id,
+      },
+      {
+        walletId: walletKhang.id,
+        amount: 80,
+        type: 'CONSULTATION_EARNING',
+        referenceId: ticket4.id,
+        idempotencyKey: `consultation-earning:${ticket4.id}`,
+        description: `Thù lao đọc sóng não & tư vấn từ xa ca "${ticket4.title}" (+80 tín chỉ)`,
+        actorId: student.id,
+      },
+    ],
+  });
+
+  // ---------------------------------------------------------------------------
+  // Seed 7 HealthCheckIns + 5 WorkingPlanBlocks for demo accounts
+  // ---------------------------------------------------------------------------
+  console.log('[seed] Seeding Self-Service HealthCheckIns & WorkingPlanBlocks...');
+  const dayMs = 86400000;
+  const hoaCheckInSeed = [
+    { daysAgo: 6, focusScore: 64, tar: 1.82, bsi: 0.062, alpha: 9.6, sleep: 5.8, stress: 7, notes: 'Ngủ muộn hoàn thành báo cáo cuối tuần, cảm giác nặng đầu đầu giờ sáng.' },
+    { daysAgo: 5, focusScore: 71, tar: 1.54, bsi: 0.055, alpha: 9.8, sleep: 6.5, stress: 6, notes: 'Ngủ sớm hơn 45 phút, giảm sử dụng màn hình sau 22h30.' },
+    { daysAgo: 4, focusScore: 76, tar: 1.38, bsi: 0.051, alpha: 10.0, sleep: 7.0, stress: 5, notes: 'Tập trung tốt trong khối Deep Work buổi sáng, chợp mắt 15 phút buổi trưa.' },
+    { daysAgo: 3, focusScore: 79, tar: 1.29, bsi: 0.048, alpha: 10.1, sleep: 7.2, stress: 4, notes: 'Nhịp Alpha chẩm ổn định 10.1 Hz, ít xao nhãng.' },
+    { daysAgo: 2, focusScore: 73, tar: 1.49, bsi: 0.053, alpha: 9.9, sleep: 6.4, stress: 6, notes: 'Họp kéo dài buổi chiều làm tăng mệt mỏi Theta nhẹ.' },
+    { daysAgo: 1, focusScore: 84, tar: 1.12, bsi: 0.044, alpha: 10.3, sleep: 7.8, stress: 3, notes: 'Ngủ đủ 7.8 giờ, trạng thái tỉnh táo tốt nhất tuần.' },
+    { daysAgo: 0, focusScore: 86, tar: 1.06, bsi: 0.042, alpha: 10.4, sleep: 7.6, stress: 3, notes: 'Đo baseline sáng nay: Alpha rõ nét, cân xứng hai bán cầu.' },
+  ];
+
+  for (const item of hoaCheckInSeed) {
+    await prisma.healthCheckIn.create({
+      data: {
+        userId: generalUser.id,
+        neuralSampleId: item.daysAgo === 0 ? createdSamples[9]!.id : null,
+        recordedDate: new Date(Date.now() - item.daysAgo * dayMs),
+        focusScore: item.focusScore,
+        fatigueIndexTar: item.tar,
+        hemisphericBsi: item.bsi,
+        alphaPeakHz: item.alpha,
+        sleepHours: item.sleep,
+        stressLevel: item.stress,
+        notes: item.notes,
+      },
+    });
+  }
+
+  await prisma.workingPlanBlock.createMany({
+    data: [
+      {
+        userId: generalUser.id,
+        dayOfWeek: 'Thứ 2',
+        timeSlot: '08:30 - 10:30',
+        title: 'Phân tích tài liệu & tác vụ nhận thức sâu (Deep Work)',
+        blockType: WorkBlockType.DEEP_WORK,
+        eegRationale: 'Alpha Peak 10.3 Hz và TAR < 1.20 đạt đỉnh tỉnh táo vỏ não trán-chẩm buổi sáng.',
+        completed: true,
+      },
+      {
+        userId: generalUser.id,
+        dayOfWeek: 'Thứ 3',
+        timeSlot: '13:30 - 14:00',
+        title: 'Thư giãn mắt nhắm & phục hồi nhịp Alpha (NSDR)',
+        blockType: WorkBlockType.NEURO_RECOVERY,
+        eegRationale: 'Hạ tải dải Theta tăng cao sau giờ trưa trước khi bước vào ca chiều.',
+        completed: true,
+      },
+      {
+        userId: generalUser.id,
+        dayOfWeek: 'Thứ 4',
+        timeSlot: '15:00 - 16:30',
+        title: 'Xử lý email, tổng hợp hành chính nhẹ',
+        blockType: WorkBlockType.LIGHT_ADMIN,
+        eegRationale: 'Khung giờ cuối chiều TAR thường tăng nhẹ (~1.45), phù hợp công việc ít tải trí nhớ làm việc.',
+        completed: false,
+      },
+      {
+        userId: generalUser.id,
+        dayOfWeek: 'Thứ 5',
+        timeSlot: '07:45 - 08:15',
+        title: 'Đo kiểm tra baseline qEEG 6 kênh tại nhà',
+        blockType: WorkBlockType.CLINICAL_CHECK,
+        eegRationale: 'Theo dõi xu hướng BSI & DAR định kỳ hàng tuần để hiệu chỉnh khối lượng làm việc.',
+        completed: false,
+      },
+      {
+        userId: generalUser.id,
+        dayOfWeek: 'Hằng ngày',
+        timeSlot: '22:45 - 06:30',
+        title: 'Ngắt màn hình xanh & mục tiêu ngủ sâu N3 >= 7.5 giờ',
+        blockType: WorkBlockType.SLEEP_TARGET,
+        eegRationale: 'Đảm bảo chu kỳ sóng chậm N3 phục hồi dẫn truyền synap và giữ TAR ngày hôm sau < 1.25.',
+        completed: false,
+      },
+    ],
+  });
+
+  // Also add 2 check-ins & 2 blocks for residentDoctor so Professional demo works cleanly too
+  await prisma.healthCheckIn.createMany({
+    data: [
+      {
+        userId: residentDoctor.id,
+        recordedDate: new Date(Date.now() - dayMs),
+        focusScore: 72,
+        fatigueIndexTar: 1.62,
+        hemisphericBsi: 0.047,
+        alphaPeakHz: 9.7,
+        sleepHours: 5.5,
+        stressLevel: 6,
+        notes: 'Sau ca trực đêm Hồi sức Đột quỵ, cần ưu tiên nghỉ bù trước khi nhận ca đọc sóng não.',
+      },
+      {
+        userId: residentDoctor.id,
+        recordedDate: new Date(),
+        focusScore: 85,
+        fatigueIndexTar: 1.14,
+        hemisphericBsi: 0.043,
+        alphaPeakHz: 10.2,
+        sleepHours: 7.5,
+        stressLevel: 4,
+        notes: 'Đã ngủ bù đủ giấc, sẵn sàng tiếp nhận ca trực đọc qEEG ngoài giờ.',
+      },
+    ],
+  });
+  await prisma.workingPlanBlock.createMany({
+    data: [
+      {
+        userId: residentDoctor.id,
+        dayOfWeek: 'Thứ 6',
+        timeSlot: '19:30 - 21:30',
+        title: 'Ca trực đọc băng ghi qEEG từ xa & hỗ trợ sàng lọc tuyến dưới',
+        blockType: WorkBlockType.CLINICAL_CHECK,
+        eegRationale: 'Chỉ số TAR = 1.14 đảm bảo độ nhạy phát hiện sóng chậm đột quỵ và gai nhọn động kinh.',
+        completed: false,
+      },
+      {
+        userId: residentDoctor.id,
+        dayOfWeek: 'Thứ 7',
+        timeSlot: '13:00 - 14:00',
+        title: 'Phục hồi nhận thức sau trực đêm',
+        blockType: WorkBlockType.NEURO_RECOVERY,
+        eegRationale: 'Phòng ngừa kiệt sức bác sĩ nội trú khi tần suất trực cấp cứu cao.',
+        completed: false,
+      },
+    ],
   });
 
   void courseReward;
@@ -730,6 +1635,7 @@ async function main() {
   console.log('[seed] Demo accounts:');
   console.log(' - Admin: admin / Password123');
   console.log(' - Doctor: dr_minh / Password123 (Verified)');
+  console.log(' - Resident Overtime Doctor: bs_noitru_khang / Password123 (Verified)');
   console.log(' - Researcher: prof_lan / Password123 (Verified)');
   console.log(' - Student: tuan_bme / Password123 (Pending verification)');
   console.log(' - General User: hoa_health / Password123');

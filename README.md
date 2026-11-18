@@ -1,212 +1,140 @@
-# PBL4_Web — Mạng Xã Hội Chuyên Môn Y Tế & Khoa Học Thần Kinh (NeuroLink)
+# NeuroLink (`PBL4_Web`) — Nền tảng Y khoa Thần kinh, Trạm qEEG & Hệ sinh thái Dữ liệu Điện não
 
-Nền tảng mạng xã hội kết nối ba nhóm người dùng:
-1. **Người dùng quan tâm đến sức khỏe & não bộ** (General Users).
-2. **Bác sĩ & nhân viên y tế** (Doctors & Healthcare Professionals).
-3. **Nhà nghiên cứu, nhà khoa học thần kinh, kỹ sư y sinh & sinh viên** (Researchers, Neuroscientists, Biomedical Engineers, Students).
+NeuroLink kết hợp mạng xã hội chuyên môn y khoa, trạm phân tích điện não đồ định lượng (qEEG) tương thích phần cứng TI ADS1299, cơ sở dữ liệu huấn luyện mạng nơ-ron (Neural DB) và bốn trụ cột vận hành sản phẩm cho ba nhóm người dùng:
 
-> [!IMPORTANT]
-> **Ranh giới hệ thống độc lập**: Dự án này hoàn toàn độc lập với website lưu trữ dataset EEG hiện có. Hệ thống **không** can thiệp, không sao chép database EEG, không thực hiện pipeline xử lý tín hiệu EEG nặng hay chẩn đoán tự động thay bác sĩ.
+1. Người dùng phổ thông và cơ sở tuyến dưới theo dõi sức khỏe não bộ, nhận định hướng sàng lọc ngoài giờ từ bác sĩ.
+2. Bác sĩ thần kinh, bác sĩ nội trú và nhân viên y tế đã xác minh chứng chỉ hành nghề (CCHN) tham gia đọc ca qEEG từ xa, phản biện ca lâm sàng và tích lũy tín chỉ đào tạo liên tục (CME) / honoraria.
+3. Nhà nghiên cứu khoa học thần kinh và kỹ sư giao diện não - máy tính (BCI) có mã ORCID khai thác kho dữ liệu đa trung tâm đã khử định danh và xuất tập đặc trưng 80 chiều.
 
----
-
-## 1. Trạng Thái Triển Khai (Acceptance Criteria)
-
-Tất cả các tiêu chí chấp nhận của MVP đã được triển khai và kiểm thử tự động đạt 100%:
-
-| Nhóm chức năng | Tính năng chi tiết | Trạng thái | Kiểm thử tự động |
-|---|---|---|---|
-| **Xác thực & Bảo mật** | Đăng ký, Đăng nhập, Đăng xuất, Session lưu DB (SHA-256), Cookie `HttpOnly` / `SameSite=Lax`, CSRF Protection, Hash mật khẩu bcrypt, Rate Limiting | Hoàn thành | `tests/auth.test.ts` (14/14 passed) |
-| **Hồ sơ cá nhân & Chuyên gia** | Chỉnh sửa tên hiển thị, bio, avatar, tạo hồ sơ Bác sĩ / Nhà nghiên cứu (chuyên khoa, viện nghiên cứu, mối quan tâm), phân quyền duyệt tích xanh | Hoàn thành | `tests/discovery_and_moderation.test.ts` (passed) |
-| **Mạng xã hội** | Đăng bài (text + tối đa 4 ảnh), Xem bảng tin cộng đồng / đang theo dõi (phân trang con trỏ Cursor-based), Sửa/Xoá bài (kiểm soát quyền tác giả 403), Thích / Bỏ thích (chặn like trùng), Bình luận / Sửa / Xoá bình luận, Theo dõi / Bỏ theo dõi (chặn follow trùng & chặn tự follow ở mức DB) | Hoàn thành | `tests/social.test.ts` (7/7 passed) |
-| **Khám phá & Tìm kiếm** | Tìm kiếm tổng hợp, tìm kiếm bác sĩ & nhà nghiên cứu theo chuyên khoa / từ khoá, tìm kiếm bài viết, tìm kiếm thành viên | Hoàn thành | `tests/discovery_and_moderation.test.ts` (passed) |
-| **Tin nhắn riêng tư (Core)** | Tạo/mở hội thoại 1-1 (khoá duy nhất `directKey`), danh sách hội thoại kèm tin nhắn mới nhất và trạng thái chưa đọc, lịch sử tin nhắn phân trang, **kiểm soát thành viên máy chủ bắt buộc (403 nếu không thuộc hội thoại)** | Hoàn thành | `tests/messaging.test.ts` (3/3 passed) |
-| **Thông báo** | Thông báo khi có lượt thích, bình luận, người theo dõi mới, tin nhắn mới, kết quả thẩm định đóng góp chuyên môn và cập nhật đổi thưởng; đánh dấu đã đọc; cơ chế de-duplicate key tránh sinh thông báo trùng | Hoàn thành | `tests/discovery_and_moderation.test.ts` (passed) |
-| **Kiểm duyệt & Quản trị** | Báo cáo bài viết/người dùng vi phạm; Dashboard Quản trị viên duyệt/từ chối cấp tích xanh chuyên gia; Ẩn / Xoá nội dung vi phạm | Hoàn thành | `tests/discovery_and_moderation.test.ts` (passed) |
-| **Đóng góp & Thẩm định Chuyên môn (Contributions)** | Bác sĩ/Nhà nghiên cứu đã xác thực gửi bài viết hiện có để thẩm định nhận thưởng; 5 danh mục đóng góp; State machine 7 trạng thái (`DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `NEEDS_REVISION`, `APPROVED`, `REJECTED`, `WITHDRAWN`); Chặn gửi bài người khác; Chặn gửi trùng; Chặn tự duyệt (Anti-Self-Review 403); Hội đồng chuyên môn chấm điểm theo 5 tiêu chí (Độ chính xác khoa học, Tính phù hợp, Tính hữu ích, Tính nguyên bản, Tác động cộng đồng); Ghi nhận lịch sử thẩm định | Hoàn thành | `tests/contributions_and_rewards.test.ts` (passed) |
-| **Ví Tín chỉ & Sổ cái Bất biến (Credit Ledger)** | Ví tín chỉ độc lập; Sổ cái ghi chép append-only (`CreditTransaction`) là nguồn chân lý; Số dư là cached balance derived từ sổ cái; Cấm cập nhật số dư ngoài giao dịch atomic DB; Chặn số dư âm và double-spending; Lịch sử giao dịch minh bạch; Điều chỉnh ví có kiểm toán (Admin Audit Adjustment) | Hoàn thành | `tests/contributions_and_rewards.test.ts` (passed) |
-| **Danh mục Đổi thưởng & Bảo vệ Rút tiền mặt (Rewards & Anti-Cash-Drain)** | Đổi quyền lợi chuyên môn (Khóa học CME, Vé hội nghị, Tài liệu học thuật, Mentoring 1:1, Sự kiện); Tự động hoàn tín chỉ (`REFUND`) khi yêu cầu đổi thưởng bị từ chối/hủy; Chặn rút tiền mặt theo mặc định (`payoutEnabled = false`, Anti-Cash-Drain); Không tiền mã hóa, không P2P transfers | Hoàn thành | `tests/contributions_and_rewards.test.ts` (passed) |
+Chiến lược kinh doanh chi tiết và phân tích rủi ro pháp lý - lâm sàng được ghi nhận tại [docs/STARTUP_STRATEGY_BMC.md](./docs/STARTUP_STRATEGY_BMC.md), mô hình kiến trúc tại [docs/MENTAL_MODEL.md](./docs/MENTAL_MODEL.md), và đặc tả hệ thống tại [docs/PROJECT_CONTEXT.md](./docs/PROJECT_CONTEXT.md).
 
 ---
 
-## 2. Công Nghệ Sử Dụng (Tech Stack)
+## 1. Khởi động Toàn Hệ thống bằng 1 Lệnh (Unified Mega-Server)
 
-- **Frontend**: React 19, Vite 8, TypeScript 5.9, Tailwind CSS v4, React Router v7, `@tanstack/react-query` v5, Lucide React.
-- **Backend**: Node.js v24 LTS, Express v5, TypeScript 5.9.
-- **Database & ORM**: PostgreSQL 16 (chạy unprivileged via `embedded-postgres` portable), Prisma ORM v6.
-- **Validation**: Zod (kiểm tra chặt chẽ schema đầu vào API).
-- **Security**: HttpOnly sessions, CSRF token header, bcryptjs, Helmet, Express Rate Limit, Multer (giới hạn MIME type & dung lượng ảnh ≤ 5MB).
-- **Testing**: Vitest, Supertest, PostgreSQL test database cô lập.
+Từ thư mục gốc dự án (`D:\PRJ_Personal\software_neuronlink_eeg`), chạy lệnh sau hoặc nhấp đúp vào [start.bat](./start.bat) trên Windows:
+
+```powershell
+python start_unified_server.py
+```
+
+Trình điều phối [start_unified_server.py](./start_unified_server.py) thực hiện tuần tự các bước khởi tạo một cách an toàn:
+
+1. Kiểm tra cổng `5432`: nếu PostgreSQL 16 chưa chạy, tự động khởi chạy `npm run db:start -w server` và chờ cụm dữ liệu sẵn sàng (nếu đã chạy sẵn sẽ tái sử dụng cụm hiện có).
+2. Áp dụng migration cơ sở dữ liệu bằng `npx prisma migrate deploy` trong `server/`, đồng thời kiểm tra số lượng bản ghi bảng `User` — nếu cơ sở dữ liệu trống (`0` người dùng), tự động chạy `npm run db:seed -w server`.
+3. Khởi chạy dịch vụ Python FastAPI qEEG (`uvicorn app:app --host 127.0.0.1 --port 8001` trong `qeeg_service/`). Nếu môi trường chưa cài `uvicorn`/`fastapi`, trình khởi chạy hiển thị cảnh báo gọn và tiếp tục bình thường nhờ động cơ dự phòng TypeScript DSP (`ts_dsp_fallback`) tích hợp sẵn trong Express.
+4. Khởi chạy máy chủ Express API (`npm run dev -w server` trên `:4000`) và giao diện Vite React (`npm run dev -w client` trên `:5173`).
+5. Kiểm tra sức khỏe đồng thời `http://127.0.0.1:4000/api/health`, `http://127.0.0.1:4000/api/qeeg/health` và `http://127.0.0.1:5173`, sau đó in bảng địa chỉ truy cập cùng danh sách tài khoản demo; nhấn `Ctrl+C` để đóng sạch toàn bộ tiến trình con đã mở.
+
+Để kiểm tra trước môi trường mà chưa bật máy chủ, chạy `python start_unified_server.py --preflight`. Nếu muốn chạy riêng tầng Node/Vite không kèm Python qEEG có thể thêm cờ `--no-qeeg`.
+
+### Địa chỉ Truy cập & Tài khoản Demo
+
+Sau khi bảng thông báo sẵn sàng xuất hiện:
+
+| Thành phần | Địa chỉ Truy cập |
+|---|---|
+| Giao diện chính NeuroLink (Web SPA) | `http://127.0.0.1:5173` |
+| Trạm qEEG Lâm sàng Chuyên sâu (Proxied) | `http://127.0.0.1:5173/clinical-workstation` |
+| Cổng kiểm tra Express API | `http://127.0.0.1:4000/api/health` |
+| Cổng kiểm tra qEEG Gateway (Python / TS Fallback) | `http://127.0.0.1:4000/api/qeeg/health` |
+| Dịch vụ Python FastAPI qEEG trực tiếp (khi khả dụng) | `http://127.0.0.1:8001/api/qeeg/health` |
+
+Danh sách tài khoản mẫu khởi tạo sẵn (mật khẩu chung: `Password123`):
+
+| Tên đăng nhập | Vai trò & Trạng thái | Mục đích kiểm thử chính |
+|---|---|---|
+| `admin` | Ban Quản trị NeuroLink (`ADMIN`) | Duyệt tích xanh CCHN/ORCID, kiểm duyệt báo cáo, thẩm định đóng góp và đổi thưởng |
+| `dr_minh` | Bác sĩ CKII Thần kinh (`VERIFIED`) | Chế độ Chuyên gia, nhận ca đọc sóng não từ xa, xác nhận nhãn Neural DB |
+| `prof_lan` | PGS. TS. Nghiên cứu BCI (`VERIFIED`) | Niêm yết gói dữ liệu Data Bank, xuất CSV/JSONL Neural DB, đóng góp Research Hub |
+| `bs_noitru_khang` | Bác sĩ Nội trú (`VERIFIED`) | Mô hình bác sĩ trẻ trực hàng đợi hỏi đáp Qanda ngoài giờ |
+| `hoa_health` | Người dùng Cá nhân (`GENERAL_MODE`) | Nhận 250 tín chỉ khởi đầu, tự theo dõi sức khỏe/lịch làm việc, đặt câu hỏi qEEG |
 
 ---
 
-## 3. Cấu Trúc Thư Mục
+## 2. Kiến trúc 4 Nhóm Lâm sàng, Neural DB & 4 Trụ cột Khởi nghiệp
 
-```
-PBL4_Web/
-├── client/                      # Giao diện Frontend React + Vite
-│   ├── src/
-│   │   ├── api/                 # Fetch client (tự động đính kèm cookie + CSRF token), endpoints, TypeScript types
-│   │   ├── components/
-│   │   │   ├── layout/          # AppShell (TopNav desktop, Mobile bottom navigation, UserMenu)
-│   │   │   ├── ui/              # Button, Input, Textarea, Card, Avatar, Badge, Spinner, Alert, EmptyState
-│   │   │   └── user/            # ProfessionalBadge, FollowButton
-│   │   ├── features/
-│   │   │   ├── auth/            # AuthContext, AuthProvider, AuthLayout, Route Guards (RequireAuth, GuestOnly, RequireAdmin)
-│   │   │   └── feed/            # PostCard, CreatePostCard, CommentSection
-│   │   ├── pages/               # LandingPage, LoginPage, RegisterPage, FeedPage, ProfilePage, SettingsPage, SearchPage, MessagesPage, NotificationsPage, AdminPage
-│   │   ├── App.tsx              # Router định tuyến
-│   │   └── main.tsx             # Root bootstrap & React Query Provider
-│   └── vite.config.ts           # Cấu hình Vite & reverse proxy sang :4000
-│
-└── server/                      # Máy chủ API Node.js + Express
-    ├── data/                    # Thư mục cluster cơ sở dữ liệu PostgreSQL 16 (được gitignore)
-    ├── prisma/
-    │   ├── schema.prisma        # Mô hình dữ liệu quan hệ PostgreSQL
-    │   ├── migrations/          # Lịch sử migration phiên bản
-    │   └── seed.ts              # Dữ liệu mẫu học thuật và tài khoản demo
-    ├── src/
-    │   ├── config/              # Đọc và validate biến môi trường (env.ts)
-    │   ├── lib/                 # PrismaClient, AppError, Crypto (hashing, random tokens)
-    │   ├── middleware/          # Session loader, CSRF guard, Rate limiter, Error handler, Upload media filter
-    │   └── modules/
-    │       ├── auth/            # Đăng ký, đăng nhập, đổi mật khẩu
-    │       ├── users/           # Quản lý hồ sơ, hồ sơ chuyên gia y tế / nghiên cứu
-    │       ├── posts/           # Bài viết, hình ảnh, bình luận, lượt thích, theo dõi
-    │       ├── search/          # Tìm kiếm phân loại (bác sĩ, người dùng, bài viết)
-    │       ├── messages/        # Hội thoại và tin nhắn riêng tư
-    │       ├── notifications/   # Quản lý thông báo người dùng
-    │       ├── moderation/      # Báo cáo và bảng điều khiển quản trị
-    │       ├── contributions/   # Quản lý quy trình đóng góp chuyên môn, nộp bài, state machine
-    │       └── rewards/         # Ví tín chỉ, sổ cái bất biến, danh mục phần thưởng & đổi thưởng
-    ├── tests/                   # 44 Integration & Unit tests (Vitest + Supertest, 100% passed)
-    └── scripts/                 # Daemon quản lý PostgreSQL và tiện ích UTF-8
+### Bốn Nhóm Lâm sàng (`ClinicalCategory`) & Trạm qEEG
+
+Trạm điện não đồ định lượng hỗ trợ sáu kịch bản lâm sàng và dữ liệu CSV 6 kênh TI ADS1299 500 Hz (`F3`, `F4`, `C3`, `C4`, `O1`, `O2`) phân loại theo bốn nhóm:
+
+- `VASCULAR_STROKE`: Sàng lọc đột quỵ thiếu máu cục bộ (LVO) và xuất huyết não (ICH) với quy tắc khóa an toàn tuyệt đối `CM[2,1] = 0` (`HOLD tPA / MANDATORY CT`, không gợi ý tiêu sợi huyết đơn độc khi chưa đối chiếu phim CT sọ não).
+- `EPILEPSY_ICU`: Theo dõi phức hợp nhọn - sóng chậm kịch phát và phóng điện thùy thái dương.
+- `SLEEP_COGNITIVE`: Phân biệt pha ngủ sâu N3 (nhóm giả đột quỵ đối xứng hai bán cầu), chỉ số mệt mỏi nhận thức TAR và nhịp Alpha chẩm.
+- `HARDWARE_BCI`: Tín hiệu thực nghiệm từ mạch đo 24-bit TI ADS1299 (`ads1299_500hz_sample.csv`) và bài toán giao diện não - máy tính.
+
+### Cơ sở Dữ liệu Huấn luyện Mạng Nơ-ron (`NeuralTrainingSample`)
+
+Mỗi bản ghi sau khi lọc Butterworth + Notch 50 Hz + CAR và nội suy bản đồ 19 chuyển đạo 10-20 được trích xuất thành vector đặc trưng 80 chiều (`featureVectorJson`) kèm các chỉ số bất biến độ lợi khuếch đại (DAR, TAR, BSI, PRI, wPLI), gán năm nhãn chuẩn (`CONTROL`, `ISCHEMIC_STROKE`, `HEMORRHAGIC_STROKE`, `EPILEPTIFORM_SLOWING`, `COGNITIVE_FATIGUE`) và bốn tập dữ liệu (`TRAIN`, `VALIDATION`, `TEST`, `EXTERNAL_HOLDOUT`). Cổng lưu mẫu bắt buộc xác nhận đã xóa định danh bệnh nhân (`deidentifiedConfirmed === true`) trước khi cho phép chuyên gia tích xanh xác nhận nhãn và xuất thành tệp CSV hoặc JSONL.
+
+### Bốn Trụ cột Vận hành (Startup Pillars)
+
+1. **Personal Assistance (`/consultations`):** Hàng đợi hỏi đáp đọc sóng não từ xa kiểu Qanda có ký quỹ tín chỉ (`CONSULTATION_ESCROW`), tự động bật cảnh báo cấp cứu 115 (`urgentRedFlag = true`) khi phát hiện ngưỡng nguy kịch, giải ngân sang ví bác sĩ (`CONSULTATION_EARNING`) sau khi người gửi nghiệm thu.
+2. **Co-creation & Data Bank (`/eeg-hub` tab Kho Dữ liệu):** Chợ trao đổi bộ dữ liệu qEEG có bản xem trước chỉ số tổng hợp, ẩn CSV gốc cho tới khi thanh toán tín chỉ nguyên tử (`DATABANK_PURCHASE` và `DATABANK_ROYALTY`).
+3. **Self-Services (`/my-health` & `/eeg-hub`):** Biểu đồ theo dõi sinh lý đa ngày (`HealthCheckIn`), điều phối khối thời gian làm việc theo trạng thái sóng não (`WorkingPlanBlock`: `DEEP_WORK`, `LIGHT_ADMIN`, `NEURO_RECOVERY`, `SLEEP_TARGET`, `CLINICAL_CHECK`) và kiểm soát ủy quyền dữ liệu EEG cho bác sĩ.
+4. **Community & Popularity (`/feed` & `/u/:username`):** Bảng tin học thuật lọc theo bốn nhóm bệnh lý cùng bảng xếp hạng chuyên gia tiêu biểu (`/api/community-insights/spotlight`) tính theo đóng góp thực tế, đi kèm nút nhận một lần `+250` tín chỉ khởi đầu (`STARTER_GRANT`) và sổ cái chống rút tiền mặt trực tiếp (`payoutEnabled = false`).
+
+---
+
+## 3. Cấu trúc Thư mục Dự án
+
+```text
+software_neuronlink_eeg/
+├── start_unified_server.py        # Trình điều phối Mega-Server 1 lệnh (DB + qEEG + Express + Vite)
+├── start.bat                      # Điểm khởi chạy nhanh trên Windows
+├── package.json                   # Workspace scripts gốc (server & client)
+├── client/                        # React 19 + Vite 8 + TypeScript + Tailwind CSS v4
+│   ├── vite.config.ts             # Reverse proxy /api, /uploads, /clinical-workstation -> :4000
+│   └── src/
+│       ├── api/                   # Fetch client (HttpOnly cookie + CSRF), types.ts, endpoints.ts
+│       ├── components/            # AppShell Dual-Mode, shared UI primitives, user badges
+│       ├── features/eeg/          # BrainWaveformViewer, CorticalTopomap2D, DataBankMarketplacePanel, NeuralDatabasePanel, QeegStudioPanel, PhysiologicalTrendChart
+│       └── pages/                 # FeedPage, EEGHubPage, MyHealthPage, ConsultationsPage, ContributionsPage, RewardsPage, ProfilePage, ProfessionalDashboardPage, AdminPage...
+├── server/                        # Express 5 + Prisma 6.19 + PostgreSQL 16
+│   ├── prisma/                    # schema.prisma, migrations/, seed.ts
+│   ├── scripts/pg-daemon.ts       # Embedded PostgreSQL 16 cluster daemon
+│   ├── src/modules/               # auth, users, posts, search, messages, notifications, moderation, verification, contributions, rewards, eeg, communities, qeeg, neural-db, consultations, databank, self-service, community-insights
+│   └── tests/                     # Bộ kiểm thử tích hợp Vitest + Supertest
+├── qeeg_service/                  # FastAPI qEEG microservice (:8001)
+│   ├── app.py                     # API phân tích sóng 6->19 kênh, khóa tPA, xuất PDF ReportLab
+│   ├── models/ & results/         # Trọng số N=1 và kết quả ngoại kiểm UCLH
+│   ├── sample_data/               # Bản ghi mẫu TI ADS1299 500 Hz
+│   ├── static/index.html          # Trạm lâm sàng Dual-Mode (/clinical-workstation)
+│   └── tests/test_qeeg_service.py # Bộ kiểm thử pytest cho dịch vụ Python qEEG
+└── docs/                          # PROJECT_CONTEXT.md, MENTAL_MODEL.md, STARTUP_STRATEGY_BMC.md, SESSION_HANDOFF.md, DESIGN_SPECIFICATION.md
 ```
 
 ---
 
-## 4. Hướng Dẫn Cài Đặt & Chạy Ứng Dụng
+## 4. Công nghệ Sử dụng & Lệnh Kiểm thử
 
-### Cách 1: Chạy Tất Cả Bằng 1 Lệnh (Khuyên Dùng)
-Tại thư mục gốc dự án:
+- **Frontend:** React 19, Vite 8, TypeScript 5.9, Tailwind CSS v4, React Router v7, `@tanstack/react-query` v5, Lucide React.
+- **Backend Node.js:** Node.js, Express 5, TypeScript 5.9, Prisma ORM 6.19, PostgreSQL 16 (`embedded-postgres`), Zod, Helmet, bcryptjs, Multer.
+- **Microservice qEEG Python:** FastAPI, Uvicorn, NumPy, SciPy, Pandas, Joblib, ReportLab.
+
+Các lệnh kiểm thử và kiểm tra tĩnh:
+
 ```powershell
-npm run dev
-```
-*(Hoặc click đúp vào file `start.bat` trên Windows)*
-Lệnh này sẽ tự động khởi động đồng thời cả 3 thành phần:
-1. `db`: PostgreSQL 16 (cổng `5432`)
-2. `api`: Backend Express (cổng `4000`)
-3. `ui`: Frontend Vite (cổng `5173`)
+# Kiểm tra cú pháp launcher Python
+python -m py_compile start_unified_server.py
 
-Sau khi chạy xong, bạn mở trình duyệt tại: **[`http://localhost:5173`](http://localhost:5173)**
+# Kiểm thử Python FastAPI qEEG service
+pytest qeeg_service/tests
 
----
-
-### Cách 2: Chạy Từng Thành Phần Riêng Biệt (Nếu Muốn Tách Terminal)
-Mở terminal tại thư mục gốc của dự án và chạy:
-```powershell
-npm run db:start
-```
-> PostgreSQL 16 sẽ sẵn sàng lắng nghe tại cổng `5432` trên máy của bạn.
-
-### Bước 2: Nạp Dữ Liệu Demo (Seed)
-Trong một terminal mới:
-```powershell
-npm run db:seed
-```
-Dữ liệu khởi tạo gồm các tài khoản:
-- **Quản trị viên**: `admin` / Mật khẩu: `Password123`
-- **Bác sĩ Thần kinh**: `dr_minh` / Mật khẩu: `Password123` *(Đã xác minh tích xanh)*
-- **Nhà nghiên cứu BCI**: `prof_lan` / Mật khẩu: `Password123` *(Đã xác minh tích xanh)*
-- **Sinh viên Kỹ thuật Y sinh**: `tuan_bme` / Mật khẩu: `Password123` *(Đang chờ duyệt)*
-- **Người dùng quan tâm sức khỏe**: `hoa_health` / Mật khẩu: `Password123`
-
-### Bước 3: Chạy Backend & Frontend Development Server
-Chạy backend:
-```powershell
-npm run dev:server
-```
-*(Lắng nghe tại `http://localhost:4000`)*
-
-Chạy frontend:
-```powershell
-npm run dev:client
-```
-*(Mở trình duyệt tại `http://localhost:5173`)*
-
----
-
-## 5. Chạy Kiểm Thử (Automated Tests)
-
-Chạy bộ 28 integration test bao phủ toàn diện các chức năng:
-```powershell
-npm test
-```
-Tất cả các bài test chạy trên cơ sở dữ liệu kiểm thử riêng biệt `pbl4_web_test` với dọn dẹp dữ liệu tự động giữa mỗi case test.
-
-Kiểm tra kiểu dữ liệu TypeScript cả hai phía:
-```powershell
+# Kiểm tra TypeScript, build production và test tích hợp Node/Express (PostgreSQL test DB)
 npm run typecheck
-```
-
-Build production:
-```powershell
 npm run build
+npm test -w server
 ```
 
 ---
 
-## 6. Danh Mục API Endpoints Chính
+## 5. Danh mục API Chính (Tóm tắt)
 
-| Phương thức | Endpoint | Mô tả | Quyền truy cập |
-|---|---|---|---|
-| `POST` | `/api/auth/register` | Đăng ký tài khoản mới | Công khai |
-| `POST` | `/api/auth/login` | Đăng nhập hệ thống | Công khai |
-| `POST` | `/api/auth/logout` | Đăng xuất và huỷ session | Đã đăng nhập |
-| `GET` | `/api/auth/me` | Lấy thông tin tài khoản hiện tại | Đã đăng nhập |
-| `PATCH` | `/api/users/me` | Cập nhật tên hiển thị, tiểu sử | Đã đăng nhập |
-| `POST` | `/api/users/me/professional` | Cập nhật hồ sơ chuyên môn (bác sĩ/nghiên cứu) | Đã đăng nhập |
-| `GET` | `/api/users/:idOrUsername` | Xem trang cá nhân người dùng | Công khai |
-| `POST` | `/api/users/:id/follow` | Theo dõi một tài khoản | Đã đăng nhập |
-| `DELETE` | `/api/users/:id/follow` | Bỏ theo dõi một tài khoản | Đã đăng nhập |
-| `GET` | `/api/posts` | Lấy bảng tin cộng đồng / đang theo dõi | Công khai / Người dùng |
-| `POST` | `/api/posts` | Đăng bài viết (kèm ảnh qua multipart/form-data) | Đã đăng nhập |
-| `PATCH` | `/api/posts/:id` | Sửa bài viết (chỉ chủ sở hữu) | Tác giả bài viết |
-| `DELETE` | `/api/posts/:id` | Xoá bài viết (chủ sở hữu hoặc admin) | Tác giả / Admin |
-| `POST` | `/api/posts/:id/like` | Thích bài viết | Đã đăng nhập |
-| `DELETE` | `/api/posts/:id/like` | Bỏ thích bài viết | Đã đăng nhập |
-| `GET` | `/api/posts/:id/comments` | Xem danh sách bình luận | Công khai |
-| `POST` | `/api/posts/:id/comments` | Bình luận bài viết | Đã đăng nhập |
-| `GET` | `/api/search` | Tìm kiếm người dùng, chuyên gia, bài viết | Công khai |
-| `GET` | `/api/conversations` | Lấy danh sách hội thoại nhắn tin | Đã đăng nhập |
-| `POST` | `/api/conversations` | Khởi tạo cuộc trò chuyện 1-1 | Đã đăng nhập |
-| `GET` | `/api/conversations/:id/messages` | Đọc tin nhắn (kiểm tra thành viên) | Thành viên hội thoại |
-| `POST` | `/api/conversations/:id/messages` | Gửi tin nhắn (kiểm tra thành viên) | Thành viên hội thoại |
-| `GET` | `/api/notifications` | Lấy danh sách thông báo và số lượng chưa đọc | Đã đăng nhập |
-| `PATCH` | `/api/notifications/:id/read` | Đánh dấu thông báo đã đọc | Đã đăng nhập |
-| `POST` | `/api/reports` | Gửi báo cáo vi phạm nội dung / tài khoản | Đã đăng nhập |
-| `GET` | `/api/admin/verifications` | Danh sách hồ sơ chuyên môn chờ cấp tích xanh | Quản trị viên |
-| `PATCH` | `/api/admin/verifications/:id` | Phê duyệt hoặc từ chối xác minh chuyên gia | Quản trị viên |
-| `GET` | `/api/admin/reports` | Danh sách báo cáo vi phạm cần xử lý | Quản trị viên |
-| `PATCH` | `/api/admin/reports/:id` | Xử lý báo cáo (ẩn/xoá nội dung vi phạm) | Quản trị viên |
-| `GET` | `/api/contributions/my` | Lấy danh sách hồ sơ đóng góp của bản thân | Chuyên gia đã xác thực |
-| `GET` | `/api/contributions/eligible-posts` | Lấy danh sách bài viết hợp lệ để gửi thẩm định | Chuyên gia đã xác thực |
-| `POST` | `/api/contributions` | Gửi bài viết tham gia chương trình đóng góp | Chuyên gia đã xác thực |
-| `GET` | `/api/contributions/:id` | Xem chi tiết hồ sơ đóng góp, điểm số & phản hồi | Tác giả / Admin |
-| `POST` | `/api/contributions/:id/resubmit` | Nộp lại hồ sơ sau khi chỉnh sửa theo yêu cầu | Tác giả |
-| `POST` | `/api/contributions/:id/withdraw` | Rút lại hồ sơ đóng góp | Tác giả |
-| `GET` | `/api/rewards/wallet` | Xem thông tin ví và lịch sử sổ cái giao dịch tín chỉ | Người dùng có hồ sơ |
-| `GET` | `/api/rewards/catalog` | Danh mục phần thưởng và quyền lợi chuyên môn | Đã đăng nhập |
-| `POST` | `/api/rewards/redeem` | Đổi thưởng bằng tín chỉ (kiểm tra số dư, atomic DB) | Đã đăng nhập |
-| `GET` | `/api/rewards/my-redemptions` | Xem danh sách yêu cầu đổi thưởng cá nhân | Đã đăng nhập |
-| `POST` | `/api/rewards/redemptions/:id/cancel` | Hủy yêu cầu đổi thưởng và hoàn tín chỉ tức thì | Người yêu cầu |
-| `GET` | `/api/admin/rewards/contributions` | Hàng đợi thẩm định đóng góp chuyên môn | Quản trị viên / Reviewer |
-| `POST` | `/api/admin/rewards/contributions/:id/claim` | Tiếp nhận thẩm định (Claim review) | Quản trị viên (Khác tác giả) |
-| `POST` | `/api/admin/rewards/contributions/:id/evaluate` | Đánh giá 5 tiêu chí & ra quyết định (Approve/Reject/Revise) | Quản trị viên (Khác tác giả) |
-| `GET` | `/api/admin/rewards/catalog` | Quản lý danh mục phần thưởng toàn hệ thống | Quản trị viên |
-| `POST` | `/api/admin/rewards/catalog` | Thêm phần thưởng mới vào danh mục | Quản trị viên |
-| `PATCH` | `/api/admin/rewards/catalog/:id` | Bật/tắt hoặc điều chỉnh thông số phần thưởng | Quản trị viên |
-| `GET` | `/api/admin/rewards/redemptions` | Danh sách yêu cầu đổi thưởng cần xử lý | Quản trị viên |
-| `PATCH` | `/api/admin/rewards/redemptions/:id` | Xử lý yêu cầu đổi thưởng (Approve/Fulfill/Reject & Auto-refund) | Quản trị viên |
-| `GET` | `/api/admin/rewards/wallets` | Kiểm toán danh sách ví tín chỉ người dùng | Quản trị viên |
-| `POST` | `/api/admin/rewards/wallets/adjust` | Điều chỉnh tín chỉ thủ công kèm lý do kiểm toán bắt buộc | Quản trị viên |
+- **Auth, Users, Social & Verification:** `/api/auth/*`, `/api/users/*`, `/api/posts/*`, `/api/search`, `/api/conversations/*`, `/api/notifications/*`, `/api/reports`, `/api/verifications/*`, `/api/admin/verifications/*`, `/api/communities/*`, `/api/contributions/*`, `/api/rewards/*` (bao gồm `POST /api/rewards/claim-onboarding-grant`), `/api/admin/rewards/*`, `/api/eeg-datasets/*`.
+- **qEEG Proxy & Workstation:** `GET /clinical-workstation`, `GET /api/qeeg/health`, `GET /api/qeeg/cases`, `POST /api/qeeg/analyze-case`, `POST /api/qeeg/analyze-csv`, `GET /api/qeeg/export-pdf-summary`, `POST /api/qeeg/save-to-platform`.
+- **Neural Network DB:** `GET /api/neural-db/stats`, `GET /api/neural-db/samples`, `POST /api/neural-db/samples`, `PATCH /api/neural-db/samples/:id/verify`, `GET /api/neural-db/export`.
+- **Pillar 1 — Consultations:** `GET /api/consultations`, `POST /api/consultations`, `POST /api/consultations/:id/claim`, `POST /api/consultations/:id/replies`, `POST /api/consultations/:id/accept/:replyId`.
+- **Pillar 2 — Data Bank:** `GET /api/databank`, `GET /api/databank/:id`, `POST /api/databank`, `POST /api/databank/:id/purchase`.
+- **Pillar 3 — Self-Service:** `GET /api/self-service/overview`, `POST /api/self-service/check-ins`, `POST /api/self-service/work-plan`, `PATCH /api/self-service/work-plan/:id`, `DELETE /api/self-service/work-plan/:id`.
+- **Pillar 4 — Community Insights:** `GET /api/community-insights/spotlight`.

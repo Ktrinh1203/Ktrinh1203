@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="vi" data-mode="professional">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trạm Điện Não Định Lượng Lâm Sàng NeuroLink</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root,
+    html[data-mode="general"] {
+      --canvas-bg: #f8fafb;
+      --surface: #ffffff;
+      --surface-subtle: #f0f9ff;
+      --surface-muted: #f1f5f9;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --topbar-bg: #ffffff;
+      --topbar-text: #0f172a;
+      --topbar-muted: #475569;
+      --topbar-border: #e2e8f0;
+      --accent: #0d9488;
+      --accent-hover: #0f766e;
+      --accent-soft: #f0fdfa;
+      --accent-border: #99f6e4;
+      --secondary: #0284c7;
+      --text-main: #0f172a;
+      --text-body: #334155;
+      --text-muted: #64748b;
+    }
+
+    html[data-mode="professional"] {
+      --canvas-bg: #f1f5f9;
+      --surface: #ffffff;
+      --surface-subtle: #f0f4f8;
+      --surface-muted: #e2e8f0;
+      --border: #cbd5e1;
+      --border-strong: #94a3b8;
+      --topbar-bg: #162b47;
+      --topbar-text: #ffffff;
+      --topbar-muted: #cbd5e1;
+      --topbar-border: #1e3a5f;
+      --accent: #2c6865;
+      --accent-hover: #214f4d;
+      --accent-soft: #f0f7f6;
+      --accent-border: #b6dcd7;
+      --secondary: #1e3a5f;
+      --text-main: #0f172a;
+      --text-body: #334155;
+      --text-muted: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--canvas-bg);
+      color: var(--text-body);
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .mono,
+    .tabular-nums {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Command Bar */
+    .command-bar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background-color: var(--topbar-bg);
+      color: var(--topbar-text);
+      border-bottom: 1px solid var(--topbar-border);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+
+    .command-bar-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-wordmark {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .brand-ecg {
+      width: 88px;
+      height: 11px;
+      color: #5aa39a;
+    }
+
+    html[data-mode="general"] .brand-ecg {
+      color: #0d9488;
+    }
+
+    .brand-divider {
+      width: 1px;
+      height: 28px;
+      background-color: rgba(148, 163, 184, 0.35);
+    }
+
+    .station-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--topbar-text);
+    }
+
+    .station-subtitle {
+      font-size: 11px;
+      color: var(--topbar-muted);
+    }
+
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Mode Switcher */
+    .mode-switch {
+      display: inline-flex;
+      background: rgba(148, 163, 184, 0.16);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .mode-btn {
+      border: none;
+      background: transparent;
+      color: var(--topbar-muted);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .mode-btn.active {
+      background-color: var(--accent);
+      color: #ffffff;
+    }
+
+    /* Buttons & Links */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn-outline-top {
+      background-color: transparent;
+      color: var(--topbar-text);
+      border-color: rgba(148, 163, 184, 0.4);
+    }
+
+    .btn-outline-top:hover {
+      background-color: rgba(148, 163, 184, 0.14);
+    }
+
+    .btn-outline {
+      background-color: var(--surface);
+      color: var(--text-main);
+      border-color: var(--border);
+    }
+
+    .btn-outline:hover {
+      background-color: var(--surface-subtle);
+      border-color: var(--border-strong);
+    }
+
+    .btn-secondary {
+      background-color: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent-border);
+    }
+
+    .btn-secondary:hover {
+      background-color: #d9ece9;
+    }
+
+    /* Health Pill */
+    .health-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background-color: rgba(44, 104, 101, 0.18);
+      color: var(--topbar-text);
+    }
+
+    html[data-mode="general"] .health-pill {
+      background-color: #f0fdfa;
+      border-color: #99f6e4;
+      color: #0f766e;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: #10b981;
+      flex-shrink: 0;
+    }
+
+    /* Main Workspace Layout */
+    .workspace {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Action Bar */
+    .action-strip {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .action-strip-info h1 {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+
+    .action-strip-info p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .action-strip-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Clinical Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    @media (max-width: 720px) {
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    .kpi-card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 13px 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--text-muted);
+    }
+
+    .kpi-value {
+      font-size: 23px;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.15;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 16px;
+      align-items: start;
+      min-width: 0;
+    }
+
+    @media (max-width: 1080px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .stack-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .panel {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .panel-subtitle {
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    .tech-caption {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background-color: var(--surface-subtle);
+      color: var(--text-body);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .badge-teal {
+      background-color: var(--accent-soft);
+      border-color: var(--accent-border);
+      color: var(--accent);
+    }
+
+    .badge-red {
+      background-color: #fef2f2;
+      border-color: #fecaca;
+      color: #b91c1c;
+    }
+
+    .badge-purple {
+      background-color: #faf5ff;
+      border-color: #e9d5ff;
+      color: #6b21a8;
+    }
+
+    .badge-amber {
+      background-color: #fffbeb;
+      border-color: #fde68a;
+      color: #b45309;
+    }
+
+    /* Category Filter Pills */
+    .cat-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .cat-tab {
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .cat-tab.active {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    /* Case List — Compact selector */
+    .case-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .case-btn {
+      width: 100%;
+      text-align: left;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background-color: var(--surface);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .case-btn:hover {
+      border-color: var(--accent);
+      background-color: var(--surface-subtle);
+    }
+
+    .case-btn.active {
+      border-color: var(--accent);
+      background-color: var(--accent-soft);
+      box-shadow: 0 0 0 2px rgba(44, 104, 101, 0.14);
+    }
+
+    .case-btn-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .case-btn-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.35;
+      min-width: 0;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .case-btn-title .dot-ind {
+      margin-top: 4px;
+    }
+
+    /* Case description: only shown for active case */
+    .case-btn-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.45;
+      display: none;
+      margin-top: 6px;
+      padding-left: 14px;
+    }
+
+    .case-btn.active .case-btn-desc {
+      display: block;
+    }
+
+    .dot-ind {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+
+    .dot-red { background-color: #dc2626; }
+    .dot-purple { background-color: #7e22ce; }
+    .dot-yellow { background-color: #d97706; }
+    .dot-green { background-color: #059669; }
+
+    /* Controls Form */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-body);
+      margin-bottom: 4px;
+    }
+
+    .input,
+    .select,
+    .textarea {
+      width: 100%;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background-color: var(--surface);
+      color: var(--text-main);
+    }
+
+    .select {
+      padding-right: 26px;
+      text-overflow: ellipsis;
+    }
+
+    .input:focus,
+    .select:focus,
+    .textarea:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    /* Triage Banner */
+    .triage-banner {
+      border-radius: 8px;
+      padding: 16px 18px;
+      color: #ffffff;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .triage-red { background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%); }
+    .triage-purple { background: linear-gradient(135deg, #4c1d95 0%, #7e22ce 100%); }
+    .triage-yellow { background: linear-gradient(135deg, #92400e 0%, #d97706 100%); }
+    .triage-green { background: linear-gradient(135deg, #162b47 0%, #2c6865 100%); }
+
+    .triage-kicker {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+
+    .triage-heading {
+      font-size: 19px;
+      font-weight: 800;
+      margin-top: 2px;
+      letter-spacing: -0.02em;
+    }
+
+    .triage-reason {
+      font-size: 12.5px;
+      opacity: 0.94;
+      margin-top: 4px;
+      max-width: 720px;
+    }
+
+    .tpa-pill-box {
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 8px;
+      padding: 10px 14px;
+      min-width: 240px;
+    }
+
+    .tpa-pill-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      opacity: 0.88;
+    }
+
+    .tpa-pill-value {
+      font-size: 13px;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+
+    /* EEG Paper Waveform Canvas */
+    .eeg-paper {
+      position: relative;
+      height: 340px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background-color: #ffffff;
+      background-image:
+        linear-gradient(to right, rgba(203, 213, 225, 0.42) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(203, 213, 225, 0.42) 1px, transparent 1px);
+      background-size: 25px 25px;
+    }
+
+    .secondary-details-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 900px) {
+      .secondary-details-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 520px) {
+      .secondary-details-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    .secondary-stat-box {
+      background: var(--surface-subtle);
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      min-width: 0;
+    }
+
+    .eeg-channel-labels {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      bottom: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      pointer-events: none;
+    }
+
+    .ch-tag {
+      font-size: 10px;
+      font-weight: 700;
+      color: #0f172a;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 1px 6px;
+    }
+
+    .sweep-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: rgba(13, 148, 136, 0.65);
+      pointer-events: none;
+    }
+
+    .waveform-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Bottom Dual Analytics Grid */
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 290px;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    @media (max-width: 1200px) {
+      .analytics-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .analytics-grid { grid-template-columns: 1fr; }
+    }
+
+    .bar-row {
+      margin-bottom: 9px;
+    }
+
+    .bar-row-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .bar-track {
+      height: 8px;
+      width: 100%;
+      background-color: var(--surface-muted);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.25s ease;
+    }
+
+    /* Topomap Legend */
+    .topomap-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .legend-bar {
+      width: 100%;
+      height: 8px;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, #0284c7 0%, #10b981 45%, #f59e0b 75%, #dc2626 100%);
+    }
+
+    /* QR Box */
+    .qr-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background-color: var(--surface-subtle);
+      min-height: 140px;
+    }
+
+    /* Feature Vector Scroll Table */
+    .fv-scroll {
+      max-height: 190px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      background-color: #f8fafc;
+      font-size: 11px;
+    }
+
+    .fv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 6px;
+    }
+
+    .fv-cell {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 6px;
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 520px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+    }
+
+    .btn:focus-visible,
+    .case-btn:focus-visible,
+    .cat-tab:focus-visible,
+    .mode-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .status-banner {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid;
+    }
+
+    .status-banner.show { display: block; }
+    .status-banner.ok { background: #f0fdfa; border-color: #99f6e4; color: #0f766e; }
+    .status-banner.err { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+
+    .hidden { display: none !important; }
+
+    /* Details/Summary open indicator */
+    details > summary { outline: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+    .accordion-chevron { display: inline-block; transition: transform 0.15s ease; }
+    details[open] > summary .accordion-chevron { transform: rotate(90deg); }
+  </style>
+</head>
+<body>
+  <!-- TOP COMMAND BAR -->
+  <header class="command-bar">
+    <div class="command-bar-inner">
+      <div class="brand-group">
+        <a href="/eeg-hub" class="brand-logo" title="Quay về Trung tâm Điện não NeuroLink">
+          <span class="brand-wordmark">neurolink</span>
+          <svg viewBox="0 0 112 12" fill="none" class="brand-ecg" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2 6 H44 L49 1.5 L55 10.5 L60 3.5 L63.5 6 H108" />
+          </svg>
+        </a>
+        <div class="brand-divider" aria-hidden="true"></div>
+        <div>
+          <div class="station-title">Trạm Điện Não Định Lượng Lâm Sàng NeuroLink</div>
+          <div class="station-subtitle">6 kênh ADS1299 · Tái tạo vỏ não 19 kênh</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <span id="health-pill" class="health-pill">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="health-text" class="mono">500 Hz · Sẵn sàng</span>
+        </span>
+
+        <div class="mode-switch" role="group" aria-label="Chế độ hiển thị NeuroLink">
+          <button type="button" id="btn-mode-general" class="mode-btn">Tổng quát</button>
+          <button type="button" id="btn-mode-professional" class="mode-btn active">Chuyên môn</button>
+        </div>
+
+        <a href="/eeg-hub" class="btn btn-outline-top">Quay lại NeuroLink</a>
+        <a href="/consultations" class="btn btn-primary">Hội chẩn Từ xa</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <!-- ACTION STRIP -->
+    <section class="action-strip">
+      <div class="action-strip-info">
+        <h1>Phân tích Điện não Định lượng &amp; Cổng An toàn Lâm sàng</h1>
+        <p>Theo dõi 4 chỉ số qEEG cốt lõi, bản đồ vỏ não 19 kênh và xuất mã bàn giao 115.</p>
+      </div>
+      <div class="action-strip-buttons">
+        <button type="button" id="btn-export-pdf" class="btn btn-outline">Xuất Báo cáo Lâm sàng PDF</button>
+        <button type="button" id="btn-open-save-modal" class="btn btn-secondary">Lưu vào CSDL Mạng Nơ-ron</button>
+        <a href="/consultations" class="btn btn-primary">Gửi Hội chẩn Bác sĩ</a>
+      </div>
+    </section>
+
+    <div id="platform-feedback" class="status-banner" role="status"></div>
+
+    <!-- KPI ROW: 4 PRIMARY BIOMARKERS -->
+    <section class="kpi-grid" aria-label="4 chỉ số sinh lý thần kinh cốt lõi">
+      <div class="kpi-card">
+        <span class="kpi-label">Tỷ số DAR</span>
+        <span id="kpi-dar" class="kpi-value mono">--</span>
+        <span class="kpi-sub">Ngưỡng chuẩn &lt; 1.50</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Bất đối xứng BSI</span>
+        <span id="kpi-bsi" class="kpi-value mono">--</span>
+        <span class="kpi-sub">Ngưỡng khu trú &gt; 0.15</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Tỷ số TAR</span>
+        <span id="kpi-tar" class="kpi-value mono">--</span>
+        <span class="kpi-sub">Mệt mỏi Theta / Alpha</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Đỉnh Alpha (O1/O2)</span>
+        <span id="kpi-alpha-peak" class="kpi-value mono">-- Hz</span>
+        <span class="kpi-sub">Sinh lý 8.0 – 12.5 Hz</span>
+      </div>
+    </section>
+
+    <!-- MAIN WORKSTATION GRID -->
+    <section class="main-grid">
+      <!-- LEFT COLUMN: CURATED CASES + CSV UPLOAD -->
+      <div class="stack-col">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Danh mục Ca Bệnh Chuẩn hóa</div>
+              <div class="panel-subtitle">Chọn ca để xem chi tiết lâm sàng</div>
+            </div>
+            <span id="cases-count-badge" class="tech-caption mono">6 ca</span>
+          </div>
+
+          <div class="cat-tabs" role="tablist" aria-label="Lọc theo nhóm lâm sàng">
+            <button type="button" class="cat-tab active" data-cat="ALL">Tất cả</button>
+            <button type="button" class="cat-tab" data-cat="VASCULAR_STROKE">Đột quỵ</button>
+            <button type="button" class="cat-tab" data-cat="EPILEPSY_ICU">Động kinh ICU</button>
+            <button type="button" class="cat-tab" data-cat="SLEEP_COGNITIVE">Giấc ngủ</button>
+            <button type="button" class="cat-tab" data-cat="HARDWARE_BCI">Phần cứng</button>
+          </div>
+
+          <div id="case-list" class="case-list"></div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="param-window">Cửa sổ (giây)</label>
+              <select id="param-window" class="select">
+                <option value="4">4 giây</option>
+                <option value="6">6 giây</option>
+                <option value="10" selected>10 giây</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="param-fast">Thang FAST</label>
+              <select id="param-fast" class="select">
+                <option value="">Tự động theo sóng</option>
+                <option value="0">FAST = 0 (Bình thường)</option>
+                <option value="1">FAST = 1</option>
+                <option value="2">FAST = 2</option>
+                <option value="3">FAST = 3 (Thiếu hụt nặng)</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:10px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <label for="param-notch" style="font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px; cursor:pointer;">
+              <input type="checkbox" id="param-notch" checked>
+              Lọc nhiễu lưới 50 Hz
+            </label>
+            <button type="button" id="btn-rerun-case" class="btn btn-outline">Phân tích lại</button>
+          </div>
+        </div>
+
+        <!-- CUSTOM CSV UPLOAD PANEL -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Nạp Tệp CSV Điện Não Thực Nghiệm</div>
+              <div class="panel-subtitle">Hỗ trợ F3..O2 hoặc CH1..CH8 (TI ADS1299)</div>
+            </div>
+            <span class="tech-caption mono">CSV Raw</span>
+          </div>
+
+          <div class="field" style="margin-bottom:8px;">
+            <label for="csv-file-input">Chọn tệp dữ liệu (.csv)</label>
+            <input type="file" id="csv-file-input" accept=".csv,text/csv" class="input">
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="csv-sfreq">Tần số lấy mẫu (Hz)</label>
+              <input type="number" id="csv-sfreq" value="500" min="50" max="4000" class="input mono">
+            </div>
+            <div class="field">
+              <label for="csv-category">Nhóm lâm sàng</label>
+              <select id="csv-category" class="select">
+                <option value="HARDWARE_BCI">HARDWARE_BCI</option>
+                <option value="VASCULAR_STROKE">VASCULAR_STROKE</option>
+                <option value="EPILEPSY_ICU">EPILEPSY_ICU</option>
+                <option value="SLEEP_COGNITIVE">SLEEP_COGNITIVE</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="button" id="btn-analyze-csv" class="btn btn-primary" style="width:100%; margin-top:10px;">
+            Phân tích Tệp CSV Tải lên
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: TRIAGE BANNER + WAVEFORM + TOPOMAP + VECTOR80 -->
+      <div class="stack-col">
+        <!-- CLINICAL TRIAGE BANNER -->
+        <div id="triage-banner" class="triage-banner triage-green">
+          <div>
+            <div class="triage-kicker">KẾT QUẢ ĐỊNH LƯỢNG &amp; AN TOÀN ĐIỀU TRỊ</div>
+            <div id="triage-title" class="triage-heading">Đang nạp dữ liệu điện não...</div>
+            <div id="triage-reason" class="triage-reason">Vui lòng chờ hệ thống xử lý chuỗi tín hiệu 6 kênh.</div>
+          </div>
+          <div class="tpa-pill-box">
+            <div class="tpa-pill-label">Cổng Kiểm soát Tiêu sợi huyết (tPA)</div>
+            <div id="tpa-badge" class="tpa-pill-value">--</div>
+            <div id="tpa-countdown" class="mono" style="font-size:11px; margin-top:4px; opacity:0.9;">Trạng thái: --</div>
+          </div>
+        </div>
+
+        <!-- 6-CHANNEL EEG PAPER WAVEFORM VIEWER -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Bản Ghi Sóng Điện Não 6 Đạo Trình Thời Gian Thực</div>
+              <div class="panel-subtitle">Đo trên giấy ghi chuẩn y khoa · Bandpass 0.5–45 Hz · Common Average Reference (CAR)</div>
+            </div>
+            <div class="waveform-toolbar">
+              <button type="button" id="btn-toggle-dsp" class="btn btn-primary" style="padding:5px 10px; font-size:11px;" aria-label="Bật/tắt bộ lọc DSP">
+                Lọc DSP: BẬT
+              </button>
+              <label for="gain-select" class="hidden">Độ lợi hiển thị</label>
+              <select id="gain-select" class="select mono" style="width:auto; padding:5px 8px; font-size:11px;">
+                <option value="0.5">25 µV/ô (0.5x)</option>
+                <option value="1.0" selected>50 µV/ô (1.0x)</option>
+                <option value="2.0">100 µV/ô (2.0x)</option>
+                <option value="4.0">200 µV/ô (4.0x)</option>
+              </select>
+              <button type="button" id="btn-pause-sweep" class="btn btn-outline" style="padding:5px 10px; font-size:11px;" aria-label="Tạm dừng hoặc tiếp tục quét sóng">
+                Tạm dừng
+              </button>
+            </div>
+          </div>
+
+          <div class="eeg-paper">
+            <canvas id="eeg-canvas" style="width:100%; height:100%; display:block;"></canvas>
+            <div class="eeg-channel-labels">
+              <span class="ch-tag mono">F3</span>
+              <span class="ch-tag mono">F4</span>
+              <span class="ch-tag mono">C3</span>
+              <span class="ch-tag mono">C4</span>
+              <span class="ch-tag mono">O1</span>
+              <span class="ch-tag mono">O2</span>
+            </div>
+            <div id="sweep-line" class="sweep-line" style="left:0%;"></div>
+          </div>
+
+          <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-top:8px; font-size:11px; color:var(--text-muted);" class="mono">
+            <span>Thước chuẩn biên độ: 50 µV | Thời gian hiển thị: 10s</span>
+            <span id="waveform-meta">fs = 500 Hz | 6 kênh vật lý</span>
+          </div>
+        </div>
+
+        <!-- ANALYTICS ROW: PROBABILITIES + 2D TOPOMAP + TELEMETRY QR -->
+        <div class="analytics-grid">
+          <!-- Probabilities -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Phân tầng 5 Trạng thái</div>
+                <div class="panel-subtitle">Xác suất định lượng từ phổ &amp; đối xứng</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="bar-row">
+                <div class="bar-row-head"><span>Nhịp nền bình thường (Control)</span><span id="prob-control" class="mono">0%</span></div>
+                <div class="bar-track"><div id="bar-control" class="bar-fill" style="width:0%; background:#059669;"></div></div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-row-head"><span>Thiếu máu cục bộ (Ischemic)</span><span id="prob-ischemic" class="mono">0%</span></div>
+                <div class="bar-track"><div id="bar-ischemic" class="bar-fill" style="width:0%; background:#dc2626;"></div></div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-row-head"><span>Xuất huyết não (Hemorrhagic)</span><span id="prob-hemorrhagic" class="mono">0%</span></div>
+                <div class="bar-track"><div id="bar-hemorrhagic" class="bar-fill" style="width:0%; background:#7e22ce;"></div></div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-row-head"><span>Phóng điện động kinh (Epileptiform)</span><span id="prob-epileptiform" class="mono">0%</span></div>
+                <div class="bar-track"><div id="bar-epileptiform" class="bar-fill" style="width:0%; background:#d97706;"></div></div>
+              </div>
+              <div class="bar-row" style="margin-bottom:0;">
+                <div class="bar-row-head"><span>Ngủ sâu / Mệt mỏi (Cognitive)</span><span id="prob-fatigue" class="mono">0%</span></div>
+                <div class="bar-track"><div id="bar-fatigue" class="bar-fill" style="width:0%; background:#0284c7;"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2D CORTICAL TOPOMAP -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Bản Đồ Vỏ Não 2D (19 Điện Cực)</div>
+                <div class="panel-subtitle">Nội suy Perrin Spherical Splines từ 6 kênh gốc</div>
+              </div>
+              <span class="tech-caption mono">10-20 System</span>
+            </div>
+
+            <div class="topomap-wrap">
+              <canvas id="topomap-canvas" width="240" height="240" style="display:block;" aria-label="Bản đồ phân bố điện thế vỏ não 2D 19 điện cực"></canvas>
+              <div style="width:100%;">
+                <div class="legend-bar"></div>
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:4px;" class="mono">
+                  <span>Bình thường</span>
+                  <span>Chậm vừa</span>
+                  <span>Sóng chậm khu trú</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TELEMETRY QR -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Mã Bàn Giao Cấp Cứu 115 / ER</div>
+                <div class="panel-subtitle">Telemetry định lượng HL7 JSON</div>
+              </div>
+            </div>
+
+            <div class="qr-box">
+              <div id="qrcode"></div>
+              <div class="mono" style="font-size:10px; color:var(--text-muted); margin-top:8px;">QUÉT TIẾP NHẬN HỒ SƠ</div>
+            </div>
+
+            <div style="margin-top:10px; font-size:11px; color:var(--text-muted); line-height:1.45; word-break:break-word;">
+              <div><strong>CUSUM Drift:</strong> <span id="cusum-flag" class="mono">--</span></div>
+              <div><strong>Trạng thái an toàn:</strong> <span id="safety-code" class="mono">--</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECONDARY SPECTRAL METRICS + 80-FEATURE VECTOR (collapsed by default) -->
+        <details class="panel" style="padding:0; overflow:hidden;">
+          <summary style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; cursor:pointer; user-select:none; list-style:none; font-family:inherit;">
+            <div style="display:flex; flex-direction:column; gap:1px; min-width:0;">
+              <span class="panel-title">Dữ liệu chi tiết: Phổ tần số &amp; Ma trận 80 đặc trưng (Mở rộng)</span>
+              <span class="panel-subtitle">Phổ năng lượng Delta/Theta/Alpha/Beta, PRI &amp; wPLI, chất lượng SQI và 80 đặc trưng f01..f80</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+              <span id="fv-count-badge" class="tech-caption mono">80 features</span>
+              <span class="accordion-chevron" style="font-size:12px; color:var(--text-muted);" aria-hidden="true">▸</span>
+            </div>
+          </summary>
+          <div style="padding:0 16px 16px 16px; border-top:1px solid var(--border); padding-top:14px;">
+            <div class="secondary-details-grid">
+              <div class="secondary-stat-box">
+                <div style="font-size:10px; font-weight:700; color:var(--text-muted);">Delta (0.5–4 Hz)</div>
+                <div id="band-delta" class="mono" style="font-size:14px; font-weight:800; color:var(--text-main);">--%</div>
+              </div>
+              <div class="secondary-stat-box">
+                <div style="font-size:10px; font-weight:700; color:var(--text-muted);">Theta (4–8 Hz)</div>
+                <div id="band-theta" class="mono" style="font-size:14px; font-weight:800; color:var(--text-main);">--%</div>
+              </div>
+              <div class="secondary-stat-box">
+                <div style="font-size:10px; font-weight:700; color:var(--text-muted);">Alpha (8–13 Hz)</div>
+                <div id="band-alpha" class="mono" style="font-size:14px; font-weight:800; color:var(--text-main);">--%</div>
+              </div>
+              <div class="secondary-stat-box">
+                <div style="font-size:10px; font-weight:700; color:var(--text-muted);">Beta (13–30 Hz)</div>
+                <div id="band-beta" class="mono" style="font-size:14px; font-weight:800; color:var(--text-main);">--%</div>
+              </div>
+              <div class="secondary-stat-box">
+                <div style="font-size:10px; font-weight:700; color:var(--text-muted);">PRI &amp; wPLI</div>
+                <div id="kpi-pri-wpli" class="mono" style="font-size:14px; font-weight:800; color:var(--text-main);">--</div>
+              </div>
+              <div class="secondary-stat-box">
+                <div style="font-size:10px; font-weight:700; color:var(--text-muted);">Chất lượng (SQI)</div>
+                <div id="kpi-sqi" class="mono" style="font-size:14px; font-weight:800; color:var(--text-main);">--%</div>
+                <div id="kpi-latency" class="mono" style="font-size:10px; color:var(--text-muted);">Độ trễ: -- ms</div>
+              </div>
+            </div>
+
+            <div id="fv-container" class="fv-scroll mono" tabindex="0" role="region" aria-label="Bảng vectơ đặc trưng 80 chiều">
+              <div class="fv-grid" id="fv-grid"></div>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: SAVE TO POSTGRESQL NEURAL DB -->
+  <div id="save-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
+    <div class="modal-card">
+      <div class="panel-header" style="margin-bottom:12px;">
+        <div>
+          <div id="save-modal-title" class="panel-title">Lưu Mẫu Điện Não vào CSDL Mạng Nơ-ron</div>
+          <div class="panel-subtitle">Tạo đồng thời hồ sơ EEG cá nhân &amp; bản ghi NeuralTrainingSample (80 chiều)</div>
+        </div>
+        <button type="button" id="btn-close-modal" class="btn btn-outline" style="padding:4px 10px;" aria-label="Đóng hộp thoại lưu mẫu">Đóng</button>
+      </div>
+
+      <form id="save-platform-form" style="display:flex; flex-direction:column; gap:10px;">
+        <div class="field">
+          <label for="save-title">Tiêu đề bản ghi lâm sàng</label>
+          <input type="text" id="save-title" class="input" required maxlength="180">
+        </div>
+        <div class="form-grid" style="margin-top:0;">
+          <div class="field">
+            <label for="save-subject">Mã ẩn danh đối tượng (Subject Code)</label>
+            <input type="text" id="save-subject" class="input mono" required maxlength="60">
+          </div>
+          <div class="field">
+            <label for="save-split">Tập dữ liệu (Dataset Split)</label>
+            <select id="save-split" class="select">
+              <option value="TRAIN">TRAIN</option>
+              <option value="VALIDATION">VALIDATION</option>
+              <option value="TEST">TEST</option>
+              <option value="EXTERNAL_HOLDOUT">EXTERNAL_HOLDOUT</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="save-note">Ghi chú chuyên môn lâm sàng</label>
+          <textarea id="save-note" rows="3" class="textarea"></textarea>
+        </div>
+        <label style="font-size:12px; font-weight:600; display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="save-deidentified" checked required style="margin-top:3px;">
+          <span>Tôi xác nhận dữ liệu điện não đã được khử định danh hoàn toàn (De-identified) theo chuẩn HIPAA / GDPR trước khi lưu trữ.</span>
+        </label>
+
+        <div id="save-modal-status" class="status-banner"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
+          <button type="button" id="btn-cancel-save" class="btn btn-outline">Hủy</button>
+          <button type="submit" id="btn-submit-save" class="btn btn-primary">Xác nhận Lưu vào PostgreSQL</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const state = {
+        mode: 'professional',
+        cases: [],
+        activeCategory: 'ALL',
+        currentCaseId: 'case_ischemia_lvo',
+        currentAnalysis: null,
+        isDspActive: true,
+        isPaused: false,
+        gainMultiplier: 1.0,
+        sweepProgress: 0,
+        csrfToken: null,
+        csrfChecked: false,
+      };
+
+      const eegCanvas = document.getElementById('eeg-canvas');
+      const eegCtx = eegCanvas.getContext('2d');
+      const topomapCanvas = document.getElementById('topomap-canvas');
+      const topomapCtx = topomapCanvas.getContext('2d');
+
+      function applyMode(mode) {
+        const normalized = mode === 'general' ? 'general' : 'professional';
+        state.mode = normalized;
+        document.documentElement.setAttribute('data-mode', normalized);
+        document.getElementById('btn-mode-general').classList.toggle('active', normalized === 'general');
+        document.getElementById('btn-mode-professional').classList.toggle('active', normalized === 'professional');
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.set('mode', normalized);
+          window.history.replaceState({}, '', url.toString());
+        } catch (_) {}
+      }
+
+      function initModeFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode');
+        applyMode(mode === 'general' ? 'general' : 'professional');
+      }
+
+      function resizeCanvases() {
+        const dpr = window.devicePixelRatio || 1;
+        if (eegCanvas && eegCanvas.clientWidth > 0) {
+          const targetW = Math.round(eegCanvas.clientWidth * dpr);
+          const targetH = Math.round(eegCanvas.clientHeight * dpr);
+          if (eegCanvas.width !== targetW || eegCanvas.height !== targetH) {
+            eegCanvas.width = targetW;
+            eegCanvas.height = targetH;
+          }
+        }
+        if (topomapCanvas) {
+          const targetS = Math.round(240 * dpr);
+          if (topomapCanvas.width !== targetS || topomapCanvas.height !== targetS) {
+            topomapCanvas.width = targetS;
+            topomapCanvas.height = targetS;
+          }
+        }
+      }
+
+      function showPlatformFeedback(msg, isOk) {
+        const el = document.getElementById('platform-feedback');
+        el.textContent = msg;
+        el.className = 'status-banner show ' + (isOk ? 'ok' : 'err');
+      }
+
+      async function checkHealth() {
+        try {
+          const res = await fetch('/api/qeeg/health');
+          if (!res.ok) return;
+          const data = await res.json();
+          const label = data.engineSource === 'ts_dsp_fallback'
+            ? '500 Hz · TS DSP Fallback'
+            : '500 Hz · Python qEEG Sẵn sàng';
+          document.getElementById('health-text').textContent = label;
+        } catch (_) {
+          document.getElementById('health-text').textContent = 'Mất kết nối máy chủ qEEG';
+        }
+      }
+
+      async function loadCases() {
+        try {
+          const res = await fetch('/api/qeeg/cases');
+          const data = await res.json();
+          state.cases = Array.isArray(data.cases) ? data.cases : [];
+          document.getElementById('cases-count-badge').textContent = `${state.cases.length} ca`;
+          renderCaseList();
+        } catch (err) {
+          showPlatformFeedback('Không tải được danh sách ca bệnh từ /api/qeeg/cases.', false);
+        }
+      }
+
+      function renderCaseList() {
+        const container = document.getElementById('case-list');
+        container.innerHTML = '';
+        const filtered = state.activeCategory === 'ALL'
+          ? state.cases
+          : state.cases.filter(c => c.clinicalCategory === state.activeCategory);
+
+        filtered.forEach(item => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'case-btn' + (item.id === state.currentCaseId ? ' active' : '');
+          const dotCls = item.trafficLight === 'red' ? 'dot-red' :
+                         item.trafficLight === 'purple' ? 'dot-purple' :
+                         item.trafficLight === 'yellow' ? 'dot-yellow' : 'dot-green';
+
+          btn.innerHTML = `
+            <div class="case-btn-top">
+              <div class="case-btn-title"><span class="dot-ind ${dotCls}"></span>${item.name}</div>
+              <span class="badge mono">${item.subjectId}</span>
+            </div>
+            <div class="case-btn-desc">${item.clinicalPresentation}</div>
+          `;
+          btn.addEventListener('click', () => runCaseAnalysis(item.id));
+          container.appendChild(btn);
+        });
+      }
+
+      async function ensureCsrfToken(forceRefresh = false) {
+        if (state.csrfChecked && !forceRefresh) {
+          return state.csrfToken;
+        }
+        try {
+          const authRes = await fetch('/api/auth/me', { credentials: 'include' });
+          if (authRes.ok) {
+            const authData = await authRes.json().catch(() => ({}));
+            state.csrfToken = authData.csrfToken || null;
+          } else {
+            state.csrfToken = null;
+          }
+        } catch (_) {
+          state.csrfToken = null;
+        }
+        state.csrfChecked = true;
+        return state.csrfToken;
+      }
+
+      async function postQeegJson(url, payload) {
+        let token = await ensureCsrfToken(false);
+        const buildHeaders = (csrf) => ({
+          'Content-Type': 'application/json',
+          ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
+        });
+        let res = await fetch(url, {
+          method: 'POST',
+          credentials: 'include',
+          headers: buildHeaders(token),
+          body: JSON.stringify(payload),
+        });
+        if (res.status === 403) {
+          token = await ensureCsrfToken(true);
+          if (token) {
+            res = await fetch(url, {
+              method: 'POST',
+              credentials: 'include',
+              headers: buildHeaders(token),
+              body: JSON.stringify(payload),
+            });
+          }
+        }
+        return res;
+      }
+
+      async function runCaseAnalysis(caseId) {
+        state.currentCaseId = caseId;
+        renderCaseList();
+        const timeWindowSec = Number(document.getElementById('param-window').value || 10);
+        const notch50Hz = document.getElementById('param-notch').checked;
+        const fastRaw = document.getElementById('param-fast').value;
+        const payload = {
+          caseId,
+          timeWindowSec,
+          notch50Hz,
+          ...(fastRaw !== '' ? { fastScore: Number(fastRaw) } : {}),
+        };
+
+        try {
+          const res = await postQeegJson('/api/qeeg/analyze-case', payload);
+          if (!res.ok) throw new Error('Analyze case error ' + res.status);
+          const result = await res.json();
+          state.currentAnalysis = result;
+          renderAnalysis(result);
+        } catch (err) {
+          showPlatformFeedback('Lỗi khi phân tích ca bệnh: ' + err.message, false);
+        }
+      }
+
+      async function runCsvUpload() {
+        const fileInput = document.getElementById('csv-file-input');
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) {
+          showPlatformFeedback('Vui lòng chọn tệp CSV điện não trước khi phân tích.', false);
+          return;
+        }
+        const samplingRateHz = Number(document.getElementById('csv-sfreq').value || 500);
+        const clinicalCategory = document.getElementById('csv-category').value || 'HARDWARE_BCI';
+
+        try {
+          const csvText = await file.text();
+          const res = await postQeegJson('/api/qeeg/analyze-csv', {
+            filename: file.name,
+            csvText,
+            samplingRateHz,
+            clinicalCategory,
+          });
+          if (!res.ok) {
+            const errJson = await res.json().catch(() => ({}));
+            throw new Error(errJson.detail || errJson?.error?.message || ('HTTP ' + res.status));
+          }
+          const result = await res.json();
+          state.currentAnalysis = result;
+          renderAnalysis(result);
+          showPlatformFeedback(`Đã phân tích thành công tệp ${file.name} (${result.samplingRateHz} Hz).`, true);
+        } catch (err) {
+          showPlatformFeedback('Không thể phân tích CSV: ' + err.message, false);
+        }
+      }
+
+      function renderAnalysis(data) {
+        if (!data) return;
+        const bm = data.biomarkers || {};
+        const bp = data.bandPowers || {};
+        const probs = data.probabilities || {};
+
+        // KPIs
+        document.getElementById('kpi-dar').textContent = Number(bm.meanDar ?? 0).toFixed(2);
+        document.getElementById('kpi-bsi').textContent = Number(bm.meanBsi ?? 0).toFixed(3);
+        document.getElementById('kpi-tar').textContent = Number(bm.meanTar ?? 0).toFixed(2);
+        document.getElementById('kpi-pri-wpli').textContent = `${Number(bm.pri ?? 0).toFixed(2)} / ${Number(bm.wpli ?? 0).toFixed(2)}`;
+        document.getElementById('kpi-alpha-peak').textContent = `${Number(bm.alphaPeakHz ?? 0).toFixed(1)} Hz`;
+        document.getElementById('kpi-sqi').textContent = `${(Number(bm.signalQualityScore ?? 0) * 100).toFixed(1)}%`;
+        document.getElementById('kpi-latency').textContent = `Độ trễ: ${data.latencyMs} ms`;
+
+        // Triage Banner
+        const banner = document.getElementById('triage-banner');
+        const tlClass = data.trafficLight === 'red' ? 'triage-red' :
+                        data.trafficLight === 'purple' ? 'triage-purple' :
+                        data.trafficLight === 'yellow' ? 'triage-yellow' : 'triage-green';
+        banner.className = 'triage-banner ' + tlClass;
+        document.getElementById('triage-title').textContent = data.classificationTitle || data.classificationLabel;
+        document.getElementById('triage-reason').textContent = data.decisionReason || '';
+        document.getElementById('tpa-badge').textContent = data.tpaBadge || '';
+        document.getElementById('tpa-countdown').textContent = bm.tpaLockoutTriggered
+          ? 'KHÓA tPA TUYỆT ĐỐI · YÊU CẦU CT KHẨN'
+          : (data.tpaCountdownMin > 0
+              ? `Cửa sổ đánh giá CT/tPA còn lại: ${data.tpaCountdownMin} phút`
+              : `Trạng thái cổng: ${data.safetyStatus}`);
+
+        // Probabilities
+        const setProb = (idText, idBar, val) => {
+          const pct = (Number(val || 0) * 100).toFixed(1);
+          document.getElementById(idText).textContent = pct + '%';
+          document.getElementById(idBar).style.width = pct + '%';
+        };
+        setProb('prob-control', 'bar-control', probs.control);
+        setProb('prob-ischemic', 'bar-ischemic', probs.ischemic);
+        setProb('prob-hemorrhagic', 'bar-hemorrhagic', probs.hemorrhagic);
+        setProb('prob-epileptiform', 'bar-epileptiform', probs.epileptiform);
+        setProb('prob-fatigue', 'bar-fatigue', probs.cognitiveFatigue);
+
+        // Band Powers
+        document.getElementById('band-delta').textContent = (Number(bp.delta || 0) * 100).toFixed(1) + '%';
+        document.getElementById('band-theta').textContent = (Number(bp.theta || 0) * 100).toFixed(1) + '%';
+        document.getElementById('band-alpha').textContent = (Number(bp.alpha || 0) * 100).toFixed(1) + '%';
+        document.getElementById('band-beta').textContent = (Number(bp.beta || 0) * 100).toFixed(1) + '%';
+
+        // Meta & QR
+        document.getElementById('waveform-meta').textContent = `fs = ${data.samplingRateHz} Hz | ${data.channelsCount} kênh | ${data.engineSource}`;
+        document.getElementById('cusum-flag').textContent = bm.cusumAlarm ? 'PHÁT HIỆN TRÔI (ALARM)' : 'ỔN ĐỊNH';
+        document.getElementById('safety-code').textContent = data.safetyStatus;
+
+        renderQr(data.telemetryQr || JSON.stringify({ caseId: data.caseId }));
+        renderFeatureVector80(data.featureVector80 || []);
+        renderWaveforms();
+        renderTopomap(data.topomap || []);
+      }
+
+      function renderFeatureVector80(vec) {
+        const grid = document.getElementById('fv-grid');
+        document.getElementById('fv-count-badge').textContent = `${vec.length} features`;
+        grid.innerHTML = vec
+          .map((val, idx) => `<div class="fv-cell"><span style="color:#64748b;">f${String(idx + 1).padStart(2, '0')}</span><strong>${Number(val).toFixed(3)}</strong></div>`)
+          .join('');
+      }
+
+      function renderQr(qrText) {
+        const box = document.getElementById('qrcode');
+        box.innerHTML = '';
+        if (typeof QRCode === 'function') {
+          try {
+            new QRCode(box, {
+              text: qrText,
+              width: 112,
+              height: 112,
+              colorDark: '#162b47',
+              colorLight: '#ffffff',
+              correctLevel: QRCode.CorrectLevel.M,
+            });
+            return;
+          } catch (_) {}
+        }
+        const pre = document.createElement('div');
+        pre.className = 'mono';
+        pre.style.fontSize = '10px';
+        pre.style.wordBreak = 'break-all';
+        pre.textContent = qrText;
+        box.appendChild(pre);
+      }
+
+      function renderWaveforms() {
+        const data = state.currentAnalysis;
+        if (!eegCanvas || !data || !data.waveforms) return;
+        const dpr = window.devicePixelRatio || 1;
+        const w = eegCanvas.width / dpr;
+        const h = eegCanvas.height / dpr;
+        if (w <= 0 || h <= 0) return;
+
+        eegCtx.save();
+        eegCtx.scale(dpr, dpr);
+        eegCtx.clearRect(0, 0, w, h);
+
+        const channels = data.waveforms.channels || [];
+        const sigMap = state.isDspActive ? data.waveforms.filtered : data.waveforms.raw;
+        const nCh = channels.length;
+        const rowH = h / Math.max(nCh, 1);
+
+        channels.forEach((ch, idx) => {
+          const sig = sigMap[ch];
+          if (!sig || sig.length < 2) return;
+          const cy = idx * rowH + rowH / 2;
+
+          eegCtx.strokeStyle = 'rgba(203, 213, 225, 0.7)';
+          eegCtx.lineWidth = 1;
+          eegCtx.beginPath();
+          eegCtx.moveTo(0, cy);
+          eegCtx.lineTo(w, cy);
+          eegCtx.stroke();
+
+          eegCtx.strokeStyle = state.isDspActive ? '#162b47' : '#b45309';
+          eegCtx.lineWidth = 1.3;
+          eegCtx.beginPath();
+          const nPts = sig.length;
+          for (let i = 0; i < nPts; i++) {
+            const x = (i / (nPts - 1)) * w;
+            const y = cy - sig[i] * state.gainMultiplier * (rowH / 110.0);
+            if (i === 0) eegCtx.moveTo(x, y);
+            else eegCtx.lineTo(x, y);
+          }
+          eegCtx.stroke();
+        });
+
+        eegCtx.restore();
+      }
+
+      function renderTopomap(nodes) {
+        if (!topomapCanvas || !nodes || nodes.length === 0) return;
+        const dpr = window.devicePixelRatio || 1;
+        const size = 240;
+        const cx0 = size / 2;
+        const cy0 = size / 2 + 6;
+        const radius = size * 0.36;
+
+        topomapCtx.save();
+        topomapCtx.scale(dpr, dpr);
+        topomapCtx.clearRect(0, 0, size, size);
+
+        // Scalp circle
+        topomapCtx.fillStyle = '#f8fafc';
+        topomapCtx.beginPath();
+        topomapCtx.arc(cx0, cy0, radius, 0, Math.PI * 2);
+        topomapCtx.fill();
+
+        // Clipped heatmap
+        topomapCtx.save();
+        topomapCtx.beginPath();
+        topomapCtx.arc(cx0, cy0, radius - 1.5, 0, Math.PI * 2);
+        topomapCtx.clip();
+
+        const vals = nodes.map(n => Number(n.value || 0));
+        const minVal = Math.min(...vals);
+        const maxVal = Math.max(...vals);
+        const span = maxVal - minVal;
+        nodes.forEach(node => {
+          const x = cx0 + Number(node.x) * radius * 0.88;
+          const y = cy0 - Number(node.y) * radius * 0.88;
+          const rawVal = Number(node.value || 0);
+          const intensity = span > 0.08
+            ? Math.min(Math.max((rawVal - minVal) / span, 0), 1)
+            : Math.min(Math.max(rawVal / Math.max(maxVal, 0.25), 0), 1);
+          const grad = topomapCtx.createRadialGradient(x, y, 4, x, y, 52);
+          if (intensity > 0.65) {
+            grad.addColorStop(0, `rgba(220, 38, 38, ${0.72 * intensity})`);
+            grad.addColorStop(0.55, `rgba(245, 158, 11, ${0.38 * intensity})`);
+            grad.addColorStop(1, 'rgba(220, 38, 38, 0)');
+          } else if (intensity > 0.35) {
+            grad.addColorStop(0, `rgba(245, 158, 11, ${0.52 * intensity})`);
+            grad.addColorStop(0.6, `rgba(16, 185, 129, ${0.25 * intensity})`);
+            grad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+          } else {
+            grad.addColorStop(0, `rgba(2, 132, 199, ${0.46 * (1 - intensity)})`);
+            grad.addColorStop(1, 'rgba(2, 132, 199, 0)');
+          }
+          topomapCtx.fillStyle = grad;
+          topomapCtx.beginPath();
+          topomapCtx.arc(x, y, 52, 0, Math.PI * 2);
+          topomapCtx.fill();
+        });
+        topomapCtx.restore();
+
+        // Head outline, nose & ears
+        topomapCtx.strokeStyle = '#334155';
+        topomapCtx.lineWidth = 1.6;
+        topomapCtx.beginPath();
+        topomapCtx.arc(cx0, cy0, radius, 0, Math.PI * 2);
+        topomapCtx.stroke();
+
+        topomapCtx.fillStyle = '#f8fafc';
+        topomapCtx.beginPath();
+        topomapCtx.moveTo(cx0 - 9, cy0 - radius + 2);
+        topomapCtx.lineTo(cx0, cy0 - radius - 12);
+        topomapCtx.lineTo(cx0 + 9, cy0 - radius + 2);
+        topomapCtx.fill();
+        topomapCtx.stroke();
+
+        topomapCtx.beginPath();
+        topomapCtx.arc(cx0 - radius - 2, cy0, 7, -Math.PI / 2, Math.PI / 2, true);
+        topomapCtx.stroke();
+        topomapCtx.beginPath();
+        topomapCtx.arc(cx0 + radius + 2, cy0, 7, -Math.PI / 2, Math.PI / 2, false);
+        topomapCtx.stroke();
+
+        // 19 Electrode Nodes
+        nodes.forEach(node => {
+          const x = cx0 + Number(node.x) * radius * 0.88;
+          const y = cy0 - Number(node.y) * radius * 0.88;
+          const isPhys = Boolean(node.isPhysical);
+
+          topomapCtx.fillStyle = isPhys ? '#2c6865' : '#94a3b8';
+          topomapCtx.beginPath();
+          topomapCtx.arc(x, y, isPhys ? 4.8 : 2.3, 0, Math.PI * 2);
+          topomapCtx.fill();
+
+          if (isPhys) {
+            topomapCtx.fillStyle = '#ffffff';
+            topomapCtx.fillRect(x - 10, y - 16, 20, 10);
+            topomapCtx.strokeStyle = '#cbd5e1';
+            topomapCtx.lineWidth = 0.6;
+            topomapCtx.strokeRect(x - 10, y - 16, 20, 10);
+          }
+
+          topomapCtx.fillStyle = isPhys ? '#0f172a' : '#64748b';
+          topomapCtx.font = isPhys ? 'bold 8px JetBrains Mono, monospace' : '7px JetBrains Mono, monospace';
+          topomapCtx.textAlign = 'center';
+          topomapCtx.textBaseline = 'middle';
+          topomapCtx.fillText(node.name, x, isPhys ? y - 11 : y - 7);
+        });
+
+        topomapCtx.restore();
+      }
+
+      function animationLoop() {
+        if (!state.isPaused && state.currentAnalysis) {
+          state.sweepProgress = (state.sweepProgress + 0.35) % 100;
+          document.getElementById('sweep-line').style.left = `${state.sweepProgress}%`;
+        }
+        requestAnimationFrame(animationLoop);
+      }
+
+      function openSaveModal() {
+        if (!state.currentAnalysis) return;
+        const a = state.currentAnalysis;
+        const matchedCase = state.cases.find(c => c.id === a.caseId);
+        document.getElementById('save-title').value = matchedCase
+          ? matchedCase.name
+          : `Bản ghi qEEG (${a.caseId})`;
+        document.getElementById('save-subject').value = matchedCase
+          ? matchedCase.subjectId
+          : `CSV-${Date.now().toString().slice(-6)}`;
+        document.getElementById('save-note').value = a.decisionReason || '';
+        document.getElementById('save-modal-status').className = 'status-banner';
+        document.getElementById('save-modal').classList.add('open');
+      }
+
+      function closeSaveModal() {
+        document.getElementById('save-modal').classList.remove('open');
+      }
+
+      async function handleSaveToPlatform(e) {
+        e.preventDefault();
+        if (!state.currentAnalysis) return;
+        const statusEl = document.getElementById('save-modal-status');
+        const showModalStatus = (msg, ok) => {
+          statusEl.textContent = msg;
+          statusEl.className = 'status-banner show ' + (ok ? 'ok' : 'err');
+        };
+
+        try {
+          const authRes = await fetch('/api/auth/me', { credentials: 'include' });
+          if (authRes.status === 401) {
+            showModalStatus('Bạn chưa đăng nhập NeuroLink. Vui lòng đăng nhập tại trang chủ trước khi lưu mẫu vào PostgreSQL.', false);
+            return;
+          }
+          const authData = await authRes.json().catch(() => ({}));
+          if (!authRes.ok || !authData.user || authData.standalone) {
+            showModalStatus('Trạm đang chạy độc lập không qua cổng NeuroLink (:4000/:5173), chưa thể kết nối CSDL PostgreSQL.', false);
+            return;
+          }
+          const csrfToken = authData.csrfToken || '';
+
+          const payload = {
+            title: document.getElementById('save-title').value.trim(),
+            clinicalCategory: state.currentAnalysis.clinicalCategory,
+            groundTruthLabel: state.currentAnalysis.classificationLabel,
+            split: document.getElementById('save-split').value,
+            subjectCode: document.getElementById('save-subject').value.trim(),
+            clinicalNote: document.getElementById('save-note').value.trim(),
+            deidentifiedConfirmed: document.getElementById('save-deidentified').checked,
+            analysis: state.currentAnalysis,
+          };
+
+          const saveRes = await fetch('/api/qeeg/save-to-platform', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': csrfToken,
+            },
+            body: JSON.stringify(payload),
+          });
+          const saveJson = await saveRes.json().catch(() => ({}));
+          if (!saveRes.ok) {
+            throw new Error(saveJson?.error?.message || saveJson?.detail || ('HTTP ' + saveRes.status));
+          }
+
+          showModalStatus('Đã lưu thành công hồ sơ EEG và mẫu 80 đặc trưng vào CSDL Mạng Nơ-ron PostgreSQL.', true);
+          showPlatformFeedback('Đã lưu mẫu mới vào CSDL Mạng Nơ-ron NeuroLink.', true);
+        } catch (err) {
+          showModalStatus('Lưu mẫu thất bại: ' + err.message, false);
+        }
+      }
+
+      // Wire events cleanly
+      window.addEventListener('DOMContentLoaded', async () => {
+        initModeFromUrl();
+        resizeCanvases();
+        window.addEventListener('resize', () => {
+          resizeCanvases();
+          renderWaveforms();
+          if (state.currentAnalysis && state.currentAnalysis.topomap) {
+            renderTopomap(state.currentAnalysis.topomap);
+          }
+        });
+
+        document.getElementById('btn-mode-general').addEventListener('click', () => applyMode('general'));
+        document.getElementById('btn-mode-professional').addEventListener('click', () => applyMode('professional'));
+
+        document.querySelectorAll('.cat-tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            state.activeCategory = tab.getAttribute('data-cat') || 'ALL';
+            renderCaseList();
+          });
+        });
+
+        document.getElementById('btn-rerun-case').addEventListener('click', () => runCaseAnalysis(state.currentCaseId));
+        document.getElementById('param-window').addEventListener('change', () => runCaseAnalysis(state.currentCaseId));
+        document.getElementById('param-notch').addEventListener('change', () => runCaseAnalysis(state.currentCaseId));
+        document.getElementById('param-fast').addEventListener('change', () => runCaseAnalysis(state.currentCaseId));
+
+        document.getElementById('btn-analyze-csv').addEventListener('click', runCsvUpload);
+
+        document.getElementById('btn-toggle-dsp').addEventListener('click', () => {
+          state.isDspActive = !state.isDspActive;
+          document.getElementById('btn-toggle-dsp').textContent = state.isDspActive ? 'Lọc DSP: BẬT' : 'Tín hiệu RAW';
+          renderWaveforms();
+        });
+
+        document.getElementById('gain-select').addEventListener('change', (ev) => {
+          state.gainMultiplier = Number(ev.target.value || 1.0);
+          renderWaveforms();
+        });
+
+        document.getElementById('btn-pause-sweep').addEventListener('click', () => {
+          state.isPaused = !state.isPaused;
+          document.getElementById('btn-pause-sweep').textContent = state.isPaused ? 'Tiếp tục' : 'Tạm dừng';
+        });
+
+        document.getElementById('btn-export-pdf').addEventListener('click', () => {
+          const targetCase = state.currentAnalysis && state.currentAnalysis.caseId && !state.currentAnalysis.caseId.startsWith('csv:')
+            ? state.currentAnalysis.caseId
+            : state.currentCaseId;
+          window.open(`/api/qeeg/export-pdf-summary?caseId=${encodeURIComponent(targetCase)}`, '_blank', 'noopener');
+        });
+
+        document.getElementById('btn-open-save-modal').addEventListener('click', openSaveModal);
+        document.getElementById('btn-close-modal').addEventListener('click', closeSaveModal);
+        document.getElementById('btn-cancel-save').addEventListener('click', closeSaveModal);
+        document.getElementById('save-platform-form').addEventListener('submit', handleSaveToPlatform);
+
+        await ensureCsrfToken();
+        await checkHealth();
+        await loadCases();
+        await runCaseAnalysis(state.currentCaseId);
+        requestAnimationFrame(animationLoop);
+      });
+    })();
+  </script>
+</body>
+</html>

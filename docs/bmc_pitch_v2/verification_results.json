@@ -1,0 +1,93 @@
+{
+  "slide": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "scrollHeight <= 1080",
+        "passed": true,
+        "details": {
+          "bodyScrollHeight": 1080,
+          "htmlScrollHeight": 1080,
+          "bodyOffsetHeight": 1080,
+          "htmlOffsetHeight": 1080,
+          "innerHeight": 1080
+        }
+      },
+      {
+        "name": "Card bounding boxes do not overlap footer",
+        "passed": true,
+        "details": {
+          "hasFooter": true,
+          "footerTop": 994,
+          "overlaps": [],
+          "totalCardsChecked": 100
+        }
+      }
+    ]
+  },
+  "survey_mobile": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "scrollWidth <= 375",
+        "passed": true,
+        "details": {
+          "scrollWidth": 375,
+          "clientWidth": 375,
+          "bodyScrollWidth": 375
+        }
+      }
+    ]
+  },
+  "survey_tablet": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "scrollWidth <= 768",
+        "passed": true,
+        "details": {
+          "scrollWidth": 768,
+          "clientWidth": 768,
+          "bodyScrollWidth": 768
+        }
+      }
+    ]
+  },
+  "survey_desktop": {
+    "passed": true,
+    "checks": []
+  },
+  "survey_admin_modal": {
+    "passed": true,
+    "checks": [
+      {
+        "foundModal": true,
+        "isOpen": true,
+        "hasOPP": true,
+        "hasPMC": true,
+        "hasPME": true,
+        "modalTextSample": "Bảng Phân Tích Số Liệu Khảo Sát & Điểm Giá Tối Ưu Van Westendorp\n\nPhân tích độ nhạy giá PSM & Tỷ lệ chuyển đổi thị trường mục tiêu\n\n×\nNguồn dữ liệu phân tích:\nBộ dữ liệu mẫu (N=25 Realistic Vietnamese Responses)\nDữ liệu thực tế (LocalStorage)\n📥 Xuất File Excel (.CSV UTF-8)\n🗑️ Xóa LocalStorage\nĐIỂM"
+      }
+    ]
+  },
+  "van_westendorp_validation": {
+    "passed": true,
+    "checks": [
+      {
+        "foundInputs": true,
+        "errorVisible": true,
+        "errorMessage": "⚠️\n            \n              Lỗi thứ tự giá Van Westendorp:\n              Mức giá Quá rẻ (2.000.000 đ) không thể cao hơn hoặc bằng Giá hời (1.000.000 đ). Vui lòng điều chỉnh lại thứ tự: Quá rẻ < Giá hời < Bắt đầu đắt < Quá đắt!"
+      }
+    ]
+  },
+  "tab_switching": {
+    "passed": true,
+    "checks": [
+      {
+        "foundTabs": true,
+        "switchedToB": true,
+        "switchedBackToA": true
+      }
+    ]
+  }
+}
