@@ -26,7 +26,7 @@ function validate(f: FormState): Partial<Record<keyof FormState, string>> {
 }
 
 const inputBaseClass =
-  'w-full rounded-xl border bg-white/5 py-2.5 pr-4 pl-10 text-sm text-white placeholder-slate-500 transition-all focus:outline-none focus:ring-1';
+  'w-full rounded-xl border bg-black/15 py-2.5 pr-4 pl-10 text-sm text-white placeholder-white/50 transition-all focus:outline-none focus:ring-1';
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -80,7 +80,7 @@ export function RegisterPage() {
           Đã có tài khoản?{' '}
           <Link
             to="/login"
-            className="font-medium text-emerald-400 hover:text-emerald-300 hover:underline"
+            className="font-medium text-[#7CE0CC] hover:text-[#A7F3D0] hover:underline"
           >
             Đăng nhập
           </Link>
@@ -98,12 +98,12 @@ export function RegisterPage() {
         )}
 
         <div>
-          <label htmlFor="displayName" className="mb-1.5 block text-xs font-medium text-slate-300 sm:text-sm">
+          <label htmlFor="displayName" className="mb-1.5 block text-xs font-medium text-white/90 sm:text-sm">
             Tên hiển thị
           </label>
           <div className="relative">
             <User
-              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/55"
               aria-hidden="true"
             />
             <input
@@ -119,7 +119,7 @@ export function RegisterPage() {
               className={`${inputBaseClass} ${
                 errors.displayName
                   ? 'border-red-400/60 focus:border-red-400 focus:ring-red-400/30'
-                  : 'border-white/12 focus:border-emerald-400/60 focus:ring-emerald-400/30'
+                  : 'border-white/20 focus:border-[#76D7C4] focus:ring-[#76D7C4]/30'
               }`}
             />
           </div>
@@ -127,12 +127,12 @@ export function RegisterPage() {
         </div>
 
         <div>
-          <label htmlFor="username" className="mb-1.5 block text-xs font-medium text-slate-300 sm:text-sm">
+          <label htmlFor="username" className="mb-1.5 block text-xs font-medium text-white/90 sm:text-sm">
             Tên người dùng
           </label>
           <div className="relative">
             <AtSign
-              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/55"
               aria-hidden="true"
             />
             <input
@@ -151,26 +151,26 @@ export function RegisterPage() {
               className={`${inputBaseClass} ${
                 errors.username
                   ? 'border-red-400/60 focus:border-red-400 focus:ring-red-400/30'
-                  : 'border-white/12 focus:border-emerald-400/60 focus:ring-emerald-400/30'
+                  : 'border-white/20 focus:border-[#76D7C4] focus:ring-[#76D7C4]/30'
               }`}
             />
           </div>
           {errors.username ? (
             <p className="mt-1 text-xs text-red-400">{errors.username}</p>
           ) : (
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-[11px] text-white/65">
               Dùng trong đường dẫn trang cá nhân, ví dụ: /u/nguyen_an
             </p>
           )}
         </div>
 
         <div>
-          <label htmlFor="email" className="mb-1.5 block text-xs font-medium text-slate-300 sm:text-sm">
+          <label htmlFor="email" className="mb-1.5 block text-xs font-medium text-white/90 sm:text-sm">
             E-mail
           </label>
           <div className="relative">
             <Mail
-              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/55"
               aria-hidden="true"
             />
             <input
@@ -186,7 +186,7 @@ export function RegisterPage() {
               className={`${inputBaseClass} ${
                 errors.email
                   ? 'border-red-400/60 focus:border-red-400 focus:ring-red-400/30'
-                  : 'border-white/12 focus:border-emerald-400/60 focus:ring-emerald-400/30'
+                  : 'border-white/20 focus:border-[#76D7C4] focus:ring-[#76D7C4]/30'
               }`}
             />
           </div>
@@ -194,12 +194,12 @@ export function RegisterPage() {
         </div>
 
         <div>
-          <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-slate-300 sm:text-sm">
+          <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-white/90 sm:text-sm">
             Mật khẩu
           </label>
           <div className="relative">
             <Lock
-              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/55"
               aria-hidden="true"
             />
             <input
@@ -215,7 +215,7 @@ export function RegisterPage() {
               className={`${inputBaseClass} pr-10 ${
                 errors.password
                   ? 'border-red-400/60 focus:border-red-400 focus:ring-red-400/30'
-                  : 'border-white/12 focus:border-emerald-400/60 focus:ring-emerald-400/30'
+                  : 'border-white/20 focus:border-[#76D7C4] focus:ring-[#76D7C4]/30'
               }`}
             />
             <button
@@ -223,7 +223,7 @@ export function RegisterPage() {
               onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               aria-pressed={showPassword}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-200 cursor-pointer"
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-white/60 transition-colors hover:text-white cursor-pointer"
             >
               {showPassword ? (
                 <EyeOff className="size-4" aria-hidden="true" />
@@ -236,12 +236,12 @@ export function RegisterPage() {
         </div>
 
         <div>
-          <label htmlFor="confirm" className="mb-1.5 block text-xs font-medium text-slate-300 sm:text-sm">
+          <label htmlFor="confirm" className="mb-1.5 block text-xs font-medium text-white/90 sm:text-sm">
             Xác nhận mật khẩu
           </label>
           <div className="relative">
             <Lock
-              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/55"
               aria-hidden="true"
             />
             <input
@@ -257,7 +257,7 @@ export function RegisterPage() {
               className={`${inputBaseClass} pr-10 ${
                 errors.confirm
                   ? 'border-red-400/60 focus:border-red-400 focus:ring-red-400/30'
-                  : 'border-white/12 focus:border-emerald-400/60 focus:ring-emerald-400/30'
+                  : 'border-white/20 focus:border-[#76D7C4] focus:ring-[#76D7C4]/30'
               }`}
             />
             <button
@@ -265,7 +265,7 @@ export function RegisterPage() {
               onClick={() => setShowConfirm((v) => !v)}
               aria-label={showConfirm ? 'Ẩn mật khẩu xác nhận' : 'Hiện mật khẩu xác nhận'}
               aria-pressed={showConfirm}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-200 cursor-pointer"
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-white/60 transition-colors hover:text-white cursor-pointer"
             >
               {showConfirm ? (
                 <EyeOff className="size-4" aria-hidden="true" />
@@ -280,7 +280,7 @@ export function RegisterPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl bg-[#16A34A] px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#15803D] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border border-white/15 bg-[#357A74] px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#2B6661] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
         >
           <UserPlus className="size-4" aria-hidden="true" />
           <span>{submitting ? 'Đang tạo tài khoản...' : 'Đăng ký'}</span>
