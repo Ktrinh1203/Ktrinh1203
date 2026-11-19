@@ -1,17 +1,27 @@
-"""Binary UART protocol codec (1 Mbps) & MicroSD Holter .BIN decoder."""
+"""Binary UART protocol codec (921600 bps), COM port guard & MicroSD Holter .BIN decoder."""
 
 from __future__ import annotations
 
 import csv
+import io
+import re
 import struct
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
+FORBIDDEN_SERIAL_PORTS: frozenset[str] = frozenset({"COM10"})
+
 RATE_MAP: dict[int, int] = {250: 0, 500: 1, 1000: 2, 2000: 3, 4000: 4}
 PGA_MAP: dict[int, int] = {1: 0, 2: 1, 4: 2, 6: 3, 8: 4, 12: 5, 24: 6}
 INPUT_MAP: dict[str, int] = {"eeg": 0, "short": 1, "test": 2, "emg": 3}
+
+MONTAGE_CHANNEL_NAMES: dict[str, list[str]] = {
+    "raw": [f"CH{i}_uV" for i in range(1, 9)],
+    "glasses": ["FP1", "FP2", "F3", "F4", "F7", "F8", "T3", "T4"],
+    "neurolink6": ["F3", "F4", "C3", "C4", "O1", "O2", "T3", "T4"],
+}
 
 HOLTER_HEADER_FMT = "<8sHHIBBBBf40s"
 HOLTER_HEADER_SIZE = struct.calcsize(HOLTER_HEADER_FMT)
@@ -19,6 +29,62 @@ HOLTER_RECORD_FMT = "<HHII8i"
 HOLTER_RECORD_SIZE = struct.calcsize(HOLTER_RECORD_FMT)
 HOLTER_MAGIC = b"EEGHOLT1"
 HOLTER_SYNC = 0xEE61
+
+
+def assert_allowed_serial_port(port: str) -> str:
+    """Validate serial port name and strictly block reserved ports (COM10)."""
+    cleaned = (port or "").strip()
+    if not cleaned:
+        raise ValueError("Serial port must not be empty.")
+    normalized = re.sub(r"^(\\\\\.\\|//\./|/dev/)", "", cleaned, flags=re.IGNORECASE).upper()
+    if normalized in FORBIDDEN_SERIAL_PORTS:
+        raise PermissionError(
+            f"Serial port '{port}' ({normalized}) is strictly forbidden by workspace hardware safety rules."
+        )
+    return cleaned
+
+
+def build_wifi_set_cmd(
+    ssid: str,
+    password: str = "",
+    host: str = "192.168.1.100",
+    port: int = 4000,
+    path: str = "/ws/hardware",
+) -> str:
+    """Build v3 ASCII command: WIFI_SET <ssid>|<pass>|<host>|<port>|<path>."""
+    if not ssid or not ssid.strip():
+        raise ValueError("Wi-Fi SSID must not be empty.")
+    if not (1 <= int(port) <= 65535):
+        raise ValueError(f"Invalid TCP port: {port}")
+    clean_path = path if path.startswith("/") else f"/{path}"
+    for field_name, val in (
+        ("ssid", ssid),
+        ("password", password),
+        ("host", host),
+        ("path", clean_path),
+    ):
+        if any(ch in val for ch in ("|", "\r", "\n")):
+            raise ValueError(f"Field '{field_name}' must not contain '|', CR, or LF.")
+    return f"WIFI_SET {ssid}|{password}|{host}|{int(port)}|{clean_path}"
+
+
+def build_eeg_stream_frame(samples_6x8: np.ndarray) -> bytes:
+    """Encode a (6, 8) microvolt array into the 197-byte 0xA5..0x5A firmware binary frame."""
+    arr = np.asarray(samples_6x8, dtype="<f4")
+    if arr.shape != (6, 8):
+        raise ValueError(f"Expected (6, 8) array for binary stream frame, got {arr.shape}")
+    payload = arr.tobytes()
+    return bytes([0xA5, 0xC2, 0x11, 0xD3]) + payload + bytes([0x5A])
+
+
+def resolve_montage_columns(montage: str = "raw") -> list[str]:
+    """Return 8 channel header names for a given montage preset."""
+    key = montage.strip().lower()
+    if key not in MONTAGE_CHANNEL_NAMES:
+        raise ValueError(
+            f"Unsupported montage '{montage}'. Choose from {list(MONTAGE_CHANNEL_NAMES)}"
+        )
+    return list(MONTAGE_CHANNEL_NAMES[key])
 
 
 def pack_cmd(addr: int, data: bytes = b"", write: bool = True) -> bytes:
@@ -113,12 +179,13 @@ def read_holter_bin(bin_path: Path) -> tuple[dict[str, Any], list[dict[str, Any]
         raise ValueError(f"File too small for Holter header: {len(raw_bytes)} bytes")
 
     hdr_tuple = struct.unpack(HOLTER_HEADER_FMT, raw_bytes[:HOLTER_HEADER_SIZE])
-    magic, version, rec_size, sample_rate, pga_gain, input_mode, srb1, bias_on, lsb_uv, _ = hdr_tuple
+    magic, version, rec_size, sample_rate, pga_gain, input_mode, srb1, bias_on, lsb_uv, reserved = hdr_tuple
     if magic != HOLTER_MAGIC:
         raise ValueError(f"Invalid Holter magic header: {magic!r}")
     if rec_size != HOLTER_RECORD_SIZE:
         raise ValueError(f"Unexpected record size: {rec_size}")
 
+    ch_mask = int(reserved[0]) if reserved and reserved[0] != 0 else 0xFF
     header = {
         "version": version,
         "sample_rate": sample_rate,
@@ -127,6 +194,7 @@ def read_holter_bin(bin_path: Path) -> tuple[dict[str, Any], list[dict[str, Any]
         "srb1": bool(srb1),
         "bias_on": bool(bias_on),
         "lsb_uV": float(lsb_uv),
+        "ch_enable_mask": ch_mask,
     }
 
     records: list[dict[str, Any]] = []
@@ -153,14 +221,13 @@ def read_holter_bin(bin_path: Path) -> tuple[dict[str, Any], list[dict[str, Any]
     return header, records
 
 
-def convert_holter_bin_to_csv(bin_path: Path, csv_path: Path) -> int:
+def convert_holter_bin_to_csv(bin_path: Path, csv_path: Path, montage: str = "raw") -> int:
     """Convert a MicroSD Holter .BIN file to standard CSV and return sample count."""
     header, records = read_holter_bin(bin_path)
     fs = float(header["sample_rate"]) if header["sample_rate"] > 0 else 500.0
+    ch_cols = resolve_montage_columns(montage)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
-    cols = ["timestamp_s", "sample_idx", "marker", "status24_hex"] + [
-        f"CH{i}_uV" for i in range(1, 9)
-    ]
+    cols = ["timestamp_s", "sample_idx", "marker", "status24_hex"] + ch_cols
 
     with csv_path.open("w", newline="", encoding="utf-8") as fh:
         writer = csv.writer(fh)
@@ -170,3 +237,20 @@ def convert_holter_bin_to_csv(bin_path: Path, csv_path: Path) -> int:
             row = [t_sec, rec["seq"], rec["marker"], f"0x{rec['status24']:06X}"] + rec["ch_uV"]
             writer.writerow(row)
     return len(records)
+
+
+def format_eeg_matrix_to_csv_text(
+    data_uv: np.ndarray, sample_rate: int = 500, montage: str = "neurolink6"
+) -> str:
+    """Format an (N, 8) microvolt array into CSV text compatible with NeuroLink qEEG endpoints."""
+    if data_uv.ndim != 2 or data_uv.shape[1] != 8:
+        raise ValueError(f"Expected (N, 8) array, got {data_uv.shape}")
+    ch_cols = resolve_montage_columns(montage)
+    buf = io.StringIO()
+    writer = csv.writer(buf, lineterminator="\n")
+    writer.writerow(["timestamp_s", "sample_idx"] + ch_cols)
+    fs = float(max(1, sample_rate))
+    for idx, row in enumerate(data_uv):
+        t_s = round(idx / fs, 6)
+        writer.writerow([t_s, idx] + [round(float(v), 4) for v in row])
+    return buf.getvalue()

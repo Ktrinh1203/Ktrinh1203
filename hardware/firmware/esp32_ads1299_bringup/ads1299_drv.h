@@ -26,11 +26,12 @@ enum AdsInputMode : uint8_t {
 };
 
 struct AdsSettings {
-  uint8_t      rateIdx   = 1;                  // 0=250, 1=500, 2=1000, 3=2000, 4=4000 SPS
-  uint8_t      pgaIdx    = 5;                  // 0=1, 1=2, 2=4, 3=6, 4=8, 5=12, 6=24
-  AdsInputMode inputMode = ADS_IN_TEST_SIGNAL; // Khởi động mặc định chạy Test Signal kiểm chứng
-  bool         biasAllCh = true;               // Đưa vòng hồi tiếp đồng pha ra chân RLD
-  bool         loffEnable = false;             // Bật bộ so sánh DC Lead-Off trên điện cực
+  uint8_t      rateIdx      = 1;                  // 0=250, 1=500, 2=1000, 3=2000, 4=4000 SPS
+  uint8_t      pgaIdx       = 5;                  // 0=1, 1=2, 2=4, 3=6, 4=8, 5=12, 6=24
+  AdsInputMode inputMode    = ADS_IN_TEST_SIGNAL; // Khởi động mặc định chạy Test Signal kiểm chứng
+  bool         biasAllCh    = true;               // Đưa vòng hồi tiếp đồng pha ra chân RLD
+  bool         loffEnable   = false;              // Bật bộ so sánh DC Lead-Off trên điện cực
+  uint8_t      chEnableMask = 0xFF;               // Mặt nạ bật từng kênh CH1..CH8 (bit 0..7)
 };
 
 // SPSC Lock-Free Ring Buffer nghiêm ngặt (Core 1 chỉ sửa head_, Core 0 chỉ sửa tail_)
@@ -169,7 +170,9 @@ public:
     readRegs(0x00, outRegs, 24, 1000000);
     memcpy(last_regs_, outRegs, 24);
     id_raw_ = outRegs[0];
-    return (outRegs[0] & 0x1F) == 0x1E;
+    id_ok_ = ((outRegs[0] & 0x1F) == 0x1E);
+    spi_err_count_ = 0;
+    return id_ok_;
   }
 
   bool applySettings(const AdsSettings &s, bool restartStreamIfNeeded = false) {
@@ -217,22 +220,25 @@ public:
       srb1 = 0x00;
     }
 
-    uint8_t chReg = static_cast<uint8_t>(((pIdx & 0x07) << 4) | (mux & 0x07));
+    uint8_t chRegActive = static_cast<uint8_t>(((pIdx & 0x07) << 4) | (mux & 0x07));
+    uint8_t chMask = (s.chEnableMask == 0) ? 0xFF : s.chEnableMask;
     for (int i = 0; i < 8; ++i) {
-      cfg[4 + i] = chReg; // 0x05..0x0C CH1SET..CH8SET
+      bool chOn = ((chMask >> i) & 0x01) != 0;
+      // Kênh tắt ghi 0x81 (PDn=1, MUX=001 nối tắt nội theo khuyến nghị TI ADS1299)
+      cfg[4 + i] = chOn ? chRegActive : 0x81; // 0x05..0x0C CH1SET..CH8SET
     }
 
     bool isElectrodeMode = (s.inputMode == ADS_IN_EEG_SRB1 || s.inputMode == ADS_IN_EMG_DIFF);
-    uint8_t biasMask = (s.biasAllCh && isElectrodeMode) ? 0xFF : 0x00;
+    uint8_t biasMask = (s.biasAllCh && isElectrodeMode) ? chMask : 0x00;
     cfg[12] = biasMask; // 0x0D BIAS_SENSP
     cfg[13] = biasMask; // 0x0E BIAS_SENSN
 
     if (s.loffEnable && isElectrodeMode) {
-      cfg[3]  = 0x00; // 0x04 LOFF: DC Pull-up/down 6 nA, 95%/5%
-      cfg[14] = 0xFF; // 0x0F LOFF_SENSP
+      cfg[3]  = 0x00;   // 0x04 LOFF: DC Pull-up/down 6 nA, 95%/5%
+      cfg[14] = chMask; // 0x0F LOFF_SENSP
       // Khi SRB1=1, chỉ kiểm cực P vì các ngõ INxN nối chung nội tới REF
-      cfg[15] = (s.inputMode == ADS_IN_EEG_SRB1) ? 0x00 : 0xFF; // 0x10 LOFF_SENSN
-      cfg[22] = 0x02; // 0x17 CONFIG4: PD_LOFF_COMP = 1
+      cfg[15] = (s.inputMode == ADS_IN_EEG_SRB1) ? 0x00 : chMask; // 0x10 LOFF_SENSN
+      cfg[22] = 0x02;   // 0x17 CONFIG4: PD_LOFF_COMP = 1
     } else {
       cfg[3]  = 0x00;
       cfg[14] = 0x00;
@@ -251,6 +257,7 @@ public:
     settings_ = s;
     settings_.rateIdx = rIdx;
     settings_.pgaIdx = pIdx;
+    settings_.chEnableMask = chMask;
 
     bool ok = (readback[0x01] == cfg[0]) &&
               (readback[0x02] == cfg[1]) &&
@@ -299,8 +306,16 @@ public:
     digitalWrite(PIN_ADS_CS, HIGH);
     hspi_.endTransaction();
 
+    uint32_t st = ((uint32_t)rx[0] << 16) | ((uint32_t)rx[1] << 8) | rx[2];
+    bool deadBus = (st == 0x000000UL || st == 0xFFFFFFUL);
+    bool badHdr  = id_ok_ && ((st & 0xF00000UL) != 0xC00000UL);
+    if (deadBus || badHdr) {
+      spi_err_count_++;
+      return false;
+    }
+
     out.seq = ++seq_;
-    out.status24 = ((uint32_t)rx[0] << 16) | ((uint32_t)rx[1] << 8) | rx[2];
+    out.status24 = st;
     out.marker = __atomic_exchange_n(&g_ads_pending_marker, 0, __ATOMIC_SEQ_CST);
 
     const float scale_uV = 4500000.0f / ((float)gain_ * 8388607.0f);
@@ -327,11 +342,12 @@ public:
       if (g_ads_drdy_irq_count != lastEdge || digitalRead(PIN_ADS_DRDY) == LOW) {
         lastEdge = g_ads_drdy_irq_count;
         AdsSample s;
-        readFrame(s);
-        if (got >= skipSamples) {
-          buf[got - skipSamples] = s;
+        if (readFrame(s)) {
+          if (got >= skipSamples) {
+            buf[got - skipSamples] = s;
+          }
+          got++;
         }
-        got++;
       } else {
         delayMicroseconds(100);
       }
@@ -339,23 +355,60 @@ public:
     return (got > skipSamples) ? (got - skipSamples) : 0;
   }
 
+  // Tự phục hồi phần cứng ADS1299 khi DRDY bị treo do xung tĩnh điện ESD hoặc lỏng cáp
+  bool recoverHardware() {
+    streaming_ = false;
+    g_ads_stream_task = nullptr;
+    digitalWrite(PIN_ADS_START, LOW);
+    digitalWrite(PIN_ADS_CS, HIGH);
+
+    digitalWrite(PIN_ADS_RST, LOW);
+    delay(6);
+    digitalWrite(PIN_ADS_RST, HIGH);
+    delay(30);
+
+    hspi_.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE1));
+    hspi_.transfer(0x00);
+    hspi_.endTransaction();
+
+    sendCommand(CMD_SDATAC, 1000000);
+    delay(2);
+    sendCommand(CMD_STOP, 1000000);
+    delay(2);
+
+    uint8_t regs[24] = {0};
+    readRegs(0x00, regs, 24, 1000000);
+    memcpy(last_regs_, regs, 24);
+    id_raw_ = regs[0];
+    id_ok_ = ((regs[0] & 0x1F) == 0x1E);
+    recovery_count_++;
+    if (!id_ok_) return false;
+    return applySettings(settings_, false);
+  }
+
   uint8_t idRaw() const { return id_raw_; }
+  bool isIdOk() const { return id_ok_; }
   uint8_t gain() const { return gain_; }
   uint16_t sampleRate() const { return sample_rate_; }
   float lsbUv() const { return 4500000.0f / ((float)gain_ * 8388607.0f); }
   const AdsSettings &settings() const { return settings_; }
   AdsInputMode mode() const { return settings_.inputMode; }
   const uint8_t *lastRegs() const { return last_regs_; }
+  uint32_t spiErrorCount() const { return spi_err_count_; }
+  uint32_t recoveryCount() const { return recovery_count_; }
 
 private:
   SPIClass hspi_{HSPI};
   bool spi_started_ = false;
   bool streaming_ = false;
+  bool id_ok_ = false;
   TaskHandle_t saved_task_handle_ = nullptr;
   uint8_t id_raw_ = 0;
   uint8_t gain_ = 12;
   uint16_t sample_rate_ = 500;
   uint32_t seq_ = 0;
+  uint32_t spi_err_count_ = 0;
+  uint32_t recovery_count_ = 0;
   AdsSettings settings_{};
   uint8_t last_regs_[24] = {0};
 

@@ -1,4 +1,4 @@
-"""Hardware Bring-Up & POST Diagnostics Runner for ESP32 + ADS1299 V1.4."""
+"""Hardware Bring-Up & POST Diagnostics Runner for ESP32 + ADS1299 V1.4 (v2/v3)."""
 
 from __future__ import annotations
 
@@ -10,8 +10,18 @@ from typing import Any
 
 import serial  # type: ignore[import-untyped]
 
+try:
+    from protocol_codec import assert_allowed_serial_port
+except ImportError:  # pragma: no cover
+    from src.protocol_codec import assert_allowed_serial_port
+
 POST_BEGIN = "=== POST_REPORT_BEGIN ==="
 POST_END = "=== POST_REPORT_END ==="
+
+LOW_BAT_SAFE_CUTOFF_MV = 3420
+VALID_AI_STATES: frozenset[str] = frozenset(
+    {"SIM_MODE", "WARMUP", "SQI_ABSTAIN", "NORMAL", "BORDERLINE", "STROKE_ALERT"}
+)
 
 
 def extract_post_report(log_text: str) -> dict[str, Any] | None:
@@ -32,19 +42,54 @@ def extract_post_report(log_text: str) -> dict[str, Any] | None:
     return None
 
 
-def extract_stream_info(log_text: str) -> dict[str, Any] | None:
-    """Extract the latest runtime streaming status JSON emitted by command 'I'."""
+def extract_json_marker(
+    log_text: str, marker_key: str, expected_val: Any = 1
+) -> dict[str, Any] | None:
+    """Extract the latest single-line JSON object where parsed[marker_key] == expected_val."""
     latest: dict[str, Any] | None = None
     for line in log_text.splitlines():
         candidate = line.strip()
-        if candidate.startswith("{") and '"info":1' in candidate:
-            try:
-                parsed = json.loads(candidate)
-                if isinstance(parsed, dict):
-                    latest = parsed
-            except json.JSONDecodeError:
-                continue
+        if not (candidate.startswith("{") and candidate.endswith("}")):
+            continue
+        if f'"{marker_key}"' not in candidate:
+            continue
+        try:
+            parsed = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict) and parsed.get(marker_key) == expected_val:
+            latest = parsed
     return latest
+
+
+def extract_stream_info(log_text: str) -> dict[str, Any] | None:
+    """Extract the latest runtime streaming status JSON emitted by command 'I'."""
+    return extract_json_marker(log_text, "info", 1)
+
+
+def extract_ai_report(log_text: str) -> dict[str, Any] | None:
+    """Extract the latest Tier-1 TinyML triage JSON emitted by command 'AI'."""
+    return extract_json_marker(log_text, "ai", 1)
+
+
+def extract_power_report(log_text: str) -> dict[str, Any] | None:
+    """Extract the latest battery/power telemetry JSON emitted by command 'PWR'."""
+    return extract_json_marker(log_text, "pwr", 1)
+
+
+def extract_wifi_status(log_text: str) -> dict[str, Any] | None:
+    """Extract the latest Wi-Fi/WebSocket status JSON emitted by command 'WIFI_STATUS'."""
+    return extract_json_marker(log_text, "wifi", 1)
+
+
+def extract_sd_list(log_text: str) -> dict[str, Any] | None:
+    """Extract the latest MicroSD file listing JSON emitted by command 'SD_LIST'."""
+    return extract_json_marker(log_text, "sd_list", 1)
+
+
+def extract_recover_report(log_text: str) -> dict[str, Any] | None:
+    """Extract the latest hardware recovery JSON emitted by command 'RECOVER'."""
+    return extract_json_marker(log_text, "recover", 1)
 
 
 def _check_channels_within(values: list[float], low: float, high: float) -> list[int]:
@@ -56,10 +101,76 @@ def _check_channels_within(values: list[float], low: float, high: float) -> list
     return bad
 
 
+def _extract_v3_telemetry(
+    report: dict[str, Any], info: dict[str, Any] | None
+) -> dict[str, Any]:
+    """Normalize optional Firmware v3 power, Edge AI, SD, and Wi-Fi telemetry fields."""
+    merged: dict[str, Any] = {}
+    src_info = info or {}
+
+    vbat_mv: int | None = None
+    vbat_v: float | None = None
+    if "vbat_mv" in src_info or "vbat_mv" in report:
+        raw_mv = src_info.get("vbat_mv", report.get("vbat_mv"))
+        if raw_mv is not None:
+            vbat_mv = int(raw_mv)
+            vbat_v = round(vbat_mv / 1000.0, 3)
+    elif "vbat_v" in src_info or "vbat_v" in report:
+        raw_v = src_info.get("vbat_v", report.get("vbat_v"))
+        if raw_v is not None:
+            vbat_v = round(float(raw_v), 3)
+            vbat_mv = int(round(vbat_v * 1000.0))
+
+    if vbat_mv is not None:
+        merged["vbat_mv"] = vbat_mv
+        merged["vbat_v"] = vbat_v
+
+    for key_out, keys_in in (
+        ("vbat_pct", ("vbat_pct", "bat_pct")),
+        ("usb_only", ("usb_only",)),
+        ("charging", ("charging",)),
+        ("low_bat", ("low_bat",)),
+        ("crit_bat", ("crit_bat",)),
+        ("wifi_state", ("wifi_state",)),
+        ("wifi_ip", ("wifi_ip",)),
+        ("sd_ready", ("sd_ready",)),
+        ("sd_mb", ("sd_mb",)),
+        ("tinyml_features", ("tinyml_features",)),
+        ("tinyml_trees", ("tinyml_trees",)),
+        ("ai_state", ("ai_state",)),
+        ("ai_rf_prob", ("ai_rf_prob",)),
+        ("ai_lr_prob", ("ai_lr_prob",)),
+        ("ai_bsi", ("ai_bsi",)),
+        ("ai_dar", ("ai_dar",)),
+        ("ai_usable_ch", ("ai_usable_ch",)),
+        ("ai_us", ("ai_us",)),
+    ):
+        for k in keys_in:
+            if k in src_info:
+                merged[key_out] = src_info[k]
+                break
+            if k in report:
+                merged[key_out] = report[k]
+                break
+
+    if "ai_ok" in src_info:
+        merged["ai_ok"] = bool(src_info["ai_ok"])
+    elif "ai_ok" in report:
+        merged["ai_ok"] = bool(report["ai_ok"])
+    elif "ai_state" in merged or "tinyml_features" in merged:
+        state_ok = str(merged.get("ai_state", "SIM_MODE")) in VALID_AI_STATES
+        model_ok = (
+            merged.get("tinyml_features", 98) == 98 and merged.get("tinyml_trees", 16) == 16
+        )
+        merged["ai_ok"] = state_ok and model_ok
+
+    return merged
+
+
 def evaluate_hardware_report(
     report: dict[str, Any], info: dict[str, Any] | None = None
 ) -> dict[str, Any]:
-    """Evaluate PASS/FAIL status and pinpoint probable wiring faults."""
+    """Evaluate PASS/FAIL status and pinpoint probable wiring faults (v2 & v3 compatible)."""
     checks: dict[str, bool] = {}
     issues: list[str] = []
 
@@ -78,13 +189,21 @@ def evaluate_hardware_report(
         )
 
     rms_vals = [float(x) for x in report.get("short_rms_uV", [])]
-    bad_short = _check_channels_within(rms_vals, 0.01, 15.0) if len(rms_vals) == 8 else list(range(1, 9))
+    bad_short = (
+        _check_channels_within(rms_vals, 0.01, 15.0)
+        if len(rms_vals) == 8
+        else list(range(1, 9))
+    )
     checks["short_noise_ok"] = bool(report.get("short_cfg_ok")) and len(bad_short) == 0
     if not checks["short_noise_ok"]:
         issues.append(f"Shorted noise bat thuong o kenh: {bad_short} (RMS={rms_vals}).")
 
     test_pp = [float(x) for x in report.get("test_pp_uV", [])]
-    bad_test = _check_channels_within(test_pp, 2800.0, 4700.0) if len(test_pp) == 8 else list(range(1, 9))
+    bad_test = (
+        _check_channels_within(test_pp, 2800.0, 4700.0)
+        if len(test_pp) == 8
+        else list(range(1, 9))
+    )
     checks["test_signal_ok"] = bool(report.get("test_cfg_ok")) and len(bad_test) == 0
     if not checks["test_signal_ok"]:
         issues.append(f"Test signal 3750 uVpp lech nguong o kenh: {bad_test} (PP={test_pp}).")
@@ -101,11 +220,35 @@ def evaluate_hardware_report(
         if not checks["stream_sps_ok"]:
             issues.append(f"Toc do stream khong dat ~500 SPS (do duoc {sps:.1f} SPS).")
 
-    return {
+    v3 = _extract_v3_telemetry(report, info)
+    if "ai_ok" in v3:
+        checks["ai_ok"] = bool(v3["ai_ok"])
+        if not checks["ai_ok"]:
+            issues.append(
+                f"Tier-1 Edge AI loi trang thai/model (state={v3.get('ai_state')}, "
+                f"features={v3.get('tinyml_features')}, trees={v3.get('tinyml_trees')})."
+            )
+
+    if "vbat_mv" in v3:
+        usb_only = bool(v3.get("usb_only", False))
+        vbat_mv = int(v3["vbat_mv"])
+        crit_bat = bool(v3.get("crit_bat", False))
+        bat_ok = usb_only or (not crit_bat and vbat_mv >= LOW_BAT_SAFE_CUTOFF_MV)
+        checks["battery_safe_ok"] = bat_ok
+        if not bat_ok:
+            issues.append(
+                f"Pin LiPo qua thap ({vbat_mv / 1000.0:.2f}V, {v3.get('vbat_pct', 0)}%); "
+                f"nguong an toan >= {LOW_BAT_SAFE_CUTOFF_MV / 1000.0:.2f}V."
+            )
+
+    result: dict[str, Any] = {
         "overall_pass": all(checks.values()),
         "checks": checks,
         "issues": issues,
     }
+    if v3:
+        result["v3_telemetry"] = v3
+    return result
 
 
 def _pulse_reset(ser: serial.Serial) -> None:
@@ -121,12 +264,13 @@ def run_serial_diagnostics(
     port: str, baud: int = 921600, timeout_s: float = 15.0
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None, list[str]]:
     """Open serial port, trigger POST if needed, and collect diagnostics + live stream info."""
+    safe_port = assert_allowed_serial_port(port)
     lines: list[str] = []
     report: dict[str, Any] | None = None
     info: dict[str, Any] | None = None
 
     ser = serial.Serial()
-    ser.port = port
+    ser.port = safe_port
     ser.baudrate = baud
     ser.timeout = 0.15
     ser.dtr = False
@@ -179,7 +323,7 @@ def run_serial_diagnostics(
 
 def main() -> int:
     """CLI entrypoint to run hardware POST on COM port and save JSON summary."""
-    parser = argparse.ArgumentParser(description="ESP32 + ADS1299 V1.4 Hardware Diagnostics")
+    parser = argparse.ArgumentParser(description="ESP32 + ADS1299 V1.4 Hardware Diagnostics (v2/v3)")
     parser.add_argument("--port", default="COM11", help="Serial port (default: COM11)")
     parser.add_argument("--baud", type=int, default=921600, help="Baud rate (default: 921600)")
     parser.add_argument(
@@ -189,9 +333,10 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    report, info, raw_lines = run_serial_diagnostics(args.port, args.baud)
+    safe_port = assert_allowed_serial_port(args.port)
+    report, info, raw_lines = run_serial_diagnostics(safe_port, args.baud)
     if report is None:
-        print(f"ERROR: Khong nhan duoc POST_REPORT tu {args.port}. Raw lines ({len(raw_lines)}):")
+        print(f"ERROR: Khong nhan duoc POST_REPORT tu {safe_port}. Raw lines ({len(raw_lines)}):")
         for ln in raw_lines[-20:]:
             print("  ", ln)
         return 2
@@ -211,6 +356,9 @@ def main() -> int:
     print(f"Buttons idle  : {report.get('buttons_idle')}")
     if info:
         print(f"Live stream   : sps={info.get('sps')} Hz, fps={info.get('fps')}, samples={info.get('total')}")
+    if "v3_telemetry" in verdict:
+        v3 = verdict["v3_telemetry"]
+        print("v3 Telemetry  :", json.dumps(v3, ensure_ascii=False))
     if verdict["issues"]:
         print("Issues:", verdict["issues"])
     return 0 if verdict["overall_pass"] else 1

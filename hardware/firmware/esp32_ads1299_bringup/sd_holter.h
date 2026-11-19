@@ -103,6 +103,7 @@ public:
       hdr.srb1 = (ads.mode() == ADS_IN_EEG_SRB1) ? 1 : 0;
       hdr.bias_on = ads.settings().biasAllCh ? 1 : 0;
       hdr.lsb_uV = ads.lsbUv();
+      hdr.reserved[0] = ads.settings().chEnableMask;
 
       size_t written = file_.write(reinterpret_cast<const uint8_t *>(&hdr), sizeof(hdr));
       file_.flush();
@@ -170,7 +171,44 @@ public:
   bool isRecording() const { return recording_; }
   uint32_t cardMb() const { return card_mb_; }
   uint32_t samplesWritten() const { return samples_written_; }
+  uint32_t writeErrors() const { return write_err_count_; }
   const char *currentFile() const { return current_file_; }
+
+  void printFileListJson(Print &out) {
+    if (!mounted_) {
+      mount();
+    }
+    if (!mounted_ || !lockBus()) {
+      out.println("{\"sd_list\":1,\"mounted\":false,\"card_mb\":0,\"files\":[]}");
+      return;
+    }
+    digitalWrite(PIN_TFT_CS, HIGH);
+    out.printf("{\"sd_list\":1,\"mounted\":true,\"card_mb\":%lu,\"files\":[", (unsigned long)card_mb_);
+    File root = SD.open("/");
+    bool first = true;
+    int count = 0;
+    if (root && root.isDirectory()) {
+      File entry = root.openNextFile();
+      while (entry && count < 32) {
+        if (!entry.isDirectory()) {
+          String fn = String(entry.name());
+          if (fn.endsWith(".BIN") || fn.endsWith(".bin")) {
+            if (!first) out.print(",");
+            first = false;
+            out.printf("{\"name\":\"%s\",\"bytes\":%lu}",
+                       fn.c_str(),
+                       static_cast<unsigned long>(entry.size()));
+            count++;
+          }
+        }
+        entry.close();
+        entry = root.openNextFile();
+      }
+      root.close();
+    }
+    out.println("]}");
+    unlockBus();
+  }
 
 private:
   SPIClass *vspi_ = nullptr;
@@ -180,6 +218,7 @@ private:
   bool recording_ = false;
   uint32_t card_mb_ = 0;
   uint32_t samples_written_ = 0;
+  uint32_t write_err_count_ = 0;
   uint32_t last_flush_ms_ = 0;
   char current_file_[24] = "";
   HolterSampleRecord batch_[BATCH_SAMPLES]{};
@@ -217,6 +256,7 @@ private:
       last_flush_ms_ = millis();
     }
     if (!writeOk) {
+      write_err_count_++;
       file_.close();
       recording_ = false;
       mounted_ = false;

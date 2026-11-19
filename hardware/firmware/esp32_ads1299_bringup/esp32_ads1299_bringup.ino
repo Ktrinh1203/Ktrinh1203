@@ -1,17 +1,22 @@
 #include <Arduino.h>
 #include <SPI.h>
+#include <Preferences.h>
 #include "pins_config.h"
 #include "st7735s_drv.h"
 #include "ads1299_drv.h"
 #include "sd_holter.h"
 #include "pc_bridge.h"
+#include "power_monitor.h"
+#include "tinyml_stroke_edge.h"
+#include "wifi_ws_link.h"
 
 // ============================================================================
-// Production Firmware: 8-Ch Portable EEG/EMG Holter & Live Monitor
-// Dual-SPI + Dual-Core:
+// Production Firmware v3: 8-Ch Portable EEG/EMG Holter, Edge AI & NeuroLink Bridge
+// Dual-SPI + Dual-Core + Watchdog Resilience:
 //   - Core 1: HSPI Mode 1 (4 MHz) đọc ADS1299 V1.4 qua ngắt DRDY -> g_ring
 //   - Core 0: vspiMutex chia sẻ TFT 1.44" ST7735S + MicroSD Holter + 5-Way HMI
-//   - Serial 921,600 bps: Tương thích song song WinForm/Studio Binary & CLI
+//   - Tier-1 Edge AI: 256-pt Radix-2 FFT + 16-Tree RF / Linear Stroke Screening
+//   - Dual Link: USB Serial 921,600 bps + Optional Wi-Fi RFC6455 WebSocket
 // ============================================================================
 
 struct ChannelStats {
@@ -50,7 +55,11 @@ static St7735sDriver g_tft;
 static Ads1299Driver g_ads;
 static SdHolterLogger g_sd;
 static PcBridge g_bridge;
-static SampleRingBuffer<512> g_ring;
+static PowerMonitor g_power;
+static TinyMlStrokeEdge g_edgeAi;
+static WifiWsLink g_wifi;
+static Preferences g_prefs;
+static SampleRingBuffer<256> g_ring;
 
 static TaskHandle_t g_adsTaskHandle = nullptr;
 static volatile bool g_pauseStream = true;
@@ -59,6 +68,8 @@ static volatile uint32_t g_streamTotalSamples = 0;
 static volatile uint32_t g_markerCount = 0;
 static uint32_t g_lastMarkerSample = 0;
 static uint32_t g_markerPopupUntilMs = 0;
+static uint32_t g_lastValidPopMs = 0;
+static uint32_t g_lastHotplugRetryMs = 0;
 
 // Popup thông báo trạng thái nhanh trên màn hình TFT
 static char g_toastText[24] = "";
@@ -85,18 +96,18 @@ static uint8_t g_scaleIdx = 0;
 static constexpr float SCALE_VALUES[5] = {0.0f, 50.0f, 200.0f, 500.0f, 2500.0f};
 static constexpr const char *SCALE_NAMES[5] = {"AUTO", "50uV", "200u", "500u", "2.5m"};
 
-// 5 Trang HMI: 0=CH1-4, 1=CH5-8, 2=8-CH Bars, 3=Lead-Off/Imp, 4=Config/SD Menu
+// 6 Trang HMI: 0=CH1-4, 1=CH5-8, 2=8-CH Bars, 3=Lead-Off, 4=Config Menu, 5=P6: AI TRIAGE
+static constexpr uint8_t NUM_UI_PAGES = 6;
+static constexpr uint8_t NUM_MENU_ITEMS = 7; // 0:Mode, 1:Rate, 2:Gain, 3:BIAS, 4:Scale, 5:SD, 6:WiFi
 static uint8_t g_uiPage = 0;
 static bool g_menuEditMode = false;
-static uint8_t g_menuCursor = 0; // 0:Mode, 1:Rate, 2:Gain, 3:BIAS, 4:Scale, 5:SD
+static uint8_t g_menuCursor = 0;
 
 static bool g_adsOk = false;
 static uint8_t g_lastRegs[24] = {0};
 static float g_drdyBootHz = 0.0f;
 static float g_lastStreamSps = 0.0f;
 static uint32_t g_fpsDisplay = 0;
-
-static AdsSample g_postBuf[360];
 
 static void showToast(const char *msg, uint16_t color, uint32_t durationMs = 1300) {
   strncpy(g_toastText, msg, sizeof(g_toastText) - 1);
@@ -121,29 +132,57 @@ static void resetScopeBuffers() {
   }
 }
 
-static void computeStats(const AdsSample *samples, int count, ChannelStats &out) {
-  out.samples = count;
-  if (count <= 0) return;
+static void collectStatsBlocking(int maxSamples, int skipSamples, uint32_t timeoutMs, ChannelStats &out) {
+  out = ChannelStats{};
+  int totalNeeded = skipSamples + maxSamples;
+  int got = 0;
+  int validCount = 0;
+  uint32_t lastEdge = g_ads_drdy_irq_count;
+  uint32_t tStart = millis();
 
+  float x0[8] = {0};
+  float vmin[8] = {0};
+  float vmax[8] = {0};
+  double sumD[8] = {0};
+  double sumSqD[8] = {0};
+  AdsSample s{};
+
+  while (got < totalNeeded && (millis() - tStart) < timeoutMs) {
+    if (g_ads_drdy_irq_count != lastEdge || digitalRead(PIN_ADS_DRDY) == LOW) {
+      lastEdge = g_ads_drdy_irq_count;
+      if (g_ads.readFrame(s)) {
+        if (got >= skipSamples) {
+          for (int ch = 0; ch < 8; ++ch) {
+            float v = s.ch_uV[ch];
+            if (validCount == 0) {
+              x0[ch] = v;
+              vmin[ch] = v;
+              vmax[ch] = v;
+            } else {
+              if (v < vmin[ch]) vmin[ch] = v;
+              if (v > vmax[ch]) vmax[ch] = v;
+            }
+            double d = static_cast<double>(v) - static_cast<double>(x0[ch]);
+            sumD[ch] += d;
+            sumSqD[ch] += d * d;
+          }
+          validCount++;
+        }
+        got++;
+      }
+    } else {
+      delayMicroseconds(100);
+    }
+  }
+
+  out.samples = validCount;
+  if (validCount <= 0) return;
   for (int ch = 0; ch < 8; ++ch) {
-    double sum = 0.0;
-    float vmin = samples[0].ch_uV[ch];
-    float vmax = samples[0].ch_uV[ch];
-    for (int i = 0; i < count; ++i) {
-      float v = samples[i].ch_uV[ch];
-      sum += v;
-      if (v < vmin) vmin = v;
-      if (v > vmax) vmax = v;
-    }
-    double mean = sum / count;
-    double sq = 0.0;
-    for (int i = 0; i < count; ++i) {
-      double d = samples[i].ch_uV[ch] - mean;
-      sq += d * d;
-    }
-    out.mean_uV[ch] = static_cast<float>(mean);
-    out.rms_uV[ch]  = static_cast<float>(sqrt(sq / count));
-    out.pp_uV[ch]   = vmax - vmin;
+    double meanD = sumD[ch] / validCount;
+    double var = (sumSqD[ch] / validCount) - (meanD * meanD);
+    out.mean_uV[ch] = static_cast<float>(static_cast<double>(x0[ch]) + meanD);
+    out.rms_uV[ch]  = (var > 0.0) ? static_cast<float>(sqrt(var)) : 0.0f;
+    out.pp_uV[ch]   = vmax[ch] - vmin[ch];
   }
 }
 
@@ -166,7 +205,7 @@ static void drawBootSplash(const char *line1, const char *line2) {
   c.setTextColor(0x07FF);
   c.setTextSize(1);
   c.setCursor(6, 10);
-  c.print("EEG HOLTER STUDIO");
+  c.print("NEUROLINK HOLTER V3");
   c.drawFastHLine(4, 22, 120, 0x3186);
 
   c.setTextColor(0xFFFF);
@@ -180,10 +219,11 @@ static void drawBootSplash(const char *line1, const char *line2) {
 
 static void pauseAdsTask() {
   g_pauseStream = true;
+  __sync_synchronize();
   if (g_adsTaskHandle != nullptr) {
     xTaskNotifyGive(g_adsTaskHandle);
     uint32_t t0 = millis();
-    while (!g_adsTaskPaused && (millis() - t0) < 120) {
+    while (!g_adsTaskPaused && (millis() - t0) < 150) {
       delay(1);
     }
   }
@@ -192,6 +232,9 @@ static void pauseAdsTask() {
 static void resumeAdsTask() {
   g_ring.clear();
   g_ads.startContinuous(g_adsTaskHandle);
+  g_lastValidPopMs = millis();
+  g_adsTaskPaused = false;
+  __sync_synchronize();
   g_pauseStream = false;
   if (g_adsTaskHandle != nullptr) {
     xTaskNotifyGive(g_adsTaskHandle);
@@ -207,16 +250,19 @@ static void applyRuntimeSettings(const AdsSettings &nextSettings) {
   g_ads.stopContinuous();
   delay(5);
   bool ok = g_ads.applySettings(nextSettings, false);
+  g_adsOk = g_ads.isIdOk() && ok;
   resetScopeBuffers();
+  g_edgeAi.reset(g_ads.sampleRate());
   resumeAdsTask();
 
   if (!g_bridge.isBinaryStreaming()) {
-    Serial.printf("[CFG] mode=%s rate=%u pga=%u bias=%d loff=%d ok=%d\n",
+    Serial.printf("[CFG] mode=%s rate=%u pga=%u bias=%d loff=%d mask=0x%02X ok=%d\n",
                   Ads1299Driver::inputModeShortName(nextSettings.inputMode),
                   g_ads.sampleRate(),
                   g_ads.gain(),
                   nextSettings.biasAllCh ? 1 : 0,
                   nextSettings.loffEnable ? 1 : 0,
+                  nextSettings.chEnableMask,
                   ok ? 1 : 0);
   }
 }
@@ -257,6 +303,50 @@ static void toggleSdRecording() {
   }
 }
 
+static void toggleWifiLink() {
+  if (g_wifi.isEnabled()) {
+    g_wifi.setEnabled(false);
+    showToast("WIFI OFF", 0xFFE0);
+  } else {
+    if (g_wifi.setEnabled(true)) {
+      showToast("WIFI CONNECTING", 0x07FF);
+    } else {
+      showToast("NO WIFI SSID", 0xF800);
+    }
+  }
+}
+
+static void saveUserPrefs() {
+  const AdsSettings &s = g_ads.settings();
+  g_prefs.begin("holter_cfg", false);
+  g_prefs.putUChar("rate", s.rateIdx);
+  g_prefs.putUChar("pga", s.pgaIdx);
+  g_prefs.putUChar("mode", static_cast<uint8_t>(s.inputMode));
+  g_prefs.putBool("bias", s.biasAllCh);
+  g_prefs.putBool("loff", s.loffEnable);
+  g_prefs.putUChar("mask", s.chEnableMask);
+  g_prefs.putUChar("scale", g_scaleIdx);
+  g_prefs.end();
+  showToast("CFG SAVED", 0x07E0);
+}
+
+static bool loadUserPrefs(AdsSettings &out) {
+  g_prefs.begin("holter_cfg", true);
+  if (!g_prefs.isKey("rate")) {
+    g_prefs.end();
+    return false;
+  }
+  out.rateIdx = g_prefs.getUChar("rate", 1);
+  out.pgaIdx = g_prefs.getUChar("pga", 5);
+  out.inputMode = static_cast<AdsInputMode>(g_prefs.getUChar("mode", 2) % 4);
+  out.biasAllCh = g_prefs.getBool("bias", true);
+  out.loffEnable = g_prefs.getBool("loff", false);
+  out.chEnableMask = g_prefs.getUChar("mask", 0xFF);
+  g_scaleIdx = g_prefs.getUChar("scale", 0) % 5;
+  g_prefs.end();
+  return true;
+}
+
 static void runFullDiagnostics() {
   g_bridge.setBinaryStreaming(false);
   g_sd.stopRecording();
@@ -264,6 +354,9 @@ static void runFullDiagnostics() {
   g_ads.stopContinuous();
   g_ring.clear();
   delay(20);
+
+  g_power.sampleNow();
+  const PowerStatus &pwr = g_power.status();
 
   drawBootSplash("Testing ADS1299...", "Checking ID & DRDY");
   g_adsOk = g_ads.probeAndReadRegs(g_drdyBootHz, g_lastRegs);
@@ -283,9 +376,8 @@ static void runFullDiagnostics() {
     sh.loffEnable = false;
     shortCfgOk = g_ads.applySettings(sh, false);
     g_ads.startContinuous(nullptr);
-    int nShort = g_ads.collectBlocking(g_postBuf, 128, 15, 600);
+    collectStatsBlocking(128, 15, 600, shortStats);
     g_ads.stopContinuous();
-    computeStats(g_postBuf, nShort, shortStats);
 
     drawBootSplash("ADS1299 OK!", "2Hz Test Signal...");
     AdsSettings ts{};
@@ -296,9 +388,8 @@ static void runFullDiagnostics() {
     ts.loffEnable = false;
     testCfgOk = g_ads.applySettings(ts, false);
     g_ads.startContinuous(nullptr);
-    int nTest = g_ads.collectBlocking(g_postBuf, 350, 25, 1100);
+    collectStatsBlocking(350, 25, 1100, testStats);
     g_ads.stopContinuous();
-    computeStats(g_postBuf, nTest, testStats);
   } else {
     AdsSettings ts{};
     g_ads.applySettings(ts, false);
@@ -310,7 +401,7 @@ static void runFullDiagnostics() {
 
   Serial.println("=== POST_REPORT_BEGIN ===");
   Serial.print("{");
-  Serial.printf("\"fw\":\"esp32_ads1299_holter_v2\",");
+  Serial.printf("\"fw\":\"esp32_ads1299_holter_v3\",");
   Serial.printf("\"sd_cs_isolated\":%s,", digitalRead(PIN_SD_CS) == HIGH ? "true" : "false");
   Serial.printf("\"sd_ready\":%s,", g_sd.isMounted() ? "true" : "false");
   Serial.printf("\"sd_mb\":%lu,", (unsigned long)g_sd.cardMb());
@@ -321,6 +412,11 @@ static void runFullDiagnostics() {
   Serial.printf("\"id_ok\":%s,", g_adsOk ? "true" : "false");
   Serial.printf("\"drdy_boot_hz\":%.1f,", g_drdyBootHz);
   Serial.printf("\"drdy_ok\":%s,", (g_drdyBootHz >= 200.0f && g_drdyBootHz <= 300.0f) ? "true" : "false");
+  Serial.printf("\"usb_only\":%s,", pwr.usb_only ? "true" : "false");
+  Serial.printf("\"vbat_mv\":%u,", pwr.vbat_mv);
+  Serial.printf("\"bat_pct\":%u,", pwr.bat_pct);
+  Serial.printf("\"tinyml_features\":%d,", STROKE_GLASSES_NUM_FEATURES);
+  Serial.printf("\"tinyml_trees\":%d,", STROKE_GLASSES_NUM_TREES);
 
   Serial.print("\"regs_hex\":\"");
   for (int i = 0; i < 24; ++i) {
@@ -353,13 +449,19 @@ static void runFullDiagnostics() {
   liveDef.inputMode = ADS_IN_TEST_SIGNAL;
   liveDef.biasAllCh = true;
   liveDef.loffEnable = false;
+  liveDef.chEnableMask = 0xFF;
   g_ads.applySettings(liveDef, false);
   resetScopeBuffers();
+  g_edgeAi.reset(g_ads.sampleRate());
   resumeAdsTask();
 }
 
 static void printRuntimeInfo() {
-  Serial.printf("{\"info\":1,\"ads_ok\":%s,\"id\":\"0x%02X\",\"mode\":%d,\"mode_name\":\"%s\",\"rate_sps\":%u,\"pga\":%u,\"bias\":%s,\"loff\":%s,\"sd_ready\":%s,\"sd_rec\":%s,\"sd_samples\":%lu,\"markers\":%lu,\"sps\":%.1f,\"fps\":%lu,\"total\":%lu,\"dropped\":%lu,\"loff_stat_p\":%lu,\"loff_stat_n\":%lu,",
+  const PowerStatus &pwr = g_power.status();
+  const EdgeAiReport &ai = g_edgeAi.report();
+  String ip = g_wifi.ipString();
+
+  Serial.printf("{\"info\":1,\"fw\":\"V3.0.0\",\"ads_ok\":%s,\"id\":\"0x%02X\",\"mode\":%d,\"mode_name\":\"%s\",\"rate_sps\":%u,\"pga\":%u,\"bias\":%s,\"loff\":%s,\"ch_mask\":\"0x%02X\",\"spi_err\":%lu,\"recoveries\":%lu,\"sd_ready\":%s,\"sd_rec\":%s,\"sd_samples\":%lu,\"sd_err\":%lu,\"markers\":%lu,\"sps\":%.1f,\"fps\":%lu,\"total\":%lu,\"dropped\":%lu,\"loff_stat_p\":%lu,\"loff_stat_n\":%lu,\"usb_only\":%s,\"vbat_mv\":%u,\"bat_pct\":%u,\"wifi_state\":\"%s\",\"wifi_ip\":\"%s\",\"ai_state\":\"%s\",\"ai_rf_prob\":%.4f,\"ai_lr_prob\":%.4f,\"ai_bsi\":%.4f,\"ai_dar\":%.2f,\"ai_usable_ch\":%u,\"ai_us\":%lu,",
                 g_adsOk ? "true" : "false",
                 g_ads.idRaw(),
                 static_cast<int>(g_ads.mode()),
@@ -368,22 +470,89 @@ static void printRuntimeInfo() {
                 g_ads.gain(),
                 g_ads.settings().biasAllCh ? "true" : "false",
                 g_ads.settings().loffEnable ? "true" : "false",
+                g_ads.settings().chEnableMask,
+                (unsigned long)g_ads.spiErrorCount(),
+                (unsigned long)g_ads.recoveryCount(),
                 g_sd.isMounted() ? "true" : "false",
                 g_sd.isRecording() ? "true" : "false",
                 (unsigned long)g_sd.samplesWritten(),
+                (unsigned long)g_sd.writeErrors(),
                 (unsigned long)g_markerCount,
                 g_lastStreamSps,
                 (unsigned long)g_fpsDisplay,
                 (unsigned long)g_streamTotalSamples,
                 (unsigned long)g_ring.droppedCount(),
                 static_cast<unsigned long>((g_latestStatus24 >> 12) & 0xFF),
-                static_cast<unsigned long>((g_latestStatus24 >> 4) & 0xFF));
+                static_cast<unsigned long>((g_latestStatus24 >> 4) & 0xFF),
+                pwr.usb_only ? "true" : "false",
+                pwr.vbat_mv,
+                pwr.bat_pct,
+                WifiWsLink::stateName(g_wifi.state()),
+                ip.c_str(),
+                TinyMlStrokeEdge::stateName(ai.state),
+                ai.rf_prob,
+                ai.lr_prob,
+                ai.bsi_dar,
+                ai.mean_dar,
+                ai.usable_ch,
+                (unsigned long)ai.latency_us);
   printFloatArrayJson("pp_uV", g_livePp, true);
   Serial.print("\"buttons_idle\":{");
   for (int i = 0; i < 6; ++i) {
     Serial.printf("\"%s\":%d%s", g_buttons[i].fullName, g_buttons[i].idleHigh ? 1 : 0, (i < 5) ? "," : "");
   }
   Serial.println("}}");
+}
+
+static void printEdgeAiJson() {
+  const EdgeAiReport &ai = g_edgeAi.report();
+  Serial.printf("{\"ai\":1,\"state\":\"%s\",\"rf_prob\":%.4f,\"lr_prob\":%.4f,\"mean_dar\":%.3f,\"bsi_dar\":%.4f,\"bsi_delta\":%.4f,\"usable_ch\":%u,\"eval_count\":%lu,\"latency_us\":%lu}\n",
+                TinyMlStrokeEdge::stateName(ai.state),
+                ai.rf_prob,
+                ai.lr_prob,
+                ai.mean_dar,
+                ai.bsi_dar,
+                ai.bsi_delta,
+                ai.usable_ch,
+                (unsigned long)ai.eval_count,
+                (unsigned long)ai.latency_us);
+}
+
+static void printPowerJson() {
+  const PowerStatus &p = g_power.status();
+  Serial.printf("{\"pwr\":1,\"usb_only\":%s,\"charging\":%s,\"vbat_mv\":%u,\"bat_pct\":%u,\"low_bat\":%s,\"crit_bat\":%s}\n",
+                p.usb_only ? "true" : "false",
+                p.charging ? "true" : "false",
+                p.vbat_mv,
+                p.bat_pct,
+                p.low_bat ? "true" : "false",
+                p.crit_bat ? "true" : "false");
+}
+
+static void sendWifiHeartbeat() {
+  if (!g_wifi.isStreaming()) return;
+  const PowerStatus &pwr = g_power.status();
+  const EdgeAiReport &ai = g_edgeAi.report();
+  char buf[384];
+  snprintf(buf, sizeof(buf),
+           "{\"type\":\"telemetry\",\"fw\":\"V3.0.0\",\"mode\":\"%s\",\"rate_sps\":%u,\"pga\":%u,\"sps\":%.1f,\"sd_rec\":%s,\"markers\":%lu,\"usb_only\":%s,\"vbat_mv\":%u,\"bat_pct\":%u,\"loff_p\":%lu,\"ai_state\":\"%s\",\"ai_rf_prob\":%.4f,\"ai_lr_prob\":%.4f,\"ai_bsi\":%.4f,\"ai_dar\":%.2f,\"ai_usable_ch\":%u}",
+           Ads1299Driver::inputModeShortName(g_ads.mode()),
+           g_ads.sampleRate(),
+           g_ads.gain(),
+           g_lastStreamSps,
+           g_sd.isRecording() ? "true" : "false",
+           (unsigned long)g_markerCount,
+           pwr.usb_only ? "true" : "false",
+           pwr.vbat_mv,
+           pwr.bat_pct,
+           static_cast<unsigned long>((g_latestStatus24 >> 12) & 0xFF),
+           TinyMlStrokeEdge::stateName(ai.state),
+           ai.rf_prob,
+           ai.lr_prob,
+           ai.bsi_dar,
+           ai.mean_dar,
+           ai.usable_ch);
+  g_wifi.sendJsonTelemetry(buf);
 }
 
 // Task Core 1: Thu mẫu ADS1299 thời gian thực qua DRDY -> g_ring
@@ -403,9 +572,10 @@ static void adsAcqTask(void *param) {
       continue;
     }
     if (notified > 0 || digitalRead(PIN_ADS_DRDY) == LOW) {
-      g_ads.readFrame(s);
-      g_ring.push(s);
-      g_streamTotalSamples = g_streamTotalSamples + 1;
+      if (g_ads.readFrame(s)) {
+        g_ring.push(s);
+        g_streamTotalSamples = g_streamTotalSamples + 1;
+      }
     }
   }
 }
@@ -413,9 +583,9 @@ static void adsAcqTask(void *param) {
 static void handleMenuNavigation(int btnIdx) {
   AdsSettings next = g_ads.settings();
   if (btnIdx == 0) { // UP
-    g_menuCursor = (g_menuCursor + 5) % 6;
+    g_menuCursor = (g_menuCursor + NUM_MENU_ITEMS - 1) % NUM_MENU_ITEMS;
   } else if (btnIdx == 1) { // DWN
-    g_menuCursor = (g_menuCursor + 1) % 6;
+    g_menuCursor = (g_menuCursor + 1) % NUM_MENU_ITEMS;
   } else if (btnIdx == 2 || btnIdx == 3) { // LET / RHT
     int delta = (btnIdx == 3) ? 1 : -1;
     if (g_menuCursor == 0) {
@@ -434,15 +604,17 @@ static void handleMenuNavigation(int btnIdx) {
       g_scaleIdx = static_cast<uint8_t>((static_cast<int>(g_scaleIdx) + delta + 5) % 5);
     } else if (g_menuCursor == 5) {
       toggleSdRecording();
+    } else if (g_menuCursor == 6) {
+      toggleWifiLink();
     }
   }
 }
 
 static void handleNormalAction(int btnIdx) {
   if (btnIdx == 0) { // UP -> lùi trang
-    g_uiPage = (g_uiPage + 4) % 5;
+    g_uiPage = (g_uiPage + NUM_UI_PAGES - 1) % NUM_UI_PAGES;
   } else if (btnIdx == 1) { // DWN -> tiến trang
-    g_uiPage = (g_uiPage + 1) % 5;
+    g_uiPage = (g_uiPage + 1) % NUM_UI_PAGES;
   } else if (btnIdx == 2 || btnIdx == 3) { // LET / RHT
     int delta = (btnIdx == 3) ? 1 : -1;
     if (g_uiPage <= 2) {
@@ -451,6 +623,11 @@ static void handleNormalAction(int btnIdx) {
       AdsSettings next = g_ads.settings();
       next.loffEnable = !next.loffEnable;
       applyRuntimeSettings(next);
+    } else if (g_uiPage == 4) {
+      g_menuEditMode = true;
+      handleMenuNavigation(btnIdx);
+    } else if (g_uiPage == 5) {
+      toggleWifiLink();
     }
   } else if (btnIdx == 4) { // OK (MID) short press
     if (g_uiPage <= 2) {
@@ -463,6 +640,8 @@ static void handleNormalAction(int btnIdx) {
       applyRuntimeSettings(next);
     } else if (g_uiPage == 4) {
       g_menuEditMode = !g_menuEditMode;
+    } else if (g_uiPage == 5) {
+      saveUserPrefs();
     }
   }
 }
@@ -646,6 +825,56 @@ static void renderLeadOffPage(GFXcanvas16 &c) {
   c.print(isElec ? "OK:Toggle LOFF" : "Switch EEG/EMG");
 }
 
+static void renderEdgeAiHealthPage(GFXcanvas16 &c) {
+  const EdgeAiReport &ai = g_edgeAi.report();
+  const PowerStatus &pwr = g_power.status();
+
+  c.setTextColor(0x07FF);
+  c.setCursor(4, 18);
+  c.print("P6: AI TRIAGE & SYS");
+
+  uint16_t aiCol = 0x07E0;
+  if (ai.state == AI_STROKE_ALERT) aiCol = ((millis() / 300) % 2) ? 0xF800 : 0xFFE0;
+  else if (ai.state == AI_BORDERLINE || ai.state == AI_SQI_ABSTAIN) aiCol = 0xFD20;
+  else if (ai.state == AI_SIM_MODE || ai.state == AI_WARMING_UP) aiCol = 0x07FF;
+
+  c.drawRoundRect(3, 28, 122, 16, 2, aiCol);
+  c.setTextColor(aiCol);
+  c.setCursor(7, 32);
+  c.printf("AI: %s", TinyMlStrokeEdge::stateName(ai.state));
+
+  c.setTextColor(0xFFFF);
+  c.setCursor(4, 48);
+  c.printf("RF:%4.1f%%  LR:%4.1f%%", ai.rf_prob * 100.0f, ai.lr_prob * 100.0f);
+
+  c.setCursor(4, 59);
+  c.printf("BSI:%.3f DAR:%5.1f", ai.bsi_dar, ai.mean_dar);
+
+  c.setCursor(4, 70);
+  if (pwr.usb_only) {
+    c.setTextColor(0x07E0);
+    c.print("PWR: USB 5V (NO BAT)");
+  } else {
+    c.setTextColor(pwr.low_bat ? 0xF800 : 0x07E0);
+    c.printf("BAT:%.2fV %u%%%s", pwr.vbat_mv / 1000.0f, pwr.bat_pct, pwr.charging ? " CHG" : "");
+  }
+
+  c.setTextColor(g_wifi.isStreaming() ? 0x07E0 : 0xFFE0);
+  c.setCursor(4, 81);
+  c.printf("NET: %s", WifiWsLink::stateName(g_wifi.state()));
+
+  c.setTextColor(0xAD55);
+  c.setCursor(4, 92);
+  c.printf("SPI E:%lu R:%lu SQI:%u/8",
+           (unsigned long)g_ads.spiErrorCount(),
+           (unsigned long)g_ads.recoveryCount(),
+           ai.usable_ch);
+
+  c.setTextColor(0x7BEF);
+  c.setCursor(4, 102);
+  c.print("LT/RT:WiFi OK:Save");
+}
+
 static void renderConfigMenuPage(GFXcanvas16 &c) {
   const AdsSettings &s = g_ads.settings();
   c.setTextColor(g_menuEditMode ? 0xFD20 : 0x07FF);
@@ -653,26 +882,27 @@ static void renderConfigMenuPage(GFXcanvas16 &c) {
   c.print(g_menuEditMode ? "CONFIG [EDIT MODE]" : "CONFIG (OK=Edit)");
 
   const char *sdStr = g_sd.isRecording() ? "REC" : (g_sd.isMounted() ? "READY" : "NO SD");
-  char lines[6][22];
+  char lines[NUM_MENU_ITEMS][22];
   snprintf(lines[0], 22, "Mode : %s", Ads1299Driver::inputModeShortName(s.inputMode));
   snprintf(lines[1], 22, "Rate : %u SPS", g_ads.sampleRate());
   snprintf(lines[2], 22, "Gain : x%u", g_ads.gain());
   snprintf(lines[3], 22, "BIAS : %s", s.biasAllCh ? "ON (RLD)" : "OFF");
   snprintf(lines[4], 22, "Scale: %s", SCALE_NAMES[g_scaleIdx]);
   snprintf(lines[5], 22, "SD   : %s", sdStr);
+  snprintf(lines[6], 22, "WiFi : %s", WifiWsLink::stateName(g_wifi.state()));
 
-  for (int i = 0; i < 6; ++i) {
-    int y = 30 + i * 13;
+  for (int i = 0; i < NUM_MENU_ITEMS; ++i) {
+    int y = 29 + i * 11;
     bool sel = (g_menuEditMode && g_menuCursor == i);
     if (sel) {
-      c.fillRect(3, y - 1, 122, 11, 0x0210);
+      c.fillRect(3, y - 1, 122, 10, 0x0210);
       c.setTextColor(0xFFE0);
-      c.setCursor(5, y + 1);
+      c.setCursor(5, y);
       c.print(">");
     } else {
       c.setTextColor(0xFFFF);
     }
-    c.setCursor(13, y + 1);
+    c.setCursor(13, y);
     c.print(lines[i]);
   }
 }
@@ -699,11 +929,14 @@ static void renderScreen() {
   c.setTextColor(0xFFE0);
   c.printf("x%u", g_ads.gain());
 
-  // Chỉ báo trạng thái PC stream hoặc SD Recording
+  // Chỉ báo trạng thái SD Recording / WiFi WS / PC stream / Trang
   c.setCursor(82, 4);
   if (g_sd.isRecording()) {
     c.setTextColor((millis() / 400) % 2 ? 0xF800 : 0xFFE0);
     c.print("REC");
+  } else if (g_wifi.isStreaming()) {
+    c.setTextColor(0x07FF);
+    c.print("WS ");
   } else if (g_bridge.isBinaryStreaming()) {
     c.setTextColor(0x07E0);
     c.print("PC ");
@@ -721,14 +954,15 @@ static void renderScreen() {
   else if (g_uiPage == 1) renderWavePage(c, 4);
   else if (g_uiPage == 2) renderBarsPage(c);
   else if (g_uiPage == 3) renderLeadOffPage(c);
-  else renderConfigMenuPage(c);
+  else if (g_uiPage == 4) renderConfigMenuPage(c);
+  else renderEdgeAiHealthPage(c);
 
   // Popup thông báo nhanh hoặc Marker
   if (millis() < g_toastUntilMs) {
     c.fillRect(14, 50, 100, 18, 0x0000);
     c.drawRect(14, 50, 100, 18, g_toastColor);
     c.setTextColor(g_toastColor);
-    c.setCursor(22, 55);
+    c.setCursor(20, 55);
     c.print(g_toastText);
   } else if (millis() < g_markerPopupUntilMs) {
     c.fillRect(36, 17, 56, 11, 0xFFE0);
@@ -770,9 +1004,7 @@ static void onBridgeCycleTft() {
 }
 
 static void onBridgeSetStream(bool en) {
-  if (!en) {
-    // Khởi tạo lại bộ đếm không để log rác tràn
-  }
+  (void)en;
 }
 
 static void onBridgeSdCmd(uint8_t cmd) {
@@ -785,7 +1017,120 @@ static void onBridgeSdCmd(uint8_t cmd) {
     if (!g_sd.isRecording()) toggleSdRecording();
   } else if (cmd == 2) {
     if (g_sd.isRecording()) toggleSdRecording();
+  } else if (cmd == 3) {
+    g_sd.printFileListJson(Serial);
   }
+}
+
+static void onBridgeExtendedCmd(const String &cmd) {
+  if (cmd == "AI" || cmd == "ai") {
+    if (!g_bridge.isBinaryStreaming()) printEdgeAiJson();
+  } else if (cmd == "PWR" || cmd == "pwr") {
+    if (!g_bridge.isBinaryStreaming()) printPowerJson();
+  } else if (cmd == "RECOVER") {
+    pauseAdsTask();
+    g_adsOk = g_ads.recoverHardware();
+    resumeAdsTask();
+    if (!g_bridge.isBinaryStreaming()) {
+      Serial.printf("{\"recover\":1,\"ads_ok\":%s,\"recoveries\":%lu}\n",
+                    g_adsOk ? "true" : "false",
+                    (unsigned long)g_ads.recoveryCount());
+    }
+  } else if (cmd.startsWith("RATE ")) {
+    int sps = cmd.substring(5).toInt();
+    int rIdx = (sps == 250) ? 0 : (sps == 500) ? 1 : (sps == 1000) ? 2 : (sps == 2000) ? 3 : (sps == 4000) ? 4 : -1;
+    if (rIdx >= 0) {
+      AdsSettings next = g_ads.settings();
+      next.rateIdx = static_cast<uint8_t>(rIdx);
+      applyRuntimeSettings(next);
+    }
+  } else if (cmd.startsWith("GAIN ")) {
+    int pga = cmd.substring(5).toInt();
+    int pIdx = (pga == 1) ? 0 : (pga == 2) ? 1 : (pga == 4) ? 2 : (pga == 6) ? 3 : (pga == 8) ? 4 : (pga == 12) ? 5 : (pga == 24) ? 6 : -1;
+    if (pIdx >= 0) {
+      AdsSettings next = g_ads.settings();
+      next.pgaIdx = static_cast<uint8_t>(pIdx);
+      applyRuntimeSettings(next);
+    }
+  } else if (cmd.startsWith("LOFF ")) {
+    AdsSettings next = g_ads.settings();
+    next.loffEnable = (cmd.substring(5).toInt() != 0);
+    applyRuntimeSettings(next);
+  } else if (cmd.startsWith("BIAS ")) {
+    AdsSettings next = g_ads.settings();
+    next.biasAllCh = (cmd.substring(5).toInt() != 0);
+    applyRuntimeSettings(next);
+  } else if (cmd.startsWith("CH_MASK ")) {
+    uint8_t mask = static_cast<uint8_t>(strtoul(cmd.substring(8).c_str(), nullptr, 0) & 0xFF);
+    if (mask != 0) {
+      AdsSettings next = g_ads.settings();
+      next.chEnableMask = mask;
+      applyRuntimeSettings(next);
+    }
+  } else if (cmd == "CFG_SAVE") {
+    saveUserPrefs();
+    if (!g_bridge.isBinaryStreaming()) Serial.println("{\"cfg_saved\":true}");
+  } else if (cmd == "CFG_LOAD") {
+    AdsSettings loaded = g_ads.settings();
+    if (loadUserPrefs(loaded)) {
+      applyRuntimeSettings(loaded);
+    }
+  } else if (cmd == "CFG_RESET") {
+    g_prefs.begin("holter_cfg", false);
+    g_prefs.clear();
+    g_prefs.end();
+    if (!g_bridge.isBinaryStreaming()) Serial.println("{\"cfg_reset\":true}");
+  } else if (cmd.startsWith("WIFI_SET ")) {
+    // Cú pháp: WIFI_SET <ssid>|<pass>|<host>|<port>|<path>
+    String body = cmd.substring(9);
+    String parts[5];
+    int partIdx = 0;
+    int startPos = 0;
+    while (partIdx < 4) {
+      int sep = body.indexOf('|', startPos);
+      if (sep < 0) break;
+      parts[partIdx++] = body.substring(startPos, sep);
+      startPos = sep + 1;
+    }
+    parts[partIdx++] = body.substring(startPos);
+
+    if (parts[0].length() > 0) {
+      String ssid = parts[0];
+      String pass = (partIdx >= 2) ? parts[1] : "";
+      String host = (partIdx >= 3 && parts[2].length() > 0) ? parts[2] : "192.168.1.100";
+      uint16_t port = (partIdx >= 4 && parts[3].toInt() > 0) ? static_cast<uint16_t>(parts[3].toInt()) : 4000;
+      String path = (partIdx >= 5 && parts[4].length() > 0) ? parts[4] : "/ws/hardware";
+      g_wifi.configure(ssid, pass, host, port, path);
+      if (!g_bridge.isBinaryStreaming()) {
+        Serial.printf("{\"wifi_cfg\":1,\"ssid\":\"%s\",\"host\":\"%s\",\"port\":%u,\"path\":\"%s\"}\n",
+                      ssid.c_str(), host.c_str(), port, path.c_str());
+      }
+    }
+  } else if (cmd == "WIFI_ON") {
+    bool ok = g_wifi.setEnabled(true);
+    if (!g_bridge.isBinaryStreaming()) {
+      Serial.printf("{\"wifi_en\":%s,\"state\":\"%s\"}\n",
+                    ok ? "true" : "false", WifiWsLink::stateName(g_wifi.state()));
+    }
+  } else if (cmd == "WIFI_OFF") {
+    g_wifi.setEnabled(false);
+    if (!g_bridge.isBinaryStreaming()) Serial.println("{\"wifi_en\":false,\"state\":\"OFF\"}");
+  } else if (cmd == "WIFI_STATUS") {
+    if (!g_bridge.isBinaryStreaming()) {
+      String ip = g_wifi.ipString();
+      Serial.printf("{\"wifi\":1,\"state\":\"%s\",\"ip\":\"%s\",\"ssid\":\"%s\",\"host\":\"%s\",\"port\":%u,\"path\":\"%s\"}\n",
+                    WifiWsLink::stateName(g_wifi.state()),
+                    ip.c_str(),
+                    g_wifi.ssid().c_str(),
+                    g_wifi.host().c_str(),
+                    g_wifi.port(),
+                    g_wifi.path().c_str());
+    }
+  }
+}
+
+static void onWifiRemoteCommand(const String &cmdLine) {
+  g_bridge.processExternalCommand(cmdLine, g_ads.settings());
 }
 
 void setup() {
@@ -794,11 +1139,14 @@ void setup() {
 
   Serial.begin(921600);
   delay(150);
-  Serial.println("\n[BOOT] esp32_ads1299_holter v2 starting @ 921600 bps...");
+  Serial.println("\n[BOOT] esp32_ads1299_holter v3 starting @ 921600 bps...");
 
   for (int i = 0; i < 6; ++i) {
     pinMode(g_buttons[i].pin, g_buttons[i].useInternalPullup ? INPUT_PULLUP : INPUT);
   }
+
+  g_power.begin();
+  g_wifi.begin(onWifiRemoteCommand);
 
   g_vspiMutex = xSemaphoreCreateMutex();
   g_vspi.begin(PIN_VSPI_SCK, PIN_VSPI_MISO, PIN_VSPI_MOSI, -1);
@@ -817,6 +1165,7 @@ void setup() {
   cb.onSetBinaryStream = onBridgeSetStream;
   cb.onTriggerMarker = triggerEventMarker;
   cb.onSdCommand = onBridgeSdCmd;
+  cb.onExtendedCommand = onBridgeExtendedCmd;
   g_bridge.setCallbacks(cb);
 
   xTaskCreatePinnedToCore(
@@ -837,19 +1186,36 @@ void loop() {
   static uint32_t lastFpsMs = millis();
   static uint32_t frameCounter = 0;
   static uint32_t lastRenderMs = 0;
+  static uint32_t lastWsBeatMs = 0;
 
   g_bridge.pollSerial(g_ads.settings());
   pollButtons();
+  g_power.poll();
+  g_wifi.poll();
+
+  // Bảo vệ chống sụt áp pin (< 3.42V): tự động flush & đóng file MicroSD trước khi sập nguồn
+  if (g_power.status().crit_bat && g_sd.isRecording()) {
+    g_sd.stopRecording();
+    showToast("BAT <3.42V SAVED", 0xF800, 2500);
+    if (!g_bridge.isBinaryStreaming()) {
+      Serial.println("[PWR] CRITICAL BATTERY (<3.42V) -> MicroSD recording flushed & closed safely.");
+    }
+  }
 
   AdsSample s;
   bool isElecMode = (g_ads.mode() == ADS_IN_EEG_SRB1 || g_ads.mode() == ADS_IN_EMG_DIFF);
-  uint32_t statWindow = g_ads.sampleRate() / 2;
+  bool loffOn = g_ads.settings().loffEnable;
+  uint16_t curRate = g_ads.sampleRate();
+  uint32_t statWindow = curRate / 2;
   if (statWindow < 100) statWindow = 100;
 
   while (g_ring.pop(s)) {
+    g_lastValidPopMs = millis();
     g_latestStatus24 = s.status24;
     g_bridge.pushSampleToStream(s);
+    g_wifi.pushSample(s, curRate);
     g_sd.pushSample(s);
+    g_edgeAi.pushSample(s, g_ads.mode(), loffOn);
 
     for (int ch = 0; ch < 8; ++ch) {
       float rawV = s.ch_uV[ch];
@@ -883,14 +1249,44 @@ void loop() {
         g_liveSq[ch]  = 0.0;
       }
       g_liveStatCount = 0;
-      // Reset cờ bão hòa cho chu kỳ mới
       for (int ch = 0; ch < 8; ++ch) g_chRail[ch] = false;
     }
   }
 
+  g_edgeAi.pollEvaluate();
   g_sd.periodicFlush();
 
   uint32_t now = millis();
+
+  // Watchdog phần cứng ADS1299: tự phục hồi nếu mất xung DRDY > 1600 ms hoặc cắm nóng lại module
+  if (!g_pauseStream) {
+    if (g_adsOk && (now - g_lastValidPopMs > 1600)) {
+      pauseAdsTask();
+      g_adsOk = g_ads.recoverHardware();
+      resumeAdsTask();
+      g_lastHotplugRetryMs = now;
+      showToast(g_adsOk ? "ADS RECOVERED" : "ADS DISCONN!", g_adsOk ? 0xFFE0 : 0xF800);
+      if (!g_bridge.isBinaryStreaming()) {
+        Serial.printf("[WDG] ADS1299 stall detected -> recover ok=%d total=%lu\n",
+                      g_adsOk ? 1 : 0, (unsigned long)g_ads.recoveryCount());
+      }
+    } else if (!g_adsOk && (now - g_lastHotplugRetryMs > 5000)) {
+      g_lastHotplugRetryMs = now;
+      pauseAdsTask();
+      if (g_ads.recoverHardware()) {
+        g_adsOk = true;
+        g_edgeAi.reset(g_ads.sampleRate());
+        showToast("ADS CONNECTED", 0x07E0);
+      }
+      resumeAdsTask();
+    }
+  }
+
+  if (now - lastWsBeatMs >= 2000) {
+    lastWsBeatMs = now;
+    sendWifiHeartbeat();
+  }
+
   if (now - lastSpsMs >= 1000) {
     uint32_t curTotal = g_streamTotalSamples;
     g_lastStreamSps = static_cast<float>(curTotal - lastSampleCounter) * 1000.0f / static_cast<float>(now - lastSpsMs);

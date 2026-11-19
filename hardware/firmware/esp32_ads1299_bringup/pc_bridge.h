@@ -4,10 +4,14 @@
 #include "ads1299_drv.h"
 
 // ============================================================================
-// Cầu nối PC Dual-Protocol ở 921,600 bps:
+// Cầu nối PC Dual-Protocol ở 921,600 bps (Firmware v3):
 // 1. Giao thức nhị phân hãng (0xAA..0xBB / 0xA5..0x5A, khung 197 byte 6 mẫu)
-//    -> Tương thích trực tiếp app WinForm/Python/MATLAB & pc_eeg_studio.py
-// 2. Lệnh ASCII CLI kết thúc '\n': R, I, O, M0..M3, MKR, SD_INIT, REC_START, REC_STOP
+//    -> Tương thích trực tiếp app WinForm/Python/MATLAB, pc_eeg_studio & NeuroLink
+// 2. Lệnh ASCII CLI kết thúc '\n' (qua USB Serial hoặc Wi-Fi WebSocket):
+//    R, I, O, M0..M3, MKR, SD_INIT, REC_START, REC_STOP, SD_LIST, AI, PWR,
+//    RATE <sps>, GAIN <pga>, LOFF <0|1>, BIAS <0|1>, CH_MASK <hex>,
+//    CFG_SAVE, CFG_LOAD, CFG_RESET, RECOVER,
+//    WIFI_SET <ssid>|<pass>|<host>|<port>|<path>, WIFI_ON, WIFI_OFF, WIFI_STATUS
 // ============================================================================
 
 class PcBridge {
@@ -19,7 +23,8 @@ public:
     void (*onApplyParams)(uint8_t rateIdx, uint8_t pgaIdx, AdsInputMode mode) = nullptr;
     void (*onSetBinaryStream)(bool enable) = nullptr;
     void (*onTriggerMarker)() = nullptr;
-    void (*onSdCommand)(uint8_t cmd) = nullptr; // 0=init, 1=rec_start, 2=rec_stop
+    void (*onSdCommand)(uint8_t cmd) = nullptr; // 0=init, 1=rec_start, 2=rec_stop, 3=list
+    void (*onExtendedCommand)(const String &cmdLine) = nullptr;
   };
 
   void setCallbacks(const Callbacks &cb) { cb_ = cb; }
@@ -70,6 +75,14 @@ public:
     sendAckBytes(addr, reinterpret_cast<const uint8_t *>(str), static_cast<uint8_t>(n));
   }
 
+  void processExternalCommand(const String &cmdLine, const AdsSettings &curSettings) {
+    String clean = cmdLine;
+    clean.trim();
+    if (clean.length() > 0) {
+      handleAsciiCommand(clean, curSettings);
+    }
+  }
+
   void pollSerial(const AdsSettings &curSettings) {
     // Reset trạng thái đọc gói binary nếu bị đứt đoạn quá 60 ms
     if (in_bin_ && (millis() - bin_last_byte_ms_ > 60)) {
@@ -118,7 +131,7 @@ public:
           handleAsciiCommand(ascii_line_, curSettings);
         }
         ascii_line_ = "";
-      } else if (b >= 0x20 && b <= 0x7E && ascii_line_.length() < 32) {
+      } else if (b >= 0x20 && b <= 0x7E && ascii_line_.length() < 160) {
         ascii_line_ += static_cast<char>(b);
       }
     }
@@ -155,7 +168,6 @@ private:
   void handleBinaryFrame(const uint8_t *buf, uint8_t len, const AdsSettings &cur) {
     if (len < 6 || buf[0] != 0xAA || buf[len - 1] != 0xBB) return;
 
-    // Kiểm tra XOR checksum từ byte 1..len-3
     uint8_t xr = 0;
     for (uint8_t i = 1; i <= len - 3; ++i) {
       xr ^= buf[i];
@@ -170,7 +182,7 @@ private:
     if (addr == 0x01) { // HardwareVersion
       sendAckString(0x01, "ESP32-ADS1299-V1.4");
     } else if (addr == 0x02) { // SoftwareVersion
-      sendAckString(0x02, "V2.0.0");
+      sendAckString(0x02, "V3.0.0");
     } else if (addr == 0x09) { // ConnStatus
       uint8_t st = (dataLen >= 1) ? data[0] : 1;
       sendAckBytes(0x09, &st, 1);
@@ -223,6 +235,8 @@ private:
       if (cb_.onSdCommand) cb_.onSdCommand(1);
     } else if (cmd == "REC_STOP") {
       if (cb_.onSdCommand) cb_.onSdCommand(2);
+    } else if (cmd == "SD_LIST") {
+      if (!bin_stream_active_ && cb_.onSdCommand) cb_.onSdCommand(3);
     } else if (cmd == "B460800") {
       Serial.println("{\"baud\":460800}");
       Serial.flush();
@@ -231,6 +245,8 @@ private:
       Serial.println("{\"baud\":921600}");
       Serial.flush();
       Serial.updateBaudRate(921600);
+    } else if (cb_.onExtendedCommand) {
+      cb_.onExtendedCommand(cmd);
     }
   }
 };

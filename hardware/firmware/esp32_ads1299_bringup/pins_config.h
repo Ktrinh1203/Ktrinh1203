@@ -31,3 +31,7 @@ constexpr int PIN_BTN_RHT   = 22; // L17
 constexpr int PIN_BTN_MID   = 15; // L4  (Start/Stop/OK)
 constexpr int PIN_BTN_SET   = 0;  // L6  (Event Marker / BOOT, pull-up 10k cứng trên DevKitC)
 // Nút RST (B2) nối cứng vào chân EN (R18) trên board ESP32.
+
+// --- Đo áp pin LiPo 1S & VBUS 5V (ADC1, an toàn song song Wi-Fi) ---
+constexpr int PIN_VBAT_ADC   = 39; // L3  (SN / GPIO39 Input-only, ADC1_CH3) -> R_BAT1(100k)/R_BAT2(100k) từ VBAT_SW
+constexpr int PIN_VBUS_SENSE = 36; // L2  (SP / GPIO36 Input-only, ADC1_CH0) -> Optional VBUS/Charger sense
