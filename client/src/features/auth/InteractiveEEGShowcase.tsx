@@ -291,7 +291,7 @@ export function InteractiveEEGShowcase() {
           Giải mã sóng não trực tiếp. Kết nối bác sĩ thần kinh.
         </h2>
         <p className="text-xs sm:text-sm text-[#575652] leading-relaxed">
-          Chạm vào sơ đồ điện cực 10-20 hoặc chuyển trạng thái não bộ bên dưới để trải nghiệm bộ lọc DSP trực tiếp.
+          Chuyển trạng thái não bộ hoặc bật/tắt bộ lọc DSP 50 Hz bên dưới để quan sát sóng não thời gian thực.
         </p>
       </div>
 
@@ -338,147 +338,64 @@ export function InteractiveEEGShowcase() {
           </button>
         </div>
 
-        {/* Interactive Split Console: 2D SVG Head Map + 60fps Canvas */}
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-stretch">
-          {/* 10-20 SVG Cortical Head Map */}
-          <div className="sm:col-span-4 rounded-xl border border-[#1E3A2B] bg-[#09140E] p-3 flex flex-col items-center justify-between gap-2">
-            <div className="flex w-full items-center justify-between text-[10px] font-medium text-[#8BB39E]">
-              <span>BẢN ĐỒ 10-20</span>
-              {selectedChannel ? (
-                <button
-                  type="button"
-                  onClick={() => setSelectedChannel(null)}
-                  className="rounded bg-[#183325] px-1.5 py-0.5 text-[10px] font-semibold text-emerald-200 hover:bg-[#1F4230]"
-                >
-                  Tất cả 8 kênh
-                </button>
-              ) : (
-                <span>Chạm điện cực</span>
-              )}
-            </div>
-
-            <svg
-              viewBox="0 0 180 180"
-              className="w-36 h-36 sm:w-40 sm:h-40 select-none"
-              role="img"
-              aria-label="Sơ đồ 8 điện cực não bộ chuẩn quốc tế 10-20"
-            >
-              {/* Ears & Nose orientation */}
-              <ellipse cx="22" cy="90" rx="6" ry="16" fill="none" stroke="#1E3A2B" strokeWidth="2" />
-              <ellipse cx="158" cy="90" rx="6" ry="16" fill="none" stroke="#1E3A2B" strokeWidth="2" />
-              <path d="M 80 22 L 90 8 L 100 22" fill="none" stroke="#2D5A42" strokeWidth="2" strokeLinejoin="round" />
-
-              {/* Head circle & anatomical crosshairs */}
-              <circle cx="90" cy="92" r="68" fill="#0D1F16" stroke="#2D5A42" strokeWidth="2" />
-              <line x1="90" y1="24" x2="90" y2="160" stroke="#1A3527" strokeWidth="1" strokeDasharray="3 3" />
-              <line x1="22" y1="92" x2="158" y2="92" stroke="#1A3527" strokeWidth="1" strokeDasharray="3 3" />
-
+        {/* Full-Width 60fps HTML5 Canvas Oscilloscope */}
+        <div className="rounded-xl border border-[#1E3A2B] bg-[#07110C] p-3 flex flex-col justify-between gap-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-0.5 text-[10px] font-medium text-[#8BB39E]">
+            <span className="inline-flex items-center gap-1 text-emerald-300">
+              <Waves className="size-3" aria-hidden="true" />
+              {selectedChannel ? `Kênh đơn: ${selectedChannel}` : 'Đa kênh: 8/8 trực tiếp'}
+            </span>
+            <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Chọn kênh sóng não">
+              <button
+                type="button"
+                onClick={() => setSelectedChannel(null)}
+                aria-pressed={selectedChannel === null}
+                className={`rounded px-1.5 py-0.5 text-[10px] font-semibold transition-colors ${
+                  selectedChannel === null
+                    ? 'bg-emerald-500/25 text-emerald-100 border border-emerald-400/60'
+                    : 'bg-[#112219] text-[#8BB39E] border border-transparent hover:text-white'
+                }`}
+              >
+                Tất cả 8 kênh
+              </button>
               {ELECTRODES.map((node) => {
                 const isSelected = selectedChannel === node.id;
                 const isStrokeFocal =
                   presetId === 'stroke' && (node.id === 'F3' || node.id === 'C3');
-
                 return (
-                  <g
+                  <button
                     key={node.id}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Chọn điện cực ${node.id} - ${node.region}`}
-                    aria-pressed={isSelected}
+                    type="button"
                     onClick={() =>
                       setSelectedChannel((cur) => (cur === node.id ? null : node.id))
                     }
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setSelectedChannel((cur) => (cur === node.id ? null : node.id));
-                      }
-                    }}
-                    className="cursor-pointer focus:outline-none"
+                    aria-label={`Chọn điện cực ${node.id} - ${node.region}`}
+                    aria-pressed={isSelected}
+                    className={`rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold transition-colors border ${
+                      isSelected
+                        ? 'bg-[#16A34A] text-white border-[#86EFAC]'
+                        : isStrokeFocal
+                          ? 'bg-amber-500/20 text-amber-200 border-amber-400/60 hover:bg-amber-500/30'
+                          : 'bg-[#112219] text-[#A7C4B5] border-transparent hover:border-[#2D5A42] hover:text-white'
+                    }`}
                   >
-                    {isStrokeFocal && (
-                      <circle
-                        cx={node.x}
-                        cy={node.y}
-                        r="16"
-                        fill="none"
-                        stroke="#F59E0B"
-                        strokeWidth="1.5"
-                        opacity="0.7"
-                      >
-                        <animate
-                          attributeName="r"
-                          values="12;19;12"
-                          dur="1.5s"
-                          repeatCount="indefinite"
-                        />
-                        <animate
-                          attributeName="opacity"
-                          values="0.85;0.15;0.85"
-                          dur="1.5s"
-                          repeatCount="indefinite"
-                        />
-                      </circle>
-                    )}
-
-                    <circle
-                      cx={node.x}
-                      cy={node.y}
-                      r={isSelected ? 13 : 11}
-                      fill={
-                        isSelected
-                          ? '#16A34A'
-                          : isStrokeFocal
-                            ? 'rgba(245, 158, 11, 0.28)'
-                            : '#153123'
-                      }
-                      stroke={
-                        isSelected ? '#86EFAC' : isStrokeFocal ? '#FBBF24' : '#34D399'
-                      }
-                      strokeWidth={isSelected ? '2' : '1.3'}
-                    />
-                    <text
-                      x={node.x}
-                      y={node.y + 3.5}
-                      textAnchor="middle"
-                      fontSize="8.5"
-                      fontWeight="700"
-                      fill={isSelected ? '#FFFFFF' : isStrokeFocal ? '#FDE68A' : '#ECFDF3'}
-                    >
-                      {node.id}
-                    </text>
-                  </g>
+                    {node.id}
+                  </button>
                 );
               })}
-            </svg>
-
-            <div className="w-full text-center text-[11px] font-medium text-[#A7C4B5] truncate">
-              {activeElectrode
-                ? `${activeElectrode.id} · ${activeElectrode.region}`
-                : '8 kênh · Chuẩn 10-20'}
             </div>
+            <span>{activePreset.freqLabel}</span>
           </div>
 
-          {/* 60fps HTML5 Canvas Waveform Renderer */}
-          <div className="sm:col-span-8 rounded-xl border border-[#1E3A2B] bg-[#07110C] p-2.5 flex flex-col justify-between gap-2">
-            <div className="flex items-center justify-between px-1 text-[10px] font-medium text-[#8BB39E]">
-              <span className="inline-flex items-center gap-1 text-emerald-300">
-                <Waves className="size-3" aria-hidden="true" />
-                {selectedChannel ? `Kênh đơn: ${selectedChannel}` : 'Đa kênh: 8/8 trực tiếp'}
-              </span>
-              <span>{activePreset.freqLabel}</span>
-            </div>
+          <canvas
+            ref={canvasRef}
+            className="w-full h-48 sm:h-52 block rounded-lg"
+            aria-label="Biểu đồ sóng não thời gian thực 60 khung hình trên giây"
+          />
 
-            <canvas
-              ref={canvasRef}
-              className="w-full h-48 sm:h-52 block rounded-lg"
-              aria-label="Biểu đồ sóng não thời gian thực 60 khung hình trên giây"
-            />
-
-            <p className="px-1 text-[11px] text-[#B7D7C6] leading-snug">
-              {activePreset.note}
-            </p>
-          </div>
+          <p className="px-0.5 text-[11px] text-[#B7D7C6] leading-snug">
+            {activePreset.note}
+          </p>
         </div>
 
         {/* Live Telemetry Footer Bar */}

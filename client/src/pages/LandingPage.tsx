@@ -140,7 +140,7 @@ export function LandingPage() {
                 to="/login"
                 className="inline-flex h-11 items-center rounded-lg border border-[#DCE6DF] bg-white px-5 text-sm font-medium text-[#141413] hover:bg-[#EFF6F1] transition-colors"
               >
-                Tài khoản mẫu
+                Đăng nhập
               </Link>
               <a
                 href="/clinical-workstation?mode=general"
@@ -202,7 +202,7 @@ export function LandingPage() {
               Cách sử dụng đơn giản trong 3 bước
             </h2>
             <Link to="/login" className="text-xs font-semibold text-[#16A34A] hover:text-[#15803D] hover:underline shrink-0">
-              Đăng nhập tài khoản mẫu →
+              Đăng nhập ngay →
             </Link>
           </div>
 
