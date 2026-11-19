@@ -26,7 +26,7 @@ function validate(f: FormState): Partial<Record<keyof FormState, string>> {
 }
 
 const inputBaseClass =
-  'w-full rounded-full border bg-[#E8F6F2]/90 py-2.5 pr-4 pl-11 text-sm text-[#0F3834] placeholder-[#3B6E68]/70 transition-all focus:bg-white focus:outline-none focus:ring-2';
+  'w-full rounded-xl border bg-white py-2.5 pr-3.5 pl-10 text-sm text-[#141413] placeholder-[#8A8882] transition-colors focus:outline-none focus:ring-2';
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -74,24 +74,24 @@ export function RegisterPage() {
   return (
     <AuthLayout
       title="Tạo tài khoản"
-      subtitle="Tham gia hệ thống điện não qEEG & hội chẩn NeuroLink"
+      subtitle="Hồ sơ chuyên môn (bác sĩ, nhà nghiên cứu) có thể bổ sung sau khi đăng ký."
       footer={
         <>
           Đã có tài khoản?{' '}
           <Link
             to="/login"
-            className="font-semibold text-[#0F6E56] underline hover:text-[#0A5240]"
+            className="font-medium text-[#16A34A] hover:text-[#15803D] hover:underline"
           >
             Đăng nhập
           </Link>
         </>
       }
     >
-      <form onSubmit={onSubmit} className="space-y-3" noValidate>
+      <form onSubmit={onSubmit} className="space-y-3.5" noValidate>
         {formError && (
           <div
             role="alert"
-            className="rounded-2xl border border-red-400/50 bg-red-50/90 px-4 py-2 text-xs font-medium text-red-800 sm:text-sm"
+            className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-red-700 sm:text-sm"
           >
             {formError}
           </div>
@@ -100,13 +100,13 @@ export function RegisterPage() {
         <div>
           <label
             htmlFor="displayName"
-            className="mb-1 block text-xs font-semibold text-[#113C38] sm:text-sm"
+            className="mb-1.5 block text-xs font-semibold text-[#141413] sm:text-sm"
           >
             Tên hiển thị
           </label>
           <div className="relative">
             <User
-              className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[#184E48]"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#6E6D68]"
               aria-hidden="true"
             />
             <input
@@ -121,26 +121,24 @@ export function RegisterPage() {
               placeholder="vd: Nguyễn Văn An"
               className={`${inputBaseClass} ${
                 errors.displayName
-                  ? 'border-red-500/70 focus:border-red-600 focus:ring-red-500/20'
-                  : 'border-[#1E5650]/35 focus:border-[#158A6A] focus:ring-[#158A6A]/25'
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-100'
+                  : 'border-[#DCE6DF] focus:border-[#16A34A] focus:ring-[#16A34A]/15'
               }`}
             />
           </div>
-          {errors.displayName && (
-            <p className="mt-1 pl-3 text-xs font-medium text-red-700">{errors.displayName}</p>
-          )}
+          {errors.displayName && <p className="mt-1 text-xs text-red-600">{errors.displayName}</p>}
         </div>
 
         <div>
           <label
             htmlFor="username"
-            className="mb-1 block text-xs font-semibold text-[#113C38] sm:text-sm"
+            className="mb-1.5 block text-xs font-semibold text-[#141413] sm:text-sm"
           >
             Tên người dùng
           </label>
           <div className="relative">
             <AtSign
-              className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[#184E48]"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#6E6D68]"
               aria-hidden="true"
             />
             <input
@@ -158,15 +156,15 @@ export function RegisterPage() {
               placeholder="vd: nguyen_an"
               className={`${inputBaseClass} ${
                 errors.username
-                  ? 'border-red-500/70 focus:border-red-600 focus:ring-red-500/20'
-                  : 'border-[#1E5650]/35 focus:border-[#158A6A] focus:ring-[#158A6A]/25'
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-100'
+                  : 'border-[#DCE6DF] focus:border-[#16A34A] focus:ring-[#16A34A]/15'
               }`}
             />
           </div>
           {errors.username ? (
-            <p className="mt-1 pl-3 text-xs font-medium text-red-700">{errors.username}</p>
+            <p className="mt-1 text-xs text-red-600">{errors.username}</p>
           ) : (
-            <p className="mt-1 pl-3 text-[11px] text-[#1E5650]/80">
+            <p className="mt-1 text-xs text-slate-500">
               Dùng trong đường dẫn trang cá nhân, ví dụ: /u/nguyen_an
             </p>
           )}
@@ -175,13 +173,13 @@ export function RegisterPage() {
         <div>
           <label
             htmlFor="email"
-            className="mb-1 block text-xs font-semibold text-[#113C38] sm:text-sm"
+            className="mb-1.5 block text-xs font-semibold text-[#141413] sm:text-sm"
           >
             E-mail
           </label>
           <div className="relative">
             <Mail
-              className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[#184E48]"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#6E6D68]"
               aria-hidden="true"
             />
             <input
@@ -196,26 +194,24 @@ export function RegisterPage() {
               placeholder="email@example.com"
               className={`${inputBaseClass} ${
                 errors.email
-                  ? 'border-red-500/70 focus:border-red-600 focus:ring-red-500/20'
-                  : 'border-[#1E5650]/35 focus:border-[#158A6A] focus:ring-[#158A6A]/25'
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-100'
+                  : 'border-[#DCE6DF] focus:border-[#16A34A] focus:ring-[#16A34A]/15'
               }`}
             />
           </div>
-          {errors.email && (
-            <p className="mt-1 pl-3 text-xs font-medium text-red-700">{errors.email}</p>
-          )}
+          {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
         </div>
 
         <div>
           <label
             htmlFor="password"
-            className="mb-1 block text-xs font-semibold text-[#113C38] sm:text-sm"
+            className="mb-1.5 block text-xs font-semibold text-[#141413] sm:text-sm"
           >
             Mật khẩu
           </label>
           <div className="relative">
             <Lock
-              className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[#184E48]"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#6E6D68]"
               aria-hidden="true"
             />
             <input
@@ -228,10 +224,10 @@ export function RegisterPage() {
               onChange={set('password')}
               aria-invalid={!!errors.password || undefined}
               placeholder="Tối thiểu 8 ký tự, gồm chữ và số"
-              className={`${inputBaseClass} pr-11 ${
+              className={`${inputBaseClass} pr-10 ${
                 errors.password
-                  ? 'border-red-500/70 focus:border-red-600 focus:ring-red-500/20'
-                  : 'border-[#1E5650]/35 focus:border-[#158A6A] focus:ring-[#158A6A]/25'
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-100'
+                  : 'border-[#DCE6DF] focus:border-[#16A34A] focus:ring-[#16A34A]/15'
               }`}
             />
             <button
@@ -239,7 +235,7 @@ export function RegisterPage() {
               onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               aria-pressed={showPassword}
-              className="absolute top-1/2 right-4 -translate-y-1/2 cursor-pointer text-[#1E5650]/75 transition-colors hover:text-[#0F3834]"
+              className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-[#6E6D68] transition-colors hover:text-[#141413]"
             >
               {showPassword ? (
                 <EyeOff className="size-4" aria-hidden="true" />
@@ -248,21 +244,19 @@ export function RegisterPage() {
               )}
             </button>
           </div>
-          {errors.password && (
-            <p className="mt-1 pl-3 text-xs font-medium text-red-700">{errors.password}</p>
-          )}
+          {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
         </div>
 
         <div>
           <label
             htmlFor="confirm"
-            className="mb-1 block text-xs font-semibold text-[#113C38] sm:text-sm"
+            className="mb-1.5 block text-xs font-semibold text-[#141413] sm:text-sm"
           >
             Xác nhận mật khẩu
           </label>
           <div className="relative">
             <Lock
-              className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[#184E48]"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#6E6D68]"
               aria-hidden="true"
             />
             <input
@@ -275,10 +269,10 @@ export function RegisterPage() {
               onChange={set('confirm')}
               aria-invalid={!!errors.confirm || undefined}
               placeholder="Nhập lại mật khẩu"
-              className={`${inputBaseClass} pr-11 ${
+              className={`${inputBaseClass} pr-10 ${
                 errors.confirm
-                  ? 'border-red-500/70 focus:border-red-600 focus:ring-red-500/20'
-                  : 'border-[#1E5650]/35 focus:border-[#158A6A] focus:ring-[#158A6A]/25'
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-100'
+                  : 'border-[#DCE6DF] focus:border-[#16A34A] focus:ring-[#16A34A]/15'
               }`}
             />
             <button
@@ -286,7 +280,7 @@ export function RegisterPage() {
               onClick={() => setShowConfirm((v) => !v)}
               aria-label={showConfirm ? 'Ẩn mật khẩu xác nhận' : 'Hiện mật khẩu xác nhận'}
               aria-pressed={showConfirm}
-              className="absolute top-1/2 right-4 -translate-y-1/2 cursor-pointer text-[#1E5650]/75 transition-colors hover:text-[#0F3834]"
+              className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-[#6E6D68] transition-colors hover:text-[#141413]"
             >
               {showConfirm ? (
                 <EyeOff className="size-4" aria-hidden="true" />
@@ -295,15 +289,13 @@ export function RegisterPage() {
               )}
             </button>
           </div>
-          {errors.confirm && (
-            <p className="mt-1 pl-3 text-xs font-medium text-red-700">{errors.confirm}</p>
-          )}
+          {errors.confirm && <p className="mt-1 text-xs text-red-600">{errors.confirm}</p>}
         </div>
 
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#158A6A] px-6 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#107055] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#15803D] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <UserPlus className="size-4" aria-hidden="true" />
           <span>{submitting ? 'Đang tạo tài khoản...' : 'Đăng ký'}</span>

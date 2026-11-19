@@ -38,16 +38,16 @@ export function LoginPage() {
 
   return (
     <AuthLayout
-      title="Chào mừng trở lại"
-      subtitle="Đăng nhập để truy cập hệ thống NeuroLink"
+      title="Đăng nhập"
+      subtitle="Chào mừng bạn quay lại cộng đồng chuyên môn NeuroLink."
       footer={
         <>
           Chưa có tài khoản?{' '}
           <Link
             to="/register"
-            className="font-semibold text-[#0F6E56] underline hover:text-[#0A5240]"
+            className="font-medium text-[#16A34A] hover:text-[#15803D] hover:underline"
           >
-            Đăng ký
+            Đăng ký tài khoản mới
           </Link>
         </>
       }
@@ -56,7 +56,7 @@ export function LoginPage() {
         {error && (
           <div
             role="alert"
-            className="rounded-2xl border border-red-400/50 bg-red-50/90 px-4 py-2.5 text-xs font-medium text-red-800 sm:text-sm"
+            className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-red-700 sm:text-sm"
           >
             {error}
           </div>
@@ -65,13 +65,13 @@ export function LoginPage() {
         <div>
           <label
             htmlFor="identifier"
-            className="mb-1.5 block text-xs font-semibold text-[#113C38] sm:text-sm"
+            className="mb-1.5 block text-xs font-semibold text-[#141413] sm:text-sm"
           >
             E-mail hoặc tên người dùng
           </label>
           <div className="relative">
             <User
-              className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[#184E48]"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#6E6D68]"
               aria-hidden="true"
             />
             <input
@@ -88,7 +88,7 @@ export function LoginPage() {
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               placeholder="vd: nguyen_an hoặc email@example.com"
-              className="w-full rounded-full border border-[#1E5650]/35 bg-[#E8F6F2]/90 py-3 pr-4 pl-11 text-sm text-[#0F3834] placeholder-[#3B6E68]/70 transition-all focus:border-[#158A6A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#158A6A]/25"
+              className="w-full rounded-xl border border-[#DCE6DF] bg-white py-2.5 pr-3.5 pl-10 text-sm text-[#141413] placeholder-[#8A8882] transition-colors focus:border-[#16A34A] focus:outline-none focus:ring-2 focus:ring-[#16A34A]/15"
             />
           </div>
         </div>
@@ -96,13 +96,13 @@ export function LoginPage() {
         <div>
           <label
             htmlFor="password"
-            className="mb-1.5 block text-xs font-semibold text-[#113C38] sm:text-sm"
+            className="mb-1.5 block text-xs font-semibold text-[#141413] sm:text-sm"
           >
             Mật khẩu
           </label>
           <div className="relative">
             <Lock
-              className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[#184E48]"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#6E6D68]"
               aria-hidden="true"
             />
             <input
@@ -115,14 +115,14 @@ export function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Nhập mật khẩu"
-              className="w-full rounded-full border border-[#1E5650]/35 bg-[#E8F6F2]/90 py-3 pr-11 pl-11 text-sm text-[#0F3834] placeholder-[#3B6E68]/70 transition-all focus:border-[#158A6A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#158A6A]/25"
+              className="w-full rounded-xl border border-[#DCE6DF] bg-white py-2.5 pr-10 pl-10 text-sm text-[#141413] placeholder-[#8A8882] transition-colors focus:border-[#16A34A] focus:outline-none focus:ring-2 focus:ring-[#16A34A]/15"
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               aria-pressed={showPassword}
-              className="absolute top-1/2 right-4 -translate-y-1/2 cursor-pointer text-[#1E5650]/75 transition-colors hover:text-[#0F3834]"
+              className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-[#6E6D68] transition-colors hover:text-[#141413]"
             >
               {showPassword ? (
                 <EyeOff className="size-4" aria-hidden="true" />
@@ -136,7 +136,7 @@ export function LoginPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#158A6A] px-6 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#107055] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#15803D] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <LogIn className="size-4" aria-hidden="true" />
           <span>{submitting ? 'Đang đăng nhập...' : 'Đăng nhập'}</span>
