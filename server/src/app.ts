@@ -7,7 +7,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { env } from './config/env.js';
 import { loadSession } from './middleware/auth.js';
-import { csrfProtection, CSRF_HEADER } from './middleware/csrf.js';
+import { csrfProtection, CSRF_HEADER, isAllowedOrigin } from './middleware/csrf.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { globalLimiter } from './middleware/rateLimit.js';
 import { authRouter } from './modules/auth/auth.routes.js';
@@ -71,7 +71,7 @@ export function createApp() {
     cors({
       origin: (origin, callback) => {
         // Non-browser clients (no Origin) are allowed; browsers must be whitelisted.
-        if (!origin || env.CORS_ORIGINS.includes(origin)) return callback(null, true);
+        if (!origin || isAllowedOrigin(origin)) return callback(null, true);
         return callback(null, false);
       },
       credentials: true,
