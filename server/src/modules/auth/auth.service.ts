@@ -1,10 +1,17 @@
+import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { env } from '../../config/env.js';
 import { prisma } from '../../lib/prisma.js';
 import { hashPassword, randomToken, sha256, verifyPassword } from '../../lib/crypto.js';
 import { AppError, conflict, unauthorized } from '../../lib/errors.js';
+import {
+  appendChainedLedgerEntry,
+  buildReceiveCodeFromWalletId,
+} from '../rewards/ledger.crypto.js';
 import { selfUserSelect, withExperienceResolution } from '../users/users.select.js';
 import type { ChangePasswordInput, LoginInput, RegisterInput } from './auth.schemas.js';
+
+const REGISTRATION_STARTER_CREDITS = 250;
 
 interface SessionMeta {
   userAgent?: string;
@@ -35,15 +42,48 @@ export async function createSession(userId: string, meta: SessionMeta) {
 export async function register(input: RegisterInput, meta: SessionMeta) {
   const passwordHash = await hashPassword(input.password);
   try {
-    const user = await prisma.user.create({
-      data: {
-        email: input.email,
-        username: input.username,
-        displayName: input.displayName,
-        passwordHash,
-      },
-      select: selfUserSelect,
+    const user = await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          email: input.email,
+          username: input.username,
+          displayName: input.displayName,
+          passwordHash,
+        },
+        select: selfUserSelect,
+      });
+
+      const walletId = randomUUID();
+      const wallet = await tx.creditWallet.create({
+        data: {
+          id: walletId,
+          userId: createdUser.id,
+          balance: REGISTRATION_STARTER_CREDITS,
+          promoCredits: REGISTRATION_STARTER_CREDITS,
+          purchasedCredits: 0,
+          earnedCredits: 0,
+          lockedCredits: 0,
+          totalEarned: REGISTRATION_STARTER_CREDITS,
+          totalSpent: 0,
+          receiveCode: buildReceiveCodeFromWalletId(walletId),
+        },
+      });
+
+      await appendChainedLedgerEntry(tx, {
+        wallet,
+        amount: REGISTRATION_STARTER_CREDITS,
+        balanceAfter: REGISTRATION_STARTER_CREDITS,
+        bucket: 'PROMO',
+        type: 'STARTER_GRANT',
+        referenceId: createdUser.id,
+        idempotencyKey: `starter-grant:${createdUser.id}`,
+        description: `Cấp Credit khởi đầu hệ sinh thái NeuroLink (+${REGISTRATION_STARTER_CREDITS} Credit)`,
+        actorId: createdUser.id,
+      });
+
+      return createdUser;
     });
+
     const session = await createSession(user.id, meta);
     return { user: withExperienceResolution(user), session };
   } catch (err) {

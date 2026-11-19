@@ -14,11 +14,12 @@ import { useMode } from '../context/ModeContext';
 import { useAuth } from '../features/auth/AuthContext';
 import { BrainWaveformViewer } from '../features/eeg/BrainWaveformViewer';
 import { DataBankMarketplacePanel } from '../features/eeg/DataBankMarketplacePanel';
+import { HardwareDevicePanel } from '../features/eeg/HardwareDevicePanel';
 import { NeuralDatabasePanel } from '../features/eeg/NeuralDatabasePanel';
 import { QeegStudioPanel } from '../features/eeg/QeegStudioPanel';
 import { triggerCsvDownload } from '../features/eeg/eegLabels';
 
-type HubTab = 'qeeg' | 'personal' | 'databank' | 'neural-db';
+type HubTab = 'qeeg' | 'personal' | 'device' | 'databank' | 'neural-db';
 
 const FALLBACK_RECORDINGS: EegDatasetRecord[] = [
   {
@@ -205,7 +206,13 @@ function buildPreviewWaveformForDataset(rec: EegDatasetRecord) {
 
 function resolveInitialTab(searchParams: URLSearchParams): HubTab {
   const tab = searchParams.get('tab');
-  if (tab === 'qeeg' || tab === 'personal' || tab === 'databank' || tab === 'neural-db') {
+  if (
+    tab === 'qeeg' ||
+    tab === 'personal' ||
+    tab === 'device' ||
+    tab === 'databank' ||
+    tab === 'neural-db'
+  ) {
     return tab;
   }
   const view = searchParams.get('view');
@@ -249,7 +256,13 @@ export function EEGHubPage() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'qeeg' || tabParam === 'personal' || tabParam === 'databank' || tabParam === 'neural-db') {
+    if (
+      tabParam === 'qeeg' ||
+      tabParam === 'personal' ||
+      tabParam === 'device' ||
+      tabParam === 'databank' ||
+      tabParam === 'neural-db'
+    ) {
       setActiveTab(tabParam);
       if (tabParam === 'databank' || tabParam === 'neural-db') {
         setShowResearchTabs(true);
@@ -416,11 +429,12 @@ export function EEGHubPage() {
   const allTabs: { id: HubTab; label: string }[] = [
     { id: 'qeeg', label: 'Đo & Đọc kết quả' },
     { id: 'personal', label: 'Hồ sơ đã lưu' },
+    { id: 'device', label: 'Thiết bị' },
     { id: 'databank', label: 'Kho Dữ liệu' },
     { id: 'neural-db', label: 'Mẫu chuẩn AI' },
   ];
   const visibleTabs =
-    isProfessional || showResearchTabs ? allTabs : allTabs.slice(0, 2);
+    isProfessional || showResearchTabs ? allTabs : allTabs.slice(0, 3);
 
   return (
     <div className={isProfessional ? 'space-y-4' : 'mx-auto max-w-6xl space-y-4'}>
@@ -494,7 +508,7 @@ export function EEGHubPage() {
 
         <nav
           aria-label="Điều hướng Đo sóng não"
-          className="border-b border-[#DCE6DF] flex items-center gap-6 overflow-x-auto"
+          className="border-b border-[#DCE6DF] flex items-center gap-4 sm:gap-6 overflow-x-auto"
         >
           {visibleTabs.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -945,12 +959,17 @@ export function EEGHubPage() {
         </div>
       )}
 
-      {/* TAB 3: Data Bank Marketplace */}
+      {/* TAB 3: Live Hardware Devices & Node-RED Center */}
+      {activeTab === 'device' && (
+        <HardwareDevicePanel isProfessional={isProfessional} />
+      )}
+
+      {/* TAB 4: Data Bank Marketplace */}
       {activeTab === 'databank' && (
         <DataBankMarketplacePanel isProfessional={isProfessional} />
       )}
 
-      {/* TAB 4: Neural Network Training DB */}
+      {/* TAB 5: Neural Network Training DB */}
       {activeTab === 'neural-db' && (
         <NeuralDatabasePanel isProfessional={isProfessional} />
       )}

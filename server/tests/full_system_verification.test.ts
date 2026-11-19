@@ -438,9 +438,9 @@ describe('Comprehensive 14-Point End-to-End Platform Verification Suite', () => 
       .contributions;
     expect(pubsList.some((c: any) => c.id === submittedContrib.id)).toBe(true);
 
-    // Verify Doctor's credit wallet balance is 300 and redeem the 150-credit CME course
+    // Verify Doctor's credit wallet balance is 550 (250 starter + 300 reward) and redeem the 150-credit CME course
     const walletBefore = (await doctorUser.get('/api/rewards/wallet').expect(200)).body.wallet;
-    expect(walletBefore.balance).toBe(300);
+    expect(walletBefore.balance).toBe(550);
 
     const redeemRes = (
       await doctorUser
@@ -450,6 +450,6 @@ describe('Comprehensive 14-Point End-to-End Platform Verification Suite', () => 
         })
         .expect(201)
     ).body;
-    expect(redeemRes.remainingBalance).toBe(150);
+    expect(redeemRes.remainingBalance).toBe(400);
   });
 });

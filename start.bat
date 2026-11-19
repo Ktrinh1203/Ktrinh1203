@@ -5,7 +5,7 @@ cd /d "%~dp0"
 
 echo ========================================================================
 echo   NeuroLink Unified Mega-Server Launcher
-echo   PostgreSQL (:5432) + FastAPI qEEG (:8001) + Express (:4000) + UI (:5173)
+echo   Postgres (:5432) + qEEG (:8001) + Express (:4000) + Node-RED IoT (:1880) + UI (:5173)
 echo ========================================================================
 echo.
 

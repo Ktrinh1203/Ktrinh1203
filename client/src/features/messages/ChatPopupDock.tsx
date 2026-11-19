@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Maximize2, MessageCircle, Minus, Search, Send, X } from 'lucide-react';
+import { ArrowLeft, Coins, Maximize2, MessageCircle, Minus, Search, Send, X } from 'lucide-react';
 import { communityInsightsApi, messagesApi, searchApi } from '../../api/endpoints';
 import type { MessageItem } from '../../api/types';
 import { Avatar } from '../../components/ui';
@@ -418,6 +418,18 @@ export function ChatPopupDock() {
               )}
             </div>
             <div className="flex items-center gap-1 shrink-0">
+              {other?.username && (
+                <Link
+                  to={`/rewards?tab=transfer&to=${encodeURIComponent(other.username)}`}
+                  onClick={minimizePopup}
+                  title={`Chuyển Credit tới @${other.username}`}
+                  aria-label="Chuyển Credit"
+                  className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#BBF7D0] bg-[#ECFDF3] px-2 text-[11px] font-semibold text-[#15803D] hover:bg-[#DCFCE7] transition-colors shrink-0"
+                >
+                  <Coins className="size-3 shrink-0" aria-hidden />
+                  <span>Chuyển Credit</span>
+                </Link>
+              )}
               <button
                 type="button"
                 aria-label="Mở toàn màn hình"

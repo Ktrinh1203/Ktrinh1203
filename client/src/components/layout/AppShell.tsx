@@ -12,6 +12,7 @@ import {
   Bell,
   Award,
   Gift,
+  Coins,
   Activity,
   Heart,
   Users,
@@ -28,9 +29,10 @@ import {
 import { Avatar, cn } from '../ui';
 import { useAuth } from '../../features/auth/AuthContext';
 import { ACCOUNT_ROLE_LABELS, useMode } from '../../context/ModeContext';
-import { notificationsApi, messagesApi } from '../../api/endpoints';
+import { notificationsApi, messagesApi, rewardsApi } from '../../api/endpoints';
 import { ChatPopupProvider, useChatPopup } from '../../features/messages/ChatPopupContext';
 import { ChatPopupDock } from '../../features/messages/ChatPopupDock';
+import { useRealtimeEvents } from '../../features/realtime/useRealtimeEvents';
 
 export interface NavItem {
   to: string;
@@ -51,19 +53,19 @@ export function Logo({
   return (
     <Link
       to={isProfessional ? '/dashboard' : '/feed'}
-      className={cn('group inline-flex items-center gap-2.5 select-none', className)}
+      className={cn('group inline-flex items-center gap-2 sm:gap-2.5 select-none', className)}
     >
       <img
         src="/logo.svg"
         alt="NeuroLink Logo"
         width={34}
         height={34}
-        className="size-8.5 shrink-0"
+        className="size-7.5 sm:size-8.5 shrink-0"
       />
       <div className="flex flex-col items-start">
         <span
           className={cn(
-            'text-[21px] leading-none font-extrabold tracking-[-0.04em]',
+            'text-[19px] sm:text-[21px] leading-none font-extrabold tracking-[-0.04em]',
             inverted ? 'text-white' : 'text-[#111827]',
           )}
         >
@@ -74,7 +76,7 @@ export function Logo({
           fill="none"
           aria-hidden="true"
           className={cn(
-            'w-[88px] h-[10px] -mt-0.5 overflow-visible',
+            'w-[76px] sm:w-[88px] h-[10px] -mt-0.5 overflow-visible',
             inverted ? 'text-emerald-300' : 'text-[#16A34A]',
           )}
           stroke="currentColor"
@@ -292,6 +294,8 @@ function AppShellContent() {
   const [globalSearch, setGlobalSearch] = useState('');
   const [showGuideModal, setShowGuideModal] = useState(false);
 
+  useRealtimeEvents(Boolean(user));
+
   useEffect(() => {
     if (!showGuideModal) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -303,6 +307,12 @@ function AppShellContent() {
 
   const rejectedProfile = user?.professionalProfiles?.find((p) => p.verificationStatus === 'REJECTED');
   const pendingProfile = user?.professionalProfiles?.find((p) => p.verificationStatus === 'PENDING');
+
+  const { data: walletData } = useQuery({
+    queryKey: ['my-wallet'],
+    queryFn: () => rewardsApi.getWallet(),
+    enabled: Boolean(user),
+  });
 
   const { data: notifData } = useQuery({
     queryKey: ['notifications'],
@@ -318,6 +328,7 @@ function AppShellContent() {
     refetchInterval: 15000,
   });
 
+  const walletBalance = walletData?.wallet?.balance ?? 0;
   const unreadNotifs = notifData?.unreadCount ?? 0;
   const unreadConvs = convData?.conversations.filter((c) => c.isUnread).length ?? 0;
 
@@ -367,8 +378,8 @@ function AppShellContent() {
       ];
 
   const iconBtnClass = isProfessional
-    ? 'relative flex size-8.5 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-colors'
-    : 'relative flex size-8.5 items-center justify-center rounded-lg text-[#4B5563] hover:bg-[#ECFDF3] hover:text-[#15803D] transition-colors';
+    ? 'relative flex size-7.5 sm:size-8.5 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-colors'
+    : 'relative flex size-7.5 sm:size-8.5 items-center justify-center rounded-lg text-[#4B5563] hover:bg-[#ECFDF3] hover:text-[#15803D] transition-colors';
 
   return (
     <div
@@ -384,13 +395,13 @@ function AppShellContent() {
             : 'bg-white/95 backdrop-blur-md border-b border-[#DCE6DF]',
         )}
       >
-        <div className="mx-auto flex h-14 max-w-[1220px] items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-14 max-w-[1220px] items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6">
           <div className="flex items-center gap-3 shrink-0">
             <Logo inverted={isProfessional} isProfessional={isProfessional} />
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <form onSubmit={handleGlobalSearch} className="hidden sm:block w-56 lg:w-64 mr-1">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <form onSubmit={handleGlobalSearch} className="hidden sm:block w-44 lg:w-56 mr-0.5">
               <div className="relative w-full">
                 <Search
                   className={cn(
@@ -415,12 +426,29 @@ function AppShellContent() {
               </div>
             </form>
 
+            {user && (
+              <Link
+                to="/rewards"
+                aria-label="Ví Credit"
+                title="Ví Credit & Thanh toán"
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-full border px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-semibold tabular-nums transition-colors shrink-0',
+                  isProfessional
+                    ? 'border-white/20 bg-white/10 text-white hover:bg-white/20'
+                    : 'border-[#BBF7D0] bg-[#ECFDF3] text-[#15803D] hover:bg-[#DCFCE7]',
+                )}
+              >
+                <Coins className="size-3.5 shrink-0" aria-hidden />
+                <span>{walletBalance.toLocaleString('vi-VN')} Credit</span>
+              </Link>
+            )}
+
             <Link to="/search" aria-label="Tìm kiếm" className={cn(iconBtnClass, 'sm:hidden')}>
-              <Search className="size-4.5" aria-hidden />
+              <Search className="size-4 sm:size-4.5" aria-hidden />
             </Link>
 
             <button type="button" onClick={togglePopup} aria-label="Tin nhắn" className={iconBtnClass}>
-              <MessageCircle className="size-4.5" aria-hidden />
+              <MessageCircle className="size-4 sm:size-4.5" aria-hidden />
               {Boolean(unreadConvs && unreadConvs > 0) && (
                 <span className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-[#B91C1C] text-[10px] font-semibold text-white">
                   {unreadConvs}
@@ -429,7 +457,7 @@ function AppShellContent() {
             </button>
 
             <Link to="/notifications" aria-label="Thông báo" className={iconBtnClass}>
-              <Bell className="size-4.5" aria-hidden />
+              <Bell className="size-4 sm:size-4.5" aria-hidden />
               {Boolean(unreadNotifs && unreadNotifs > 0) && (
                 <span className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-[#B91C1C] text-[10px] font-semibold text-white">
                   {unreadNotifs}
@@ -442,7 +470,7 @@ function AppShellContent() {
               onClick={() => setShowGuideModal(true)}
               aria-label="Hướng dẫn nhanh"
               title="Hướng dẫn nhanh"
-              className={iconBtnClass}
+              className={cn(iconBtnClass, 'hidden sm:flex')}
             >
               <HelpCircle className="size-4.5" aria-hidden />
             </button>

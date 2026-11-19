@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Báo Cáo Phân Tích Toàn Diện Mô Hình Kinh Doanh Business Model Canvas v2.0</title>
+<title>Báo Cáo Phân Tích Mô Hình Kinh Doanh Business Model Canvas - Dự Án NeuroLink</title>
 <style>
   @page {
     size: A4;
@@ -23,18 +23,15 @@
   }
   .doc-header {
     margin-bottom: 18pt;
-    padding-bottom: 6pt;
   }
   .org-name {
     font-size: 11pt;
     font-weight: bold;
     text-transform: uppercase;
     color: #000000;
-    letter-spacing: 0.5px;
-    margin-bottom: 4pt;
   }
   .doc-title {
-    font-size: 17pt;
+    font-size: 16pt;
     font-weight: bold;
     color: #000000;
     margin: 6pt 0 4pt 0;
@@ -48,11 +45,10 @@
     margin-bottom: 6pt;
   }
   .doc-meta {
-    font-size: 10pt;
+    font-size: 11pt;
     color: #000000;
     display: flex;
     justify-content: space-between;
-    margin-top: 4pt;
   }
   h1 {
     font-size: 13.5pt;
@@ -62,453 +58,657 @@
     margin-top: 18pt;
     margin-bottom: 8pt;
     page-break-after: avoid;
+    text-align: left;
   }
   h2 {
     font-size: 12.5pt;
     font-weight: bold;
     color: #000000;
-    margin-top: 14pt;
+    margin-top: 13pt;
     margin-bottom: 6pt;
     page-break-after: avoid;
+    text-align: left;
   }
   h3 {
     font-size: 12pt;
     font-weight: bold;
     color: #000000;
-    margin-top: 10pt;
+    margin-top: 9pt;
     margin-bottom: 4pt;
     page-break-after: avoid;
-  }
-  h4 {
-    font-size: 12pt;
-    font-weight: bold;
-    color: #000000;
-    margin-top: 8pt;
-    margin-bottom: 4pt;
-    page-break-after: avoid;
+    text-align: left;
   }
   p {
-    margin-bottom: 6pt;
-    text-indent: 18pt;
-    line-height: 1.5;
-    color: #000000;
+    margin-bottom: 7pt;
+    text-indent: 1.5em;
   }
-  .no-indent {
+  p.no-indent {
     text-indent: 0;
   }
   ul {
     list-style: none;
-    padding-left: 18pt;
-    margin: 4pt 0 8pt 0;
+    margin-left: 0;
+    padding-left: 1.2em;
+    margin-bottom: 7pt;
   }
   ul li {
     position: relative;
-    margin-bottom: 3pt;
-    line-height: 1.45;
-    color: #000000;
+    padding-left: 1.1em;
+    margin-bottom: 4pt;
+    text-indent: 0;
   }
   ul li::before {
     content: "- ";
     position: absolute;
-    left: -14pt;
+    left: 0;
     color: #000000;
   }
   ul ul {
-    list-style: none;
-    padding-left: 16pt;
-    margin: 2pt 0;
+    margin-top: 3pt;
+    margin-bottom: 3pt;
+    padding-left: 1.2em;
   }
   ul ul li::before {
     content: "+ ";
     position: absolute;
-    left: -12pt;
+    left: 0;
     color: #000000;
   }
   table {
     width: 100%;
     border-collapse: collapse;
-    margin: 12pt 0;
+    margin: 10pt 0;
     font-size: 10.5pt;
     background: #ffffff;
+    color: #000000;
+  }
+  tr {
     page-break-inside: avoid;
   }
   th, td {
     border: 1px solid #000000;
     padding: 5pt 6pt;
-    color: #000000;
     vertical-align: top;
+    text-align: left;
+    background: #ffffff;
+    color: #000000;
   }
   th {
     font-weight: bold;
-    background: #ffffff;
     text-align: center;
   }
-  td.num {
-    text-align: right;
+
+  table.comparison-table {
+    font-size: 8pt;
+    margin: 8pt 0;
   }
-  td.center {
-    text-align: center;
+  table.comparison-table th, table.comparison-table td {
+    padding: 3pt 4pt;
+    font-size: 8pt;
+    line-height: 1.35;
   }
 </style>
 </head>
 <body>
 
 <div class="doc-header">
-  <div class="org-name">DỰ ÁN KHỞI NGHIỆP Y TẾ SỐ NEUROLINK EEG — HỘI ĐỒNG THẨM ĐỊNH</div>
-  <div class="doc-title">BÁO CÁO PHÂN TÍCH TOÀN DIỆN MÔ HÌNH KINH DOANH BUSINESS MODEL CANVAS v2.0</div>
-  <div class="doc-subtitle">Nền tảng Theo dõi Sóng não Giấc ngủ và Sức khỏe Chủ động NeuroLink</div>
+  <div class="org-name">DỰ ÁN KỸ THUẬT Y SINH &amp; Y TẾ SỐ NEUROLINK — ĐẠI HỌC BÁCH KHOA, ĐẠI HỌC ĐÀ NẴNG</div>
+  <div class="doc-title">BÁO CÁO PHÂN TÍCH MÔ HÌNH KINH DOANH BUSINESS MODEL CANVAS</div>
+  <div class="doc-subtitle">Hệ thống Đo lường Sóng não, Hỗ trợ Giấc ngủ và Nghiên cứu Cảnh báo Sớm Đột quỵ NeuroLink</div>
   <div class="doc-meta">
-    <span>Địa bàn thực địa: Thành phố Đà Nẵng</span>
-    <span>Kiến trúc: Động cơ Kép B2B + B2C Hợp pháp</span>
-    <span>Ngày: 18/11/2026</span>
+    <span>Địa bàn trọng điểm: Thành phố Đà Nẵng &amp; Miền Trung</span>
+    <span>Trọng tâm: Logic Vận hành Kỹ thuật &amp; Điều tra Quy mô Tệp Khách hàng</span>
   </div>
 </div>
 
-<h1>I. TỔNG QUAN MÔ HÌNH KINH DOANH VÀ DÒNG CHẢY LOGIC OSTERWALDER</h1>
+<h1>I. LOGIC TỔNG THỂ VÀ NGUYÊN TẮC THIẾT KẾ MÔ HÌNH</h1>
 
-<h2>1. Nguyên lý tách bạch Người chi trả (Payer) và Người sử dụng (End-User)</h2>
-<p>Đa số dự án thiết bị y tế tiêu dùng thất bại vì đánh đồng người sử dụng với người chi trả. Người cao tuổi tại Việt Nam có tâm lý sợ tốn tiền của con cái. Họ thường giấu bệnh và từ chối chi vài triệu đồng cho một thiết bị công nghệ. Nếu tiếp cận trực tiếp người cao tuổi, chi phí thuyết phục bán hàng sẽ rất lớn.</p>
-<p>NeuroLink tách đôi hai đối tượng này. Người sử dụng là cha mẹ từ 55 tuổi trở lên có bệnh lý nền mất ngủ, huyết áp cao, suy giảm tuần hoàn não. Người chi trả là con cái trưởng thành trong độ tuổi 25 đến 45 tuổi có thu nhập ổn định và đi làm xa quê. Con cái mua thiết bị không phải để cha mẹ thao tác phức tạp. Họ mua sự an tâm cho bản thân. Họ muốn đêm ngủ ngon và sáng ra biết chắc cha mẹ ở quê vẫn bình an.</p>
-<p>Bản chất kinh tế ở đây là hoán đổi giá trị tâm lý. Cha mẹ tiếp nhận thiết bị như một món quà hiếu nghĩa của con. Con cái theo dõi dữ liệu sức khỏe từ xa qua điện thoại. Khi có sự cố bất đối xứng bán cầu não lúc nửa đêm, hệ thống lập tức gọi điện cho con cái. Con cái đóng vai trò người giám sát và nhắc nhở cha mẹ đeo máy mỗi tối.</p>
-
-<h2>2. Lý do chọn mô hình Động cơ Kép và loại bỏ các phương án bẫy</h2>
-<p class="no-indent">Để tồn tại và tăng trưởng bền vững, startup bắt buộc phải vượt qua các ảo tưởng kinh doanh bằng tinh thần phản biện thực chứng:</p>
+<h2>1. Sự liên kết nhân quả giữa sản phẩm kỹ thuật và nhu cầu thực tế</h2>
+<p>Điểm nghẽn của nhiều đề tài kỹ thuật y sinh trong trường đại học là dừng lại ở mạch nguyên lý trên bàn thí nghiệm hoặc đặt mục tiêu thương mại hóa trực diện vào bệnh viện ngay khi chưa có giấy phép lưu hành. Thực tế quy trình kiểm định lâm sàng để được Bộ Y tế cấp Số lưu hành Trang thiết bị Y tế loại B hoặc C kéo dài từ 12 đến 24 tháng. Nếu chỉ trông chờ vào một đầu ra duy nhất tại bệnh viện, dự án sẽ bị đóng băng hoạt động và thiếu dữ liệu thực tế để cải tiến thuật toán.</p>
+<p class="no-indent">Mô hình NeuroLink được thiết kế theo hướng đi tuần tự, lấy khả năng ứng dụng hợp pháp ở hiện tại để nuôi mục tiêu y tế chuyên sâu ở tương lai trên cùng một nền tảng phần cứng và phần mềm thống nhất:</p>
 <ul>
-  <li>Loại bỏ bán và kê đơn y tế qua Nhà thuốc hoặc Phòng khám ở Pha 1:
-    Khi chưa có Số lưu hành Trang thiết bị Y tế (TBYT) do Bộ Y tế cấp (quy trình kiểm định hồ sơ loại C thường kéo dài 12 đến 18 tháng), mọi chuỗi nhà thuốc lớn, tổ chức công đoàn hay phòng khám tư nhân đều từ chối thu tiền trực tiếp từ bệnh nhân do rủi ro pháp lý và trách nhiệm liên đới. Lao vào kênh y tế chính quy ngay từ vạch xuất phát đồng nghĩa với việc doanh nghiệp tự đẩy mình vào tình trạng đóng băng doanh thu chờ giấy phép.
-  </li>
-  <li>Loại bỏ chính sách đặt cọc 990.000 đồng dưới giá vốn:
-    Chi phí sản xuất phần cứng (COGS) của thiết bị ở quy mô ban đầu là 1.150.000 đồng. Việc thu tiền đặt cọc 990.000 đồng sẽ làm âm dòng vốn lưu động 160.000 đồng trên mỗi máy xuất xưởng. Nếu người dùng giữ máy lâu dài hoặc mở rộng quy mô quá nhanh, startup sẽ nhanh chóng cạn kiệt tiền mặt. Thay vào đó, nếu khách hàng B2C muốn dùng thử 30 ngày, công ty áp dụng chính sách mua kèm cam kết hoàn tiền hoặc mức Đặt cọc bảo toàn vốn 1.500.000 đồng (cao hơn giá vốn sản xuất, bảo toàn 100% dòng tiền lưu động).
-  </li>
-  <li>Loại bỏ các ngách thị trường lệch lõi:
-    Các ý tưởng như làm mũ chống ngủ gật cho tài xế xe tải hay đồ chơi giáo dục STEAM cho học sinh đều làm phân tán nguồn lực kỹ thuật. Toàn bộ đội ngũ tập trung tuyệt đối vào trục giá trị duy nhất: Sóng não - Giấc ngủ - Thần kinh. Mọi dữ liệu thu thập được từ người dùng ban đêm đều trực tiếp phục vụ cho việc huấn luyện mô hình phát hiện sớm nguy cơ đột quỵ ở giai đoạn sau.
-  </li>
-  <li>Giải pháp đột phá: Kiến trúc Động cơ Kép (B2B + B2C Hợp pháp Ngày 1):
-    Doanh nghiệp kích hoạt đồng thời hai nhánh doanh thu hợp pháp 100% ngay từ ngày đầu tiên mà không vướng rào cản giấy phép y tế:
-    <ul>
-      <li>Nhánh B2B (Doanh thu nhanh, nuôi sống bộ máy): Thương mại hóa bộ công cụ nghiên cứu NeuroLink Research Kit (kèm API trích xuất sóng thô và phần mềm qEEG) cho các Khoa Kỹ thuật Y sinh, Khoa CNTT - AI của các trường Đại học, đồng thời cung cấp giải pháp đo lường chỉ số thư giãn não bộ cho các Trung tâm trị liệu giấc ngủ không dùng thuốc và Wellness Resort cao cấp tại Đà Nẵng và Hội An.</li>
-      <li>Nhánh B2C (Phủ rộng thị trường, gom dữ liệu thực địa): Phân phối vòng đeo ngủ NeuroLink Sleep Band dưới phân loại Thiết bị Hỗ trợ Giấc ngủ và Thể trạng (General Wellness Device) theo Nghị định 98/2021/NĐ-CP và Nghị định 07/2023/NĐ-CP cho phân khúc kỹ sư công nghệ và người làm việc trí óc mua cho bản thân hoặc báo hiếu cha mẹ.</li>
-    </ul>
-  </li>
+  <li>Nhánh học thuật và chăm sóc giấc ngủ (Triển khai ngay ở Giai đoạn 1): Sử dụng trực tiếp bo mạch đo điện não 6 lớp ADS1299 và trạm phân tích Web qEEG đã hoàn thiện để cung cấp Bộ Kit nghiên cứu mở cho các phòng thí nghiệm đại học và các cơ sở trị liệu giấc ngủ, song song với phiên bản vòng đeo vùng tai hỗ trợ theo dõi chất lượng giấc ngủ cho hộ gia đình (thuộc nhóm thiết bị chăm sóc sức khỏe thông thường theo Nghị định 98/2021/NĐ-CP).</li>
+  <li>Nhánh cộng tác chuyên môn và huấn luyện AI: Mở miễn phí công cụ lọc nhiễu và định lượng sóng não phục vụ nghiên cứu cho bác sĩ trẻ và nghiên cứu sinh. Khi chuyên gia sử dụng công cụ và gán nhãn cho các bản ghi đã khử định danh, hệ thống tặng lại tín chỉ (Credit) để đổi lấy tài nguyên dữ liệu trên nền tảng. Cơ chế này giúp nhóm phát triển tích lũy kho dữ liệu sóng não có nhãn chuẩn mà không tốn kinh phí thuê chuyên gia gán nhãn.</li>
+  <li>Nhánh sàng lọc y tế tuyến cơ sở (Mở rộng ở Giai đoạn 2 sau kiểm định): Kết hợp cùng Bệnh viện Đà Nẵng và Trung tâm Hỗ trợ Khởi nghiệp Đổi mới Sáng tạo Đà Nẵng (DISSC) triển khai đo đối chứng trong cơ chế thử nghiệm có kiểm soát (Sandbox Nghị quyết 136/2024/QH15), làm cơ sở xin cấp phép lưu hành chính thức trước khi đưa vào phòng khám chuyên khoa.</li>
 </ul>
 
-<h1>II. PHÂN TÍCH CHI TIẾT 9 KHỐI BUSINESS MODEL CANVAS VÀ HÀNH LANG CHÍNH SÁCH</h1>
+<h2>2. Nguyên tắc tách người đeo sử dụng và người theo dõi chi trả trong gia đình</h2>
+<p>Đối với nhóm người dùng gia đình tại Việt Nam, người cao tuổi (từ 55 tuổi trở lên) thường có tâm lý tiết kiệm, ngại thao tác điện thoại thông minh và hay giấu các triệu chứng mất ngủ, hoa mắt chóng mặt ban đêm. Ngược lại, con cái trưởng thành đi làm xa (từ 25 đến 45 tuổi) lại là người thường trực lo lắng cho sức khỏe cha mẹ ở quê và có khả năng tiếp cận công nghệ nhanh.</p>
+<p>Vì vậy, sản phẩm tách bạch rõ trải nghiệm cho hai phía: phần cứng vòng đeo vùng tai dành cho cha mẹ được tối giản đến mức tự kích hoạt khi tiếp xúc da mà không cần bấm nút hay cài đặt; toàn bộ phần mềm theo dõi chất lượng ngủ sâu và cuộc gọi cảnh báo khi có bất đối xứng sóng não ban đêm được kết nối thẳng về điện thoại của người con.</p>
 
-<h2>1. Phân khúc Khách hàng (Customer Segments)</h2>
-<h3>a. Nội dung cô đọng dự kiến đưa lên bảng BMC:</h3>
+<h1>II. PHÂN TÍCH CHI TIẾT 9 KHỐI BUSINESS MODEL CANVAS VÀ LỘ TRÌNH PHÁP LÝ</h1>
+
+<h2>1. Phân khúc Khách hàng (Customer Segments) và Số liệu Điều tra Quy mô</h2>
+<h3>a. Nội dung cô đọng đưa lên bảng BMC:</h3>
 <ul>
-  <li>Số liệu Nỗi đau & Thị trường: Hơn 10 triệu người VN rối loạn giấc ngủ (30% người trưởng thành - Hội Y học Giấc ngủ VN); 14,8-16 triệu người cao tuổi, 200.000 ca đột quỵ/năm với 76,8% lỡ giờ vàng 4,5h (Bộ Y tế); >65 trường/viện khối Kỹ thuật - Y sinh & >220 khách sạn/resort 4-5 sao tại cụm Đà Nẵng - Hội An (Sở Du lịch).</li>
-  <li>Nhóm 1 (B2B Ngắn hạn Pha 1): Lab Kỹ thuật Y sinh / CNTT - AI các trường ĐH và các Wellness Resort / Trung tâm Trị liệu Giấc ngủ - Tâm lý.</li>
-  <li>Nhóm 2 (B2C Đại chúng Pha 1): Người mất ngủ kinh niên, nhân sự trí óc (25-45 tuổi) và con cái xa quê mua vòng theo dõi giấc ngủ cho cha mẹ (55+).</li>
-  <li>Nhóm 3 & 4 (Đối tác & Pha 2-3): Bác sĩ/Chuyên gia đọc biểu đồ theo ca; Phòng khám tư (Neuro-Holter 3-5 đêm), Nhà thuốc & Viện BCI / Hãng Dược mua dữ liệu RWE.</li>
-  <li>Quy mô Thị trường (Bottom-up): TAM: 16.200 tỷ VNĐ (~640 triệu USD) | SAM: 1.680 tỷ VNĐ (~66 triệu USD) | SOM 24 tháng: 56,5 tỷ VNĐ (~2,2 triệu USD; riêng Năm 1 đạt 5,48 tỷ VNĐ).</li>
+  <li>Tệp 1 - Người dùng Giấc ngủ và Gia đình (Giai đoạn 1): Con cái đi làm xa (25-45 tuổi) và cha mẹ lớn tuổi (55+). Quy mô: hơn 10 triệu người Việt Nam rối loạn giấc ngủ (~30% người lớn); 14,8 đến 16 triệu người cao tuổi, khoảng 200.000 ca đột quỵ/năm với 76,8% nhập viện trễ giờ vàng 4,5 giờ.</li>
+  <li>Tệp 2 - Tổ chức Học thuật và Trị liệu Giấc ngủ (Giai đoạn 1): Phòng Lab đại học và cơ sở nghỉ dưỡng phục hồi. Quy mô: hơn 240 trường đại học toàn quốc (gần 40 trường đào tạo Y Dược và hơn 65 khoa Kỹ thuật Y sinh, Điện tử, CNTT); riêng cụm Đà Nẵng - Hội An có hơn 220 khách sạn, resort 4-5 sao.</li>
+  <li>Tệp 3 - Cộng đồng Chuyên môn Đọc và Gán nhãn (Đối tác nòng cốt): Bác sĩ trẻ, bác sĩ nội trú và nghiên cứu sinh. Quy mô: khoảng 10.000 bác sĩ tốt nghiệp mỗi năm trên cả nước cùng hàng ngàn học viên sau đại học cần công cụ xử lý tín hiệu và dữ liệu làm đề tài.</li>
+  <li>Tệp 4 - Cơ sở Y tế Tuyến dưới và Viện Nghiên cứu Thần kinh (Giai đoạn 2-3): Phòng khám thần kinh, bệnh viện tuyến cơ sở và đơn vị nghiên cứu BCI, dược phẩm. Quy mô: cả nước mới có hơn 130 đơn vị đột quỵ trên tổng số hơn 1.500 bệnh viện, dẫn đến thiếu hụt lớn công cụ sàng lọc sớm tại tuyến dưới.</li>
 </ul>
-<h3>b. Phân tích số liệu khảo sát khách hàng và định lượng quy mô thị trường (TAM - SAM - SOM):</h3>
-<p>Thống kê nỗi đau khách hàng thực chứng: Số liệu từ Hội Y học Giấc ngủ Việt Nam ghi nhận khoảng 30% người trưởng thành gặp phải các triệu chứng rối loạn giấc ngủ, tương đương hơn 10 triệu người; ở nhóm người cao tuổi tỷ lệ này lên tới 30% đến 40%. Theo báo cáo của Cục Thống kê và Bộ Y tế, cả nước hiện có khoảng 14,8 đến 16 triệu người từ 60 tuổi trở lên, trung bình mỗi người mắc 3 đến 4 bệnh mạn tính. Mỗi năm ghi nhận khoảng 200.000 ca đột quỵ mới nhưng chỉ 23,2% bệnh nhân đến bệnh viện kịp trong khung giờ vàng 4,5 giờ đầu; nghĩa là 76,8% bệnh nhân nhập viện muộn do không phát hiện kịp biến cố ban đêm trong lúc ngủ.</p>
-<p>Ở phía thị trường B2B học thuật và trị liệu, cả nước hiện có hơn 240 trường đại học và viện nghiên cứu, trong đó có hơn 65 đơn vị đào tạo chuyên ngành Kỹ thuật Y sinh, Công nghệ Thông tin - Trí tuệ Nhân tạo và Y Dược đang phải nhập khẩu thiết bị đo sóng não OpenBCI của Mỹ với giá 999 USD. Tại khu vực miền Trung, theo thống kê của Sở Du lịch Đà Nẵng, địa phương hiện có khoảng 164 đến 167 cơ sở lưu trú đạt chuẩn 4 đến 5 sao, cùng với đô thị cổ Hội An tạo thành cụm hơn 220 khu nghỉ dưỡng và khách sạn cao cấp đang chuyển dịch mạnh mẽ sang mô hình du lịch chăm sóc sức khỏe và phục hồi sinh lực (Wellness Tourism).</p>
-<p class="no-indent">Định lượng quy mô thị trường theo phương pháp Bottom-up:</p>
+<h3>b. Dẫn chứng điều tra thực tế trên từng tệp khách hàng:</h3>
+<p class="no-indent">Mọi phân khúc mục tiêu của dự án đều dựa trên số liệu thống kê chính thức của cơ quan chuyên ngành tại Việt Nam thay vì suy đoán cảm tính:</p>
 <ul>
-  <li>Tổng thị trường tiềm năng (TAM) ước đạt khoảng 16.200 tỷ VNĐ (~640 triệu USD): Bao gồm 4,5 triệu hộ gia đình trung lưu tại các đô thị có thành viên rối loạn giấc ngủ hoặc có cha mẹ cao tuổi có bệnh nền tim mạch, huyết áp nhân với mức chi tiêu thiết bị và theo dõi sức khỏe bình quân 3,5 triệu đồng một hộ (tương đương 15.750 tỷ đồng), kết hợp với nhu cầu trang bị thiết bị đo lường sóng não và giấc ngủ tại hơn 240 trường đại học, bệnh viện và hơn 1.000 khu nghỉ dưỡng, trung tâm trị liệu trên toàn quốc (ước đạt 450 tỷ đồng).</li>
-  <li>Thị trường phục vụ khả thi (SAM) ước đạt khoảng 1.680 tỷ VNĐ (~66 triệu USD): Bao gồm nhánh B2C với 450.000 hộ gia đình kỹ sư, nhân sự công nghệ và tài chính trong độ tuổi 25 đến 45 tuổi tại Đà Nẵng, Hà Nội và TP. Hồ Chí Minh có cha mẹ già sống ở các tỉnh lân cận nhân với gói chi tiêu năm đầu 3.678.000 đồng (thiết bị 2.490.000 đồng cộng 12 tháng thuê bao AI 99.000 đồng), tương đương 1.655 tỷ đồng; kết hợp với nhánh B2B gồm khoảng 65 trường đại học, viện nghiên cứu kỹ thuật - y sinh và khoảng 220 khu nghỉ dưỡng 4 đến 5 sao, trung tâm tâm lý trị liệu tại miền Trung và hai đầu đất nước, tương đương 25 tỷ đồng.</li>
-  <li>Thị trường mục tiêu tiếp cận ban đầu trong 24 tháng (SOM) ước đạt 56,5 tỷ VNĐ (~2,2 triệu USD - chiếm 3,36% SAM): Trong năm thứ nhất (Pha 1), doanh nghiệp đặt mục tiêu khai thác 80 bộ B2B Pro Kit (doanh thu 0,71 tỷ đồng), 20 cơ sở Wellness Resort sử dụng phần mềm SaaS (doanh thu 0,36 tỷ đồng) và 1.200 hộ gia đình B2C đầu tiên tại cụm công nghệ thông tin Đà Nẵng và miền Trung (doanh thu 4,41 tỷ đồng), mang lại tổng doanh thu 5,48 tỷ đồng trong Năm 1. Bước sang năm thứ hai (Pha 2 sau khi có giấy phép TBYT), công ty mở rộng lũy kế đạt 15.000 hộ gia đình và ca thuê bao cùng 150 bộ B2B cho phòng khám, nâng tổng doanh thu khai thác trong 24 tháng lên mức 56,5 tỷ đồng.</li>
+  <li>Điều tra Tệp 1 (Nhu cầu theo dõi giấc ngủ và tai biến ban đêm tại gia đình): Theo thống kê của Hội Y học Giấc ngủ Việt Nam, khoảng 30% người trưởng thành đang gặp các vấn đề rối loạn giấc ngủ (tương đương hơn 10 triệu người), riêng nhóm người cao tuổi tỷ lệ mất ngủ mạn tính chiếm từ 30% đến 40%. Số liệu từ Cục Thống kê và Bộ Y tế ghi nhận Việt Nam có từ 14,8 đến 16 triệu người từ 60 tuổi trở lên (trung bình mắc 3 đến 4 bệnh nền như tăng huyết áp, tim mạch). Mỗi năm cả nước xảy ra khoảng 200.000 ca đột quỵ mới nhưng chỉ 23,2% người bệnh đến viện trong khung giờ vàng 4,5 giờ đầu; 76,8% còn lại đến muộn, phần lớn do biến cố xảy ra trong lúc ngủ ban đêm không có người phát hiện kịp. Ngay tại Đà Nẵng, riêng khu phức hợp FPT Complex đã tập trung khoảng 8.000 kỹ sư công nghệ trẻ phần đông quê ở các tỉnh miền Trung sống xa cha mẹ.</li>
+  <li>Điều tra Tệp 2 (Nhu cầu thiết bị đo mở ở trường đại học và cơ sở phục hồi giấc ngủ): Theo thống kê hệ thống giáo dục đại học của Bộ Giáo dục và Đào tạo, Việt Nam có hơn 240 trường đại học, trong đó gần 40 cơ sở đào tạo khối ngành sức khỏe (Y Dược) và hơn 65 khoa đào tạo Kỹ thuật Y sinh, Điện tử Viễn thông, Khoa học Máy tính và Trí tuệ Nhân tạo. Hiện các phòng thí nghiệm trong nước muốn đo sóng não thô phải đặt mua các bộ mạch ngoại nhập như OpenBCI từ Mỹ với thủ tục nhập khẩu lâu và chi phí cao. Bên cạnh đó, theo số liệu Sở Du lịch Đà Nẵng, riêng thành phố có 164 đến 167 cơ sở lưu trú 4-5 sao (kết hợp khu vực Hội An tạo thành cụm hơn 220 khách sạn và khu nghỉ dưỡng cao cấp) đang phát triển mạnh các gói trị liệu thư giãn, thiền định và phục hồi giấc ngủ cần số liệu đo đạc khách quan trước và sau liệu trình.</li>
+  <li>Điều tra Tệp 3 (Nguồn lực bác sĩ trẻ và nhà nghiên cứu tham gia hệ sinh thái): Theo số liệu từ Bộ Y tế và Hội đồng Y khoa Quốc gia, mỗi năm cả nước có khoảng 10.000 bác sĩ tốt nghiệp ra trường, cùng hàng ngàn bác sĩ nội trú, học viên cao học tại các trường Y Dược lớn (Hà Nội, Huế, Đà Nẵng, TP. Hồ Chí Minh, Cần Thơ). Lực lượng này thường xuyên phải xử lý dữ liệu y sinh để làm luận văn tốt nghiệp, công bố bài báo khoa học và có nhu cầu tận dụng thời gian ngoài giờ để đọc bản ghi chuyên môn.</li>
+  <li>Điều tra Tệp 4 (Khoảng trống trang thiết bị tuyến cơ sở và dữ liệu thần kinh): Báo cáo của Bộ Y tế và Hội Đột quỵ Việt Nam chỉ ra toàn quốc hiện mới thành lập được hơn 130 trung tâm và đơn vị đột quỵ trên tổng số hơn 1.500 bệnh viện công lập và tư nhân. Các cơ sở y tế tuyến huyện, tuyến tỉnh và phòng khám tư thiếu cả máy điện não gọn nhẹ lẫn bác sĩ chuyên khoa đọc kết quả trực đêm. Ngoài ra, các nhóm nghiên cứu giao diện não - máy tính (BCI) và thử nghiệm lâm sàng thuốc thần kinh đang thiếu các tập dữ liệu sóng não đo tự nhiên nhiều đêm liên tục ngoài môi trường phòng bệnh.</li>
+  <li>Khảo sát kiểm chứng trực tiếp của nhóm dự án: Song song với số liệu thống kê ngành, nhóm xây dựng biểu mẫu khảo sát thực địa hai luồng (neurolink_market_survey.html) hướng tới quy mô mẫu 100 đến 150 người đi làm xa quê và các bác sĩ trẻ tại Đà Nẵng - Huế để kiểm tra chéo thói quen sử dụng, rào cản đeo thiết bị khi ngủ và mức chi phí hợp lý trước khi sản xuất lô thử nghiệm.</li>
 </ul>
-<p>Phân tích bản chất kinh tế phân khúc: Khu phức hợp FPT Complex quận Ngũ Hành Sơn quy tụ 8.000 kỹ sư công nghệ thông tin, đóng góp 69% tổng kim ngạch xuất khẩu phần mềm toàn thành phố Đà Nẵng theo công bố của FPT và Báo Chính phủ. Lực lượng kỹ sư trẻ tại đây phần đông xuất thân từ các tỉnh miền Trung lân cận (Quảng Nam, Quảng Ngãi, Huế, Quảng Trị) với mức lương từ 18 đến 45 triệu đồng một tháng. Thói quen chi tiền bảo vệ sức khỏe cho cha mẹ đã được kiểm chứng qua sự kiện Ngày Phụ huynh tháng 11 và bảo hiểm FPT Care mở rộng trên ứng dụng myFPT.</p>
-<p>Thiết kế khảo sát thực địa khách hàng mục tiêu (Primary Customer Discovery): Dự án triển khai quy trình đo lường thực chứng trên quy mô mẫu mục tiêu N = 100 đến 150 người tại Đà Nẵng thông qua bộ công cụ khảo sát trực tuyến hai luồng neurolink_market_survey.html. Khảo sát nhằm kiểm chứng khách quan ba giả định cốt lõi: tỷ lệ lo âu về các biến cố sức khỏe ban đêm của cha mẹ ở nhóm con cái đi làm xa, khoảng giá chấp nhận được theo phương pháp Van Westendorp (OPP, RAP), và tỷ lệ người dùng ưu tiên mua đứt thiết bị 2,49 triệu đồng so với phương án đặt cọc dùng thử 1,5 triệu đồng.</p>
-<h3>c. Phản biện câu hỏi xoáy của hội đồng:</h3>
-<p>Hội đồng chất vấn: Tại sao nhóm sáng lập lại tính toán quy mô thị trường theo phương pháp Bottom-up thay vì lấy một tỷ lệ phần trăm dân số chung chung?</p>
-<p>Phản biện: Cách tiếp cận lấy 1% hay 5% dân số là tư duy ước đoán thiếu căn cứ thực tế. Tính toán Bottom-up bắt đầu từ từng đơn vị khách hàng cụ thể có khả năng tiếp cận và sẵn sàng chi trả: 450.000 hộ gia đình kỹ sư có thu nhập khá và 65 trường đại học đào tạo y sinh. Mọi con số đều gắn liền với đơn giá sản phẩm thực tế và khả năng đáp ứng của năng lực sản xuất Fabless.</p>
-<p>Hội đồng chất vấn: Nhánh B2B Pro Kit quy mô doanh thu nhỏ hơn B2C rất nhiều, tại sao startup lại đưa vào trọng tâm Pha 1?</p>
-<p>Phản biện: Tuy quy mô tổng thể của B2B Pro Kit nhỏ hơn B2C, nhưng giá trị đóng góp tiền mặt trên từng đơn vị lại vượt trội. Lợi nhuận gộp 6,7 triệu đồng trên mỗi bộ B2B Pro Kit giúp startup tạo ra dòng tiền ròng ngay từ tháng đầu tiên để nuôi sống bộ máy mà không phải đốt tiền tiếp thị. B2B Pro Kit đóng vai trò đòn bẩy tài chính và bảo chứng uy tín khoa học cho sản phẩm tiêu dùng B2C mở rộng sau này.</p>
+<h3>c. Phản biện câu hỏi kiểm tra tính logic:</h3>
+<p>Câu hỏi chất vấn: Phục vụ cả phòng Lab đại học, người mất ngủ lẫn bác sĩ trên cùng một mô hình liệu có làm nhóm kỹ thuật bị quá tải không?</p>
+<p>Giải trình logic: Ba nhóm này không tách thành ba sản phẩm rời rạc mà sử dụng chung một lõi kỹ thuật duy nhất. Mạch thu nhận tín hiệu ADS1299 và thuật toán trích xuất đặc trưng trên Web đều là một; điểm khác nhau chỉ nằm ở quyền truy cập giao diện: phòng Lab cần xuất dữ liệu sóng thô (CSV/API), người dùng gia đình chỉ nhận thông báo tóm tắt giấc ngủ dễ hiểu trên điện thoại, còn bác sĩ nhìn thấy bản đồ phổ tần số 19 kênh đã lọc nhiễu để đánh giá và gán nhãn.</p>
 
 <h2>2. Giải pháp Giá trị (Value Propositions)</h2>
-<h3>a. Nội dung cô đọng dự kiến đưa lên bảng BMC:</h3>
+<h3>a. Nội dung cô đọng đưa lên bảng BMC:</h3>
 <ul>
-  <li>Cho Lab ĐH và Trung tâm Wellness (B2B Pha 1): Kit thu nhận sóng não 8 kênh giá bằng 1/3 thiết bị nhập khẩu Mỹ; Báo cáo định lượng mức độ thư giãn sóng Alpha trước - sau trị liệu cho khách VIP.</li>
-  <li>Cho Người dùng và Con cái xa quê (B2C Pha 1): Vòng đeo ngủ điện cực khô tự học đường nền 7 đêm đầu, theo dõi nhịp sinh học và gọi điện báo động khi có lệch pha ban đêm.</li>
-  <li>Cho Bác sĩ và Nhà nghiên cứu (Pha 1-2): Miễn phí trạm định lượng qEEG phục vụ nghiên cứu (Research-Use-Only - RUO); gán nhãn sóng não nhận Credit đổi bộ dữ liệu Data Bank và ưu tiên nhận ca tư vấn trả tiền 150.000 đồng/15 phút.</li>
-  <li>Cho Y tế và Hãng Dược (Pha 2-3): Cảnh báo sớm tai biến ban đêm kèm khóa an toàn tPA CM[2,1]=0 sau Sandbox; Kho dữ liệu RWE tiết kiệm 80% chi phí đo PSG bệnh viện.</li>
+  <li>Cho Gia đình và Người rối loạn giấc ngủ: Vòng đeo vùng tai gọn nhẹ, tự đo khi ngủ (0 thao tác phức tạp); tự học đường nền sóng não 7 đêm đầu và gọi báo động cho con cái ở xa khi phát hiện lệch pha bất thường.</li>
+  <li>Cho Phòng Lab ĐH và Cơ sở Trị liệu Giấc ngủ: Bộ Kit đo sóng não 8 kênh 24-bit kèm phần mềm tiếng Việt và API mở với chi phí thấp hơn nhiều so với nhập ngoại; xuất báo cáo định lượng chỉ số thư giãn trước - sau buổi trị liệu.</li>
+  <li>Cho Bác sĩ Trẻ và Nhà nghiên cứu: Miễn phí trạm lọc nhiễu, dựng bản đồ não 19 kênh phục vụ nghiên cứu (chuẩn Research-Use-Only); gán nhãn sóng não nhận tín chỉ (Credit) đổi bộ dữ liệu luận văn và nhận thù lao khi đọc ca tư vấn ngoài giờ.</li>
+  <li>Cho Tuyến Y tế Cơ sở và Đơn vị Nghiên cứu (Giai đoạn 2): Hỗ trợ sàng lọc bất đối xứng bán cầu não từ xa (kèm rào chắn an toàn tPA) sau khi hoàn tất cấp phép; cung cấp bộ dữ liệu sóng não dài ngày đã khử định danh.</li>
 </ul>
-<h3>b. Phân tích bản chất kinh tế và dẫn chứng thực chứng:</h3>
-<p>Đối với khách hàng B2B, giá trị nằm ở khả năng tùy biến và bản địa hóa. Các nhà khoa học trong nước được tiếp cận bộ phần mềm phân tích qEEG hoàn toàn bằng tiếng Việt với các thuật toán lọc nhiễu 50Hz chuẩn điện lưới quốc gia. Đối với các Wellness Resort, phần mềm tự động xuất báo cáo PDF định dạng sang trọng mang thương hiệu riêng của resort. Báo cáo thể hiện rõ chỉ số thư giãn nhận thức trước và sau buổi trị liệu, giúp cơ sở nâng tầm dịch vụ và thuyết phục khách hàng cao cấp chi trả.</p>
-<p>Đối với khách hàng cá nhân B2C, giá trị cốt lõi là giấc ngủ ngon và sự an tâm từ xa. Thiết bị đo trực tiếp điện thế vỏ não, ghi nhận sự biến thiên của tỷ lệ sóng chậm (DAR, TAR) và tính đối xứng bán cầu não (BSI) trong các chu kỳ ngủ sâu. Khi phát hiện các dấu hiệu bất thường vượt ngưỡng so với đường nền cá nhân hóa 7 đêm đầu, hệ thống phát tín hiệu cảnh báo đến người thân.</p>
-<p>Đối với bác sĩ và nhà nghiên cứu, NeuroLink thiết lập cơ chế trao đổi giá trị hai chiều mang tên Gán nhãn Đổi Tín chỉ (Label-for-Credit RLHF). Các bác sĩ xác thực chứng chỉ hành nghề hoặc nghiên cứu sinh xác thực ORCID/email học thuật được sử dụng miễn phí công cụ tiền xử lý qEEG chuẩn nghiên cứu (RUO - giới hạn 30 bản ghi mỗi tháng) để dựng bản đồ não 19 kênh và xuất biểu đồ công bố quốc tế. Đổi lại, mỗi bản ghi đã khử định danh được họ gán nhãn lâm sàng sẽ cộng điểm tín chỉ (Credit) vào ví nội bộ. Tín chỉ này dùng để mở rộng hạn mức phân tích hàng loạt, tải các bộ dữ liệu nghiên cứu khác trên chợ Data Bank phục vụ luận văn, đồng thời nâng điểm uy tín học thuật để được hệ thống ưu tiên phân bổ các ca hội chẩn có trả thù lao tiền mặt 150.000 đồng/15 phút.</p>
-<h3>c. Phản biện câu hỏi xoáy của hội đồng:</h3>
-<p>Hội đồng chất vấn: Các thiết bị vòng đeo tay thông minh hiện nay đều có tính năng đo giấc ngủ, NeuroLink có gì vượt trội?</p>
-<p>Phản biện: Đồng hồ thông minh chỉ sử dụng cảm biến gia tốc và cảm biến quang học PPG ở cổ tay. PPG phản ánh gián tiếp nhịp đập mạch máu ngoại vi, chịu sai số rất lớn khi người dùng trở mình và có độ trễ nhiều giờ so với các biến đổi thần kinh trung ương. NeuroLink đo trực tiếp điện thế hoạt động của vỏ não (EEG) qua các điện cực vùng tai, ghi nhận chính xác các pha giấc ngủ và phát hiện sớm các dấu hiệu thiếu máu cục bộ thoáng qua ngay khi vừa xuất hiện.</p>
+<h3>b. Phân tích tính thuyết phục về mặt kỹ thuật và sử dụng:</h3>
+<p>Khác với đồng hồ thông minh ở cổ tay chỉ đo gián tiếp nhịp tim bằng cảm biến quang học (PPG) vốn dễ sai lệch khi gập tay và phản ánh chậm biến đổi thần kinh trung ương, NeuroLink thu trực tiếp điện thế hoạt động vỏ não qua cụm điện cực khô vùng tai. Hệ thống theo dõi tỷ lệ sóng chậm (DAR, TAR) và độ bất đối xứng giữa hai bán cầu não (BSI) xuyên suốt các chu kỳ ngủ sâu.</p>
+<p>Đối với giới nghiên cứu và bác sĩ trẻ, việc xử lý nhiễu điện lưới 50Hz, nhiễu nháy mắt và dựng bản đồ nội suy không gian tốn rất nhiều công sức lập trình. NeuroLink đóng gói sẵn toàn bộ quy trình này trên giao diện trình duyệt miễn phí (dưới nhãn phục vụ nghiên cứu - Research-Use-Only để tuân thủ đúng pháp luật khi chưa đăng ký chẩn đoán lâm sàng), biến công cụ thành trợ lý đắc lực thu hút giới chuyên môn tham gia hệ sinh thái.</p>
+<h3>c. Phản biện câu hỏi kiểm tra tính logic:</h3>
+<p>Câu hỏi chất vấn: Khi ngủ sâu bình thường não người cũng sinh ra sóng chậm Delta, làm sao máy không báo động nhầm lúc nửa đêm?</p>
+<p>Giải trình logic: Sóng chậm Delta của giấc ngủ sâu sinh lý (pha N3) có đặc trưng đối xứng đồng bộ trên cả hai bán cầu não. Ngược lại, hiện tượng thiếu máu cục bộ hoặc rối loạn vỏ não khu trú gây ra sự chênh lệch bất đối xứng rõ rệt về công suất phổ và pha giữa bán cầu trái và bán cầu phải (đo qua chỉ số BSI và wPLI) so với chính đường nền 7 đêm đầu của người đó. Hệ thống dựa trên độ lệch đối xứng cá nhân hóa thay vì chỉ đếm biên độ sóng chậm đơn thuần.</p>
 
-<h2>3. Kênh Tiếp cận theo Lộ trình Vết dầu loang 3 Pha (Channels)</h2>
-<h3>a. Nội dung cô đọng dự kiến đưa lên bảng BMC:</h3>
+<h2>3. Kênh Tiếp cận theo Lộ trình Tuân thủ Pháp lý (Channels)</h2>
+<h3>a. Nội dung cô đọng đưa lên bảng BMC:</h3>
 <ul>
-  <li>Pha 1 (Tháng 0-12): Bán trực tiếp B2B cho Lab ĐH và Wellness Resort (Đà Nẵng - Hội An); Kênh D2C trực tuyến (Website, Shopee Mall) kết hợp B2B2E ưu đãi cho kỹ sư CNTT (FPT Complex, KMS); Đo lâm sàng tình nguyện tại BV Đà Nẵng.</li>
-  <li>Pha 2 (Tháng 12-24): Đưa vào chuỗi nhà thuốc Long Châu, Pharmacity và phân phối qua phòng khám chuyên khoa khi có Số lưu hành TBYT.</li>
-  <li>Pha 3 (Tháng 24+): Cổng cấp phép dữ liệu số RWE B2B trực tuyến cho các tổ chức y tế quốc tế và đối tác bảo hiểm.</li>
+  <li>Giai đoạn 1 (0-12 tháng - Không vướng phép khám chữa bệnh): Cung cấp trực tiếp bộ Kit cho các khoa Kỹ thuật - Y sinh và cơ sở trị liệu giấc ngủ; phân phối thiết bị theo dõi giấc ngủ qua Website và cộng đồng trực tuyến.</li>
+  <li>Giai đoạn 2 (12-24 tháng - Sau thử nghiệm Sandbox và cấp phép): Phối hợp phòng khám chuyên khoa thần kinh cho bệnh nhân mượn hoặc thuê đo theo dõi ngắn hạn 3-5 đêm tại nhà và mở rộng sang chuỗi nhà thuốc.</li>
+  <li>Giai đoạn 3 (Trên 24 tháng): Cổng chia sẻ và cấp phép bộ dữ liệu nghiên cứu (Data Bank) trực tuyến cho các viện thần kinh và đơn vị phát triển y sinh.</li>
 </ul>
-<h3>b. Phân tích bản chất kinh tế và dẫn chứng thực chứng:</h3>
-<p>Chiến lược phân phối tuân thủ nghiêm ngặt tính hợp pháp và thực tế dòng tiền. Trong 12 tháng đầu tiên, startup hoàn toàn không bán sản phẩm qua kênh kê đơn bệnh viện hay nhà thuốc y tế. Nhánh B2B được tiếp cận trực tiếp qua các hội thảo khoa học, mạng lưới cựu sinh viên Bách Khoa và các chuyến làm việc chuyên môn với ban giám đốc các khu nghỉ dưỡng trị liệu tại Hội An và Đà Nẵng.</p>
-<p>Đối với nhánh B2C, doanh nghiệp phân phối sản phẩm dưới nhãn Thiết bị Hỗ trợ Giấc ngủ thông qua kênh bán lẻ trực tuyến D2C (Website chính thức, gian hàng thương mại điện tử Shopee Mall có chứng thực) kết hợp mô hình B2B2E. Khai thác mạng lưới cựu sinh viên Bách Khoa Đà Nẵng (DUT Alumni) giữ chức vụ quản lý tại FPT Complex và KMS để tổ chức ngày hội trải nghiệm sức khỏe nhân Ngày Phụ huynh. Doanh nghiệp không phải chi trả ngân sách công ty (tránh bẫy xuất toán thuế TNDN theo Thông tư 96/2015/TT-BTC và Luật ATVSLĐ 84/2015/QH13), nhân viên tự mua sắm bằng mã ưu đãi cá nhân.</p>
-<p>Song song đó, startup kết nối với Hội Thầy thuốc Trẻ Đà Nẵng và Bệnh viện Đà Nẵng triển khai các đợt đo đối chứng điện não tình nguyện miễn phí cho bệnh nhân. Hoạt động này vừa tạo giá trị cộng đồng, vừa tích lũy hồ sơ kiểm định lâm sàng phục vụ quy trình cấp phép thiết bị y tế chính quy cho Pha 2.</p>
-<h3>c. Phản biện câu hỏi xoáy của hội đồng:</h3>
-<p>Hội đồng chất vấn: Tại sao không đưa ngay sản phẩm vào chuỗi nhà thuốc FPT Long Châu từ Pha 1?</p>
-<p>Phản biện: Chuỗi nhà thuốc yêu cầu nghiêm ngặt về Số lưu hành Trang thiết bị Y tế do Bộ Y tế cấp, đồng thời áp dụng mức chiết khấu thương mại 35% đến 45%, phí niêm yết kệ hàng và công nợ 60 đến 90 ngày. Đưa sản phẩm vào chuỗi bán lẻ khi chưa có giấy phép y tế là vi phạm pháp luật; còn nếu cố tình làm khi chưa có thương hiệu sẽ dẫn đến chôn vốn và phá sản vì công nợ.</p>
+<h3>b. Phân tích tính hợp lý của lộ trình triển khai:</h3>
+<p>Lộ trình ba giai đoạn giải quyết triệt để mâu thuẫn giữa tốc độ ra mắt sản phẩm công nghệ và thời gian kiểm định y tế. Ở Giai đoạn 1, nhóm không đưa máy vào nhà thuốc hay phòng khám kê đơn vì chưa có Số lưu hành Trang thiết bị Y tế. Thay vào đó, việc cung cấp bộ Kit thực hành nghiên cứu cho các phòng Lab đại học và bán thiết bị hỗ trợ theo dõi giấc ngủ trực tuyến là hoàn toàn hợp pháp và vừa sức với nguồn lực của một nhóm phát triển xuất phát từ trường kỹ thuật.</p>
+<p>Khi bước sang Giai đoạn 2 (sau khi đã có kết quả đo đối chứng tại bệnh viện và chứng nhận lưu hành), kênh phòng khám chuyên khoa sẽ vận hành theo hình thức đo ngắn hạn 3 đến 5 đêm tại nhà tương tự như dịch vụ đeo máy Holter điện tim 24 giờ hiện hành, giúp bệnh nhân dễ dàng tiếp cận mà không phải mua đứt thiết bị đắt tiền.</p>
+<h3>c. Phản biện câu hỏi kiểm tra tính logic:</h3>
+<p>Câu hỏi chất vấn: Làm sao thu hút được các phòng Lab và bác sĩ biết đến nền tảng khi nhóm không có nhiều tiền quảng cáo?</p>
+<p>Giải trình logic: Kênh lan tỏa tự nhiên nằm ở chính công cụ Web qEEG miễn phí cho nghiên cứu. Khi sinh viên y sinh, học viên cao học và giảng viên tại các trường đại học dùng phần mềm để phân tích sóng não và trích dẫn nền tảng trong các báo cáo khoa học, uy tín học thuật sẽ tự động kéo theo nhu cầu đặt mua phần cứng Bộ Kit đồng bộ cho phòng thí nghiệm.</p>
 
-<h2>4. Quan hệ và Cơ chế Giữ chân Khách hàng (Customer Relationships)</h2>
-<h3>a. Nội dung cô đọng dự kiến đưa lên bảng BMC:</h3>
+<h2>4. Quan hệ và Cơ chế Giữ chân Người dùng (Customer Relationships)</h2>
+<h3>a. Nội dung cô đọng đưa lên bảng BMC:</h3>
 <ul>
-  <li>Vòng lặp RLHF Bác sĩ và B2B Portal: Bác sĩ (CCHN) và Researcher (ORCID) gán nhãn ca sạch nhiễu (đồng thuận chéo 2 người) để tích Credit đổi dữ liệu Data Bank; Resort có cổng xuất báo cáo Co-branding.</li>
-  <li>Khóa sinh học B2C: AI học sâu đường nền 7 đêm đầu (đổi máy mất hồ sơ cá nhân hóa) kết hợp báo cáo sáng tự động gửi ứng dụng 2-3 người con.</li>
-  <li>Tư vấn On-Demand: Kết nối chuyên gia và bác sĩ giải thích biểu đồ giấc ngủ trong vòng 2 giờ khi có cảnh báo.</li>
+  <li>Cộng sinh cùng Bác sĩ và Nhà nghiên cứu: Xác thực CCHN/ORCID dùng miễn phí công cụ qEEG; gán nhãn ca sạch nhiễu (kiểm tra đồng thuận 2 người) để tích Credit tải dữ liệu Data Bank và ưu tiên nhận ca tư vấn.</li>
+  <li>Duy trì thói quen đeo máy ở người lớn tuổi: AI hiệu chuẩn theo não từng người trong 7 đêm đầu; báo cáo sáng gửi điện thoại các con để con cái chủ động hỏi thăm, nhắc cha mẹ đeo đều đặn.</li>
+  <li>Hỗ trợ chuyên môn khi cần: Khi có chỉ số bất thường, gia đình gửi yêu cầu trên ứng dụng để bác sĩ xem bản ghi đã lọc nhiễu và giải thích định hướng từ xa.</li>
 </ul>
-<h3>b. Phân tích bản chất kinh tế và dẫn chứng thực chứng:</h3>
-<p>Tỷ lệ bỏ rơi thiết bị theo dõi sức khỏe phổ thông trên thị trường thường lên đến 60% đến 80% sau 1 đến 3 tháng. NeuroLink bẻ gãy điểm nghẽn này bằng ba cơ chế giữ chân độc quyền:</p>
-<p>Thứ nhất là vòng lặp cộng sinh học thuật (Academic RLHF Flywheel) đã được hiện thực hóa trực tiếp trên cơ sở dữ liệu CreditWallet và NeuralTrainingSample của nền tảng. Thay vì tốn hàng tỷ đồng thuê chuyên gia y tế gán nhãn dữ liệu huấn luyện như các công ty AI truyền thống, NeuroLink biến chính nhu cầu nghiên cứu của bác sĩ nội trú và nhà khoa học thành động lực làm giàu dữ liệu. Để ngăn chặn hành vi bấm chọn nhãn bừa bãi nhằm gom tín chỉ rác (Label Farming), hệ thống áp đặt hai chốt kiểm soát tự động: bản ghi phải đạt điểm chất lượng tín hiệu từ 0,80 trở lên (loại bỏ nhiễu điện lưới 50Hz) và chỉ giải ngân Credit khi có sự đồng thuận nhãn độc lập từ tối thiểu hai chuyên gia kết hợp vượt qua các mẫu kiểm định chuẩn vàng ẩn danh. Do tín chỉ nội bộ khóa chức năng rút tiền mặt trực tiếp, startup thu về kho dữ liệu gán nhãn chuẩn lâm sàng với chi phí tiền mặt bằng 0 đồng, đồng thời khóa chặt thói quen sử dụng phần mềm của giới chuyên môn.</p>
-<p>Đối với khách hàng B2C, cơ chế giữ chân dựa trên sự gắn kết gia đình. Mỗi sáng lúc 6h30, ứng dụng tự động gửi tóm tắt chất lượng giấc ngủ của cha mẹ đến điện thoại của 2 đến 3 người con. Nếu một đêm cha mẹ quên không đeo máy, hệ thống báo cờ chưa có dữ liệu. Con cái sẽ chủ động gọi điện nhắc nhở. Việc sử dụng máy trở thành sợi dây kết nối tình cảm gia đình.</p>
-<p>Ngoài ra, thuật toán AI học sâu đường nền sinh học riêng của từng cá nhân trong tuần đầu tiên. Dữ liệu càng nhiều thì độ chính xác phân tích càng cao. Người dùng hiểu rằng chuyển sang thiết bị khác đồng nghĩa với việc xóa bỏ toàn bộ lịch sử nhịp não đã được hiệu chuẩn cá nhân.</p>
-<h3>c. Phản biện câu hỏi xoáy của hội đồng:</h3>
-<p>Hội đồng chất vấn: Cho bác sĩ và nhà nghiên cứu dùng miễn phí công cụ phân tích qEEG liệu có làm mất doanh thu bán phần mềm B2B và bị spam nhãn bẩn vào cơ sở dữ liệu không?</p>
-<p>Phản biện: Gói miễn phí được đóng khung nghiêm ngặt dưới chuẩn phục vụ nghiên cứu cá nhân (Research-Use-Only, giới hạn 30 ca lẻ mỗi tháng) và hoàn toàn không tự triệt tiêu doanh thu thương mại: muốn thu sóng trực tiếp từ người thật, phòng Lab vẫn phải mua phần cứng B2B Pro Kit giá 8,9 triệu đồng; muốn xuất báo cáo mang thương hiệu riêng cho khách hàng, Resort vẫn phải trả gói SaaS 1,5 triệu đồng mỗi tháng. Về chất lượng nhãn, cơ chế đồng thuận mù hai bác sĩ (2-Reader Blind Consensus) cùng các ca bẫy chuẩn vàng gài ngầm đảm bảo lọc sạch 100% thao tác gán nhãn cẩu thả trước khi đưa vào tập huấn luyện.</p>
+<h3>b. Phân tích tính chặt chẽ của vòng lặp giữ chân:</h3>
+<p class="no-indent">Thách thức lớn nhất của thiết bị đeo sức khỏe là người dùng dễ bỏ quên sau vài tuần đầu (tỷ lệ bỏ cuộc ngoài thị trường thường chiếm 60% đến 80%), còn thách thức của AI y tế là thiếu bác sĩ gán nhãn dữ liệu. Khối Quan hệ khách hàng giải quyết cả hai bài toán bằng cơ chế khóa chéo:</p>
+<ul>
+  <li>Thứ nhất, đối với bác sĩ và nhà nghiên cứu: Hệ thống không mở miễn phí một chiều mà áp dụng nguyên tắc trao đổi công bằng đã được lập trình sẵn trong cơ sở dữ liệu (CreditWallet và NeuralTrainingSample). Để tránh tình trạng người dùng bấm chọn nhãn đại khái nhằm lấy điểm (spam nhãn), hệ thống chỉ cộng Credit khi bản ghi đạt độ sạch tín hiệu trên 0,80 và có kết quả gán nhãn trùng khớp giữa ít nhất hai người đọc độc lập (đồng thuận mù 2 chuyên gia) cùng các mẫu chuẩn vàng kiểm tra ngầm.</li>
+  <li>Thứ hai, đối với hộ gia đình: Thói quen sử dụng không đặt lên vai người già hay quên, mà đặt vào tình cảm và trách nhiệm của người con nhận bản tin sáng mỗi ngày trên điện thoại, kết hợp với hồ sơ đường chuẩn sóng não cá nhân hóa tích lũy theo thời gian.</li>
+</ul>
+<h3>c. Phản biện câu hỏi kiểm tra tính logic:</h3>
+<p>Câu hỏi chất vấn: Nếu bác sĩ trên ứng dụng tư vấn sai dẫn đến rủi ro y khoa cho người dùng ở nhà thì sao?</p>
+<p>Giải trình logic: Phần mềm khóa chặt cấu trúc phản hồi thành ba mục tách biệt (nhận xét hình thái sóng khách quan, giải thích kiến thức tham khảo và khuyến nghị đi khám chuyên khoa), hoàn toàn không cho phép kê đơn thuốc trên mạng. Đồng thời, nếu thuật toán phát hiện độ lệch bán cầu vượt ngưỡng nguy hiểm cấp tính, màn hình tự động bật cảnh báo đỏ hướng dẫn gia đình gọi cấp cứu 115 đưa đến bệnh viện chụp CT ngay lập tức thay vì ngồi chờ tư vấn trực tuyến.</p>
 
-<h2>5. Dòng Doanh thu 3 Động cơ (Revenue Streams)</h2>
-<h3>a. Nội dung cô đọng dự kiến đưa lên bảng BMC:</h3>
+<h2>5. Dòng Doanh thu Tự Duy trì (Revenue Streams)</h2>
+<h3>a. Nội dung cô đọng đưa lên bảng BMC:</h3>
 <ul>
-  <li>(1) B2B Pro Kit và SaaS Tổ chức: Bán Kit R&D / Wellness giá 8.900.000 đồng/bộ (lãi gộp 75,3%, tương đương 6,7 triệu đồng/bộ) + Thuê bao phần mềm báo cáo cho Resort 1.500.000 đồng/tháng (biên lãi gộp ~92%).</li>
-  <li>(2) B2C Thiết bị Giấc ngủ: Bán đứt 2.490.000 đồng/bộ (lãi gộp 53,8%, tương đương 1.340.000 đồng/bộ) hoặc Đặt cọc dùng thử 30 ngày 1.500.000 đồng (bảo toàn vốn lưu động).</li>
-  <li>(3) Thuê bao AI và Vật tư tiêu hao: Gói AI Gia đình 99.000 đồng/tháng (biên lãi gộp ~87% - 90%, Cloud ~6.000 đồng) + Đệm điện cực thay thế 149.000 đồng/quý (lãi gộp 73,2%) + Phí sàn tư vấn 199.000 đồng/ca (chuyên gia 150k, sàn 49k).</li>
-  <li>(4) Dữ liệu RWE B2B (Pha 3): Cấp phép 3.000 đến 10.000 USD cho mỗi bộ dữ liệu ẩn danh chuẩn hóa.</li>
+  <li>(1) Cung cấp Bộ Kit Nghiên cứu và Phần mềm: Bán bộ Kit đo sóng não 8 kênh cho phòng Lab đại học (thấp hơn nhiều so với nhập ngoại) và phí thuê bao phần mềm xuất báo cáo cho cơ sở trị liệu giấc ngủ.</li>
+  <li>(2) Thiết bị Đeo Theo dõi Giấc ngủ Cá nhân: Thu từ bán thiết bị đeo ngủ cho hộ gia đình hoặc hình thức đặt cọc mượn máy dùng thử (mức cọc bảo đảm bằng hoặc lớn hơn giá linh kiện để không hụt vốn).</li>
+  <li>(3) Duy trì Phần mềm AI, Đệm Điện cực và Phí Kết nối: Phí duy trì tài khoản cảnh báo gia đình hàng tháng nhẹ nhàng, bán hộp đệm điện cực thay thế định kỳ để giữ độ dẫn điện tốt và thu một phần nhỏ phí vận hành trên mỗi ca tư vấn bác sĩ.</li>
+  <li>(4) Cấp phép Bộ Dữ liệu Nghiên cứu (Giai đoạn 3): Phí cấp phép truy cập các tập dữ liệu sóng não dài ngày đã khử sạch định danh cho các đơn vị nghiên cứu thần kinh - dược phẩm.</li>
 </ul>
-<h3>b. Phân tích bản chất kinh tế và dẫn chứng thực chứng:</h3>
-<p>Mô hình tài chính được thiết kế để tạo dòng tiền dương ngay từ ngày đầu tiên thông qua 3 động cơ bổ trợ lẫn nhau:</p>
-<p>Động cơ thứ nhất là B2B Pro Kit và SaaS tổ chức. Mức giá 8.900.000 đồng hoàn toàn nằm trong hạn mức giải ngân mua sắm vật tư nghiên cứu định kỳ của các lab đại học và chi phí trang thiết bị của các resort cao cấp. Với giá vốn sản xuất khoảng 2.200.000 đồng, mỗi bộ Kit mang lại 6,7 triệu đồng lợi nhuận gộp. Đi kèm với đó là gói thuê bao phần mềm xuất báo cáo định kỳ 1.500.000 đồng mỗi cơ sở mỗi tháng, chi phí máy chủ chỉ khoảng 120.000 đồng, biên lãi gộp đạt 92%.</p>
-<p>Động cơ thứ hai là dòng sản phẩm B2C tiêu dùng. Giá bán đứt 2.490.000 đồng mang lại lãi gộp 1.340.000 đồng (53,8%). Đối với khách hàng còn ngần ngại, gói cọc dùng thử 1.500.000 đồng cao hơn giá vốn 1.150.000 đồng, giúp doanh nghiệp luôn dương tiền mặt lưu động.</p>
-<p>Động cơ thứ ba là doanh thu định kỳ từ phần mềm và vật tư tiêu hao. Gói thuê bao 99.000 đồng một tháng là phần mềm tự động hóa 100%, không gánh lương bác sĩ cố định. Chi phí máy chủ biên khoảng 6.000 đồng, phí cổng thanh toán khoảng 7.000 đồng, công ty thu về lợi nhuận gộp khoảng 86.000 đồng mỗi tháng. Đệm điện cực bán rời 149.000 đồng một quý theo mô hình dao cạo và lưỡi dao cạo. Dịch vụ hội chẩn chuyên gia thu phí riêng 199.000 đồng mỗi lượt, chia sẻ 150.000 đồng cho bác sĩ và thu phí sàn 49.000 đồng.</p>
-<h3>c. Phản biện câu hỏi xoáy của hội đồng:</h3>
-<p>Hội đồng chất vấn: Gói thuê bao 99.000 đồng có đủ trang trải chi phí máy chủ và vận hành không?</p>
-<p>Phản biện: Gói 99.000 đồng thuần túy là dịch vụ phần mềm đám mây (SaaS). Thuật toán AI chạy các tác vụ suy luận nhẹ trên chuỗi thời gian, chi phí máy chủ trung bình trên mỗi người dùng chỉ 6.000 đồng mỗi tháng. Startup không bao gồm chi phí bác sĩ hay vật tư trong gói này. Do đó, biên lãi gộp đạt xấp xỉ 90%, tương tự biên lợi nhuận của các dịch vụ đám mây toàn cầu.</p>
+<h3>b. Phân tích tính hợp lý và khả năng tự nuôi sống dự án:</h3>
+<p class="no-indent">Thay vì đặt ra các mức giá cao bất hợp lý hay kỳ vọng lợi nhuận đột biến, cấu trúc nguồn thu được phân bổ để dự án kỹ thuật có thể tự trang trải chi phí ở quy mô nhỏ ngay từ đầu:</p>
+<ul>
+  <li>Khoản thu từ Bộ Kit nghiên cứu và thiết bị đeo cá nhân giúp thu hồi ngay vốn linh kiện sản xuất lô tiếp theo mà không bị đọng vốn.</li>
+  <li>Khoản phí duy trì tài khoản hàng tháng được giữ ở mức phổ thông vì hệ thống xử lý hoàn toàn tự động bằng thuật toán trên máy chủ, không gộp chi phí bác sĩ vào gói tháng. Chỉ khi nào gia đình có nhu cầu nhờ bác sĩ xem chuyên sâu từng bản ghi bất thường thì mới thanh toán theo lượt đó (phần lớn thù lao chuyển thẳng cho bác sĩ đọc ca, hệ thống chỉ giữ lại phần nhỏ bù đắp hạ tầng).</li>
+</ul>
+<h3>c. Phản biện câu hỏi kiểm tra tính logic:</h3>
+<p>Câu hỏi chất vấn: Vì sao người dùng phải thay đệm điện cực định kỳ mà không dùng vĩnh viễn một cặp điện cực kim loại?</p>
+<p>Giải trình logic: Đây là yêu cầu vật lý sinh học thực tế. Mồ hôi và dầu tự nhiên trên da vùng tai lâu ngày sẽ làm tăng trở kháng tiếp xúc bề mặt (vượt quá ngưỡng an toàn 10 đến 20 kOhm), gây nhiễu đường nền làm giảm độ chính xác của sóng não microvolt. Việc thiết kế đệm dẫn điện dạng khớp tháo lắp thay mới sau mỗi vài tháng vừa đảm bảo vệ sinh da cho người lớn tuổi, vừa giữ chất lượng tín hiệu luôn ổn định như ban đầu.</p>
 
 <h2>6. Tài sản và Nguồn lực Cốt lõi (Key Resources)</h2>
-<h3>a. Nội dung cô đọng dự kiến đưa lên bảng BMC:</h3>
+<h3>a. Nội dung cô đọng đưa lên bảng BMC:</h3>
 <ul>
-  <li>Phần cứng, Phần mềm và Sổ cái Tín chỉ chạy thật: Bo mạch 6 lớp ADS1299 (0 lỗi DRC) thương mại hóa ngay cho B2B Pro Kit; Trạm Web qEEG, sổ cái CreditWallet và kho lưu trữ Neural DB tự động làm giàu nhãn y khoa với chi phí tiền mặt 0 đồng.</li>
-  <li>Thuật toán và Kiểm nghiệm mù: Bộ 80 đặc trưng bất biến độ lợi; Kiểm nghiệm mù UCLH London N=28 (BAcc 73,33% Confirmatory, 67,22% Zero-Calibration Round 2, khóa an toàn CM[2,1]=0).</li>
-  <li>Sở hữu Trí tuệ và Thiết kế: Thiết kế công thái học vòng đeo ngủ B2C; Báo cáo phân tích mức độ thư giãn sóng não tiếng Việt độc quyền.</li>
-  <li>Mạng lưới Học thuật và Chính sách: Liên kết các Lab Đại học kỹ thuật - y dược, Trung tâm DISSC Đà Nẵng và Hội Thầy thuốc Trẻ.</li>
+  <li>Chống Ăn cắp Mô hình và Nhái Mạch: Trọng số AI và rào chắn an toàn CM[2,1]=0 chạy kín trên Cloud Server (không lưu trên thiết bị); khóa Flash MCU APPROTECT kết hợp xác thực thiết bị Device Certificate chặn bo mạch sao chép kết nối hệ thống.</li>
+  <li>Hào lũy Dữ liệu Đồng thuận Kép: Kho dữ liệu sóng não người Việt NeuralTrainingSample gán nhãn mù độc lập bởi 2 bác sĩ có CCHN đổi tín chỉ Credit; lịch sử đường nền cá nhân hóa 3 đến 6 tháng gắn chặt với người dùng.</li>
+  <li>Định vị Né Cá lớn (Judo Strategy): Mở SDK Python chiếm lĩnh hơn 65 khoa Kỹ thuật - Y sinh và 40 trường Y Dược (thay thế OpenBCI và Emotiv đắt đỏ); lấp đầy khoảng trống kết nối bác sĩ thần kinh nội địa mà Smartwatch PPG hay đai ngủ ngoại (Muse/Frenz) bỏ trống.</li>
+  <li>Tài sản Đã Kiểm chứng: Bo mạch 6 lớp ADS1299 đạt 0 lỗi DRC (hệ số tương quan mô phỏng r = 0,99396), mô hình AI ngoại kiểm mù UCLH London N=28 đạt BAcc 73,33% (và 67,22% ở điều kiện Zero-Calibration sau đợt kiểm toán Round 2), bằng Giải pháp hữu ích điện cực khô vùng tai và rào cản pháp lý Sandbox Nghị quyết 136/2024/QH15.</li>
 </ul>
-<h3>b. Phân tích bản chất kinh tế và dẫn chứng thực chứng:</h3>
-<p>Tài sản cốt lõi của NeuroLink là các kết quả nghiên cứu và kỹ thuật đã được hiện thực hóa bằng mã nguồn và sản phẩm vật lý chạy thật. Bo mạch phần cứng 6 lớp chuyên dụng cho đo điện não đã vượt qua kiểm tra tĩnh với 0 lỗi DRC, sử dụng chip chuyển đổi tương tự số sinh học TI ADS1299 kết hợp vi điều khiển nRF52 BLE.</p>
-<p>Hệ thống trạm làm việc Web qEEG và kho cơ sở dữ liệu Neural DB đã được triển khai hoàn chỉnh tại dự án software_neuronlink_eeg, hỗ trợ hiển thị biểu đồ sóng não thời gian thực và phân tích phổ tần số. Thuật toán học máy của dự án đã trải qua kiểm nghiệm mù độc lập trên tập dữ liệu chuẩn lâm sàng UCLH London gồm 28 ca bệnh.</p>
-<p>Mô hình đạt Balanced Accuracy 73,33% ở nhánh Confirmatory và 67,22% ở điều kiện Zero-Calibration sau đợt kiểm toán khử nhiễu phần cứng đa trung tâm Round 2. Tầng phòng vệ an toàn Stage 3 Safety Veto áp đặt điều kiện bất khả xâm phạm CM[2,1]=0, bảo đảm không có ca xuất huyết não nào bị bỏ sót dẫn đến chỉ định nhầm thuốc tiêu sợi huyết tPA.</p>
-<h3>c. Phản biện câu hỏi xoáy của hội đồng:</h3>
-<p>Hội đồng chất vấn: Các giải thuật điện não hiện nay có rất nhiều trên mã nguồn mở, NeuroLink có gì độc quyền?</p>
-<p>Phản biện: Mã nguồn mở chỉ cung cấp các bộ lọc cơ bản. Sự khác biệt của NeuroLink nằm ở tập đặc trưng bất biến độ lợi (Gain-Invariant Metrics) gồm DAR, TAR, BSI và wPLI được chuẩn hóa để thích ứng với điện cực khô vùng tai, cùng kho dữ liệu điện não đa trạng thái đã được các chuyên gia y tế thẩm định và gán nhãn thực tế.</p>
+<h3>b. Phân tích giá trị cốt lõi về mặt công nghệ:</h3>
+<p>Điểm tựa kỹ thuật cốt lõi của NeuroLink dựa trên kiến trúc bảo vệ đa tầng kết hợp chặt chẽ giữa phần cứng và điện toán đám mây. Mạch in 6 lớp ADS1299 sử dụng kỹ thuật đường bao bảo vệ (guard-ring) và phân tách mặt phẳng đất AGND/DGND nghiêm ngặt để triệt tiêu nhiễu ký sinh vi mô, đạt hệ số nén tín hiệu đồng pha CMRR vượt trội (hệ số tương quan tín hiệu mô phỏng r = 0,99396).</p>
+<p>Về bảo mật giải thuật, toàn bộ 80 đặc trưng bất biến độ lợi, mô hình học đường nền cá nhân 7 đêm và tầng veto an toàn cấp 3 (Stage 3 Safety Veto) được giấu kín hoàn toàn trên máy chủ đám mây. Vi điều khiển nRF52 trên thiết bị đeo chỉ thực thi các tác vụ lọc nhân quả cơ bản (bộ lọc khuyết Notch 50Hz, dải thông Bandpass 0.5-40Hz), kiểm tra tiếp xúc điện cực lead-off và mã hóa đường truyền Bluetooth Low Energy. Việc sao chép phần cứng hay trích xuất bộ nhớ vi điều khiển hoàn toàn không thể thu thập được trọng số mô hình AI hay giải thuật phân tích chuyên sâu.</p>
+<p>Đồng thời, dự án xây dựng hào lũy dữ liệu độc quyền thông qua cơ chế đồng thuận kép (2-Reader Blind Consensus). Mỗi bản ghi điện não trước khi đưa vào kho dữ liệu NeuralTrainingSample bắt buộc phải được thẩm định độc lập bởi hai bác sĩ có CCHN. Dữ liệu thực nghiệm của người Việt với nhãn chuẩn y khoa là tài nguyên mà các đối thủ nước ngoài không thể sở hữu trong ngắn hạn.</p>
+<h3>c. Phản biện câu hỏi kiểm tra tính logic:</h3>
+<p>Câu hỏi chất vấn: Nếu các xưởng điện tử Thẩm Quyến sao chép nguyên mẫu bo mạch và bán giá rẻ trên các sàn thương mại điện tử thì startup có bị bóp nghẹt không?</p>
+<p>Giải trình logic: Việc sao chép phần cứng chỉ tạo ra một bo mạch trần vô tri. NeuroLink áp dụng cơ chế xác thực chứng chỉ số phần cứng (Device Certificate) được ký điện tử tại xưởng EMS và khóa cổng nạp Flash bằng tính năng APPROTECT của chip nRF52. Bo mạch trôi nổi không có chứng chỉ xác thực sẽ bị máy chủ từ chối kết nối API, không thể sử dụng Trạm Web qEEG cũng như ứng dụng gia đình. Khách hàng mua thiết bị để nhận phân tích và cảnh báo chứ không mua một tấm mạch điện tử rời.</p>
 
-<h2>7. Hoạt động Trọng yếu theo Mô hình Fabless (Key Activities)</h2>
-<h3>a. Nội dung cô đọng dự kiến đưa lên bảng BMC:</h3>
+<h2>7. Hoạt động Trọng yếu (Key Activities)</h2>
+<h3>a. Nội dung cô đọng đưa lên bảng BMC:</h3>
 <ul>
-  <li>Sản xuất Fabless: Quản lý chuỗi cung ứng linh kiện và hợp tác gia công đóng gói với xưởng EMS đạt chuẩn ISO 13485.</li>
-  <li>Phát triển Bộ Kit và Phần mềm B2B: Tối ưu firmware nạp trước, cung cấp API dữ liệu thô cho Lab ĐH và phần mềm xuất báo cáo cho Wellness Resort.</li>
-  <li>Vận hành Kênh D2C và Sàn Tư vấn: Quản lý trải nghiệm khách hàng tiêu dùng, kiểm duyệt chứng chỉ chuyên gia và điều phối thời gian nhận ca dưới 2 giờ.</li>
-  <li>Kiểm định Lâm sàng: Phối hợp Hội đồng Đạo đức Bệnh viện Đà Nẵng đo đối chứng miễn phí để hoàn thiện hồ sơ xin cấp Số lưu hành TBYT.</li>
+  <li>Tối ưu Mạch đo, Điện cực khô và Lọc nhiễu: Hoàn thiện kiểu dáng công thái học đeo vùng tai, firmware BLE tiết kiệm năng lượng và bộ lọc khử nhiễu chuyển động, nhiễu điện lưới 50Hz thời gian thực.</li>
+  <li>Vận hành Trạm qEEG và Học đường nền: Duy trì hệ thống phân tích tự động, học đường chuẩn 7 đêm đầu của từng cá nhân và kiểm soát quy trình đồng thuận nhãn dữ liệu từ bác sĩ.</li>
+  <li>Đo đối chứng lâm sàng và Pháp lý: Phối hợp đo song song với máy điện não tiêu chuẩn tại bệnh viện dưới sự giám sát của Hội đồng Đạo đức để hoàn thiện hồ sơ xin cấp phép lưu hành.</li>
 </ul>
-<h3>b. Phân tích bản chất kinh tế và dẫn chứng thực chứng:</h3>
-<p>Doanh nghiệp vận hành theo mô hình phần cứng không xưởng (Fabless Hardware). Toàn bộ công đoạn gia công mạch in PCB, dán linh kiện SMT, đúc vỏ nhựa sinh học và đóng gói bao bì được ủy thác cho các đối tác EMS đạt chứng nhận quốc tế ISO 13485 tại Việt Nam. Cách làm này giúp công ty không phải đầu tư hàng chục tỷ đồng vào nhà xưởng máy móc mà vẫn đảm bảo chất lượng xuất xưởng đồng đều.</p>
-<p>Đội ngũ nòng cốt tập trung vào các hoạt động có giá trị gia tăng cao nhất: hoàn thiện firmware, bảo mật truyền dữ liệu BLE, phát triển các tính năng phân tích phổ sóng não trên web và duy trì chất lượng dịch vụ sàn tư vấn. Đối với hoạt động kiểm định y tế, công ty chủ động tổ chức các đợt đo thực nghiệm tình nguyện để tích lũy dữ liệu đối chứng lâm sàng với máy đo tiêu chuẩn nội viện, chuẩn bị sẵn sàng hồ sơ kỹ thuật cho giai đoạn xin cấp phép.</p>
-<h3>c. Phản biện câu hỏi xoáy của hội đồng:</h3>
-<p>Hội đồng chất vấn: Không sở hữu nhà máy sản xuất thì startup kiểm soát chất lượng linh kiện và tiến độ giao hàng như thế nào?</p>
-<p>Phản biện: Hợp đồng hợp tác với các nhà máy EMS chuẩn ISO 13485 quy định rõ quy trình kiểm tra chức năng tự động 100% trước khi xuất xưởng (In-Circuit Testing và Functional Testing). Mọi bo mạch lỗi đều bị loại bỏ ngay trên dây chuyền. Startup nắm giữ firmware mã hóa nạp sau cùng, đảm bảo bảo mật thiết kế và chất lượng sản phẩm xuất xưởng.</p>
+<h3>b. Phân tích tính khả thi đối với nhóm thực hiện:</h3>
+<p>Nhóm dự án không tự đầu tư máy móc cơ khí hay dây chuyền hàn mạch tốn kém mà áp dụng phương thức thiết kế và kiểm chuẩn tập trung (Fabless). Khâu sản xuất phôi mạch và gắn linh kiện bề mặt (SMT) được đặt hàng tại các xưởng gia công điện tử chuyên nghiệp đạt chuẩn ISO 13485 trong nước. Nhóm kỹ thuật tập trung toàn bộ thời gian vào ba việc cốt lõi đúng chuyên môn đào tạo: tối ưu chất lượng thu nhận tín hiệu sinh học, nâng cấp thuật toán học máy chống nhiễu giả và tổ chức đo kiểm đối chứng thực tế.</p>
+<h3>c. Phản biện câu hỏi kiểm tra tính logic:</h3>
+<p>Câu hỏi chất vấn: Rào cản kỹ thuật khó nhất khi chuyển từ mạch đo phòng thí nghiệm sang vòng đeo ngủ vùng tai cho người già là gì và nhóm xử lý thế nào?</p>
+<p>Giải trình logic: Khó khăn lớn nhất là nhiễu chuyển động khi người ngủ xoay đầu đè lên gối làm xê dịch điện cực khô. Nhóm giải quyết trên cả hai tầng: tầng vật lý dùng chất liệu đàn hồi y tế ôm sát hõm tai kết hợp mạch tự động đo trở kháng tiếp xúc liên tục (Lead-off / Impedance check có sẵn trên chip ADS1299); tầng phần mềm dùng bộ đánh giá chất lượng tín hiệu tự động (Signal Quality Index - SQI) cắt bỏ các đoạn cửa sổ 4 giây bị nhiễu cơ do nghiến răng hoặc trở mình trước khi đưa vào thuật toán tính đối xứng bán cầu, tránh phát sinh báo động giả.</p>
 
-<h2>8. Liên minh Đối tác Chiến lược (Key Partners)</h2>
-<h3>a. Nội dung cô đọng dự kiến đưa lên bảng BMC:</h3>
+<h2>8. Đối tác Chính (Key Partners)</h2>
+<h3>a. Nội dung cô đọng đưa lên bảng BMC:</h3>
 <ul>
-  <li>Khối Học thuật và Wellness (Thương mại ngay): Khoa Kỹ thuật Y sinh / CNTT các trường Đại học; Wellness Resort và Trung tâm Tâm lý - Trị liệu Giấc ngủ tại Đà Nẵng - Hội An.</li>
-  <li>Khối Chính sách và Mở đường Lâm sàng: Trung tâm DISSC (Sở KH&CN Đà Nẵng - đầu mối vốn NQ 19 và Sandbox NQ 136), Vườn ươm DNES, Hội Thầy thuốc Trẻ Đà Nẵng và Bệnh viện Đà Nẵng.</li>
-  <li>Khối Sản xuất: Nhà máy gia công điện tử y tế EMS đạt chuẩn quản lý chất lượng ISO 13485.</li>
-  <li>Khối Phân phối Pha 2: Chuỗi nhà thuốc bán lẻ FPT Long Châu, Pharmacity khi hoàn tất giấy phép TBYT.</li>
+  <li>Khối Học thuật và Chăm sóc Giấc ngủ: Các phòng Lab Kỹ thuật - Y sinh tại các trường đại học (ĐH Bách Khoa, khối trường Y Dược) và các trung tâm tâm lý, cơ sở nghỉ dưỡng phục hồi tại Đà Nẵng - Hội An.</li>
+  <li>Đầu mối Chính sách và Ươm tạo: Trung tâm Hỗ trợ Khởi nghiệp Đổi mới Sáng tạo Đà Nẵng (DISSC - Sở KH&amp;CN) và Vườn ươm Doanh nghiệp Đà Nẵng (DNES).</li>
+  <li>Đối tác Chuyên môn và Đo đối chứng: Hội Thầy thuốc Trẻ Đà Nẵng và các khoa chuyên môn tại Bệnh viện Đà Nẵng.</li>
+  <li>Đối tác Gia công: Đơn vị gia công mạch điện tử EMS đạt chứng nhận quản lý chất lượng thiết bị y tế ISO 13485.</li>
 </ul>
-<h3>b. Phân tích bản chất kinh tế và dẫn chứng thực chứng:</h3>
-<p>Chiến lược xây dựng đối tác dựa trên nguyên tắc liên minh với những đơn vị có thể tạo ra doanh thu hoặc giá trị pháp lý ngay lập tức mà không bị vướng mắc giấy phép y tế. Các trường đại học lớn như Đại học Bách Khoa và các trường thành viên Đại học Đà Nẵng là khách hàng mua sắm thiết bị phục vụ giảng dạy và nghiên cứu khoa học.</p>
-<p>Về mặt chính sách địa phương, Trung tâm Hỗ trợ Khởi nghiệp Đổi mới Sáng tạo Đà Nẵng (DISSC) thuộc Sở Khoa học và Công nghệ là cơ quan đầu mối hướng dẫn thực hiện chính sách hỗ trợ khởi nghiệp đổi mới sáng tạo theo Nghị quyết 19/2026/NQ-HĐND và tham mưu cơ chế thử nghiệm có kiểm soát (Sandbox) theo Nghị quyết 136/2024/QH15. Vườn ươm Doanh nghiệp Đà Nẵng (DNES) hỗ trợ hoàn thiện mô hình kinh doanh và kết nối các quỹ đầu tư mầm.</p>
-<p>Về mặt lâm sàng, sự đồng hành của Hội Thầy thuốc Trẻ Đà Nẵng và các bác sĩ Bệnh viện Đà Nẵng tạo điều kiện thuận lợi để triển khai các nghiên cứu quan sát trên người tình nguyện dưới sự chấp thuận của Hội đồng Đạo đức y sinh học, mở đường cho việc cấp phép y tế chính thức.</p>
-<h3>c. Phản biện câu hỏi xoáy của hội đồng:</h3>
-<p>Hội đồng chất vấn: Các khu nghỉ dưỡng Wellness Resort có thực sự cần thiết bị đo sóng não không hay chỉ là dịch vụ thêm thắt?</p>
-<p>Phản biện: Xu hướng du lịch phục hồi sức khỏe cao cấp đòi hỏi sự minh bạch và kiểm chứng khoa học. Khách hàng cao cấp chi trả hàng chục triệu đồng cho một kỳ nghỉ dưỡng không chỉ muốn nghe tư vấn cảm tính. Họ muốn nhìn thấy số liệu đo đạc khách quan cho thấy mức độ cải thiện giấc ngủ và sóng thư giãn của não bộ. NeuroLink cung cấp chính xác công cụ định lượng mà các resort đang tìm kiếm để khẳng định đẳng cấp dịch vụ.</p>
-
-<h2>9. Cấu trúc Chi phí Biến đổi hóa (Cost Structure)</h2>
-<h3>a. Nội dung cô đọng dự kiến đưa lên bảng BMC:</h3>
+<h3>b. Phân tích động lực hợp tác thực tế của từng đối tác:</h3>
+<p class="no-indent">Mối quan hệ hợp tác chỉ bền vững khi mang lại lợi ích thiết thực cho cả hai phía:</p>
 <ul>
-  <li>Giá vốn Thiết bị: Kit B2B Pro ~2.200.000 đồng/bộ (chiếm 24,7% giá bán); Thiết bị B2C Sleep ~1.150.000 đồng/bộ (chiếm 46,2% giá bán).</li>
-  <li>Chi phí Đám mây và Thanh toán: Server xử lý tín hiệu ~6.000 đồng/người dùng/tháng; Phí cổng thanh toán trực tuyến ~7% trên mỗi giao dịch.</li>
-  <li>Chia sẻ Thù lao Chuyên gia và Gán nhãn AI: 150.000 đồng/ca tư vấn (chiếm 75,4% giá dịch vụ, 0 đồng lương cứng cố định); 0 đồng tiền mặt mua nhãn dữ liệu nhờ trả thưởng bằng Credit nội bộ.</li>
-  <li>Tiếp thị và Thử nghiệm: Ngân sách tiếp thị số D2C, tham gia hội thảo khoa học và chi phí đo đối chứng lâm sàng (tài trợ từ dòng tiền B2B và ngân sách NQ 19).</li>
+  <li>Các phòng Lab đại học có được thiết bị thu thập sóng não mở phục vụ giảng dạy đồ án và công bố khoa học với chi phí hợp lý và hỗ trợ kỹ thuật trực tiếp trong nước.</li>
+  <li>Hội Thầy thuốc Trẻ và các bác sĩ tại bệnh viện có thêm nguồn dữ liệu số hóa và công cụ phần mềm tự động phục vụ các đề tài nghiên cứu khoa học cấp cơ sở, cấp thành phố mà không tốn công xử lý tín hiệu thủ công.</li>
+  <li>Trung tâm DISSC và Vườn ươm DNES thực hiện đúng chức năng hỗ trợ các dự án công nghệ cao xuất phát từ đại học địa phương tiếp cận hành lang thử nghiệm Sandbox Nghị quyết 136/2024/QH15.</li>
 </ul>
-<h3>b. Phân tích bản chất kinh tế và dẫn chứng thực chứng:</h3>
-<p>Mô hình tài chính triệt tiêu tối đa các khoản chi phí cố định (Fixed Cost) để bảo đảm sức chịu đựng bền bỉ cho doanh nghiệp. Công ty không duy trì đội ngũ bác sĩ cơ hữu trả lương tháng cố định. Chi phí chuyên gia hoàn toàn là chi phí biến đổi, chỉ phát sinh khi khách hàng yêu cầu đọc ca và thanh toán phí dịch vụ.</p>
-<p>Chi phí sản xuất phần cứng biến thiên trực tiếp theo đơn đặt hàng thực tế từ khách hàng B2B và B2C. Hạ tầng máy chủ đám mây được tối ưu hóa kiến trúc, chỉ tính tiền theo lưu lượng truy vấn thực tế.</p>
-<p>Điểm hòa vốn vận hành của bộ máy cực kỳ thấp: Chi phí cố định tối thiểu của doanh nghiệp (thuê không gian làm việc chung, kế toán và máy chủ cơ sở dữ liệu) chỉ dao động khoảng 60 đến 80 triệu đồng một tháng. Doanh nghiệp chỉ cần bán được 10 đến 12 bộ B2B Pro Kit (lãi gộp 67 đến 80 triệu đồng) hoặc duy trì khoảng 800 thuê bao phần mềm B2C đang hoạt động là đã đạt điểm hòa vốn tiền mặt mà không cần trợ lực tài chính từ bên ngoài.</p>
-<h3>c. Phản biện câu hỏi xoáy của hội đồng:</h3>
-<p>Hội đồng chất vấn: Chi phí kiểm định lâm sàng và đăng ký thiết bị y tế loại C rất đắt đỏ, startup lấy tiền đâu để chi trả?</p>
-<p>Phản biện: Chi phí này được phân bổ làm 2 nguồn đối ứng rõ ràng: Thứ nhất là trích từ lợi nhuận gộp tích lũy của nhánh thương mại B2B Pro Kit và bán lẻ B2C Wellness trong 12 tháng đầu. Thứ hai là tiếp cận gói tài trợ không hoàn lại tối đa 2 tỷ đồng từ chính sách hỗ trợ dự án khởi nghiệp đổi mới sáng tạo theo Nghị quyết 19/2026/NQ-HĐND của thành phố Đà Nẵng, giúp giảm áp lực vốn đối với doanh nghiệp.</p>
+<h3>c. Phản biện câu hỏi kiểm tra tính logic:</h3>
+<p>Câu hỏi chất vấn: Làm sao thuyết phục bệnh viện đồng ý cho đo đối chứng trên bệnh nhân thực tế?</p>
+<p>Giải trình logic: Dự án không tự ý mang thiết bị vào đo thương mại, mà đi theo con đường đề tài nghiên cứu khoa học phối hợp cùng các bác sĩ chuyên khoa thần kinh dưới sự xét duyệt của Hội đồng Đạo đức trong nghiên cứu y sinh học. Việc đo kiểm hoàn toàn không xâm lấn, thực hiện miễn phí trên người tình nguyện có ký phiếu đồng thuận và không can thiệp vào phác đồ điều trị hiện hành của bệnh viện.</p>
 
-<h2>10. Chân bảng: Tính Bền vững và Đòn bẩy Chính sách Đặc thù Đà Nẵng</h2>
-<h3>a. Nội dung cô đọng dự kiến đưa lên bảng BMC:</h3>
+<h2>9. Cấu trúc Chi phí (Cost Structure)</h2>
+<h3>a. Nội dung cô đọng đưa lên bảng BMC:</h3>
 <ul>
-  <li>Lộ trình Pháp lý 2 Bước Không Bị Chặn: Pha 1 bán hợp pháp 100% dưới dạng B2B Research Kit và B2C General Wellness Sleep Device (theo Nghị định 98/2021/NĐ-CP và 07/2023/NĐ-CP, không quảng cáo chẩn đoán đột quỵ).</li>
-  <li>Cơ chế Thử nghiệm Sandbox Đà Nẵng: Đầu mối DISSC - Sở KH&CN Đà Nẵng đăng ký Sandbox theo Nghị quyết 136/2024/QH15 tại Bệnh viện Đà Nẵng để hoàn tất thử nghiệm lâm sàng cấp phép TBYT cảnh báo đột quỵ ở Pha 2.</li>
-  <li>Đòn bẩy Tài chính và Ưu đãi Thuế: Tiếp cận gói hỗ trợ tối đa 2 tỷ đồng theo Nghị quyết 19/2026/NQ-HĐND thành phố Đà Nẵng; Miễn 100% thuế Thu nhập Doanh nghiệp trong 5 năm đầu cho doanh nghiệp khởi nghiệp đổi mới sáng tạo.</li>
+  <li>Linh kiện và Gia công phần cứng: Chi phí chip đo sinh học AFE, vi điều khiển BLE, pin an toàn, điện cực khô mạ vàng và phí thuê gia công SMT theo từng lô đặt hàng (không chôn vốn xây xưởng).</li>
+  <li>Hạ tầng Máy chủ và Lưu trữ: Chi phí vận hành máy chủ xử lý tín hiệu đám mây, cơ sở dữ liệu chuỗi thời gian bảo mật và dịch vụ gửi cảnh báo tự động (tăng tuyến tính theo lượng người dùng thực tế).</li>
+  <li>Thù lao Bác sĩ và Thu thập Nhãn AI: Không tốn chi phí lương cứng cố định hàng tháng (chỉ chia sẻ thù lao khi có ca tư vấn phát sinh); chi phí tiền mặt mua nhãn huấn luyện bằng 0 nhờ cơ chế đổi tín chỉ nội bộ.</li>
+  <li>Đo đối chứng và Hồ sơ Pháp lý: Kinh phí kiểm tra an toàn điện sinh học IEC 60601-1, thử nghiệm đối chứng tại viện và lập hồ sơ đăng ký lưu hành.</li>
 </ul>
-<h3>b. Phân tích bản chất kinh tế và dẫn chứng thực chứng:</h3>
-<p>Khung chính sách đặc thù của thành phố Đà Nẵng là lợi thế cạnh tranh mang tính nền tảng cho NeuroLink. Nghị quyết số 136/2024/QH15 của Quốc hội về thí điểm tổ chức chính quyền đô thị và một số cơ chế, chính sách đặc thù phát triển thành phố Đà Nẵng tạo hành lang pháp lý mở cho việc thử nghiệm các giải pháp công nghệ cao và y tế thông minh chưa có tiền lệ. Thông qua đầu mối là Trung tâm Hỗ trợ Khởi nghiệp Đổi mới Sáng tạo (DISSC) thuộc Sở Khoa học và Công nghệ, startup được tạo điều kiện đưa thiết bị vào thử nghiệm trong môi trường y tế có kiểm soát tại Bệnh viện Đà Nẵng.</p>
-<p>Đi kèm với đó là chính sách tài trợ trực tiếp không hoàn lại tối đa 2 tỷ đồng theo Nghị quyết số 19/2026/NQ-HĐND của Hội đồng Nhân dân thành phố Đà Nẵng dành cho các nhiệm vụ nghiên cứu phát triển và hoàn thiện sản phẩm công nghệ cao. Ngoài ra, chính sách miễn 100% thuế TNDN trong 5 năm đầu đối với doanh nghiệp khởi nghiệp sáng tạo giúp giữ lại toàn bộ thặng dư tiền mặt để tái đầu tư vào hoạt động nghiên cứu khoa học.</p>
-<p>Về mặt phân loại lưu hành, việc tách bạch lộ trình sản phẩm giúp công ty hoạt động hoàn toàn hợp pháp. Ở Pha 1, thiết bị được đăng ký theo đúng quy định của Nghị định 98/2021/NĐ-CP và Nghị định 07/2023/NĐ-CP với bản chất là thiết bị hỗ trợ theo dõi giấc ngủ thông thường (Wellness Device), giúp tạo lập doanh thu ngay từ ngày đầu. Khi hoàn tất thử nghiệm trong Sandbox y tế, sản phẩm mới chính thức đăng ký mở rộng tính năng cảnh báo đột quỵ thuộc danh mục TBYT chuyên dụng ở Pha 2.</p>
-<h3>c. Phản biện câu hỏi xoáy của hội đồng:</h3>
-<p>Hội đồng chất vấn: Nếu quy trình xin phép vào Sandbox Đà Nẵng bị chậm trễ thì hoạt động kinh doanh của công ty có bị đình trệ không?</p>
-<p>Phản biện: Hoàn toàn không. Nhờ kiến trúc Động cơ Kép, nhánh thương mại B2B Pro Kit cho các trường đại học và nhánh B2C thiết bị giấc ngủ Wellness vẫn vận hành kinh doanh bình thường và đem lại dòng tiền dương độc lập. Sandbox là bước đệm gia tăng giá trị y tế chứ không phải là điều kiện tiên quyết để công ty tồn tại trong năm đầu tiên.</p>
+<h3>b. Phân tích tính an toàn tài chính khi vận hành nhỏ gọn:</h3>
+<p>Cấu trúc chi phí được thiết kế tối giản tối đa các khoản chi cố định hàng tháng để phù hợp với xuất phát điểm của một dự án công nghệ khởi nguồn từ đại học. Ba khoản chi thường làm các dự án y tế số cạn vốn sớm nhất gồm chi phí xây xưởng sản xuất, lương tháng cố định cho đội ngũ bác sĩ trực và chi phí mua dữ liệu huấn luyện đều đã được chuyển hóa hoàn toàn thành chi phí biến đổi hoặc cơ chế trao đổi tín chỉ cộng sinh. Nhờ vậy, khi số lượng người dùng ban đầu còn ít, chi phí duy trì hệ thống rất thấp và không gây áp lực tài chính.</p>
+<h3>c. Phản biện câu hỏi kiểm tra tính logic:</h3>
+<p>Câu hỏi chất vấn: Chip đo điện não chuyên dụng như ADS1299 có giá linh kiện khá cao khi mua lẻ, làm sao tối ưu giá thành cho phiên bản đeo ngủ gia đình?</p>
+<p>Giải trình logic: Dự án phân tách cấu hình linh kiện hợp lý theo đúng mục đích kỹ thuật: phiên bản Bộ Kit nghiên cứu 8 kênh cho phòng Lab giữ nguyên chip TI ADS1299 8 kênh độ phân giải cao vì khách hàng tổ chức ưu tiên độ chi tiết đa kênh; trong khi phiên bản vòng đeo ngủ vùng tai cho hộ gia đình chỉ cần thu gọn 2 đến 4 kênh đối xứng hai bên thái dương - tai nên sử dụng dòng chip AFE ít kênh hơn hoặc mạch khuếch đại đo lường sinh học chuyên biệt kết hợp ADC 24-bit tiêu thụ dòng siêu thấp, giúp giảm mạnh giá thành linh kiện mà vẫn giữ nguyên độ tin cậy phát hiện bất đối xứng.</p>
 
-<h1>III. BẢNG TÍNH KINH TẾ ĐƠN VỊ (UNIT ECONOMICS) VÀ KẾ HOẠCH KHẢO NGHIỆM THỊ TRƯỜNG</h1>
+<h2>10. Chân bảng: Tính Bền vững và Hành lang Pháp lý tại Đà Nẵng</h2>
+<h3>a. Nội dung cô đọng đưa lên bảng BMC:</h3>
+<ul>
+  <li>Lộ trình 2 Bước Đúng Luật: Giai đoạn 1 cung cấp hợp pháp Bộ Kit nghiên cứu và Thiết bị hỗ trợ theo dõi giấc ngủ thông thường (tuân thủ Nghị định 98/2021/NĐ-CP và 07/2023/NĐ-CP, không quảng cáo chẩn đoán bệnh) -> Giai đoạn 2 hoàn tất kiểm định lâm sàng để mở khóa tính năng cảnh báo y tế.</li>
+  <li>Hành lang Chính sách Đà Nẵng: Tận dụng cơ chế thử nghiệm có kiểm soát (Sandbox) theo Nghị quyết 136/2024/QH15 của Quốc hội và chính sách hỗ trợ dự án khởi nghiệp sáng tạo theo Nghị quyết 19/2026/NQ-HĐND thành phố Đà Nẵng thông qua Sở Khoa học và Công nghệ.</li>
+</ul>
+<h3>b. Phân tích ý nghĩa bảo vệ dự án:</h3>
+<p>Việc đặt Chân bảng pháp lý làm nền đỡ cho toàn bộ 9 khối phía trên chứng minh dự án hiểu rõ ranh giới nghiêm ngặt giữa thiết bị điện tử chăm sóc sức khỏe (Wellness) và trang thiết bị y tế (Medical Device). Tuân thủ lộ trình hai bước giúp sản phẩm vừa được phép đưa ra thực tế sớm để thu nhận phản hồi người dùng, vừa tận dụng được lợi thế địa phương của Đà Nẵng (cơ chế Sandbox công nghệ mới theo Nghị quyết 136/2024/QH15) để đi trọn con đường kiểm chứng khoa học chính quy.</p>
+<h3>c. Phản biện câu hỏi kiểm tra tính logic:</h3>
+<p>Câu hỏi chất vấn: Làm sao bảo vệ quyền riêng tư đối với dữ liệu sóng não của người dùng?</p>
+<p>Giải trình logic: Ngay từ tầng cơ sở dữ liệu (đã lập trình trong bảng NeuralTrainingSample), mọi bản ghi đưa vào kho nghiên cứu hoặc gửi lên hàng đợi nhờ bác sĩ đọc đều bắt buộc tách rời hoàn toàn thông tin định danh cá nhân (tên, số điện thoại, địa chỉ), chỉ lưu mã băm ẩn danh và chỉ được phép chia sẻ khi người sở hữu dữ liệu chủ động bật quyền đồng thuận (Data Consent) trên ứng dụng.</p>
 
-<h2>1. Bảng hạch toán biên lợi nhuận đơn vị, LTV 24 tháng và CAC</h2>
-<p class="no-indent">Bảng phân rã chi tiết cơ cấu doanh thu, chi phí biến đổi và biên lợi nhuận gộp trên toàn bộ các dòng sản phẩm, dịch vụ của NeuroLink trong mô hình Động cơ Kép:</p>
-
-<table>
+<h1>III. PHÂN TÍCH ĐỐI THỦ CẠNH TRANH, HÀO LŨY PHÒNG THỦ VÀ CƠ CHẾ CHỐNG SAO CHÉP</h1>
+<h2>1. Bản đồ 4 nhóm đối thủ cạnh tranh và khoảng trống tại Việt Nam</h2>
+<p>Nhóm phát triển khẳng định nguyên tắc phân tích kỹ thuật: Dự án tuyệt đối không tự nhận không có đối thủ cạnh tranh. Mọi giải pháp công nghệ trên thị trường đều chịu sự cạnh tranh trực tiếp hoặc gián tiếp từ các thiết bị hiện hành. Việc đánh giá năng lực cạnh tranh được xây dựng dựa trên sự phân rã véc-tơ tấn công kỹ thuật, ranh giới vật lý của cảm biến, chi phí vận hành biên và rào cản pháp lý tại thị trường Việt Nam.</p>
+<h3>a. Vòng 1: Thiết bị EEG lâm sàng bệnh viện và cấp cứu</h3>
+<ul>
+  <li>Đại diện tiêu biểu: Ceribell Rapid Response EEG (Mỹ), BrainScope (Mỹ), hệ thống máy điện não tĩnh 32-64 kênh chuyên dụng phòng Lab (Nihon Kohden EEG-1200, Natus Quantum/Xltek).</li>
+  <li>Đặc tính kỹ thuật:
+    <ul>
+      <li>Ceribell sử dụng dải đai 10 điện cực dán một lần qua trán và thái dương (thu được 8 kênh vi sai), đầu đọc bỏ túi kèm màn hình hiển thị, thuật toán Clarity phát hiện trạng thái động kinh không co giật (NCSE), chuyển đổi sóng não thành âm thanh (Brain Stethoscope), đã được FDA 510(k) phê duyệt và nhận cơ chế thanh toán gia tăng CMS NTAP tại Mỹ.</li>
+      <li>Nihon Kohden và Natus vận hành 32 đến 64 kênh chuẩn 10-20, tốc độ lấy mẫu từ 1.000 Hz đến 10.000 Hz, ADC 24-bit, sử dụng mũ đo gel ướt hoặc gắn điện cực bằng keo dẫn điện Collodion.</li>
+    </ul></li>
+  <li>Điểm nghẽn vận hành và rào cản tiếp cận:
+    <ul>
+      <li>Chi phí đầu tư thiết bị rất cao: Hệ thống máy điện não chuyên dụng Nihon Kohden hoặc Natus có giá từ 500 triệu đến hơn 1,2 tỷ VNĐ (tương đương 20.000 đến 50.000 USD). Đai dán Ceribell là vật tư tiêu hao dùng một lần có giá hàng trăm USD cho mỗi ca đo, bán kèm hợp đồng dịch vụ bệnh viện định kỳ.</li>
+      <li>Quy trình thao tác phức tạp: Việc gắn mũ điện não 19 đến 32 kênh gel ướt đòi hỏi kỹ thuật viên điện thần kinh chuyên trách thực hiện đo đạc, chà da giảm trở kháng xuống dưới 5 kOhm trong thời gian từ 30 đến 45 phút. Quy trình này không thể triển khai tại phòng khám tuyến huyện, trạm y tế cơ sở lúc nửa đêm hoặc tại nhà riêng của người bệnh.</li>
+    </ul></li>
+  <li>Khoảng trống thị trường cho NeuroLink: Dự án không đối đầu trực diện trong phòng hồi sức tích cực (ICU) của các bệnh viện tuyến trung ương. NeuroLink tập trung giải quyết bài toán theo dõi dài hạn ban đêm tại hộ gia đình bằng đai đeo vùng tai gọn nhẹ và cung cấp bộ Kit 8 kênh giá thấp cho các phòng thực hành nghiên cứu chưa có kinh phí trang bị máy lâm sàng đắt tiền.</li>
+</ul>
+<h3>b. Vòng 2: Thiết bị kit nghiên cứu và đào tạo đại học</h3>
+<ul>
+  <li>Đại diện tiêu biểu: OpenBCI Cyton 8 kênh (Mỹ), Emotiv EPOC X và Insight (Mỹ/Úc), Bitbrain Versatile (Tây Ban Nha).</li>
+  <li>Đặc tính kỹ thuật:
+    <ul>
+      <li>OpenBCI Cyton 8 kênh sử dụng chip TI ADS1299 kết hợp vi điều khiển PIC32MX, truyền dữ liệu không dây qua bộ thu phát USB Dongle RF 2.4 GHz, mã nguồn mở phần cứng và phần mềm, hỗ trợ truyền luồng dữ liệu thô qua giao thức Lab Streaming Layer (LSL) và thư viện BrainFlow.</li>
+      <li>Emotiv EPOC X trang bị 14 điện cực nỉ tẩm nước muối sinh lý (saline), truyền thông Bluetooth không dây.</li>
+    </ul></li>
+  <li>Điểm nghẽn vận hành và rào cản tiếp cận:
+    <ul>
+      <li>Rào cản chi phí mua sắm: Bo mạch OpenBCI Cyton 8 kênh có giá bán niêm yết 1.249 USD (khoảng 32 triệu VNĐ), khi mua trọn bộ khung mũ Ultracortex Mark IV chi phí vượt quá 2.100 USD (hơn 54 triệu VNĐ). Đây là rào cản rất lớn đối với ngân sách đề tài sinh viên (thường ở mức 10 đến 30 triệu VNĐ) hoặc đề tài cấp cơ sở tại các trường đại học Việt Nam. Thủ tục hải quan nhập khẩu trang thiết bị đo sinh học kéo dài từ 4 đến 8 tuần và không có đơn vị bảo hành, hỗ trợ kỹ thuật tại chỗ.</li>
+      <li>Rào cản thu phí dữ liệu thô (Paywall): Emotiv bán phần cứng EPOC X ở mức giá 849 đến 999 USD, nhưng khóa chặt toàn bộ luồng dữ liệu thô (raw EEG). Người nghiên cứu muốn trích xuất dữ liệu dạng CSV hoặc kết nối API thời gian thực để chạy thuật toán bắt buộc phải trả phí thuê bao phần mềm EmotivPRO hàng tháng hoặc hàng năm với chi phí định kỳ đắt đỏ.</li>
+    </ul></li>
+  <li>Khoảng trống thị trường cho NeuroLink: Cung cấp bo mạch phần cứng 8 kênh ADS1299 nội địa hóa với chi phí chế tạo thực tế chỉ bằng một phần tư OpenBCI, tích hợp sẵn API kết nối Python/LSL mở hoàn toàn và trạm Web qEEG tiếng Việt, loại bỏ hoàn toàn các rào cản thu phí thuê bao xuất dữ liệu thô.</li>
+</ul>
+<h3>c. Vòng 3: Thiết bị đeo theo dõi giấc ngủ tiêu dùng</h3>
+<ul>
+  <li>Đại diện tiêu biểu: Frenz Brainband của Earable Neuroscience (GS. Vũ Ngọc Tâm sáng lập, có văn phòng tại Mỹ và Việt Nam), Muse S (Interaxon, Canada), NextSense (Mỹ).</li>
+  <li>Đặc tính kỹ thuật:
+    <ul>
+      <li>Frenz Brainband có giá bán lẻ khoảng 680 USD (tương đương 17 triệu VNĐ), thiết kế dạng băng đô ôm trán và vòng qua tai. Thiết bị tích hợp 7 cảm biến gồm điện cực khô mạ vàng đo EEG, EOG, EMG, cảm biến quang học PPG đo nồng độ oxy trong máu SpO2, nhịp tim và gia tốc kế đo chuyển động đầu. Hệ thống sử dụng loa truyền dẫn qua xương (bone conduction) phát âm thanh kích thích (pink noise, binaural beats, liệu pháp CBT-i) để dẫn dắt người dùng vào giấc ngủ.</li>
+      <li>Muse S có giá bán 399 USD kèm phí phần mềm 12,99 USD/tháng, trang bị 4 kênh EEG (2 trán, 2 sau tai), PPG và cảm biến chuyển động phục vụ thiền định và theo dõi chu kỳ ngủ.</li>
+    </ul></li>
+  <li>Điểm nghẽn vận hành và rào cản tiếp cận:
+    <ul>
+      <li>Ranh giới phân định thiết bị tiêu dùng (Wellness): Frenz Brainband và Muse S được định vị là sản phẩm phong cách sống và thư giãn giấc ngủ cá nhân cho đối tượng có thu nhập cao. Thiết bị tập trung vào vòng lặp âm thanh ru ngủ, không có cấu hình phân tích bệnh lý thần kinh, không tính toán chỉ số bất đối xứng bán cầu (BSI), không có mô hình phân loại đột quỵ và không tích hợp rào chắn an toàn tiêu sợi huyết CM[2,1]=0.</li>
+      <li>Thiếu sự kết nối chuyên môn y tế: Cả Frenz và Muse vận hành theo mô hình ứng dụng di động độc lập. Người dùng chỉ xem được điểm số giấc ngủ tổng hợp, hoàn toàn không có cơ chế chuyển giao dữ liệu sóng não đã khử nhiễu tới các bác sĩ chuyên khoa thần kinh có chứng chỉ hành nghề tại Việt Nam khi có dấu hiệu bất thường.</li>
+    </ul></li>
+  <li>Khoảng trống thị trường cho NeuroLink: NeuroLink tiếp cận theo hướng kỹ thuật y sinh chuyên sâu: không đầu tư chi phí vào hệ thống loa dẫn truyền xương đắt đỏ để ru ngủ, mà tập trung vào nhiệm vụ giám sát an toàn sóng não ban đêm cho người cao tuổi, học đường cơ sở cá nhân hóa và cung cấp kênh phối hợp tư vấn từ xa cùng bác sĩ thần kinh nội địa.</li>
+</ul>
+<h3>d. Vòng 4: Thiết bị quang học cổ tay và bo mạch sao chép giá rẻ Thẩm Quyến</h3>
+<ul>
+  <li>Đại diện tiêu biểu: Apple Watch Series 9/10, Oura Ring Gen 3/4, Garmin, Omron HeartGuide; các module đo sóng não giá rẻ TGAM (NeuroSky) và module ADS1299 trần bán trên các sàn thương mại điện tử Trung Quốc.</li>
+  <li>Đặc tính kỹ thuật và giới hạn vật lý:
+    <ul>
+      <li>Giới hạn vật lý của cảm biến quang học PPG: Thiết bị đeo cổ tay hoặc nhẫn chỉ sử dụng đèn LED quang học để đo biến thiên thể tích máu vi mạch ngoại vi, từ đó tính toán nhịp tim và biến thiên nhịp tim (HRV). Phương pháp quang học hoàn toàn không ghi nhận được điện thế hoạt động của các nơ-ron vỏ não (ở thang đo microvolt). Tai biến thiếu máu cục bộ cấp tính gây ra sự ức chế nơ-ron cục bộ sinh ra sóng chậm và mất đối xứng bán cầu ngay trong những phút đầu tiên, trong khi nhịp tim và mạch ngoại vi chỉ biến đổi trễ khi cơ thể xảy ra phản ứng sốc tuần hoàn. Thêm vào đó, khi người ngủ đè tay lên gối, cảm biến PPG dễ bị hở tạo ra báo động giả liên tục.</li>
+      <li>Giới hạn chất lượng của bo mạch sao chép giá rẻ: Module TGAM chỉ có 1 kênh trán đơn cực, xử lý qua chip chuyên dụng đóng kín thuật toán eSense với mức nhiễu nền lớn, không đo được tín hiệu vi sai hai bán cầu. Các module ADS1299 trần trên thị trường giá rẻ (50 đến 80 USD) chỉ dùng mạch 2 lớp hoặc 4 lớp gia công thô, không có mặt phẳng mass tách biệt AGND/DGND và không có vành bao bảo vệ chống nhiễu, dẫn đến sàn nhiễu vật lý thực tế vượt quá 5 đến 10 uVrms (làm sai lệch hoàn toàn biên độ sóng não vốn chỉ từ 10 đến 50 uV), không đạt tiêu chuẩn dòng rò y tế IEC 60601-1.</li>
+    </ul></li>
+</ul>
+<h3>e. Bảng so sánh đối chiếu đa chiều giữa NeuroLink và các nhóm đối thủ</h3>
+<table class="comparison-table">
   <thead>
     <tr>
-      <th>Cấu phần Sản phẩm / Dịch vụ</th>
-      <th>Mức giá Niêm yết (VNĐ)</th>
-      <th>Giá vốn / Biến phí (VNĐ)</th>
-      <th>Lãi gộp Đơn vị (VNĐ)</th>
-      <th>Biên Lãi gộp (%)</th>
-      <th>Cơ chế Vận hành và Kiểm soát Chi phí</th>
+      <th>Tiêu chí kỹ thuật và vận hành</th>
+      <th>NeuroLink (Đề xuất)</th>
+      <th>Ceribell Rapid EEG</th>
+      <th>OpenBCI Cyton 8-ch</th>
+      <th>Emotiv EPOC X</th>
+      <th>Frenz Brainband (Earable)</th>
+      <th>Thiết bị PPG (Apple/Oura)</th>
+      <th>Mạch nhái Thẩm Quyến</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>(1) B2B Research & Wellness Kit</td>
-      <td class="num">8.900.000 đ</td>
-      <td class="num">2.200.000 đ</td>
-      <td class="num">6.700.000 đ</td>
-      <td class="center">75,3%</td>
-      <td>Kit 8 kênh kèm API, phụ kiện đo lường, phần mềm qEEG; bán cho Lab ĐH và Resort</td>
+      <td>Số kênh EEG và cơ chế xuất dữ liệu</td>
+      <td>8 kênh vi sai (Lab) / 2-4 kênh (Đai ngủ); xuất mở CSV, LSL, API</td>
+      <td>8 kênh vi sai qua đai trán; trích xuất qua cổng đám mây bệnh viện</td>
+      <td>8 kênh vi sai mở; xuất dữ liệu trực tiếp qua LSL, BrainFlow</td>
+      <td>14 kênh nỉ muối; khóa dữ liệu thô sau thuê bao EmotivPRO</td>
+      <td>7 cảm biến (EEG, EOG, EMG, PPG); đóng kín trong ứng dụng di động</td>
+      <td>0 kênh EEG (chỉ đo biến thiên mạch ngoại vi PPG)</td>
+      <td>1 kênh đơn cực (TGAM) hoặc 8 kênh trần không có SDK</td>
     </tr>
     <tr>
-      <td>(1b) SaaS Báo cáo cho Resort</td>
-      <td class="num">1.500.000 đ/tháng</td>
-      <td class="num">120.000 đ (Server B2B)</td>
-      <td class="num">1.380.000 đ/tháng</td>
-      <td class="center">92,0%</td>
-      <td>Phần mềm xuất báo cáo định lượng sóng não thương hiệu riêng cho Resort / Wellness Center</td>
+      <td>Giá thành phần cứng và rào cản tại ĐH VN</td>
+      <td>Chi phí linh kiện thấp; thiết kế và sản xuất nội địa; hỗ trợ tại chỗ</td>
+      <td>Bán đai dán dùng 1 lần đắt đỏ theo hợp đồng trọn gói bệnh viện</td>
+      <td>Giá bo mạch 1.249 USD; phụ thuộc nhập khẩu; thủ tục hải quan lâu</td>
+      <td>Giá 849-999 USD cộng phí bản quyền phần mềm định kỳ</td>
+      <td>Giá bán lẻ 680 USD (khoảng 17 triệu VNĐ); hướng khách cao cấp</td>
+      <td>Giá 300-500 USD; phổ biến nhưng không đo được điện não</td>
+      <td>Giá 30-80 USD; rẻ nhưng sàn nhiễu lớn và không có bảo hành</td>
     </tr>
     <tr>
-      <td>(1c) Trạm qEEG Học thuật (RUO)</td>
-      <td class="num">0 đ (Đổi nhãn)</td>
-      <td class="num">~1.500 đ/ca (Compute)</td>
-      <td class="num">+1 Nhãn chuẩn y khoa</td>
-      <td class="center">0 đ tiền mặt</td>
-      <td>Bác sĩ/Researcher gán nhãn (đồng thuận 2 người) nhận Credit nội bộ đổi Data Bank, 0 đ chi phí mua nhãn</td>
+      <td>Bác sĩ chuyên khoa đọc và gán nhãn</td>
+      <td>Cơ chế đồng thuận 2 bác sĩ có CCHN đổi tín chỉ Credit nội bộ</td>
+      <td>Chuyên gia thần kinh đọc qua cổng đám mây của hãng tại Mỹ</td>
+      <td>Không có hệ sinh thái bác sĩ lâm sàng đi kèm thiết bị</td>
+      <td>Không có hệ sinh thái bác sĩ lâm sàng đi kèm thiết bị</td>
+      <td>Không kết nối hồ sơ tới mạng lưới bác sĩ thần kinh nội địa</td>
+      <td>Không kết nối phân tích sóng não với bác sĩ chuyên khoa</td>
+      <td>Không có hệ thống phần mềm hay chuyên gia y tế</td>
     </tr>
     <tr>
-      <td>(2) B2C Thiết bị Giấc ngủ (Bán đứt)</td>
-      <td class="num">2.490.000 đ</td>
-      <td class="num">1.150.000 đ</td>
-      <td class="num">1.340.000 đ</td>
-      <td class="center">53,8%</td>
-      <td>Mạch 6 lớp, cảm biến điện cực khô vùng tai, gia công EMS chuẩn y tế ISO 13485</td>
+      <td>Baseline cá nhân hóa và quy tắc FAST</td>
+      <td>Học đường nền 7 đêm đầu; tính BSI đối xứng; khóa an toàn CM[2,1]=0</td>
+      <td>Phân tích NCSE cấp cứu; theo dõi ADR; không học đường nền ngủ</td>
+      <td>Không có thuật toán học đường nền cá nhân hóa tự động</td>
+      <td>Không có thuật toán học đường nền cá nhân hóa tự động</td>
+      <td>Tối ưu âm thanh ru ngủ cá nhân; không có quy tắc y tế FAST</td>
+      <td>Phân tích nhịp tim nền; hoàn toàn không có quy tắc FAST</td>
+      <td>Không có thuật toán phân tích hay cảnh báo an toàn</td>
     </tr>
     <tr>
-      <td>(2b) Đặt cọc Dùng thử 30 ngày</td>
-      <td class="num">1.500.000 đ (cọc)</td>
-      <td class="num">1.150.000 đ (COGS)</td>
-      <td class="num">Dòng tiền bảo toàn</td>
-      <td class="center">Hoàn cọc</td>
-      <td>Khách trả máy hoàn cọc; cọc cao hơn giá vốn 350k giúp bảo toàn 100% vốn lưu động</td>
+      <td>Hành lang pháp lý và ứng dụng tại VN</td>
+      <td>Thử nghiệm Sandbox NQ 136/2024/QH15 tại Đà Nẵng; đo kiểm IRB</td>
+      <td>Đạt FDA 510(k) Mỹ; chưa phân phối phổ cập tại tuyến cơ sở VN</td>
+      <td>Thiết bị nghiên cứu giáo dục; không đăng ký y tế tại VN</td>
+      <td>Thiết bị nghiên cứu thương mại; không đăng ký y tế tại VN</td>
+      <td>Thiết bị chăm sóc sức khỏe giấc ngủ thông thường (Wellness)</td>
+      <td>Thiết bị điện tử đeo thông thường; không chẩn đoán đột quỵ</td>
+      <td>Thiết bị linh kiện điện tử rời; không chứng nhận an toàn</td>
+    </tr>
+  </tbody>
+</table>
+<h3>f. Khoảng trống thị trường và định vị chiến lược của NeuroLink</h3>
+<ul>
+  <li>Khoảng trống thị trường xác thực: Thị trường hiện tại tồn tại một khoảng cách lớn giữa hai thái cực: một bên là các hệ thống điện não lâm sàng đắt đỏ (Ceribell, Nihon Kohden) chỉ nằm trong phòng cấp cứu lớn và đòi hỏi chuyên viên thao tác; một bên là các thiết bị tiêu dùng cá nhân (Frenz, Apple Watch) chỉ tập trung vào ru ngủ hoặc đếm bước chân mà bỏ trống hoàn toàn bài toán giám sát an toàn mạch máu não ban đêm cho người cao tuổi. Trong khi đó, các trường đại học kỹ thuật và y dược tại Việt Nam thiếu một bộ công cụ đo sóng não mở với chi phí thực tế phù hợp để đào tạo và nghiên cứu.</li>
+  <li>Định vị sinh tồn của NeuroLink: Dự án định vị là hệ sinh thái kỹ thuật y sinh mở phân tầng: cung cấp phần cứng đo điện não chuẩn xác với chi phí chế tạo nội địa hóa, mở API cho khối đào tạo đại học để tạo chân rết chuyên môn, và ứng dụng thuật toán học đường cơ sở cá nhân hóa kết hợp mạng lưới bác sĩ thần kinh nội địa để bảo vệ sức khỏe giấc ngủ gia đình.</li>
+</ul>
+<h2>2. Cơ chế kỹ thuật 4 lớp chống ăn cắp mô hình AI và chống làm nhái phần cứng</h2>
+<h3>a. Lớp 1: Tách biệt Edge DSP và Cloud Inference (Zero Weight Exposure)</h3>
+<ul>
+  <li>Phân tích véc-tơ tấn công: Kẻ sao chép mua thiết bị phần cứng thương mại, sử dụng máy khò nhiệt tháo chip vi điều khiển hoặc chip nhớ Flash, dùng thiết bị đọc bộ nhớ ngoài để trích xuất mã nhị phân firmware nhằm bóc tách trọng số mạng nơ-ron (Model Extraction Attack).</li>
+  <li>Giải pháp phòng thủ kỹ thuật của NeuroLink:
+    <ul>
+      <li>Triệt tiêu hoàn toàn sự hiện diện của trọng số mô hình AI trên thiết bị đeo (Nguyên lý Zero Weight Exposure).</li>
+      <li>Vi điều khiển gắn trên đai đeo (dòng SoC nRF52832 hoặc nRF52840 của Nordic Semiconductor) chỉ đảm nhiệm các thuật toán xử lý tín hiệu số (DSP) nhân quả nhẹ: Bộ lọc IIR bậc 2 khử nhiễu điện lưới Notch 50Hz, bộ lọc thông dải Bandpass nhân quả từ 0.5 đến 40Hz, bộ đệm vòng lưu trữ cửa sổ trượt 4 giây, mạch kiểm tra trở kháng tiếp xúc điện cực rơi (Lead-off Check dòng bơm 6 nA) và mô-đun đóng gói mã hóa khung truyền tin BLE.</li>
+      <li>Toàn bộ pipeline trí tuệ nhân tạo chuyên sâu: Không gian trích xuất 80 đặc trưng bất biến biên độ (DAR, TAR, BSI đối xứng hai bán cầu, wPLI liên vùng, contrast trước-sau), mô hình học máy 3 lớp bệnh lý, thuật toán học đường nền cá nhân hóa 7 đêm đầu và Hàng rào an toàn chi phí lâm sàng đa tầng với bất biến sinh mạng tuyệt đối CM[2,1] bằng đúng 0 đều được triển khai tập trung trên Cloud Server Backend (môi trường Python FastAPI).</li>
+    </ul></li>
+  <li>Hệ quả kỹ thuật: Khi đối thủ tháo rã phần cứng hoặc đọc trộm toàn bộ bộ nhớ Flash của vi điều khiển, họ chỉ thu được các thuật toán lọc số học cơ bản. Toàn bộ tài sản trí tuệ cốt lõi về mô hình AI vẫn được bảo toàn tuyệt đối trên máy chủ.</li>
+</ul>
+<h3>b. Lớp 2: Khóa đọc Flash MCU và Xác thực Thiết bị Bắt tay Mật mã</h3>
+<ul>
+  <li>Phân tích véc-tơ tấn công: Các xưởng sản xuất điện tử sao chép nguyên mẫu sơ đồ chân và layout bo mạch, sản xuất hàng loạt phần cứng giá rẻ rồi kết nối trực tiếp vào máy chủ NeuroLink để sử dụng miễn phí trạm phân tích qEEG và ứng dụng cảnh báo người dùng.</li>
+  <li>Giải pháp phòng thủ kỹ thuật của NeuroLink:
+    <ul>
+      <li>Cấu hình thanh ghi khóa phần cứng APPROTECT (Access Port Protection) trên vi điều khiển nRF52: Khóa vĩnh viễn giao tiếp cổng nạp và gỡ lỗi phần cứng SWD/JTAG ở cấp độ silicon trước khi xuất xưởng, ngăn chặn các công cụ nạp dịch ngược bộ nhớ nội.</li>
+      <li>Cơ chế xác thực thiết bị dựa trên mật mã bất đối xứng (Device Certificate Challenge-Response): Mỗi bo mạch chính hãng khi xuất xưởng được nạp một khóa riêng tư (Private Key) duy nhất vào vùng nhớ bảo vệ OTP (kết hợp định danh phần cứng duy nhất từ chip EEPROM 24AA256UID). Khi thiết bị khởi động và kết nối vào hệ thống, máy chủ gửi xuống một chuỗi ngẫu nhiên (Nonce Challenge). Thiết bị phải thực hiện thuật toán ký số mã hóa (HMAC-SHA256) và gửi trả lại chữ ký số. Máy chủ đối soát chữ ký với danh mục khóa công khai hợp lệ trong cơ sở dữ liệu mới mở cổng tiếp nhận dữ liệu sóng não.</li>
+    </ul></li>
+  <li>Hệ quả kỹ thuật: Các bo mạch sao chép trái phép từ các xưởng gia công bên ngoài không sở hữu chứng thư số hợp lệ, sẽ bị máy chủ API Gateway từ chối kết nối ngay ở tầng bắt tay mạng (lỗi 401 Unauthorized), biến phần cứng nhái thành thiết bị cô lập không thể hoạt động với hệ thống phần mềm.</li>
+</ul>
+<h3>c. Lớp 3: Chiến lược Mở Có Chọn Lọc (Open-Core Architecture)</h3>
+<ul>
+  <li>Phân tích sự đánh đổi kỹ thuật: Nếu đóng kín toàn bộ hệ thống, dự án sẽ gặp định kiến độc quyền, không thu hút được cộng đồng nghiên cứu và sinh viên đại học. Nếu mở toàn bộ mã nguồn và bản vẽ sản xuất, các xưởng gia công sẽ sao chép trọn vẹn kiểu dáng công nghiệp.</li>
+  <li>Giải pháp phân tầng cấu trúc của NeuroLink:
+    <ul>
+      <li>Cấu phần mở (Open Tier): Nhóm công khai mã nguồn bộ công cụ SDK Python, các mô-đun kết nối giao thức Lab Streaming Layer (LSL), script nhận luồng dữ liệu thời gian thực và tài liệu mô tả API RESTful. Động thái này xóa bỏ điểm nghẽn thu phí dữ liệu thô của Emotiv, biến NeuroLink thành công cụ nghiên cứu thân thiện được sinh viên và giảng viên ưu tiên lựa chọn.</li>
+      <li>Cấu phần đóng (Proprietary Core):
+        <ul>
+          <li>Đóng kín toàn bộ bộ tệp sản xuất Gerber và thiết kế mạch in 6 lớp HDI Master (ads1299_eeg_daq_6layer.kicad_pcb) với cấu trúc các lớp mass AGND/DGND cách ly, vành bao bảo vệ (guard-ring) và nghiệm thu 0 lỗi DRC.</li>
+          <li>Đăng ký bảo hộ Giải pháp hữu ích tại Cục Sở hữu Trí tuệ cho cấu trúc hình học và cơ chế tiếp xúc da của cụm điện cực khô vùng tai.</li>
+          <li>Đóng kín toàn bộ mã nguồn xử lý tín hiệu tại Cloud Server: Pipeline 80 đặc trưng bất biến độ lợi, thuật toán hiệu chuẩn miền đối kháng, bộ chỉ số đánh giá chất lượng tín hiệu tự động (SQI) và kho dữ liệu sóng não Neural DB.</li>
+        </ul></li>
+    </ul></li>
+</ul>
+<h3>d. Lớp 4: Khóa Chuyển Đổi Bằng Hồ Sơ Đường Cơ Sở Cá Nhân Hóa Dài Hạn</h3>
+<ul>
+  <li>Phân tích hành vi dữ liệu: Sóng điện não của con người mang tính đặc thù cá thể rất cao do sự sai khác về cấu trúc xương sọ, độ dày da đầu và nhịp sinh học riêng biệt. Một ngưỡng cảnh báo cố định dùng chung cho toàn bộ cộng đồng luôn dẫn đến sự đánh đổi giữa việc bỏ sót bệnh lý và phát sinh báo động giả.</li>
+  <li>Cơ chế tạo rào cản chuyển đổi của NeuroLink:
+    <ul>
+      <li>Nền tảng xây dựng ma trận đường cơ sở cá nhân hóa (Personalized Longitudinal Baseline) được tự động học liên tục qua 7 đêm đầu tiên và cập nhật thích nghi trong suốt 3 đến 6 tháng sử dụng đai đeo của người bệnh. Hồ sơ này bao gồm phổ công suất tương đối cá nhân, tỷ số DAR/TAR chuẩn trong trạng thái ngủ sâu và chỉ số bất đối xứng bán cầu BSI đặc trưng của từng cá thể.</li>
+      <li>Ma trận dữ liệu này được mã hóa và lưu trữ duy nhất trên tài khoản đám mây của gia đình. Nếu người dùng chuyển sang sử dụng một thiết bị phần cứng nhái hoặc thiết bị của hãng khác, họ sẽ đánh mất toàn bộ lịch sử đường cơ sở đã tích lũy, thiết bị mới sẽ phải học lại từ đầu và tỷ lệ phát sinh báo động giả nửa đêm sẽ tăng vọt.</li>
+      <li>Tương tự đối với cộng đồng nghiên cứu và bác sĩ: Ví tín chỉ tích lũy (CreditWallet), chỉ số uy tín học thuật (Impact Score) và quyền truy cập kho dữ liệu đặc quyền gắn liền với tài khoản nền tảng, tạo ra chi phí chuyển đổi rất lớn ngăn ngừa người dùng rời bỏ hệ sinh thái.</li>
+    </ul></li>
+</ul>
+<h2>3. Hệ thống 5 hào lũy phòng thủ và chiến lược sinh tồn bất đối xứng (Judo Strategy)</h2>
+<h3>a. Hào lũy 1: Kho dữ liệu EEG người Việt gắn nhãn đồng thuận kép</h3>
+<ul>
+  <li>Bản chất rào cản: Các mô hình trí tuệ nhân tạo quốc tế khi áp dụng trực tiếp lên bệnh nhân Việt Nam thường gặp hiện tượng suy giảm độ chính xác do sai lệch miền phân bố (domain shift) về nhân khẩu học và mô hình bệnh học. Việc xây dựng một kho dữ liệu sóng não có nhãn lâm sàng chuẩn đòi hỏi kinh phí hàng tỷ đồng nếu thuê bác sĩ gán nhãn theo giờ công truyền thống.</li>
+  <li>Đòn bẩy bất đối xứng của NeuroLink:
+    <ul>
+      <li>Tận dụng lực lượng hơn 10.000 bác sĩ tốt nghiệp mỗi năm cùng hàng ngàn bác sĩ nội trú, học viên sau đại học tại các trường Y Dược lớn đang cần công cụ phân tích dữ liệu phục vụ nghiên cứu khoa học và luận văn.</li>
+      <li>Nền tảng cung cấp miễn phí trạm lọc nhiễu và định lượng qEEG; đổi lại, các bác sĩ tham gia thẩm định và gán nhãn cho các đoạn sóng não ẩn danh. Hệ thống thiết lập quy tắc đồng thuận mù 2 chuyên gia (2-Reader Blind Consensus): Một bản ghi chỉ được đưa vào tập dữ liệu huấn luyện chuẩn khi có ít nhất 2 bác sĩ có chứng chỉ hành nghề xác nhận trùng khớp nhãn và chỉ số chất lượng tín hiệu SQI đạt trên 0,80.</li>
+      <li>Bác sĩ được hệ thống tặng lại tín chỉ (Credit) để đổi quyền trích xuất dữ liệu phục vụ đề tài nghiên cứu riêng của họ.</li>
+      <li>Chi phí tiền mặt thuê người gán nhãn: Đúng 0 VNĐ. Tài sản tích lũy là kho dữ liệu điện não người Việt đa trung tâm tăng trưởng tự nhiên theo quy mô người dùng, tạo nên rào cản dữ liệu mà các đối thủ nước ngoài không thể mua được trong thời gian ngắn.</li>
+    </ul></li>
+</ul>
+<h3>b. Hào lũy 2: Chiến lược thâm nhập giáo dục đại học (Trojan Horse Strategy)</h3>
+<ul>
+  <li>Mô hình tham chiếu: Chiến lược xâm nhập kinh điển của Arduino trong đào tạo phần cứng và MATLAB, LabVIEW trong đào tạo kỹ thuật đo lường. Khi sinh viên và giảng viên quen thuộc với một nền tảng công cụ ngay trong các bài thí nghiệm đại học, họ sẽ tiếp tục mang chính công cụ đó vào quy trình làm việc chuyên nghiệp khi ra trường.</li>
+  <li>Triển khai thực tế của NeuroLink:
+    <ul>
+      <li>Tiếp cận trực tiếp mạng lưới hơn 240 trường đại học tại Việt Nam, đặc biệt là gần 40 trường đào tạo khối ngành Y Dược và hơn 65 khoa Kỹ thuật Y sinh, Điện tử Viễn thông, Công nghệ Thông tin và Trí tuệ Nhân tạo.</li>
+      <li>Cung cấp Bộ Kit nghiên cứu 8 kênh chuẩn ADS1299 với chi phí hợp lý, tài liệu hướng dẫn thực hành tiếng Việt và SDK Python mở hoàn toàn.</li>
+      <li>Hệ quả chiến lược: Tạo thói quen sử dụng nền tảng cho thế hệ kỹ sư y sinh và bác sĩ trẻ trước khi tốt nghiệp. Khi lực lượng này về công tác tại các cơ sở y tế địa phương, NeuroLink đã trở thành công cụ định lượng quen thuộc, vô hiệu hóa nỗ lực thâm nhập của các thiết bị đóng đắt tiền từ nước ngoài.</li>
+    </ul></li>
+</ul>
+<h3>c. Hào lũy 3: Quy trình phối hợp bác sĩ chuyên khoa nội địa (Doctor-in-the-loop Workflow)</h3>
+<ul>
+  <li>Điểm yếu của các tập đoàn công nghệ lớn và thiết bị ngoại:
+    <ul>
+      <li>Đồng hồ Apple Watch hay nhẫn Oura chỉ hiển thị biểu đồ nhịp tim trên màn hình; khi phát hiện chỉ số bất thường, ứng dụng chỉ đưa ra khuyến cáo chung chung hướng dẫn người dùng đi khám bệnh mà không có bất kỳ kênh hỗ trợ chuyên môn nào tại Việt Nam.</li>
+      <li>Các bộ Kit nghiên cứu như OpenBCI hoàn toàn không có giao diện ứng dụng kết nối bác sĩ dành cho người dùng cuối.</li>
+    </ul></li>
+  <li>Khác biệt thực tế của NeuroLink:
+    <ul>
+      <li>Xây dựng luồng vận hành khép kín: Khi thuật toán máy chủ phát hiện chỉ số sóng chậm và mất đối xứng bán cầu vượt ngưỡng đường nền ban đêm, hệ thống tự động khởi tạo phiếu tư vấn chuyên môn (ConsultationTicket). Đoạn sóng não đã lọc sạch nhiễu được chuyển tiếp an toàn tới hàng đợi của các bác sĩ thần kinh có CCHN trong mạng lưới.</li>
+      <li>Bác sĩ xem xét dạng sóng trên trạm Web qEEG chuẩn và phản hồi định hướng theo cấu trúc 3 phần rõ ràng: nhận xét hình thái sóng, giải thích kiến thức tham khảo và khuyến nghị hướng thăm khám.</li>
+      <li>Tích hợp bộ quy tắc phân loại lâm sàng FAST (Face - Arm - Speech - Time): Nếu chỉ số mất đối xứng BSI vượt ngưỡng nguy hiểm (BSI lớn hơn hoặc bằng 0,22) kèm triệu chứng méo miệng hoặc yếu chi, màn hình tự động bật cảnh báo đỏ hướng dẫn gia đình gọi cấp cứu 115 đưa đến bệnh viện có đơn vị đột quỵ gần nhất, kích hoạt hàng rào an toàn CM[2,1]=0 bảo đảm tính mạng tuyệt đối cho người bệnh.</li>
+    </ul></li>
+</ul>
+<h3>d. Hào lũy 4: Hàng rào pháp lý và thời gian thử nghiệm lâm sàng tại địa phương</h3>
+<ul>
+  <li>Quy định pháp lý chặt chẽ:
+    <ul>
+      <li>Trang thiết bị y tế tại Việt Nam chịu sự quản lý nghiêm ngặt theo Nghị định 98/2021/NĐ-CP và Nghị định 07/2023/NĐ-CP. Để một thiết bị có tính năng hỗ trợ chẩn đoán y khoa được cấp Số lưu hành, quy trình thử nghiệm lâm sàng độc lập thông qua Hội đồng Đạo đức (IRB) tại bệnh viện kéo dài từ 12 đến 24 tháng.</li>
+    </ul></li>
+  <li>Lợi thế bảo hộ địa phương của NeuroLink:
+    <ul>
+      <li>Dự án xuất phát từ Đại học Bách Khoa - ĐH Đà Nẵng, kết nối chặt chẽ với Trung tâm Hỗ trợ Khởi nghiệp Đổi mới Sáng tạo Đà Nẵng (DISSC - Sở Khoa học và Công nghệ) và cơ chế thử nghiệm có kiểm soát (Sandbox) theo Nghị quyết 136/2024/QH15 của Quốc hội.</li>
+      <li>Kế hoạch đo kiểm đối chứng song song cùng máy điện não lâm sàng tại Bệnh viện Đà Nẵng tạo ra bộ hồ sơ kiểm định khoa học chính quy.</li>
+      <li>Tác dụng ngăn chặn: Khoảng thời gian từ 12 đến 24 tháng kiểm định lâm sàng đóng vai trò như một bức tường phòng thủ vững chắc, ngăn chặn hoàn toàn các sản phẩm phần cứng tiểu ngạch giá rẻ từ nước ngoài hoặc các nhóm sao chép nhảy vào thị trường khám chữa bệnh mà không có giấy phép lưu hành hợp pháp.</li>
+    </ul></li>
+</ul>
+<h3>e. Hào lũy 5: Kiến trúc phần cứng mô-đun kép tối ưu hóa chi phí sản xuất</h3>
+<ul>
+  <li>Phân rã kiến trúc phần cứng:
+    <ul>
+      <li>Dự án không cố gắng tạo ra một thiết bị duy nhất cho mọi nhu cầu, mà phân tách thành hai mô-đun phần cứng riêng biệt về quy trình gia công nhưng dùng chung lõi thuật toán:</li>
+      <li>Phiên bản Mô-đun A (Phòng thí nghiệm và Giảng dạy): Bo mạch đo 8 kênh vi sai 24-bit sử dụng chip TI ADS1299 cao cấp, thiết kế 6 lớp HDI đạt chuẩn True Zero DRC, đầy đủ cổng giao tiếp SPI/I2C và đo đa vị trí chuẩn 10-20. Phục vụ nhu cầu nghiên cứu học thuật đòi hỏi độ phân giải tín hiệu tối đa.</li>
+      <li>Phiên bản Mô-đun B (Đai đeo ngủ gia đình): Cấu hình thu gọn tối giản 2 đến 4 kênh vi sai đối xứng hai bên thái dương và hõm tai (vùng giải phẫu nhạy cảm với bất đối xứng tưới máu động mạch não giữa MCA), sử dụng IC đo sinh học AFE tiêu thụ điện năng thấp kết hợp SoC nRF52 BLE.</li>
+    </ul></li>
+  <li>Tối ưu hóa chuỗi cung ứng: Phiên bản Mô-đun B cắt giảm hơn 60% chi phí linh kiện so với bản 8 kênh, sử dụng pin dung lượng nhỏ hơn, bảo đảm thời lượng pin hoạt động liên tục suốt đêm ngủ mà vẫn duy trì độ chính xác của thuật toán tính toán chỉ số bất đối xứng bán cầu BSI.</li>
+</ul>
+<h2>4. Kịch bản phản công khi các đối thủ lớn tấn công (What If Analysis)</h2>
+<h3>a. Kịch bản 1: Apple, Samsung hoặc Oura đưa cảm biến điện sinh học lên thiết bị đeo vùng đầu hoặc tai</h3>
+<ul>
+  <li>Tình huống giả định: Các tập đoàn công nghệ lớn tích hợp cảm biến điện não khô vào tai nghe không dây hoặc đai đeo đầu tiêu dùng và bán ra toàn cầu.</li>
+  <li>Đánh giá tương quan lực lượng:
+    <ul>
+      <li>Lợi thế của Big Tech: Tiềm lực tài chính khổng lồ, năng lực sản xuất quy mô lớn và nhận diện thương hiệu toàn cầu.</li>
+      <li>Hạn chế cốt tử của Big Tech tại thị trường y tế Việt Nam:
+        <ul>
+          <li>Rủi ro trách nhiệm pháp lý: Để tránh các vụ kiện tụng y khoa quốc tế, các tập đoàn lớn luôn khóa tính năng thiết bị ở mức theo dõi sức khỏe tổng quát (General Wellness), tuyệt đối không đưa ra các kết luận mang tính định hướng lâm sàng hoặc can thiệp cấp cứu.</li>
+          <li>Thiếu mạng lưới bác sĩ lâm sàng bản địa: Họ không có hạ tầng kết nối trực tiếp với đội ngũ bác sĩ chuyên khoa thần kinh có CCHN tại các bệnh viện Việt Nam để đọc bản ghi và xử lý ca bệnh.</li>
+          <li>Thiếu sự chuẩn hóa dữ liệu địa phương: Thuật toán toàn cầu không được hiệu chuẩn trên mô hình bệnh học và phân bố tín hiệu điện não của người cao tuổi Việt Nam.</li>
+        </ul></li>
+    </ul></li>
+  <li>Chiến lược phản công của NeuroLink:
+    <ul>
+      <li>Không cạnh tranh đối đầu ở khâu sản xuất phần cứng tiêu dùng đại trà. NeuroLink định vị là nền tảng xử lý dữ liệu và điều phối dịch vụ y sinh (Software and Service Platform): Nếu tai nghe của các hãng lớn mở API dữ liệu thô, NeuroLink sẵn sàng mở cổng tiếp nhận dữ liệu sóng não đó vào trạm Web qEEG và kết nối vào quy trình Doctor-in-the-loop nội địa.</li>
+      <li>Tận dụng chiến dịch truyền thông của các tập đoàn lớn để người dân hiểu rõ giá trị của điện não đồ, sau đó khai thác thị trường bằng dịch vụ kết nối bác sĩ chuyên khoa và quy tắc an toàn cấp cứu FAST bản địa.</li>
+    </ul></li>
+</ul>
+<h3>b. Kịch bản 2: Earable đưa Frenz Brainband phiên bản giá rẻ về thị trường Việt Nam</h3>
+<ul>
+  <li>Tình huống giả định: Earable Neuroscience quyết định hạ giá sản phẩm Frenz Brainband xuống phân khúc dưới 200 USD hoặc tung ra các chương trình trợ giá quy mô lớn tại Việt Nam.</li>
+  <li>Đánh giá tương quan lực lượng:
+    <ul>
+      <li>Frenz Brainband có thế mạnh về kiểu dáng công nghiệp tiêu dùng và liệu pháp âm thanh ru ngủ qua xương. Tuy nhiên, kiến trúc sản phẩm của họ được thiết kế tối ưu cho vòng lặp ru ngủ cá nhân, hoàn toàn không có thuật toán phát hiện đột quỵ, không có rào chắn an toàn tPA và không kết nối quy trình tư vấn y tế.</li>
+    </ul></li>
+  <li>Chiến lược phản công của NeuroLink:
+    <ul>
+      <li>Giữ vững định vị y sinh chuyên sâu: NeuroLink không chạy đua phát triển tính năng kích thích âm thanh ru ngủ đắt đỏ. Dự án tập trung toàn bộ nguồn lực vào bài toán an toàn thần kinh: phát hiện bất đối xứng bán cầu ban đêm, rào chắn an toàn sinh mạng CM[2,1]=0 và liên kết cấp cứu 115 cho người cao tuổi.</li>
+      <li>Đòn bẩy tâm lý khách hàng gia đình: Sản phẩm của NeuroLink giải quyết nỗi lo lắng của con cái đi làm xa đối với cha mẹ già ở quê (nhóm đối tượng mà các sản phẩm ru ngủ cá nhân xa xỉ không tiếp cận).</li>
+      <li>Đòn bẩy học thuật: Bộ Kit 8 kênh NeuroLink mở hoàn toàn dữ liệu thô phục vụ nghiên cứu đại học với mức giá chỉ bằng một phần nhỏ giá bán của Frenz, chiếm lĩnh toàn bộ thị phần phòng thí nghiệm trong nước.</li>
+    </ul></li>
+</ul>
+<h3>c. Kịch bản 3: Các xưởng phần cứng Thẩm Quyến bán bo mạch sao chép ADS1299 kèm ứng dụng bẻ khóa</h3>
+<ul>
+  <li>Tình huống giả định: Các nhà sản xuất Trung Quốc sao chép nguyên mẫu sơ đồ chân ADS1299, bán tràn lan trên các sàn thương mại điện tử với giá siêu rẻ kèm bản sao giao diện Web.</li>
+  <li>Đánh giá tương quan lực lượng:
+    <ul>
+      <li>Mạch nhái giá rẻ bị giới hạn vật lý nghiêm trọng: Để hạ giá thành, các xưởng bắt buộc phải dùng mạch 2 lớp hoặc 4 lớp rẻ tiền, loại bỏ vành bao bảo vệ guard-ring và không có mặt phẳng mass AGND/DGND cách ly. Hệ quả là sàn nhiễu vật lý sẽ tăng vọt lên trên 5 đến 10 uVrms, làm méo mó hoàn toàn tín hiệu sóng não microvolt. Khi đo thực tế, sóng não sẽ bị chôn vùi trong can nhiễu điện lưới 50Hz và xung nguồn.</li>
+    </ul></li>
+  <li>Chiến lược phản công của NeuroLink:
+    <ul>
+      <li>Kích hoạt cơ chế phòng thủ Lớp 2: Khóa phần cứng APPROTECT trên vi điều khiển chính hãng và cơ chế xác thực chứng thư số thiết bị (Device Certificate Challenge-Response). Bo mạch nhái không có khóa bí mật lưu trong chip sẽ bị máy chủ API từ chối kết nối ngay lập tức.</li>
+      <li>Cổng kiểm soát chất lượng tín hiệu tự động (SQI Gate): Nếu dữ liệu từ mạch nhái được truyền vào trạm Web, bộ lọc SQI sẽ tự động phát hiện sàn nhiễu vượt ngưỡng và chặn phân tích, hiển thị cảnh báo đỏ &quot;Chất lượng phần cứng không đạt chuẩn y sinh&quot;.</li>
+      <li>Rào cản niềm tin y tế: Trong lĩnh vực sức khỏe và an toàn tính mạng, các cơ sở nghiên cứu và hộ gia đình không bao giờ mạo hiểm sử dụng bo mạch trôi nổi không có chứng nhận an toàn điện sinh học và cam kết bảo mật dữ liệu.</li>
+    </ul></li>
+</ul>
+<h3>d. Kịch bản 4: Các bệnh viện lớn hoặc trường đại học khác tự phát triển hệ thống tương tự</h3>
+<ul>
+  <li>Tình huống giả định: Một trường đại học hoặc viện nghiên cứu lớn tại Hà Nội hoặc TP. Hồ Chí Minh đầu tư kinh phí tự nghiên cứu và chế tạo trạm qEEG cùng bo mạch đo điện não.</li>
+  <li>Đánh giá tương quan lực lượng:
+    <ul>
+      <li>Để hoàn thiện một hệ sinh thái kỹ thuật từ bo mạch 6 lớp HDI đạt 0 lỗi DRC, bộ lọc streaming thời gian thực trễ dưới 10 ms, bộ 80 đặc trưng bất biến đã kiểm nghiệm mù trên tập dữ liệu quốc tế UCLH London và nền tảng 4 trụ cột vận hành có cơ chế ví Credit đòi hỏi thời gian nghiên cứu thực nghiệm từ 2 đến 3 năm.</li>
+    </ul></li>
+  <li>Chiến lược phản công của NeuroLink:
+    <ul>
+      <li>Chuyển hóa đối thủ tiềm năng thành đối tác thụ hưởng: Thay vì cạnh tranh khép kín, NeuroLink áp dụng chính sách liên minh học thuật mở rộng. Dự án sẵn sàng cung cấp trạm Web qEEG và hỗ trợ kỹ thuật bo mạch nghiên cứu cho các nhóm nghiên cứu tại các trường bạn phục vụ đề tài khoa học.</li>
+      <li>Mời các giáo sư, chuyên gia đầu ngành tham gia Hội đồng cố vấn khoa học và trở thành chuyên gia thẩm định nhãn cấp cao trên hệ sinh thái với đặc quyền trích xuất dữ liệu đa trung tâm.</li>
+      <li>Khi các cơ sở bạn sử dụng nền tảng của NeuroLink để công bố bài báo khoa học, kho dữ liệu của NeuroLink càng tăng trưởng mạnh mẽ và vị thế chuẩn mực của hệ thống càng được củng cố vững chắc trong cộng đồng y sinh học Việt Nam.</li>
+    </ul></li>
+</ul>
+
+<h1>IV. TÍNH KHẢ THI VẬN HÀNH VÀ KẾ HOẠCH KHẢO NGHIỆM THỰC TẾ</h1>
+
+<h2>1. Bảng đối chiếu logic cân đối giữa các cấu phần sản phẩm và kiểm soát nguồn lực</h2>
+<p class="no-indent">Thay vì đặt nặng các dự phóng doanh thu khổng lồ chưa kiểm chứng, tính bền vững của mô hình được thể hiện qua sự tự cân đối trên từng cấu phần vận hành:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Cấu phần Hệ thống</th>
+      <th>Đối tượng Sử dụng</th>
+      <th>Hình thức Cung cấp</th>
+      <th>Chi phí Phát sinh Thực tế</th>
+      <th>Logic Tự Duy trì và Tạo Giá trị</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>(1) Bộ Kit Đo Sóng não 8 kênh + API</td>
+      <td>Phòng Lab ĐH, Nhóm nghiên cứu, Cơ sở trị liệu</td>
+      <td>Bán thiết bị nghiên cứu &amp; cấp tài khoản phần mềm</td>
+      <td>Linh kiện mạch 6 lớp, vỏ hộp và gia công theo lô nhỏ</td>
+      <td>Chi phí thấp hơn nhiều so với nhập ngoại nên dễ tiếp cận ngân sách đề tài; tạo nguồn thu thực tế ngay Giai đoạn 1 để nuôi R&amp;D</td>
     </tr>
     <tr>
-      <td>(3) Thuê bao AI An Tâm Báo Hiếu</td>
-      <td class="num">99.000 đ/tháng</td>
-      <td class="num">13.000 đ (Cloud + Cổng)</td>
-      <td class="num">86.000 đ/tháng</td>
-      <td class="center">86,9%</td>
-      <td>100% AI tự động học Baseline, cảnh báo lệch pha đêm; 0 đồng lương bác sĩ cố định</td>
+      <td>(2) Trạm Web qEEG Học thuật (RUO)</td>
+      <td>Bác sĩ trẻ, Bác sĩ nội trú, Nghiên cứu sinh</td>
+      <td>Miễn phí (giới hạn lượt cá nhân) đổi lấy nhãn dữ liệu</td>
+      <td>Chi phí tính toán máy chủ rất nhỏ trên mỗi bản ghi</td>
+      <td>Chuyên gia được công cụ làm nghiên cứu miễn phí; dự án thu được kho dữ liệu gán nhãn đồng thuận 2 người mà không tốn tiền mua nhãn</td>
     </tr>
     <tr>
-      <td>(4) Hộp đệm điện cực (Định kỳ quý)</td>
-      <td class="num">149.000 đ/hộp</td>
-      <td class="num">40.000 đ</td>
-      <td class="num">109.000 đ/hộp</td>
-      <td class="center">73,2%</td>
-      <td>Vật tư tiêu hao thay sau 90 đêm đảm bảo trở kháng tiếp xúc da dưới 10 kOhm</td>
+      <td>(3) Vòng đeo Theo dõi Giấc ngủ</td>
+      <td>Người mất ngủ, Con cái mua cho cha mẹ lớn tuổi</td>
+      <td>Bán thiết bị hoặc cho mượn có đặt cọc bảo toàn linh kiện</td>
+      <td>Linh kiện mạch thu gọn vùng tai, pin và đệm dẫn điện</td>
+      <td>Thu hồi ngay chi phí sản xuất phần cứng; mở rộng mạng lưới thiết bị đo thực tế hàng đêm tại hộ gia đình</td>
     </tr>
     <tr>
-      <td>(5) Sàn Hội chẩn Chuyên gia Theo Ca</td>
-      <td class="num">199.000 đ/ca</td>
-      <td class="num">150.000 đ (Bác sĩ) + 5.000 đ hạ tầng</td>
-      <td class="num">44.000 đ/ca</td>
-      <td class="center">22,1%</td>
-      <td>Bác sĩ nhận 75,4% thù lao theo ca, NeuroLink thu phí sàn công nghệ 24,6%</td>
+      <td>(4) Tài khoản Cảnh báo Gia đình &amp; Đệm thay thế</td>
+      <td>Hộ gia đình đang sử dụng vòng đeo ngủ</td>
+      <td>Phí duy trì phần mềm hàng tháng &amp; bán rời đệm định kỳ</td>
+      <td>Máy chủ lưu trữ chuỗi thời gian, dịch vụ gọi cảnh báo tự động</td>
+      <td>Xử lý tự động 100% bằng thuật toán (không kèm lương bác sĩ) nên phí hàng tháng nhẹ nhàng vẫn dư bù đắp hạ tầng đám mây</td>
+    </tr>
+    <tr>
+      <td>(5) Kết nối Bác sĩ Giải thích Biểu đồ</td>
+      <td>Gia đình có bản ghi đêm bất thường cần hỏi thêm</td>
+      <td>Thu phí theo từng lượt yêu cầu tư vấn</td>
+      <td>Phần lớn chuyển trả thù lao cho bác sĩ nhận đọc ca</td>
+      <td>Không nuôi bác sĩ lương cứng; có ca yêu cầu mới phát sinh giao dịch nên hệ thống không chịu rủi ro chi phí cố định</td>
     </tr>
   </tbody>
 </table>
 
-<p class="no-indent">Phân tích giá trị vòng đời khách hàng B2C (Customer Lifetime Value - LTV) trong 24 tháng:</p>
+<h2>2. Lộ trình khảo nghiệm thực chứng và các cột mốc kiểm tra (Validation Roadmap)</h2>
+<p class="no-indent">Để chứng minh tính khả thi từng bước theo phương pháp kỹ thuật thực nghiệm, dự án đặt ra ba chặng kiểm chứng rõ ràng:</p>
 <ul>
-  <li>Lợi nhuận gộp từ bán phần cứng ban đầu: 1.340.000 đồng</li>
-  <li>Lợi nhuận gộp từ thuê bao phần mềm AI (24 tháng x 86.000 đồng): 2.064.000 đồng</li>
-  <li>Lợi nhuận gộp từ vật tư tiêu hao hộp đệm (7 quý thay mới x 109.000 đồng): 763.000 đồng</li>
-  <li>Lợi nhuận gộp từ phí sàn đọc ca bác sĩ (ước tính bảo thủ 2 ca/24 tháng x 44.000 đồng): 88.000 đồng</li>
-  <li>Tổng LTV lý thuyết tích lũy trong 24 tháng trên một hộ gia đình: 4.255.000 đồng (khoảng 4.265.000 đồng nếu tính phí sàn 49.000 đồng).</li>
-  <li>Mức LTV bảo thủ tính toán theo tỷ lệ khấu hao và rời bỏ tự nhiên 12% mỗi năm: khoảng 3.996.000 đồng.</li>
-</ul>
-
-<p class="no-indent">Chỉ số chi phí thu hút khách hàng (CAC) và thời gian hoàn vốn B2C:</p>
-<ul>
-  <li>Chi phí thu hút một khách hàng (CAC bình quân): 350.000 đến 500.000 đồng một hộ.
+  <li>Chặng 1 - Khảo sát nhu cầu và kiểm chuẩn phòng thí nghiệm (Hiện tại - Tháng 6):
     <ul>
-      <li>Chi phí kênh B2B2E phân bổ qua gian hàng trải nghiệm Ngày Phụ huynh: khoảng 350.000 đồng một khách hàng.</li>
-      <li>Chi phí tiếp thị trực tuyến D2C có định hướng: khoảng 500.000 đồng một khách hàng.</li>
+      <li>Hoàn tất khảo sát thực tế hai luồng (Người đi làm có cha mẹ lớn tuổi và Bác sĩ trẻ/Nghiên cứu sinh) thông qua biểu mẫu trực tuyến neurolink_market_survey.html để xác thực nhu cầu sử dụng, thói quen đeo khi ngủ và mức chi phí hợp lý.</li>
+      <li>Hàn lắp ráp thực tế lô bo mạch nguyên mẫu từ bản thiết kế PCB 6 lớp đã qua kiểm tra DRC, đo kiểm tra sàn nhiễu vật lý (Input-referred noise), độ suy giảm nhiễu 50Hz và dòng rò an toàn điện sinh học trên mô hình giả lập (Phantom test).</li>
     </ul>
   </li>
-  <li>Tỷ số LTV trên CAC:
-    Tỷ số LTV / CAC = 3.996.000 đồng / 500.000 đồng = 8,0x (vượt xa chuẩn khuyến nghị 3,0x của ngành phần mềm y tế).
-  </li>
-  <li>Thời gian thu hồi vốn CAC (CAC Payback Period): Ngay tháng thứ nhất.
-    Khoản lãi gộp phần cứng 1.340.000 đồng ngay khi bán đã hoàn trả chi phí tiếp thị 500.000 đồng và tạo ra thặng dư tiền mặt 840.000 đồng ngay tại thời điểm xuất kho.
-  </li>
-</ul>
-
-<p class="no-indent">Điểm hòa vốn vận hành toàn diện (Break-even Analysis):</p>
-<ul>
-  <li>Chi phí định phí vận hành tinh gọn của bộ máy: khoảng 70.000.000 đồng/tháng (văn phòng không gian chia sẻ, dịch vụ kế toán kiểm toán, máy chủ cơ sở dữ liệu và chi phí hành chính).</li>
-  <li>Kịch bản hòa vốn 1 (Thuần B2B): Chỉ cần bán 11 bộ B2B Pro Kit mỗi tháng (lợi nhuận gộp 11 x 6.700.000 = 73.700.000 đồng) là đủ bù đắp 100% chi phí vận hành toàn công ty.</li>
-  <li>Kịch bản hòa vốn 2 (Thuần B2C): Cần duy trì khoảng 815 thuê bao AI đang hoạt động thường xuyên (815 x 86.000 đồng = 70.090.000 đồng).</li>
-  <li>Kịch bản hòa vốn thực tế (Kết hợp Động cơ Kép): Chỉ cần bán 5 bộ B2B Pro Kit (lãi gộp 33,5 triệu đồng), 10 cơ sở Resort dùng SaaS (lãi gộp 13,8 triệu đồng) và 300 thuê bao B2C (lãi gộp 25,8 triệu đồng) là đạt ngưỡng sinh lời ròng dương hàng tháng.</li>
-</ul>
-
-<h2>2. Ngưỡng kiểm chứng chuyển pha (Milestone Gates) và Khảo sát định giá Van Westendorp PSM</h2>
-<p class="no-indent">Ngưỡng chuyển giao giữa các giai đoạn được kiểm soát bằng các chỉ số định lượng bắt buộc:</p>
-<ul>
-  <li>Ngưỡng Gate 1 (Từ Pha 1 sang Pha 2):
+  <li>Chặng 2 - Thử nghiệm thực địa nhóm nhỏ và cộng đồng học thuật (Tháng 6 - Tháng 12):
     <ul>
-      <li>Đạt doanh số tối thiểu 50 bộ B2B Pro Kit và 1.000 thiết bị B2C hoạt động thường xuyên.</li>
-      <li>Tỷ lệ duy trì sử dụng sau 90 ngày (D90 Retention) đạt từ 70% trở lên.</li>
-      <li>Thời gian nhận ca trung vị của chuyên gia trên sàn (Median Time-to-Claim) dưới 2 giờ.</li>
-      <li>Hoàn thành bộ hồ sơ nghiên cứu lâm sàng quan sát đối chứng với máy điện não nội viện tại Bệnh viện Đà Nẵng, đạt chứng nhận 0 lỗi PHI.</li>
-      <li>Được Hội đồng Đạo đức và Sở Khoa học Công nghệ Đà Nẵng phê duyệt tham gia cơ chế Sandbox theo Nghị quyết 136/2024/QH15.</li>
+      <li>Chuyển giao 5 đến 10 bộ Kit đầu tiên cho các nhóm nghiên cứu sinh viên, giảng viên khối Kỹ thuật Y sinh - CNTT dùng thử thực tế để đánh giá độ ổn định tín hiệu và hoàn thiện giao diện Web qEEG.</li>
+      <li>Thử nghiệm đeo thực tế phiên bản theo dõi giấc ngủ trên nhóm tình nguyện viên gia đình trong 14 đến 30 đêm liên tục để đo tỷ lệ duy trì đeo máy, độ êm vành tai và tỷ lệ cảnh báo nhầm khi xoay trở tư thế ngủ.</li>
     </ul>
   </li>
-  <li>Ngưỡng Gate 2 (Từ Pha 2 sang Pha 3):
+  <li>Chặng 3 - Đo đối chứng lâm sàng và đăng ký Sandbox y tế (Tháng 12 - Tháng 24):
     <ul>
-      <li>Quy mô người dùng thường xuyên đạt từ 15.000 thuê bao gia đình.</li>
-      <li>Được Bộ Y tế cấp Số lưu hành Trang thiết bị Y tế chính thức cho tính năng hỗ trợ chẩn đoán và cảnh báo nguy cơ thần kinh.</li>
-      <li>Tích lũy tối thiểu 50.000 giờ dữ liệu điện não ban đêm chuẩn hóa được gán nhãn lâm sàng.</li>
-      <li>Thiết lập thỏa thuận hợp tác thương mại chính thức với ít nhất một chuỗi bán lẻ dược phẩm lớn (FPT Long Châu hoặc Pharmacity) và một công ty bảo hiểm nhân thọ.</li>
+      <li>Thông qua Hội đồng Đạo đức và cơ chế Sandbox Nghị quyết 136/2024/QH15 tại Đà Nẵng, tiến hành đo song song với máy điện não đa kênh tiêu chuẩn tại bệnh viện trên nhóm bệnh nhân có yếu tố nguy cơ để hiệu chuẩn thuật toán phát hiện bất đối xứng bán cầu và hoàn thiện hồ sơ pháp lý lưu hành.</li>
     </ul>
   </li>
 </ul>
-
-<p class="no-indent">Phương pháp khảo nghiệm độ nhạy cảm giá Van Westendorp (PSM):</p>
-<p>Dự án đang triển khai công cụ khảo sát thực địa trực tuyến với 4 câu hỏi chuẩn hóa Van Westendorp trên hai nhóm đối tượng:</p>
-<ul>
-  <li>Luồng A (Con cái - Người chi trả): Xác định điểm giá tối ưu (Optimum Price Point - OPP), điểm giá trung hòa (Indifference Price Point - IDP) và khoảng giá chấp nhận được (Range of Acceptable Prices - RAP) cho gói thiết bị giấc ngủ B2C và gói thuê bao 99.000 đồng.</li>
-  <li>Luồng B (Bác sĩ và Chuyên gia - Người cung cấp dịch vụ): Đo lường mức thù lao tối thiểu chấp nhận được và mức thù lao kỳ vọng cho một phiên đọc bản ghi điện não 15 phút ngoài giờ.</li>
-</ul>
-<p>Kết quả thu thập thực tế sẽ được dùng để hiệu chỉnh các chính sách chiết khấu và ưu đãi trước khi chính thức mở bán quy mô lớn tại sự kiện Ngày Phụ huynh tháng 11.</p>
 
 </body>
 </html>

@@ -157,6 +157,8 @@ export const rewardsApi = {
     api<{ wallet: import('./types').CreditWalletItem; transactions: import('./types').CreditTransactionItem[] }>(
       '/rewards/wallet',
     ),
+  verifyIntegrity: () =>
+    api<import('./types').WalletIntegrityStatus>('/rewards/wallet/verify-integrity'),
   getCatalog: (category?: string) =>
     api<{ items: import('./types').RewardCatalogItem[] }>('/rewards/catalog', {
       query: { category: category || undefined },
@@ -173,6 +175,52 @@ export const rewardsApi = {
       '/rewards/claim-onboarding-grant',
       { method: 'POST' },
     ),
+};
+
+export const paymentsApi = {
+  getPackages: () =>
+    api<import('./types').TopupPackagesResponse>('/payments/packages'),
+  createTopupOrder: (body: { packageId?: string; amountVnd?: number }) =>
+    api<{ order: import('./types').PaymentOrderItem }>('/payments/topup-orders', {
+      method: 'POST',
+      body,
+    }),
+  getTopupOrders: () =>
+    api<{ orders: import('./types').PaymentOrderItem[] }>('/payments/topup-orders'),
+  simulateOrderPaid: (orderCode: string) =>
+    api<{ order: import('./types').PaymentOrderItem; wallet: import('./types').CreditWalletItem }>(
+      `/payments/topup-orders/${encodeURIComponent(orderCode)}/simulate-paid`,
+      { method: 'POST' },
+    ),
+  getReceiveCode: () =>
+    api<import('./types').ReceiveCodeInfo>('/payments/receive-code'),
+  updateBankProfile: (body: {
+    bankBin: string;
+    bankName: string;
+    bankAccountNo: string;
+    bankAccountName: string;
+  }) =>
+    api<{ wallet: import('./types').CreditWalletItem }>('/payments/bank-profile', {
+      method: 'PATCH',
+      body,
+    }),
+  transferCredits: (body: {
+    recipientCodeOrUsername: string;
+    amountCredits: number;
+    note?: string;
+    idempotencyKey?: string;
+  }) =>
+    api<{ transferId: string; senderWallet: import('./types').CreditWalletItem }>(
+      '/payments/transfer',
+      { method: 'POST', body },
+    ),
+  requestPayout: (body: { amountCredits: number; note?: string }) =>
+    api<{ payout: import('./types').PayoutRequestItem; wallet: import('./types').CreditWalletItem }>(
+      '/payments/payout-requests',
+      { method: 'POST', body },
+    ),
+  getPayoutRequests: () =>
+    api<{ payouts: import('./types').PayoutRequestItem[] }>('/payments/payout-requests'),
 };
 
 export const adminRewardsApi = {
@@ -567,5 +615,74 @@ export const communityInsightsApi = {
       '/community-insights/spotlight',
     ),
 };
+
+export const devicesApi = {
+  list: () => api<import('./types').DevicesOverviewResponse>('/devices'),
+  create: (body: {
+    name: string;
+    deviceCode?: string;
+    model?: string;
+    montage?: string;
+    sampleRateSps?: number;
+    pgaGain?: number;
+  }) =>
+    api<{
+      device: import('./types').HardwareDeviceItem;
+      apiKey: string;
+      wifiSetCommand: string;
+    }>('/devices', { method: 'POST', body }),
+  update: (
+    id: string,
+    body: {
+      name?: string;
+      montage?: string;
+      sampleRateSps?: number;
+      pgaGain?: number;
+    },
+  ) =>
+    api<{ device: import('./types').HardwareDeviceItem }>(
+      `/devices/${encodeURIComponent(id)}`,
+      { method: 'PATCH', body },
+    ),
+  remove: (id: string) =>
+    api<void>(`/devices/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  getTelemetry: (id: string) =>
+    api<{
+      device: import('./types').HardwareDeviceItem;
+      logs: import('./types').DeviceTelemetryPoint[];
+      bufferedSamples: number[][];
+    }>(`/devices/${encodeURIComponent(id)}/telemetry`),
+  sendCommand: (id: string, command: string) =>
+    api<{ dispatched: boolean; via: string; command: string }>(
+      `/devices/${encodeURIComponent(id)}/command`,
+      { method: 'POST', body: { command } },
+    ),
+  simulate: (
+    id: string,
+    scenario: import('./types').DeviceSimulationScenario = 'normal',
+  ) =>
+    api<{
+      ok: boolean;
+      samplesIngested: number;
+      device: import('./types').HardwareDeviceItem;
+    }>(`/devices/${encodeURIComponent(id)}/simulate`, {
+      method: 'POST',
+      body: { scenario },
+    }),
+  ackAlert: (id: string, alertId: string) =>
+    api<{ alert: import('./types').DeviceAlertItem }>(
+      `/devices/${encodeURIComponent(id)}/alerts/${encodeURIComponent(alertId)}/ack`,
+      { method: 'POST' },
+    ),
+  captureSession: (
+    id: string,
+    body?: { title?: string; samples?: number[][] },
+  ) =>
+    api<{ session: import('./types').DeviceRecordingSessionItem }>(
+      `/devices/${encodeURIComponent(id)}/sessions/capture`,
+      { method: 'POST', body: body ?? {} },
+    ),
+};
+
 
 

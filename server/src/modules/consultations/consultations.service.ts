@@ -3,6 +3,12 @@ import { prisma } from '../../lib/prisma.js';
 import { AppError, badRequest, forbidden, notFound } from '../../lib/errors.js';
 import { assertVerifiedProfessional } from '../contributions/contributions.service.js';
 import { formatNeuralSample, neuralSampleInclude } from '../neural-db/neural-db.service.js';
+import {
+  appendChainedLedgerEntry,
+  computeInternalSpendDeduction,
+  lockWalletForUpdate,
+  lockWalletsDeterministic,
+} from '../rewards/ledger.crypto.js';
 import { userSummarySelect } from '../users/users.select.js';
 import type {
   CreateConsultationInput,
@@ -146,34 +152,22 @@ export async function createConsultation(userId: string, input: CreateConsultati
             attachedSample.tpaLockoutTriggered),
       ) || hasAcuteStrokeKeywords(input.title, input.symptomSummary);
 
-    let wallet = await tx.creditWallet.findUnique({ where: { userId } });
+    let wallet = await lockWalletForUpdate(tx, userId);
+    let escrowDeduction: ReturnType<typeof computeInternalSpendDeduction> | null = null;
 
     if (input.bountyCredits > 0) {
-      if (!wallet) {
-        throw new AppError(
-          400,
-          'INSUFFICIENT_CREDITS',
-          `Số dư credit không đủ. Cần ${input.bountyCredits} credit ký quỹ nhưng hiện có 0 credit.`,
-        );
-      }
-
-      const debit = await tx.creditWallet.updateMany({
-        where: { userId, balance: { gte: input.bountyCredits } },
+      escrowDeduction = computeInternalSpendDeduction(wallet, input.bountyCredits);
+      wallet = await tx.creditWallet.update({
+        where: { id: wallet.id },
         data: {
-          balance: { decrement: input.bountyCredits },
+          balance: escrowDeduction.nextBalance,
+          promoCredits: escrowDeduction.nextPromo,
+          purchasedCredits: escrowDeduction.nextPurchased,
+          earnedCredits: escrowDeduction.nextEarned,
+          lockedCredits: { increment: input.bountyCredits },
           totalSpent: { increment: input.bountyCredits },
         },
       });
-
-      if (debit.count === 0) {
-        throw new AppError(
-          400,
-          'INSUFFICIENT_CREDITS',
-          `Số dư credit không đủ. Cần ${input.bountyCredits} credit ký quỹ nhưng số dư hiện tại chỉ có ${wallet.balance} credit.`,
-        );
-      }
-
-      wallet = await tx.creditWallet.findUniqueOrThrow({ where: { userId } });
     }
 
     const ticket = await tx.consultationTicket.create({
@@ -190,18 +184,19 @@ export async function createConsultation(userId: string, input: CreateConsultati
       },
     });
 
-    if (input.bountyCredits > 0 && wallet) {
-      await tx.creditTransaction.create({
-        data: {
-          walletId: wallet.id,
-          amount: -input.bountyCredits,
-          type: 'CONSULTATION_ESCROW',
-          referenceId: ticket.id,
-          idempotencyKey: `consultation-escrow:${ticket.id}`,
-          description: `Ký quỹ credit tư vấn ca "${input.title}" (-${input.bountyCredits} credit)`,
-          actorId: userId,
-        },
+    if (input.bountyCredits > 0 && escrowDeduction) {
+      const { wallet: sealed } = await appendChainedLedgerEntry(tx, {
+        wallet,
+        amount: -input.bountyCredits,
+        balanceAfter: escrowDeduction.nextBalance,
+        bucket: escrowDeduction.bucket,
+        type: 'CONSULTATION_ESCROW',
+        referenceId: ticket.id,
+        idempotencyKey: `consultation-escrow:${ticket.id}`,
+        description: `Ký quỹ Credit tư vấn ca "${input.title}" (-${input.bountyCredits} Credit)`,
+        actorId: userId,
       });
+      wallet = sealed;
     }
 
     const fullTicket = await tx.consultationTicket.findUniqueOrThrow({
@@ -393,30 +388,39 @@ export async function acceptConsultationReply(
       });
 
       if (!existingEarning) {
-        const responderWallet = await tx.creditWallet.upsert({
-          where: { userId: reply.responderId },
-          create: {
-            userId: reply.responderId,
-            balance: ticket.bountyCredits,
-            totalEarned: ticket.bountyCredits,
-            totalSpent: 0,
-          },
-          update: {
-            balance: { increment: ticket.bountyCredits },
-            totalEarned: { increment: ticket.bountyCredits },
+        const lockedMap = await lockWalletsDeterministic(tx, [ticket.requesterId, reply.responderId]);
+        const requesterWallet = lockedMap.get(ticket.requesterId)!;
+        const responderLocked = lockedMap.get(reply.responderId)!;
+
+        if (requesterWallet.lockedCredits > 0) {
+          await tx.creditWallet.update({
+            where: { id: requesterWallet.id },
+            data: {
+              lockedCredits: Math.max(0, requesterWallet.lockedCredits - ticket.bountyCredits),
+            },
+          });
+        }
+
+        const nextResponderBalance = responderLocked.balance + ticket.bountyCredits;
+        const responderWallet = await tx.creditWallet.update({
+          where: { id: responderLocked.id },
+          data: {
+            balance: nextResponderBalance,
+            earnedCredits: responderLocked.earnedCredits + ticket.bountyCredits,
+            totalEarned: responderLocked.totalEarned + ticket.bountyCredits,
           },
         });
 
-        await tx.creditTransaction.create({
-          data: {
-            walletId: responderWallet.id,
-            amount: ticket.bountyCredits,
-            type: 'CONSULTATION_EARNING',
-            referenceId: ticketId,
-            idempotencyKey,
-            description: `Thù lao đọc sóng não & tư vấn từ xa ca "${ticket.title}" (+${ticket.bountyCredits} credit)`,
-            actorId: requesterId,
-          },
+        await appendChainedLedgerEntry(tx, {
+          wallet: responderWallet,
+          amount: ticket.bountyCredits,
+          balanceAfter: nextResponderBalance,
+          bucket: 'EARNED',
+          type: 'CONSULTATION_EARNING',
+          referenceId: ticketId,
+          idempotencyKey,
+          description: `Thù lao đọc sóng não & tư vấn từ xa ca "${ticket.title}" (+${ticket.bountyCredits} Credit)`,
+          actorId: requesterId,
         });
       }
     }

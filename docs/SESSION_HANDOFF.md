@@ -44,3 +44,19 @@
   - `@client-social-startup` (#7) & `@client-clinical-eeg` (#8): `npm run typecheck -w client` (exit 0) and `npm run build -w client` (exit 0, 2021 modules built).
 - **Pending Independent Verifier Check:**
   - Full cross-stack verification (`deterministic_gate.py`, builds, tests, Zero-AI-Slop scan, and 12-screen Playwright E2E audit) assigned to `@verifier` (#14).
+
+---
+
+## 4. Hardware IoT, Node-RED v5 Visual Gateway & Device DB Update (`nodered-gateway` Slice)
+
+- **Embedded Node-RED v5 Gateway ([node_red/settings.js](../node_red/settings.js), [node_red/flows.json](../node_red/flows.json), [node_red/README.md](../node_red/README.md)):**
+  - Zero third-party palette dependencies — built strictly from Node-RED v5.0.7 core nodes (`tab`, `websocket-listener`, `websocket in/out`, `http in/response/request`, `function`, `switch`, `inject`, `debug`, `comment`).
+  - 4 visual tabs on `http://127.0.0.1:1880`:
+    1. `ESP32 Hardware Gateway`: WebSocket `/ws/hardware` decoding 197-byte binary ADS1299 frames (`0xA5 0xC2 0x11 0xD3 [48 float32 LE] 0x5A`) and JSON telemetry heartbeats -> authenticated POST (`x-nodered-secret`) to `:4000/api/devices/ingest/{telemetry,samples}`, plus `POST /device/command` and `GET /gateway/status`.
+    2. `Edge AI & Alert Router`: Evaluates `ai_state === 'STROKE_ALERT'`, `0 < vbat_mv < 3450`, and `loff_p > 0` with 30s debounce -> `POST :4000/api/devices/ingest/alert`.
+    3. `qEEG Epoch Forwarder`: Buffers rolling 4-second 8-channel epochs (`F3,F4,C3,C4,O1,O2,T3,T4`) -> `POST :4000/api/qeeg/analyze-csv` -> `POST :4000/api/devices/ingest/epoch`.
+    4. `ESP32 Test Simulator`: One-click `inject` triggers (`Sim: Normal Sinusoidal EEG`, `Sim: Acute Stroke Alert`, `Sim: Critical Battery 3.38V`) for hardware-free live demos.
+- **Launcher & Vite Integration ([start_unified_server.py](../start_unified_server.py), [start.bat](../start.bat), [client/vite.config.ts](../client/vite.config.ts)):**
+  - Added `NODERED_DIR`, `NODERED_PORT = 1880`, `--no-nodered`, `find_nodered_cli()`, graceful warning if `node-red` is absent, startup banner & `--preflight` Node-RED status, and clean process-tree shutdown.
+  - Proxied `/ws/hardware` (`ws: true`) in `client/vite.config.ts` to Express `:4000` for direct RFC 6455 hardware WebSocket streaming.
+  - Documented Node-RED `:1880`, direct RFC 6455 WS `/ws/hardware`, and Device DB endpoints (`HardwareDevice`, `DeviceTelemetryLog`, `DeviceAlert`, `DeviceRecordingSession`) in [README.md](../README.md) and [node_red/README.md](../node_red/README.md).

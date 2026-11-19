@@ -1,9 +1,13 @@
 import multer from 'multer';
+import type { RequestHandler } from 'express';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import fs from 'node:fs';
 import { env } from '../config/env.js';
 import { badRequest } from '../lib/errors.js';
+import { enforceUploadedFilesMagicBytes } from '../lib/fileSecurity.js';
+
+export { enforceUploadedFilesMagicBytes };
 
 const uploadDir = path.resolve(env.UPLOAD_DIR);
 if (!fs.existsSync(uploadDir)) {
@@ -28,7 +32,7 @@ const storage = multer.diskStorage({
   },
 });
 
-export const uploadMedia = multer({
+const rawUploadMedia = multer({
   storage,
   limits: {
     fileSize: env.MAX_UPLOAD_MB * 1024 * 1024,
@@ -41,3 +45,25 @@ export const uploadMedia = multer({
     cb(null, true);
   },
 });
+
+function withMagicBytesGuard(multerHandler: RequestHandler): RequestHandler {
+  return (req, res, next) => {
+    multerHandler(req, res, (err: unknown) => {
+      if (err) {
+        next(err);
+        return;
+      }
+      enforceUploadedFilesMagicBytes(req, res, next);
+    });
+  };
+}
+
+export const uploadMedia: multer.Multer = {
+  single: (fieldName: string) => withMagicBytesGuard(rawUploadMedia.single(fieldName)),
+  array: (fieldName: string, maxCount?: number) =>
+    withMagicBytesGuard(rawUploadMedia.array(fieldName, maxCount)),
+  fields: (fields: readonly multer.Field[]) =>
+    withMagicBytesGuard(rawUploadMedia.fields(fields)),
+  any: () => withMagicBytesGuard(rawUploadMedia.any()),
+  none: () => rawUploadMedia.none(),
+};

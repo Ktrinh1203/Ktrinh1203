@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma.js';
 import { badRequest, forbidden, notFound } from '../../lib/errors.js';
+import { realtimeBus } from '../realtime/realtime.bus.js';
 import { userSummarySelect } from '../users/users.select.js';
 
 export function computeDirectKey(userIdA: string, userIdB: string): string {
@@ -262,6 +263,25 @@ export async function sendMessage(conversationId: string, senderId: string, cont
         updatedAt: now,
       },
     }).catch(() => undefined);
+
+    realtimeBus.emitToUser(otherParticipant.userId, 'notification:new', {
+      type: 'NEW_MESSAGE',
+      conversationId,
+    });
+  }
+
+  for (const p of participant.conversation.participants) {
+    realtimeBus.emitToUser(p.userId, 'message:new', {
+      conversationId,
+      message: {
+        id: message.id,
+        conversationId: message.conversationId,
+        content: message.content,
+        createdAt: message.createdAt,
+        sender: message.sender,
+        isSender: p.userId === senderId,
+      },
+    });
   }
 
   return {

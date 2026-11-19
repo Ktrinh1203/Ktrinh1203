@@ -1,7 +1,13 @@
 import type { ClinicalCategory, Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
-import { AppError, badRequest, conflict, notFound } from '../../lib/errors.js';
+import { badRequest, conflict, notFound } from '../../lib/errors.js';
 import { assertVerifiedProfessional } from '../contributions/contributions.service.js';
+import {
+  appendChainedLedgerEntry,
+  computeInternalSpendDeduction,
+  lockWalletForUpdate,
+  lockWalletsDeterministic,
+} from '../rewards/ledger.crypto.js';
 import { userSummarySelect } from '../users/users.select.js';
 import type { CreateDataBankListingInput } from './databank.schemas.js';
 
@@ -153,71 +159,58 @@ export async function purchaseDataBankListing(buyerId: string, listingId: string
       throw conflict('Bạn đã mở khóa gói dữ liệu này trước đó.', 'ALREADY_PURCHASED');
     }
 
-    let buyerWallet = await tx.creditWallet.findUnique({ where: { userId: buyerId } });
+    let remainingBalance = 0;
 
     if (listing.priceCredits > 0) {
-      if (!buyerWallet) {
-        throw new AppError(
-          400,
-          'INSUFFICIENT_CREDITS',
-          `Số dư credit không đủ. Gói dữ liệu yêu cầu ${listing.priceCredits} credit nhưng bạn hiện có 0 credit.`,
-        );
-      }
+      const lockedMap = await lockWalletsDeterministic(tx, [buyerId, listing.authorId]);
+      const buyerLocked = lockedMap.get(buyerId)!;
+      const authorLocked = lockedMap.get(listing.authorId)!;
 
-      const debit = await tx.creditWallet.updateMany({
-        where: { userId: buyerId, balance: { gte: listing.priceCredits } },
+      const deduction = computeInternalSpendDeduction(buyerLocked, listing.priceCredits);
+
+      const buyerWallet = await tx.creditWallet.update({
+        where: { id: buyerLocked.id },
         data: {
-          balance: { decrement: listing.priceCredits },
+          balance: deduction.nextBalance,
+          promoCredits: deduction.nextPromo,
+          purchasedCredits: deduction.nextPurchased,
+          earnedCredits: deduction.nextEarned,
           totalSpent: { increment: listing.priceCredits },
         },
       });
 
-      if (debit.count === 0) {
-        throw new AppError(
-          400,
-          'INSUFFICIENT_CREDITS',
-          `Số dư credit không đủ. Cần ${listing.priceCredits} credit nhưng số dư hiện tại chỉ có ${buyerWallet.balance} credit.`,
-        );
-      }
+      await appendChainedLedgerEntry(tx, {
+        wallet: buyerWallet,
+        amount: -listing.priceCredits,
+        balanceAfter: deduction.nextBalance,
+        bucket: deduction.bucket,
+        type: 'DATABANK_PURCHASE',
+        referenceId: listing.id,
+        idempotencyKey: `databank-purchase:${listing.id}:${buyerId}`,
+        description: `Mở khóa gói dữ liệu "${listing.title}" (-${listing.priceCredits} Credit)`,
+        actorId: buyerId,
+      });
 
-      buyerWallet = await tx.creditWallet.findUniqueOrThrow({ where: { userId: buyerId } });
-
-      await tx.creditTransaction.create({
+      const nextAuthorBalance = authorLocked.balance + listing.priceCredits;
+      const authorWallet = await tx.creditWallet.update({
+        where: { id: authorLocked.id },
         data: {
-          walletId: buyerWallet.id,
-          amount: -listing.priceCredits,
-          type: 'DATABANK_PURCHASE',
-          referenceId: listing.id,
-          idempotencyKey: `databank-purchase:${listing.id}:${buyerId}`,
-          description: `Mở khóa gói dữ liệu "${listing.title}" (-${listing.priceCredits} credit)`,
-          actorId: buyerId,
+          balance: nextAuthorBalance,
+          earnedCredits: authorLocked.earnedCredits + listing.priceCredits,
+          totalEarned: authorLocked.totalEarned + listing.priceCredits,
         },
       });
 
-      const authorWallet = await tx.creditWallet.upsert({
-        where: { userId: listing.authorId },
-        create: {
-          userId: listing.authorId,
-          balance: listing.priceCredits,
-          totalEarned: listing.priceCredits,
-          totalSpent: 0,
-        },
-        update: {
-          balance: { increment: listing.priceCredits },
-          totalEarned: { increment: listing.priceCredits },
-        },
-      });
-
-      await tx.creditTransaction.create({
-        data: {
-          walletId: authorWallet.id,
-          amount: listing.priceCredits,
-          type: 'DATABANK_ROYALTY',
-          referenceId: listing.id,
-          idempotencyKey: `databank-royalty:${listing.id}:${buyerId}`,
-          description: `Tác quyền Data Bank cho gói "${listing.title}" (+${listing.priceCredits} credit)`,
-          actorId: buyerId,
-        },
+      await appendChainedLedgerEntry(tx, {
+        wallet: authorWallet,
+        amount: listing.priceCredits,
+        balanceAfter: nextAuthorBalance,
+        bucket: 'EARNED',
+        type: 'DATABANK_ROYALTY',
+        referenceId: listing.id,
+        idempotencyKey: `databank-royalty:${listing.id}:${buyerId}`,
+        description: `Tác quyền Data Bank cho gói "${listing.title}" (+${listing.priceCredits} Credit)`,
+        actorId: buyerId,
       });
 
       await tx.notification.upsert({
@@ -232,6 +225,11 @@ export async function purchaseDataBankListing(buyerId: string, listingId: string
           readAt: null,
         },
       });
+
+      remainingBalance = deduction.nextBalance;
+    } else {
+      const buyerWallet = await lockWalletForUpdate(tx, buyerId);
+      remainingBalance = buyerWallet.balance;
     }
 
     await tx.dataBankPurchase.create({
@@ -250,7 +248,7 @@ export async function purchaseDataBankListing(buyerId: string, listingId: string
 
     return {
       listing: formatListing(updatedListing, buyerId, true),
-      remainingBalance: buyerWallet?.balance ?? 0,
+      remainingBalance,
     };
   });
 }

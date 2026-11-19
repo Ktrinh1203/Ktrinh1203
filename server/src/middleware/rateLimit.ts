@@ -25,5 +25,8 @@ export const authLimiter = createLimiter(20, 15 * 60 * 1000);
 /** Generic write limiter for content creation (posts, comments, messages). */
 export const writeLimiter = createLimiter(60, 60 * 1000);
 
+/** Strict limiter for financial mutations (top-ups, P2P transfers, payouts). */
+export const financialLimiter = createLimiter(15, 60 * 1000);
+
 /** Global safety net. */
 export const globalLimiter = createLimiter(600, 60 * 1000);

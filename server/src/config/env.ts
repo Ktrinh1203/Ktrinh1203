@@ -27,6 +27,21 @@ const envSchema = z.object({
   UPLOAD_DIR: z.string().default('uploads'),
   MAX_UPLOAD_MB: z.coerce.number().positive().max(20).default(5),
   QEEG_SERVICE_URL: z.string().default('http://127.0.0.1:8001'),
+  NODERED_URL: z.string().default('http://127.0.0.1:1880'),
+  NODERED_INGEST_SECRET: z.string().min(8).default('neurolink-nodered-dev-secret'),
+  LEDGER_HMAC_SECRET: z
+    .string()
+    .min(16)
+    .default('neurolink-dev-ledger-hmac-secret-change-in-prod-32b'),
+  PAYMENT_WEBHOOK_SECRET: z
+    .string()
+    .min(16)
+    .default('neurolink-dev-webhook-hmac-secret-change-in-prod'),
+  VIETQR_BANK_BIN: z.string().default('970422'),
+  VIETQR_BANK_NAME: z.string().default('MB Bank'),
+  VIETQR_ACCOUNT_NO: z.string().default('0888999777'),
+  VIETQR_ACCOUNT_NAME: z.string().default('CONG TY NEUROLINK VIET NAM'),
+  VND_PER_CREDIT: z.coerce.number().int().positive().default(1000),
 });
 
 export type Env = z.infer<typeof envSchema>;

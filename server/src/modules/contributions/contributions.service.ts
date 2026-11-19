@@ -1,6 +1,7 @@
 import { Prisma, type ContributionStatus } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { AppError, badRequest, forbidden, notFound } from '../../lib/errors.js';
+import { appendChainedLedgerEntry, lockWalletForUpdate } from '../rewards/ledger.crypto.js';
 import type {
   CreateContributionInput,
   ResubmitContributionInput,
@@ -399,34 +400,30 @@ export async function adminReviewContribution(
         where: { idempotencyKey },
       });
 
-      if (!existingTx) {
-        // Upsert user's credit wallet
-        const wallet = await tx.creditWallet.upsert({
-          where: { userId: contribution.userId },
-          create: {
-            userId: contribution.userId,
-            balance: input.awardedCredits,
-            totalEarned: input.awardedCredits,
-            totalSpent: 0,
-          },
-          update: {
-            balance: { increment: input.awardedCredits },
-            totalEarned: { increment: input.awardedCredits },
+      if (!existingTx && input.awardedCredits > 0) {
+        const locked = await lockWalletForUpdate(tx, contribution.userId);
+        const nextBalance = locked.balance + input.awardedCredits;
+
+        const wallet = await tx.creditWallet.update({
+          where: { id: locked.id },
+          data: {
+            balance: nextBalance,
+            earnedCredits: locked.earnedCredits + input.awardedCredits,
+            totalEarned: locked.totalEarned + input.awardedCredits,
           },
         });
 
-        // Record immutable ledger transaction
-        await tx.creditTransaction.create({
-          data: {
-            walletId: wallet.id,
-            amount: input.awardedCredits,
-            type: 'CONTRIBUTION_REWARD',
-            referenceId: contributionId,
-            idempotencyKey,
-            description: `Khen thưởng bài đóng góp học thuật/chuyên môn (${contribution.category}): +${input.awardedCredits} credit`,
-            actorId: adminId,
-            contributionId,
-          },
+        await appendChainedLedgerEntry(tx, {
+          wallet,
+          amount: input.awardedCredits,
+          balanceAfter: nextBalance,
+          bucket: 'EARNED',
+          type: 'CONTRIBUTION_REWARD',
+          referenceId: contributionId,
+          idempotencyKey,
+          description: `Khen thưởng bài đóng góp học thuật/chuyên môn (${contribution.category}): +${input.awardedCredits} Credit`,
+          actorId: adminId,
+          contributionId,
         });
       }
     }

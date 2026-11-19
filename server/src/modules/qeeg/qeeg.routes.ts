@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { env } from '../../config/env.js';
-import { badRequest } from '../../lib/errors.js';
+import { AppError, badRequest } from '../../lib/errors.js';
 import { getAuth, requireAuth } from '../../middleware/auth.js';
 import { createPersonalDataset } from '../eeg/eeg-access.service.js';
 import {
@@ -22,14 +22,56 @@ import {
 
 export const qeegRouter = Router();
 
-const PYTHON_PROXY_TIMEOUT_MS = 1500;
+export const MAX_CONCURRENT_QEEG_JOBS = 4;
+export const MAX_QEEG_QUEUE_SIZE = 12;
+const PYTHON_UPSTREAM_TIMEOUT_MS = 15000;
+
+let activeQeegJobs = 0;
+const qeegWaitQueue: Array<() => void> = [];
+
+export function getQeegConcurrencyStats() {
+  return {
+    activeJobs: activeQeegJobs,
+    queuedJobs: qeegWaitQueue.length,
+    maxConcurrent: MAX_CONCURRENT_QEEG_JOBS,
+    maxQueue: MAX_QEEG_QUEUE_SIZE,
+  };
+}
+
+async function runWithQeegSemaphore<T>(task: () => Promise<T>): Promise<T> {
+  if (activeQeegJobs >= MAX_CONCURRENT_QEEG_JOBS) {
+    if (qeegWaitQueue.length >= MAX_QEEG_QUEUE_SIZE) {
+      throw new AppError(
+        429,
+        'RATE_LIMITED',
+        'Hệ thống phân tích qEEG đang quá tải luồng xử lý, vui lòng thử lại sau giây lát.',
+      );
+    }
+    await new Promise<void>((resolve) => {
+      qeegWaitQueue.push(resolve);
+    });
+  } else {
+    activeQeegJobs += 1;
+  }
+
+  try {
+    return await task();
+  } finally {
+    const nextWaiter = qeegWaitQueue.shift();
+    if (nextWaiter) {
+      nextWaiter();
+    } else {
+      activeQeegJobs = Math.max(0, activeQeegJobs - 1);
+    }
+  }
+}
 
 async function proxyJson<T>(path: string, init?: RequestInit): Promise<T | null> {
   try {
     const base = env.QEEG_SERVICE_URL.replace(/\/+$/, '');
     const res = await fetch(`${base}${path}`, {
       ...init,
-      signal: AbortSignal.timeout(PYTHON_PROXY_TIMEOUT_MS),
+      signal: AbortSignal.timeout(PYTHON_UPSTREAM_TIMEOUT_MS),
     });
     if (!res.ok) return null;
     return (await res.json()) as T;
@@ -38,11 +80,13 @@ async function proxyJson<T>(path: string, init?: RequestInit): Promise<T | null>
   }
 }
 
-async function proxyBinary(path: string): Promise<{ buffer: Buffer; contentType: string; disposition?: string } | null> {
+async function proxyBinary(
+  path: string,
+): Promise<{ buffer: Buffer; contentType: string; disposition?: string } | null> {
   try {
     const base = env.QEEG_SERVICE_URL.replace(/\/+$/, '');
     const res = await fetch(`${base}${path}`, {
-      signal: AbortSignal.timeout(PYTHON_PROXY_TIMEOUT_MS),
+      signal: AbortSignal.timeout(PYTHON_UPSTREAM_TIMEOUT_MS),
     });
     if (!res.ok) return null;
     const arrayBuf = await res.arrayBuffer();
@@ -119,6 +163,7 @@ qeegRouter.get('/health', async (_req, res) => {
       status: 'ok',
       engineSource: 'python_qeeg_service',
       categories: Array.isArray(py.categories) ? py.categories : CLINICAL_CATEGORIES,
+      concurrency: getQeegConcurrencyStats(),
     });
     return;
   }
@@ -127,6 +172,7 @@ qeegRouter.get('/health', async (_req, res) => {
     status: 'ok',
     engineSource: 'ts_dsp_fallback',
     categories: CLINICAL_CATEGORIES,
+    concurrency: getQeegConcurrencyStats(),
   });
 });
 
@@ -141,71 +187,82 @@ qeegRouter.get('/cases', async (_req, res) => {
 
 qeegRouter.post('/analyze-case', async (req, res) => {
   const input = analyzeCaseSchema.parse(req.body);
-  const py = await proxyJson<QeegAnalysisResult>('/api/qeeg/analyze-case', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  });
-  if (py && py.status === 'SUCCESS' && Array.isArray(py.featureVector80)) {
-    res.json({ ...py, engineSource: 'python_qeeg_service' });
-    return;
-  }
+  const result = await runWithQeegSemaphore(async () => {
+    const py = await proxyJson<QeegAnalysisResult>('/api/qeeg/analyze-case', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    if (py && py.status === 'SUCCESS' && Array.isArray(py.featureVector80)) {
+      return { ...py, engineSource: 'python_qeeg_service' as const };
+    }
 
-  const tsResult = analyzeCaseTs(input);
-  if (!tsResult) {
-    throw badRequest(`Mã kịch bản qEEG không hợp lệ: ${input.caseId}`);
-  }
-  res.json(tsResult);
+    const tsResult = analyzeCaseTs(input);
+    if (!tsResult) {
+      throw badRequest(`Mã kịch bản qEEG không hợp lệ: ${input.caseId}`);
+    }
+    return tsResult;
+  });
+
+  res.json(result);
 });
 
 qeegRouter.post('/analyze-csv', async (req, res) => {
   const input = analyzeCsvSchema.parse(req.body);
-  const py = await proxyJson<QeegAnalysisResult>('/api/qeeg/analyze-csv', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  });
-  if (py && py.status === 'SUCCESS' && Array.isArray(py.featureVector80)) {
-    res.json({ ...py, engineSource: 'python_qeeg_service' });
-    return;
-  }
+  const result = await runWithQeegSemaphore(async () => {
+    const py = await proxyJson<QeegAnalysisResult>('/api/qeeg/analyze-csv', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    if (py && py.status === 'SUCCESS' && Array.isArray(py.featureVector80)) {
+      return { ...py, engineSource: 'python_qeeg_service' as const };
+    }
 
-  try {
-    const tsResult = analyzeCsvTs(input);
-    res.json(tsResult);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Không thể phân tích file CSV điện não';
-    throw badRequest(msg);
-  }
+    try {
+      return analyzeCsvTs(input);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Không thể phân tích file CSV điện não';
+      throw badRequest(msg);
+    }
+  });
+
+  res.json(result);
 });
 
 qeegRouter.get('/export-pdf-summary', async (req, res) => {
-  const rawCaseId = typeof req.query.caseId === 'string' && req.query.caseId.trim()
-    ? req.query.caseId.trim()
-    : 'case_ischemia_lvo';
+  const rawCaseId =
+    typeof req.query.caseId === 'string' && req.query.caseId.trim()
+      ? req.query.caseId.trim()
+      : 'case_ischemia_lvo';
   const normalizedId = resolveCaseId(rawCaseId);
 
-  const pyPdf = await proxyBinary(
-    `/api/qeeg/export-pdf-summary?caseId=${encodeURIComponent(normalizedId)}`,
-  );
-  if (pyPdf) {
-    res.setHeader('Content-Type', pyPdf.contentType);
-    res.setHeader(
-      'Content-Disposition',
-      pyPdf.disposition || `attachment; filename="NeuroLink_qEEG_${normalizedId}.pdf"`,
+  const pdfPayload = await runWithQeegSemaphore(async () => {
+    const pyPdf = await proxyBinary(
+      `/api/qeeg/export-pdf-summary?caseId=${encodeURIComponent(normalizedId)}`,
     );
-    res.send(pyPdf.buffer);
-    return;
-  }
+    if (pyPdf) {
+      return {
+        buffer: pyPdf.buffer,
+        contentType: pyPdf.contentType,
+        disposition:
+          pyPdf.disposition || `attachment; filename="NeuroLink_qEEG_${normalizedId}.pdf"`,
+      };
+    }
 
-  const fallbackAnalysis = analyzeCaseTs({ caseId: normalizedId }) ?? analyzeCaseTs({ caseId: 'case_ischemia_lvo' })!;
-  const pdfBuffer = generateClinicalPdfFallback(fallbackAnalysis);
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader(
-    'Content-Disposition',
-    `attachment; filename="NeuroLink_qEEG_${fallbackAnalysis.caseId}.pdf"`,
-  );
-  res.send(pdfBuffer);
+    const fallbackAnalysis =
+      analyzeCaseTs({ caseId: normalizedId }) ?? analyzeCaseTs({ caseId: 'case_ischemia_lvo' })!;
+    const pdfBuffer = generateClinicalPdfFallback(fallbackAnalysis);
+    return {
+      buffer: pdfBuffer,
+      contentType: 'application/pdf',
+      disposition: `attachment; filename="NeuroLink_qEEG_${fallbackAnalysis.caseId}.pdf"`,
+    };
+  });
+
+  res.setHeader('Content-Type', pdfPayload.contentType);
+  res.setHeader('Content-Disposition', pdfPayload.disposition);
+  res.send(pdfPayload.buffer);
 });
 
 qeegRouter.post('/save-to-platform', requireAuth, async (req, res) => {

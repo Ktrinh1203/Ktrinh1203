@@ -187,11 +187,13 @@ describe('Contribution Workflow Tests', () => {
     expect(approveRes.body.contribution.status).toBe('APPROVED');
     expect(approveRes.body.contribution.awardCredits).toBe(350);
 
-    // Verify credits were awarded to doctor's wallet
+    // Verify credits were awarded to doctor's wallet (250 starter grant + 350 contribution reward = 600)
     const walletRes = await doctor.get('/api/rewards/wallet').expect(200);
-    expect(walletRes.body.wallet.balance).toBe(350);
-    expect(walletRes.body.wallet.totalEarned).toBe(350);
-    expect(walletRes.body.transactions).toHaveLength(1);
+    expect(walletRes.body.wallet.balance).toBe(600);
+    expect(walletRes.body.wallet.promoCredits).toBe(250);
+    expect(walletRes.body.wallet.earnedCredits).toBe(350);
+    expect(walletRes.body.wallet.totalEarned).toBe(600);
+    expect(walletRes.body.transactions).toHaveLength(2);
     expect(walletRes.body.transactions[0].type).toBe('CONTRIBUTION_REWARD');
   });
 });
@@ -200,50 +202,50 @@ describe('Credit Wallet, Ledger & Double-Spending Prevention', () => {
   it('records immutable credit ledger and prevents overspending or negative balance', async () => {
     const { doctor, admin } = await createVerifiedDoctor('dr_frank');
 
-    // Admin creates an active reward catalog item
+    // Admin creates an active reward catalog item (cost 300 > starter 250)
     const catalogItemRes = await admin.post('/api/admin/rewards/catalog', {
       name: 'Khóa học Đọc bản ghi EEG Nâng cao',
       description: 'Khóa học có chứng chỉ 12 tiết học trực tuyến.',
       category: 'PROFESSIONAL_COURSE',
-      creditCost: 200,
+      creditCost: 300,
       stockQuantity: 5,
     }).expect(201);
     const rewardId = catalogItemRes.body.reward.id;
 
-    // Doctor has 0 credits initially, tries to redeem -> 400 INSUFFICIENT_CREDITS
+    // Doctor has 250 starter credits initially, tries to redeem 300 -> 400 INSUFFICIENT_CREDITS
     const failRedeem = await doctor.post('/api/rewards/redeem', {
       rewardId,
     }).expect(400);
     expect(failRedeem.body.error.code).toBe('INSUFFICIENT_CREDITS');
 
-    // Admin adjusts doctor wallet with justified manual credit adjustment (+500 credits)
+    // Admin adjusts doctor wallet with justified manual credit adjustment (+500 credits -> total 750)
     const adjustRes = await admin.post(`/api/admin/rewards/wallets/${(await doctor.get('/api/rewards/wallet')).body.wallet.id}/adjust`, {
       amount: 500,
       reason: 'Khen thưởng đóng góp phiên phản biện xuất sắc',
     }).expect(200);
-    expect(adjustRes.body.wallet.balance).toBe(500);
+    expect(adjustRes.body.wallet.balance).toBe(750);
 
-    // Doctor redeems reward (cost 200) -> 201 Created, remaining balance 300
+    // Doctor redeems reward (cost 300) -> 201 Created, remaining balance 450
     const redeemRes = await doctor.post('/api/rewards/redeem', {
       rewardId,
       userNote: 'Đăng ký tham dự lớp học tháng tới',
     }).expect(201);
-    expect(redeemRes.body.remainingBalance).toBe(300);
+    expect(redeemRes.body.remainingBalance).toBe(450);
 
     // Check wallet and ledger
     const walletAfter = (await doctor.get('/api/rewards/wallet').expect(200)).body;
-    expect(walletAfter.wallet.balance).toBe(300);
-    expect(walletAfter.wallet.totalSpent).toBe(200);
-    expect(walletAfter.transactions).toHaveLength(2); // ADMIN_ADJUSTMENT and REWARD_REDEMPTION
+    expect(walletAfter.wallet.balance).toBe(450);
+    expect(walletAfter.wallet.totalSpent).toBe(300);
+    expect(walletAfter.transactions).toHaveLength(3); // STARTER_GRANT, ADMIN_ADJUSTMENT, REWARD_REDEMPTION
   });
 
   it('automatically refunds credits when a redemption request is rejected or cancelled', async () => {
     const { doctor, admin } = await createVerifiedDoctor('dr_grace');
 
-    // Admin grants 400 credits to doctor
+    // Admin grants +150 credits to doctor (250 starter + 150 = 400)
     const walletId = (await doctor.get('/api/rewards/wallet')).body.wallet.id;
     await admin.post(`/api/admin/rewards/wallets/${walletId}/adjust`, {
-      amount: 400,
+      amount: 150,
       reason: 'Cấp hạn mức nghiên cứu',
     }).expect(200);
 
@@ -293,10 +295,10 @@ describe('Credit Wallet, Ledger & Double-Spending Prevention', () => {
 
     expect(monetaryReward.payoutEnabled).toBe(false);
 
-    // Grant doctor 1000 credits
+    // Grant doctor +750 credits (250 starter + 750 = 1000)
     const walletId = (await doctor.get('/api/rewards/wallet')).body.wallet.id;
     await admin.post(`/api/admin/rewards/wallets/${walletId}/adjust`, {
-      amount: 1000,
+      amount: 750,
       reason: 'Cấp credit thử nghiệm',
     }).expect(200);
 

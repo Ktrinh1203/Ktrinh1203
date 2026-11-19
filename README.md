@@ -15,7 +15,8 @@ Chiến lược kinh doanh chi tiết và phân tích rủi ro pháp lý - lâm 
 | **Frontend Team** | [`client/`](./client/) | Giao diện Web React 19 + Vite + Tailwind v4 (`npm run dev:client` -> `:5173`) |
 | **Backend Team** | [`server/`](./server/) | Cổng API Express 5 + Prisma + PostgreSQL 16 (`npm run dev:server` -> `:4000`) |
 | **AI & qEEG Team** | [`qeeg_service/`](./qeeg_service/) | Microservice Python FastAPI qEEG, wPLI & Stroke Ensemble (`:8001`) |
-| **Hardware & Embedded Team** | [`hardware/`](./hardware/) | Firmware C++ `ESP32 + ADS1299 V1.4` Dual-Core, 5 trang TFT, Holter SD & `pc_eeg_studio.py` (`921600 bps`) — xem [`hardware/README.md`](./hardware/README.md) |
+| **IoT Gateway (Node-RED)** | [`node_red/`](./node_red/) | Node-RED v5 Visual IoT Gateway (`:1880`, 4 tab: ESP32 WS `/ws/hardware`, Edge AI Alerts, 4s qEEG Epoch, Simulator) — xem [`node_red/README.md`](./node_red/README.md) |
+| **Hardware & Embedded Team** | [`hardware/`](./hardware/) | Firmware C++ `ESP32 + ADS1299 V3.0` Dual-Core, 5 trang TFT, Holter SD, RFC 6455 Wi-Fi WS & `pc_eeg_studio.py` (`921600 bps`) — xem [`hardware/README.md`](./hardware/README.md) |
 
 ---
 
@@ -32,10 +33,11 @@ Trình điều phối [start_unified_server.py](./start_unified_server.py) thự
 1. Kiểm tra cổng `5432`: nếu PostgreSQL 16 chưa chạy, tự động khởi chạy `npm run db:start -w server` và chờ cụm dữ liệu sẵn sàng (nếu đã chạy sẵn sẽ tái sử dụng cụm hiện có).
 2. Áp dụng migration cơ sở dữ liệu bằng `npx prisma migrate deploy` trong `server/`, đồng thời kiểm tra số lượng bản ghi bảng `User` — nếu cơ sở dữ liệu trống (`0` người dùng), tự động chạy `npm run db:seed -w server`.
 3. Khởi chạy dịch vụ Python FastAPI qEEG (`uvicorn app:app --host 127.0.0.1 --port 8001` trong `qeeg_service/`). Nếu môi trường chưa cài `uvicorn`/`fastapi`, trình khởi chạy hiển thị cảnh báo gọn và tiếp tục bình thường nhờ động cơ dự phòng TypeScript DSP (`ts_dsp_fallback`) tích hợp sẵn trong Express.
-4. Khởi chạy máy chủ Express API (`npm run dev -w server` trên `:4000`) và giao diện Vite React (`npm run dev -w client` trên `:5173`).
-5. Kiểm tra sức khỏe đồng thời `http://127.0.0.1:4000/api/health`, `http://127.0.0.1:4000/api/qeeg/health` và `http://127.0.0.1:5173`, sau đó in bảng địa chỉ truy cập cùng danh sách tài khoản demo; nhấn `Ctrl+C` để đóng sạch toàn bộ tiến trình con đã mở.
+4. Khởi chạy máy chủ Express API (`npm run dev -w server` trên `:4000`, tích hợp sẵn cổng WebSocket phần cứng trực tiếp `/ws/hardware`) và giao diện Vite React (`npm run dev -w client` trên `:5173`).
+5. Khởi chạy **Node-RED v5 IoT Gateway** (`node-red -u node_red -s node_red/settings.js --no-telemetry` trên `:1880`); nếu máy chưa cài `node-red`, trình khởi chạy cảnh báo nhẹ và giữ nguyên luồng WebSocket phần cứng trực tiếp trên `:4000`.
+6. Kiểm tra sức khỏe đồng thời `http://127.0.0.1:4000/api/health`, `http://127.0.0.1:4000/api/qeeg/health`, `http://127.0.0.1:1880/gateway/status` (khi Node-RED bật) và `http://127.0.0.1:5173`, sau đó in bảng địa chỉ truy cập cùng danh sách tài khoản demo; nhấn `Ctrl+C` để đóng sạch toàn bộ tiến trình con đã mở.
 
-Để kiểm tra trước môi trường mà chưa bật máy chủ, chạy `python start_unified_server.py --preflight`. Nếu muốn chạy riêng tầng Node/Vite không kèm Python qEEG có thể thêm cờ `--no-qeeg`.
+Để kiểm tra trước môi trường mà chưa bật máy chủ, chạy `python start_unified_server.py --preflight`. Có thể dùng `--no-qeeg` để bỏ qua Python qEEG hoặc `--no-nodered` để tắt cổng Node-RED `:1880`.
 
 ### Địa chỉ Truy cập & Tài khoản Demo
 
@@ -44,8 +46,11 @@ Sau khi bảng thông báo sẵn sàng xuất hiện:
 | Thành phần | Địa chỉ Truy cập |
 |---|---|
 | Giao diện chính NeuroLink (Web SPA) | `http://127.0.0.1:5173` |
+| Trạm Thiết bị Phần cứng trực tiếp (`Thiết bị`) | `http://127.0.0.1:5173/eeg-hub?tab=device` |
 | Trạm qEEG Lâm sàng Chuyên sâu (Proxied) | `http://127.0.0.1:5173/clinical-workstation` |
 | Cổng kiểm tra Express API | `http://127.0.0.1:4000/api/health` |
+| Cổng WebSocket Phần cứng trực tiếp (RFC 6455) | `ws://127.0.0.1:4000/ws/hardware` |
+| Node-RED v5 IoT Visual Gateway | `http://127.0.0.1:1880` (`GET /gateway/status`, WS `/ws/hardware`) |
 | Cổng kiểm tra qEEG Gateway (Python / TS Fallback) | `http://127.0.0.1:4000/api/qeeg/health` |
 | Dịch vụ Python FastAPI qEEG trực tiếp (khi khả dụng) | `http://127.0.0.1:8001/api/qeeg/health` |
 
@@ -89,11 +94,15 @@ Mỗi bản ghi sau khi lọc Butterworth + Notch 50 Hz + CAR và nội suy bả
 
 ```text
 software_neuronlink_eeg/
-├── start_unified_server.py        # Trình điều phối Mega-Server 1 lệnh (DB + qEEG + Express + Vite)
+├── start_unified_server.py        # Trình điều phối Mega-Server 1 lệnh (DB + qEEG + Express + Node-RED + Vite)
 ├── start.bat                      # Điểm khởi chạy nhanh trên Windows
 ├── package.json                   # Workspace scripts gốc (server & client)
+├── node_red/                      # Node-RED v5 Visual IoT Gateway (:1880, 100% core nodes)
+│   ├── settings.js                # Cấu hình Node-RED v5 (telemetry tắt, global API/secret)
+│   ├── flows.json                 # 4 tab trực quan: ESP32 Gateway, Edge AI Alerts, 4s qEEG Epoch, Simulator
+│   └── README.md                  # Hướng dẫn vận hành & kết nối ESP32 qua Node-RED hoặc WS trực tiếp
 ├── client/                        # React 19 + Vite 8 + TypeScript + Tailwind CSS v4
-│   ├── vite.config.ts             # Reverse proxy /api, /uploads, /clinical-workstation -> :4000
+│   ├── vite.config.ts             # Reverse proxy /api, /uploads, /clinical-workstation, /ws/hardware -> :4000
 │   └── src/
 │       ├── api/                   # Fetch client (HttpOnly cookie + CSRF), types.ts, endpoints.ts
 │       ├── components/            # AppShell Dual-Mode, shared UI primitives, user badges
@@ -155,3 +164,4 @@ npm test -w server
 - **Pillar 2 — Data Bank:** `GET /api/databank`, `GET /api/databank/:id`, `POST /api/databank`, `POST /api/databank/:id/purchase`.
 - **Pillar 3 — Self-Service:** `GET /api/self-service/overview`, `POST /api/self-service/check-ins`, `POST /api/self-service/work-plan`, `PATCH /api/self-service/work-plan/:id`, `DELETE /api/self-service/work-plan/:id`.
 - **Pillar 4 — Community Insights:** `GET /api/community-insights/spotlight`.
+- **Hardware IoT, Direct WS & Node-RED Ingestion:** `WS /ws/hardware` (RFC 6455 binary 197B + JSON telemetry), `/api/devices` (`GET`, `POST`, `PATCH /:id`, `DELETE /:id`, `GET /:id/telemetry`, `POST /:id/command`, `POST /:id/simulate`, `POST /:id/alerts/:alertId/ack`, `POST /:id/sessions/capture`), và `/api/devices/ingest/{telemetry,samples,alert,epoch}` (xác thực `x-nodered-secret` hoặc `x-device-key`).

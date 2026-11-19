@@ -15,6 +15,7 @@ import bcrypt from 'bcryptjs';
 import { buildDocumentEvidenceDossier } from '../src/modules/verification/ocr.service.js';
 import { PRIVATE_VERIFICATION_DIR } from '../src/middleware/uploadVerification.js';
 import { analyzeCaseTs } from '../src/modules/qeeg/qeeg-dsp.engine.js';
+import { verifyWalletIntegrity } from '../src/modules/rewards/ledger.crypto.js';
 
 const prisma = new PrismaClient();
 
@@ -47,7 +48,11 @@ function saveSeedDoc(fileName: string, buffer: Buffer) {
 async function main() {
   console.log('[seed] Seeding demo data for PBL4_Web development...');
 
-  // Clean existing seed data safely (new startup & qEEG tables first)
+  // Clean existing seed data safely (hardware IoT & startup & qEEG tables first)
+  await prisma.deviceRecordingSession.deleteMany();
+  await prisma.deviceAlert.deleteMany();
+  await prisma.deviceTelemetryLog.deleteMany();
+  await prisma.hardwareDevice.deleteMany();
   await prisma.workingPlanBlock.deleteMany();
   await prisma.healthCheckIn.deleteMany();
   await prisma.consultationReply.deleteMany();
@@ -55,9 +60,10 @@ async function main() {
   await prisma.dataBankPurchase.deleteMany();
   await prisma.dataBankListing.deleteMany();
   await prisma.neuralTrainingSample.deleteMany();
+  await prisma.payoutRequest.deleteMany();
+  await prisma.paymentOrder.deleteMany();
   await prisma.rewardRedemption.deleteMany();
-  await prisma.creditTransaction.deleteMany();
-  await prisma.creditWallet.deleteMany();
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE "CreditTransaction", "CreditWallet" CASCADE');
   await prisma.rewardCatalog.deleteMany();
   await prisma.contributionReview.deleteMany();
   await prisma.contribution.deleteMany();
@@ -768,12 +774,45 @@ async function main() {
     },
   });
 
+  const walletAdmin = await prisma.creditWallet.create({
+    data: {
+      userId: admin.id,
+      balance: 250,
+      promoCredits: 250,
+      purchasedCredits: 0,
+      earnedCredits: 0,
+      lockedCredits: 0,
+      totalEarned: 250,
+      totalSpent: 0,
+    },
+  });
+  await prisma.creditTransaction.create({
+    data: {
+      walletId: walletAdmin.id,
+      amount: 250,
+      bucket: 'PROMO',
+      type: 'STARTER_GRANT',
+      referenceId: admin.id,
+      idempotencyKey: `starter-grant:${admin.id}`,
+      description: 'Cấp Credit khởi đầu hệ sinh thái NeuroLink (+250 Credit)',
+      actorId: admin.id,
+    },
+  });
+
   const walletMinh = await prisma.creditWallet.create({
     data: {
       userId: doctor.id,
       balance: 550,
+      promoCredits: 250,
+      purchasedCredits: 0,
+      earnedCredits: 300,
+      lockedCredits: 0,
       totalEarned: 550,
       totalSpent: 0,
+      bankBin: '970422',
+      bankName: 'MB Bank',
+      bankAccountNo: '0912345678',
+      bankAccountName: 'NGUYEN VAN MINH',
     },
   });
 
@@ -781,22 +820,26 @@ async function main() {
     data: [
       {
         walletId: walletMinh.id,
-        amount: 300,
-        type: 'CONTRIBUTION_REWARD',
-        referenceId: contribMinh.id,
-        idempotencyKey: `contribution-reward:${contribMinh.id}`,
-        description: 'Khen thưởng bài đóng góp học thuật/chuyên môn (HEALTHCARE_EDUCATION): +300 credit',
-        actorId: admin.id,
-        contributionId: contribMinh.id,
-      },
-      {
-        walletId: walletMinh.id,
         amount: 250,
+        bucket: 'PROMO',
         type: 'STARTER_GRANT',
         referenceId: doctor.id,
         idempotencyKey: `starter-grant:${doctor.id}`,
-        description: 'Cấp credit khởi đầu hệ sinh thái NeuroLink (+250 credit)',
+        description: 'Cấp Credit khởi đầu hệ sinh thái NeuroLink (+250 Credit)',
         actorId: doctor.id,
+        createdAt: new Date(Date.now() - 86400000 * 6),
+      },
+      {
+        walletId: walletMinh.id,
+        amount: 300,
+        bucket: 'EARNED',
+        type: 'CONTRIBUTION_REWARD',
+        referenceId: contribMinh.id,
+        idempotencyKey: `contribution-reward:${contribMinh.id}`,
+        description: 'Khen thưởng bài đóng góp học thuật/chuyên môn (HEALTHCARE_EDUCATION): +300 Credit',
+        actorId: admin.id,
+        contributionId: contribMinh.id,
+        createdAt: new Date(Date.now() - 86400000 * 4),
       },
     ],
   });
@@ -834,8 +877,16 @@ async function main() {
     data: {
       userId: researcher.id,
       balance: 800,
+      promoCredits: 250,
+      purchasedCredits: 0,
+      earnedCredits: 550,
+      lockedCredits: 0,
       totalEarned: 800,
       totalSpent: 0,
+      bankBin: '970436',
+      bankName: 'Vietcombank',
+      bankAccountNo: '0011009988776',
+      bankAccountName: 'TRAN MAI LAN',
     },
   });
 
@@ -843,22 +894,26 @@ async function main() {
     data: [
       {
         walletId: walletLan.id,
-        amount: 450,
-        type: 'CONTRIBUTION_REWARD',
-        referenceId: contribLan.id,
-        idempotencyKey: `contribution-reward:${contribLan.id}`,
-        description: 'Khen thưởng bài đóng góp học thuật/chuyên môn (RESEARCH_CONTRIBUTION): +450 credit',
-        actorId: admin.id,
-        contributionId: contribLan.id,
-      },
-      {
-        walletId: walletLan.id,
         amount: 250,
+        bucket: 'PROMO',
         type: 'STARTER_GRANT',
         referenceId: researcher.id,
         idempotencyKey: `starter-grant:${researcher.id}`,
-        description: 'Cấp credit khởi đầu hệ sinh thái NeuroLink (+250 credit)',
+        description: 'Cấp Credit khởi đầu hệ sinh thái NeuroLink (+250 Credit)',
         actorId: researcher.id,
+        createdAt: new Date(Date.now() - 86400000 * 5),
+      },
+      {
+        walletId: walletLan.id,
+        amount: 450,
+        bucket: 'EARNED',
+        type: 'CONTRIBUTION_REWARD',
+        referenceId: contribLan.id,
+        idempotencyKey: `contribution-reward:${contribLan.id}`,
+        description: 'Khen thưởng bài đóng góp học thuật/chuyên môn (RESEARCH_CONTRIBUTION): +450 Credit',
+        actorId: admin.id,
+        contributionId: contribLan.id,
+        createdAt: new Date(Date.now() - 86400000 * 3),
       },
     ],
   });
@@ -888,62 +943,110 @@ async function main() {
 
   // Starter Grants for Hoa, Tuan, KTV Linh, and BS Khang
   const walletHoa = await prisma.creditWallet.create({
-    data: { userId: generalUser.id, balance: 190, totalEarned: 250, totalSpent: 60 },
+    data: {
+      userId: generalUser.id,
+      balance: 190,
+      promoCredits: 190,
+      purchasedCredits: 0,
+      earnedCredits: 0,
+      lockedCredits: 60,
+      totalEarned: 250,
+      totalSpent: 60,
+    },
   });
   await prisma.creditTransaction.create({
     data: {
       walletId: walletHoa.id,
       amount: 250,
+      bucket: 'PROMO',
       type: 'STARTER_GRANT',
       referenceId: generalUser.id,
       idempotencyKey: `starter-grant:${generalUser.id}`,
-      description: 'Cấp credit khởi đầu hệ sinh thái NeuroLink (+250 credit)',
+      description: 'Cấp Credit khởi đầu hệ sinh thái NeuroLink (+250 Credit)',
       actorId: generalUser.id,
+      createdAt: new Date(Date.now() - 86400000 * 5),
     },
   });
 
   const walletTuan = await prisma.creditWallet.create({
-    data: { userId: student.id, balance: 70, totalEarned: 250, totalSpent: 180 },
+    data: {
+      userId: student.id,
+      balance: 70,
+      promoCredits: 70,
+      purchasedCredits: 0,
+      earnedCredits: 0,
+      lockedCredits: 0,
+      totalEarned: 250,
+      totalSpent: 180,
+    },
   });
   await prisma.creditTransaction.create({
     data: {
       walletId: walletTuan.id,
       amount: 250,
+      bucket: 'PROMO',
       type: 'STARTER_GRANT',
       referenceId: student.id,
       idempotencyKey: `starter-grant:${student.id}`,
-      description: 'Cấp credit khởi đầu hệ sinh thái NeuroLink (+250 credit)',
+      description: 'Cấp Credit khởi đầu hệ sinh thái NeuroLink (+250 Credit)',
       actorId: student.id,
+      createdAt: new Date(Date.now() - 86400000 * 5),
     },
   });
 
   const walletLinh = await prisma.creditWallet.create({
-    data: { userId: healthcareWorker.id, balance: 175, totalEarned: 250, totalSpent: 75 },
+    data: {
+      userId: healthcareWorker.id,
+      balance: 175,
+      promoCredits: 175,
+      purchasedCredits: 0,
+      earnedCredits: 0,
+      lockedCredits: 75,
+      totalEarned: 250,
+      totalSpent: 75,
+    },
   });
   await prisma.creditTransaction.create({
     data: {
       walletId: walletLinh.id,
       amount: 250,
+      bucket: 'PROMO',
       type: 'STARTER_GRANT',
       referenceId: healthcareWorker.id,
       idempotencyKey: `starter-grant:${healthcareWorker.id}`,
-      description: 'Cấp credit khởi đầu hệ sinh thái NeuroLink (+250 credit)',
+      description: 'Cấp Credit khởi đầu hệ sinh thái NeuroLink (+250 Credit)',
       actorId: healthcareWorker.id,
+      createdAt: new Date(Date.now() - 86400000 * 5),
     },
   });
 
   const walletKhang = await prisma.creditWallet.create({
-    data: { userId: residentDoctor.id, balance: 330, totalEarned: 330, totalSpent: 0 },
+    data: {
+      userId: residentDoctor.id,
+      balance: 330,
+      promoCredits: 250,
+      purchasedCredits: 0,
+      earnedCredits: 80,
+      lockedCredits: 0,
+      totalEarned: 330,
+      totalSpent: 0,
+      bankBin: '970407',
+      bankName: 'Techcombank',
+      bankAccountNo: '19034567890123',
+      bankAccountName: 'LE MINH KHANG',
+    },
   });
   await prisma.creditTransaction.create({
     data: {
       walletId: walletKhang.id,
       amount: 250,
+      bucket: 'PROMO',
       type: 'STARTER_GRANT',
       referenceId: residentDoctor.id,
       idempotencyKey: `starter-grant:${residentDoctor.id}`,
-      description: 'Cấp credit khởi đầu hệ sinh thái NeuroLink (+250 credit)',
+      description: 'Cấp Credit khởi đầu hệ sinh thái NeuroLink (+250 Credit)',
       actorId: residentDoctor.id,
+      createdAt: new Date(Date.now() - 86400000 * 5),
     },
   });
 
@@ -1321,20 +1424,24 @@ async function main() {
       {
         walletId: walletTuan.id,
         amount: -100,
+        bucket: 'PROMO',
         type: 'DATABANK_PURCHASE',
         referenceId: paidBciListing.id,
         idempotencyKey: `databank-purchase:${paidBciListing.id}:${student.id}`,
-        description: `Mở khóa gói dữ liệu "${paidBciListing.title}" (-100 credit)`,
+        description: `Mở khóa gói dữ liệu "${paidBciListing.title}" (-100 Credit)`,
         actorId: student.id,
+        createdAt: new Date(Date.now() - 86400000 * 4),
       },
       {
         walletId: walletLan.id,
         amount: 100,
+        bucket: 'EARNED',
         type: 'DATABANK_ROYALTY',
         referenceId: paidBciListing.id,
         idempotencyKey: `databank-royalty:${paidBciListing.id}:${student.id}`,
-        description: `Tác quyền Data Bank cho gói "${paidBciListing.title}" (+100 credit)`,
+        description: `Tác quyền Data Bank cho gói "${paidBciListing.title}" (+100 Credit)`,
         actorId: student.id,
+        createdAt: new Date(Date.now() - 86400000 * 2),
       },
     ],
   });
@@ -1627,6 +1734,250 @@ async function main() {
       },
     ],
   });
+
+  // Seed Hardware IoT EEG Devices (ESP32-ADS1299 v3) + Telemetry + Alerts + Sessions
+  console.log('[seed] Seeding hardware IoT devices and telemetry...');
+  const holterApiKeyHash = createHash('sha256').update('nldev_demo_holter01').digest('hex');
+  const clinicApiKeyHash = createHash('sha256').update('nldev_demo_clinic01').digest('hex');
+
+  const holterDevice = await prisma.hardwareDevice.create({
+    data: {
+      ownerId: generalUser.id,
+      deviceCode: 'NL-HOLTER-01',
+      name: 'NeuroLink Holter Cá nhân v3 (ESP32-ADS1299)',
+      model: 'ESP32_ADS1299_V3',
+      firmwareVersion: 'V3.0.0',
+      montage: 'neurolink6',
+      sampleRateSps: 500,
+      pgaGain: 24,
+      apiKeyHash: holterApiKeyHash,
+      apiKeyPrefix: 'nldev_demo_',
+      status: 'ONLINE',
+      connectionSource: 'WS_DIRECT',
+      ipAddress: '192.168.1.142',
+      lastSeenAt: new Date(Date.now() - 45_000),
+      lastBatteryMv: 3940,
+      lastBatteryPct: 86,
+      lastAiState: 'NORMAL',
+      lastAiRfProb: 0.084,
+      lastAiBsi: 0.051,
+      lastAiDar: 1.16,
+      lastLeadOffMask: 0,
+      sdRecording: false,
+    },
+  });
+
+  const clinicDevice = await prisma.hardwareDevice.create({
+    data: {
+      ownerId: doctor.id,
+      deviceCode: 'NL-CLINIC-01',
+      name: 'NeuroLink Trạm Cấp cứu BV Bạch Mai #01',
+      model: 'ESP32_ADS1299_V3',
+      firmwareVersion: 'V3.0.0',
+      montage: 'neurolink6',
+      sampleRateSps: 500,
+      pgaGain: 24,
+      apiKeyHash: clinicApiKeyHash,
+      apiKeyPrefix: 'nldev_demo_',
+      status: 'ONLINE',
+      connectionSource: 'NODERED_HTTP',
+      ipAddress: '10.12.4.88',
+      lastSeenAt: new Date(Date.now() - 120_000),
+      lastBatteryMv: 4080,
+      lastBatteryPct: 95,
+      lastAiState: 'NORMAL',
+      lastAiRfProb: 0.112,
+      lastAiBsi: 0.064,
+      lastAiDar: 1.29,
+      lastLeadOffMask: 0,
+      sdRecording: true,
+    },
+  });
+
+  const nowMs = Date.now();
+  await prisma.deviceTelemetryLog.createMany({
+    data: [
+      {
+        deviceId: holterDevice.id,
+        mode: 'EEG',
+        rateSps: 500,
+        pga: 24,
+        actualSps: 499.7,
+        vbatMv: 3980,
+        batPct: 89,
+        usbOnly: false,
+        sdRec: false,
+        markers: 0,
+        loffMask: 0,
+        aiState: 'NORMAL',
+        aiRfProb: 0.075,
+        aiLrProb: 0.068,
+        aiBsi: 0.048,
+        aiDar: 1.12,
+        aiUsableCh: 8,
+        source: 'WS_DIRECT',
+        recordedAt: new Date(nowMs - 600_000),
+      },
+      {
+        deviceId: holterDevice.id,
+        mode: 'EEG',
+        rateSps: 500,
+        pga: 24,
+        actualSps: 499.9,
+        vbatMv: 3960,
+        batPct: 87,
+        usbOnly: false,
+        sdRec: true,
+        markers: 1,
+        loffMask: 0,
+        aiState: 'NORMAL',
+        aiRfProb: 0.081,
+        aiLrProb: 0.072,
+        aiBsi: 0.053,
+        aiDar: 1.15,
+        aiUsableCh: 8,
+        source: 'WS_DIRECT',
+        recordedAt: new Date(nowMs - 300_000),
+      },
+      {
+        deviceId: holterDevice.id,
+        mode: 'EEG',
+        rateSps: 500,
+        pga: 24,
+        actualSps: 499.8,
+        vbatMv: 3940,
+        batPct: 86,
+        usbOnly: false,
+        sdRec: false,
+        markers: 2,
+        loffMask: 0,
+        aiState: 'NORMAL',
+        aiRfProb: 0.084,
+        aiLrProb: 0.074,
+        aiBsi: 0.051,
+        aiDar: 1.16,
+        aiUsableCh: 8,
+        source: 'WS_DIRECT',
+        recordedAt: new Date(nowMs - 45_000),
+      },
+      {
+        deviceId: clinicDevice.id,
+        mode: 'EEG',
+        rateSps: 500,
+        pga: 24,
+        actualSps: 500.0,
+        vbatMv: 4100,
+        batPct: 96,
+        usbOnly: true,
+        sdRec: true,
+        markers: 3,
+        loffMask: 0,
+        aiState: 'NORMAL',
+        aiRfProb: 0.105,
+        aiLrProb: 0.095,
+        aiBsi: 0.061,
+        aiDar: 1.25,
+        aiUsableCh: 8,
+        source: 'NODERED_HTTP',
+        recordedAt: new Date(nowMs - 420_000),
+      },
+      {
+        deviceId: clinicDevice.id,
+        mode: 'EEG',
+        rateSps: 500,
+        pga: 24,
+        actualSps: 499.9,
+        vbatMv: 4080,
+        batPct: 95,
+        usbOnly: true,
+        sdRec: true,
+        markers: 4,
+        loffMask: 0,
+        aiState: 'NORMAL',
+        aiRfProb: 0.112,
+        aiLrProb: 0.099,
+        aiBsi: 0.064,
+        aiDar: 1.29,
+        aiUsableCh: 8,
+        source: 'NODERED_HTTP',
+        recordedAt: new Date(nowMs - 120_000),
+      },
+    ],
+  });
+
+  await prisma.deviceAlert.createMany({
+    data: [
+      {
+        deviceId: holterDevice.id,
+        severity: 'INFO',
+        code: 'POST_SELF_TEST_OK',
+        message: 'ADS1299 8 kênh tự kiểm tra POST đạt nhiễu nền 0.28 uVrms; tất cả 8 điện cực tiếp xúc tốt.',
+        acknowledged: true,
+        acknowledgedAt: new Date(nowMs - 550_000),
+        createdAt: new Date(nowMs - 600_000),
+      },
+      {
+        deviceId: clinicDevice.id,
+        severity: 'WARNING',
+        code: 'LEAD_OFF',
+        message: 'Phát hiện trở kháng tiếp xúc tăng thoáng qua trên kênh C3 (CH3) trong lúc gắn mũ đo.',
+        acknowledged: false,
+        createdAt: new Date(nowMs - 180_000),
+      },
+    ],
+  });
+
+  const baselineQeeg = analyzeCaseTs({ caseId: 'case_ads1299_hardware', timeWindowSec: 4, notch50Hz: true });
+  const clinicalQeeg = analyzeCaseTs({ caseId: 'case_healthy_alpha', timeWindowSec: 4, notch50Hz: true });
+
+  await prisma.deviceRecordingSession.createMany({
+    data: [
+      {
+        deviceId: holterDevice.id,
+        ownerId: generalUser.id,
+        title: 'Phiên đo Baseline buổi sáng · NL-HOLTER-01',
+        montage: 'neurolink6',
+        sampleRateSps: 500,
+        channelNames: ['F3', 'F4', 'C3', 'C4', 'O1', 'O2', 'T3', 'T4'],
+        sampleCount: 2000,
+        durationSec: 4.0,
+        csvSummary: 'F3,F4,C3,C4,O1,O2,T3,T4\n1.24,-0.88,2.11,-1.04,12.40,11.95,0.52,-0.41',
+        qeegResultJson: baselineQeeg ? JSON.parse(JSON.stringify(baselineQeeg)) : undefined,
+        startedAt: new Date(nowMs - 900_000),
+        endedAt: new Date(nowMs - 896_000),
+      },
+      {
+        deviceId: clinicDevice.id,
+        ownerId: doctor.id,
+        title: 'Đo đối chứng Alpha chẩm 10 Hz · NL-CLINIC-01',
+        montage: 'neurolink6',
+        sampleRateSps: 500,
+        channelNames: ['F3', 'F4', 'C3', 'C4', 'O1', 'O2', 'T3', 'T4'],
+        sampleCount: 2000,
+        durationSec: 4.0,
+        csvSummary: 'F3,F4,C3,C4,O1,O2,T3,T4\n0.85,0.92,1.12,1.08,18.20,17.84,0.34,0.29',
+        qeegResultJson: clinicalQeeg ? JSON.parse(JSON.stringify(clinicalQeeg)) : undefined,
+        startedAt: new Date(nowMs - 700_000),
+        endedAt: new Date(nowMs - 696_000),
+      },
+    ],
+  });
+
+  // Seal HMAC-SHA256 cryptographic ledger chains for all seeded wallets
+  for (const u of [
+    admin,
+    doctor,
+    researcher,
+    student,
+    generalUser,
+    healthcareWorker,
+    residentDoctor,
+  ]) {
+    const check = await verifyWalletIntegrity(u.id);
+    if (!check.valid) {
+      throw new Error(`Seeded wallet integrity check failed for ${u.username}`);
+    }
+  }
 
   void courseReward;
   void confReward;

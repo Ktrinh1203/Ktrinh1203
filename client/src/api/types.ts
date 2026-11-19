@@ -362,7 +362,13 @@ export type CreditTransactionType =
   | 'CONSULTATION_REFUND'
   | 'DATABANK_PURCHASE'
   | 'DATABANK_ROYALTY'
-  | 'STARTER_GRANT';
+  | 'STARTER_GRANT'
+  | 'TOPUP_VND'
+  | 'P2P_TRANSFER_OUT'
+  | 'P2P_TRANSFER_IN'
+  | 'PAYOUT_LOCK'
+  | 'PAYOUT_SETTLED'
+  | 'PAYOUT_REFUND';
 
 export type RewardCategory =
   | 'MONETARY_REWARD'
@@ -452,22 +458,117 @@ export interface EligiblePostItem {
 
 export interface CreditTransactionItem {
   id: string;
-  walletId: string;
+  walletId?: string;
   amount: number;
+  balanceAfter?: number | null;
+  bucket?: string;
   type: CreditTransactionType;
-  referenceId: string | null;
-  idempotencyKey: string | null;
+  referenceId?: string | null;
+  idempotencyKey?: string | null;
   description: string;
-  actorId: string | null;
+  actorId?: string | null;
+  txHash?: string | null;
+  prevHash?: string | null;
   createdAt: string;
 }
 
 export interface CreditWalletItem {
   id: string;
   balance: number;
+  promoCredits?: number;
+  purchasedCredits?: number;
+  earnedCredits?: number;
+  lockedCredits?: number;
   totalEarned: number;
   totalSpent: number;
+  receiveCode?: string | null;
+  bankBin?: string | null;
+  bankName?: string | null;
+  bankAccountNo?: string | null;
+  bankAccountName?: string | null;
+  headHash?: string | null;
   updatedAt: string;
+}
+
+export interface WalletIntegrityStatus {
+  valid: boolean;
+  checkedCount: number;
+  headHash: string | null;
+  balanceMatchesLedger: boolean;
+  tamperedTxId: string | null;
+}
+
+export type PaymentOrderStatus = 'PENDING' | 'PAID' | 'EXPIRED' | 'CANCELLED';
+export type PayoutRequestStatus = 'PENDING' | 'PAID' | 'REJECTED';
+
+export interface TopupPackageItem {
+  id: string;
+  label: string;
+  amountVnd: number;
+  credits: number;
+  bonusCredits: number;
+}
+
+export interface TopupPackagesResponse {
+  vndPerCredit: number;
+  bankInfo: {
+    bankBin: string;
+    bankName: string;
+    accountNo: string;
+    accountName: string;
+  };
+  packages: TopupPackageItem[];
+}
+
+export interface PaymentOrderItem {
+  id: string;
+  orderCode: string;
+  amountVnd: number;
+  creditsToGrant: number;
+  bonusCredits: number;
+  status: PaymentOrderStatus;
+  expiresAt: string;
+  paidAt?: string | null;
+  qrPayload: string;
+  vietQrImageUrl: string;
+  bankBin?: string;
+  bankName?: string;
+  accountNo?: string;
+  accountName?: string;
+  createdAt: string;
+}
+
+export interface ReceiveCodeInfo {
+  receiveCode: string;
+  username: string;
+  displayName: string;
+  qrPayload: string;
+  bankProfile: {
+    bankBin: string | null;
+    bankName: string | null;
+    bankAccountNo: string | null;
+    bankAccountName: string | null;
+  } | null;
+  vietQrReceiveUrl: string | null;
+}
+
+export interface PayoutRequestItem {
+  id: string;
+  userId?: string;
+  amountCredits: number;
+  amountVnd: number;
+  bankBin: string;
+  bankName: string;
+  bankAccountNo: string;
+  bankAccountName: string;
+  payoutVietQrUrl?: string;
+  status: PayoutRequestStatus;
+  bankRef?: string | null;
+  note?: string | null;
+  adminNote?: string | null;
+  reviewedAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface RewardCatalogItem {
@@ -809,5 +910,128 @@ export interface CommunitySpotlightProfessional {
     impactScore: number;
   };
 }
+
+// ---------------------------------------------------------------------------
+// Hardware IoT Devices, Telemetry, Alerts & Node-RED Gateway
+// ---------------------------------------------------------------------------
+
+export type DeviceStatus = 'OFFLINE' | 'ONLINE' | 'STREAMING' | 'ALERT';
+export type DeviceAlertSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
+export type DeviceSimulationScenario = 'normal' | 'stroke_alert' | 'low_battery';
+
+export interface HardwareDeviceItem {
+  id: string;
+  ownerId: string;
+  deviceCode: string;
+  name: string;
+  model: string;
+  firmwareVersion: string;
+  montage: string;
+  sampleRateSps: number;
+  pgaGain: number;
+  apiKeyPrefix: string;
+  status: DeviceStatus;
+  connectionSource: string;
+  ipAddress: string | null;
+  lastSeenAt: string | null;
+  lastBatteryMv: number | null;
+  lastBatteryPct: number | null;
+  lastAiState: string | null;
+  lastAiRfProb: number | null;
+  lastAiBsi: number | null;
+  lastAiDar: number | null;
+  lastLeadOffMask: number | null;
+  sdRecording: boolean;
+  isWsConnected?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DeviceTelemetryPoint {
+  id: string;
+  deviceId: string;
+  mode: string;
+  rateSps: number;
+  pga: number;
+  actualSps: number | null;
+  vbatMv: number;
+  batPct: number;
+  usbOnly: boolean;
+  sdRec: boolean;
+  markers: number;
+  loffMask: number;
+  aiState: string;
+  aiRfProb: number | null;
+  aiLrProb: number | null;
+  aiBsi: number | null;
+  aiDar: number | null;
+  aiUsableCh: number | null;
+  source: string;
+  recordedAt: string;
+}
+
+export interface DeviceAlertItem {
+  id: string;
+  deviceId: string;
+  severity: DeviceAlertSeverity;
+  code: string;
+  message: string;
+  acknowledged: boolean;
+  acknowledgedAt: string | null;
+  createdAt: string;
+  device?: {
+    id: string;
+    deviceCode: string;
+    name: string;
+  };
+}
+
+export interface DeviceRecordingSessionItem {
+  id: string;
+  deviceId: string;
+  ownerId: string;
+  title: string;
+  montage: string;
+  sampleRateSps: number;
+  channelNames: string[];
+  sampleCount: number;
+  durationSec: number;
+  csvSummary?: string | null;
+  qeegResultJson: Record<string, unknown> | null;
+  startedAt: string;
+  endedAt: string | null;
+  device?: {
+    id: string;
+    deviceCode: string;
+    name: string;
+  };
+}
+
+export interface DeviceGatewayInfo {
+  wsPath: string;
+  nodeRedUrl: string;
+  ingestPath: string;
+}
+
+export interface DevicesOverviewResponse {
+  devices: HardwareDeviceItem[];
+  alerts: DeviceAlertItem[];
+  sessions: DeviceRecordingSessionItem[];
+  gateway: DeviceGatewayInfo;
+}
+
+export interface DeviceWaveformEventPayload {
+  deviceId?: string;
+  deviceCode?: string;
+  sampleRateSps?: number;
+  channels?: string[];
+  samples?: number[][];
+}
+
+export interface DeviceRealtimeEventDetail {
+  type: 'device:waveform' | 'device:telemetry' | 'device:alert' | 'device:session';
+  payload: Record<string, unknown>;
+}
+
 
 

@@ -3,6 +3,10 @@
     "passed": true,
     "checks": []
   },
+  "moats_check": {
+    "passed": true,
+    "checks": []
+  },
   "report_html_style": {
     "passed": true,
     "checks": [
@@ -19,7 +23,7 @@
         "name": "Report 100% monochrome",
         "passed": true,
         "details": {
-          "totalHexFound": 18,
+          "totalHexFound": 16,
           "nonMonoHex": []
         }
       }

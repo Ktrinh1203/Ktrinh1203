@@ -32,6 +32,9 @@ import { consultationsRouter } from './modules/consultations/consultations.route
 import { databankRouter } from './modules/databank/databank.routes.js';
 import { selfServiceRouter } from './modules/self-service/self-service.routes.js';
 import { communityInsightsRouter } from './modules/community-insights/community-insights.routes.js';
+import { paymentsRouter, paymentsWebhookRouter } from './modules/payments/payments.routes.js';
+import { realtimeRouter } from './modules/realtime/realtime.routes.js';
+import { devicesIngestRouter, devicesRouter } from './modules/devices/devices.routes.js';
 
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WORKSTATION_HTML_PATH = path.resolve(MODULE_DIR, '../../qeeg_service/static/index.html');
@@ -73,10 +76,17 @@ export function createApp() {
       },
       credentials: true,
       methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-      allowedHeaders: ['Content-Type', CSRF_HEADER],
+      allowedHeaders: ['Content-Type', CSRF_HEADER, 'X-Payment-Signature', 'X-NodeRed-Secret', 'X-Device-Key'],
     }),
   );
-  app.use(express.json({ limit: '2mb' }));
+  app.use(
+    express.json({
+      limit: '2mb',
+      verify: (req, _res, buf) => {
+        (req as express.Request & { rawBody?: string }).rawBody = buf.toString('utf8');
+      },
+    }),
+  );
   app.use(cookieParser());
 
   // Static uploads directory
@@ -91,11 +101,17 @@ export function createApp() {
     res.sendFile(WORKSTATION_HTML_PATH);
   });
 
+  // Hardware & Node-RED gateway ingestion mounted BEFORE globalLimiter, session & CSRF middleware
+  app.use('/api/devices/ingest', devicesIngestRouter);
+
   app.use(globalLimiter);
 
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
+
+  // Public HMAC-authenticated bank webhook mounted BEFORE session & CSRF middleware
+  app.use('/api/payments/webhook', paymentsWebhookRouter);
 
   app.use('/api', loadSession, csrfProtection);
   app.use('/api/auth', authRouter);
@@ -110,6 +126,9 @@ export function createApp() {
   app.use('/api/contributions', contributionsRouter);
   app.use('/api/rewards', rewardsRouter);
   app.use('/api/admin/rewards', adminRewardsRouter);
+  app.use('/api/payments', paymentsRouter);
+  app.use('/api/realtime', realtimeRouter);
+  app.use('/api/devices', devicesRouter);
   app.use('/api/eeg-datasets', eegDatasetsRouter);
   app.use('/api/communities', communitiesRouter);
   app.use('/api/qeeg', qeegRouter);

@@ -13,6 +13,12 @@ rewardsRouter.get('/wallet', async (req, res) => {
   res.json(data);
 });
 
+rewardsRouter.get('/wallet/verify-integrity', async (req, res) => {
+  const auth = getAuth(req);
+  const integrity = await rewardsService.verifyWalletIntegrity(auth.userId);
+  res.json(integrity);
+});
+
 rewardsRouter.get('/catalog', async (req, res) => {
   const category = req.query.category as string | undefined;
   const items = await rewardsService.getActiveRewardCatalog(category);

@@ -103,6 +103,25 @@ enum CreditTransactionType {
   DATABANK_PURCHASE
   DATABANK_ROYALTY
   STARTER_GRANT
+  TOPUP_VND
+  P2P_TRANSFER_OUT
+  P2P_TRANSFER_IN
+  PAYOUT_LOCK
+  PAYOUT_SETTLED
+  PAYOUT_REFUND
+}
+
+enum PaymentOrderStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+enum PayoutRequestStatus {
+  PENDING
+  PAID
+  REJECTED
 }
 
 enum ClinicalCategory {
@@ -185,6 +204,19 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum DeviceStatus {
+  OFFLINE
+  ONLINE
+  STREAMING
+  ALERT
+}
+
+enum DeviceAlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
 // ---------------------------------------------------------------------------
 // Accounts
 // ---------------------------------------------------------------------------
@@ -239,6 +271,11 @@ model User {
   consultationReplies           ConsultationReply[]   @relation("ConsultationResponder")
   healthCheckIns                HealthCheckIn[]
   workingPlanBlocks             WorkingPlanBlock[]
+  paymentOrders                 PaymentOrder[]        @relation("UserPaymentOrders")
+  payoutRequests                PayoutRequest[]       @relation("UserPayoutRequests")
+  payoutRequestsReviewed        PayoutRequest[]       @relation("PayoutReviewer")
+  hardwareDevices               HardwareDevice[]      @relation("UserHardwareDevices")
+  deviceRecordingSessions       DeviceRecordingSession[] @relation("UserDeviceSessions")
 
   @@index([displayName])
 }
@@ -588,14 +625,24 @@ model ContributionReview {
 }
 
 model CreditWallet {
-  id           String              @id @default(uuid()) @db.Uuid
-  userId       String              @unique @db.Uuid
-  user         User                @relation("UserWallet", fields: [userId], references: [id], onDelete: Cascade)
-  balance      Int                 @default(0)
-  totalEarned  Int                 @default(0)
-  totalSpent   Int                 @default(0)
-  updatedAt    DateTime            @updatedAt
-  createdAt    DateTime            @default(now())
+  id               String              @id @default(uuid()) @db.Uuid
+  userId           String              @unique @db.Uuid
+  user             User                @relation("UserWallet", fields: [userId], references: [id], onDelete: Cascade)
+  balance          Int                 @default(0)
+  promoCredits     Int                 @default(0)
+  purchasedCredits Int                 @default(0)
+  earnedCredits    Int                 @default(0)
+  lockedCredits    Int                 @default(0)
+  totalEarned      Int                 @default(0)
+  totalSpent       Int                 @default(0)
+  receiveCode      String?             @unique @db.VarChar(32)
+  bankBin          String?             @db.VarChar(16)
+  bankName         String?             @db.VarChar(80)
+  bankAccountNo    String?             @db.VarChar(40)
+  bankAccountName  String?             @db.VarChar(120)
+  headHash         String?             @db.VarChar(64)
+  updatedAt        DateTime            @updatedAt
+  createdAt        DateTime            @default(now())
 
   transactions CreditTransaction[]
 
@@ -607,10 +654,14 @@ model CreditTransaction {
   walletId       String                @db.Uuid
   wallet         CreditWallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
   amount         Int                   // Positive (credit added) or Negative (credit spent)
+  balanceAfter   Int?
+  bucket         String                @default("PROMO") @db.VarChar(20)
   type           CreditTransactionType
   referenceId    String?               @db.VarChar(100)
   idempotencyKey String?               @unique @db.VarChar(120)
   description    String                @db.VarChar(500)
+  prevHash       String?               @db.VarChar(64)
+  txHash         String?               @db.VarChar(64)
   actorId        String?               @db.Uuid
   actor          User?                 @relation("TransactionActor", fields: [actorId], references: [id], onDelete: SetNull)
   createdAt      DateTime              @default(now())
@@ -622,6 +673,53 @@ model CreditTransaction {
 
   @@index([walletId, createdAt(sort: Desc)])
   @@index([type])
+}
+
+model PaymentOrder {
+  id             String             @id @default(uuid()) @db.Uuid
+  userId         String             @db.Uuid
+  user           User               @relation("UserPaymentOrders", fields: [userId], references: [id], onDelete: Cascade)
+  orderCode      String             @unique @db.VarChar(32)
+  amountVnd      Int
+  creditsToGrant Int
+  bonusCredits   Int                @default(0)
+  status         PaymentOrderStatus @default(PENDING)
+  provider       String             @default("VIETQR") @db.VarChar(32)
+  providerTxId   String?            @unique @db.VarChar(120)
+  qrPayload      String             @db.VarChar(1000)
+  vietQrImageUrl String             @db.VarChar(1000)
+  expiresAt      DateTime
+  paidAt         DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, expiresAt])
+}
+
+model PayoutRequest {
+  id              String              @id @default(uuid()) @db.Uuid
+  userId          String              @db.Uuid
+  user            User                @relation("UserPayoutRequests", fields: [userId], references: [id], onDelete: Cascade)
+  amountCredits   Int
+  amountVnd       Int
+  bankBin         String              @db.VarChar(16)
+  bankName        String              @db.VarChar(80)
+  bankAccountNo   String              @db.VarChar(40)
+  bankAccountName String              @db.VarChar(120)
+  payoutVietQrUrl String              @db.VarChar(1000)
+  status          PayoutRequestStatus @default(PENDING)
+  bankRef         String?             @db.VarChar(120)
+  note            String?             @db.VarChar(500)
+  adminNote       String?             @db.VarChar(500)
+  reviewedById    String?             @db.Uuid
+  reviewedBy      User?               @relation("PayoutReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt      DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
 }
 
 model RewardCatalog {
@@ -823,4 +921,105 @@ model WorkingPlanBlock {
   updatedAt    DateTime      @updatedAt
 
   @@index([userId, dayOfWeek])
+}
+
+// ---------------------------------------------------------------------------
+// Hardware IoT Devices, Live Telemetry, Alerts & Captured Sessions
+// ---------------------------------------------------------------------------
+
+model HardwareDevice {
+  id               String       @id @default(uuid()) @db.Uuid
+  ownerId          String       @db.Uuid
+  owner            User         @relation("UserHardwareDevices", fields: [ownerId], references: [id], onDelete: Cascade)
+  deviceCode       String       @unique @db.VarChar(40)
+  name             String       @db.VarChar(120)
+  model            String       @default("ESP32_ADS1299_V3") @db.VarChar(60)
+  firmwareVersion  String       @default("V3.0.0") @db.VarChar(30)
+  montage          String       @default("neurolink6") @db.VarChar(30)
+  sampleRateSps    Int          @default(500)
+  pgaGain          Int          @default(24)
+  apiKeyHash       String       @db.VarChar(64)
+  apiKeyPrefix     String       @db.VarChar(16)
+  status           DeviceStatus @default(OFFLINE)
+  connectionSource String       @default("NONE") @db.VarChar(30)
+  ipAddress        String?      @db.VarChar(64)
+  lastSeenAt       DateTime?
+  lastBatteryMv    Int?
+  lastBatteryPct   Int?
+  lastAiState      String?      @db.VarChar(40)
+  lastAiRfProb     Float?
+  lastAiBsi        Float?
+  lastAiDar        Float?
+  lastLeadOffMask  Int?
+  sdRecording      Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  telemetryLogs     DeviceTelemetryLog[]
+  alerts            DeviceAlert[]
+  recordingSessions DeviceRecordingSession[]
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([status])
+}
+
+model DeviceTelemetryLog {
+  id         String         @id @default(uuid()) @db.Uuid
+  deviceId   String         @db.Uuid
+  device     HardwareDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  mode       String         @db.VarChar(20)
+  rateSps    Int
+  pga        Int
+  actualSps  Float?
+  vbatMv     Int
+  batPct     Int
+  usbOnly    Boolean        @default(false)
+  sdRec      Boolean        @default(false)
+  markers    Int            @default(0)
+  loffMask   Int            @default(0)
+  aiState    String         @db.VarChar(40)
+  aiRfProb   Float?
+  aiLrProb   Float?
+  aiBsi      Float?
+  aiDar      Float?
+  aiUsableCh Int?
+  source     String         @default("WS_DIRECT") @db.VarChar(30)
+  recordedAt DateTime       @default(now())
+
+  @@index([deviceId, recordedAt(sort: Desc)])
+}
+
+model DeviceAlert {
+  id             String              @id @default(uuid()) @db.Uuid
+  deviceId       String              @db.Uuid
+  device         HardwareDevice      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  severity       DeviceAlertSeverity
+  code           String              @db.VarChar(60)
+  message        String              @db.VarChar(500)
+  acknowledged   Boolean             @default(false)
+  acknowledgedAt DateTime?
+  createdAt      DateTime            @default(now())
+
+  @@index([deviceId, createdAt(sort: Desc)])
+}
+
+model DeviceRecordingSession {
+  id             String         @id @default(uuid()) @db.Uuid
+  deviceId       String         @db.Uuid
+  device         HardwareDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  ownerId        String         @db.Uuid
+  owner          User           @relation("UserDeviceSessions", fields: [ownerId], references: [id], onDelete: Cascade)
+  title          String         @db.VarChar(160)
+  montage        String         @db.VarChar(30)
+  sampleRateSps  Int
+  channelNames   String[]
+  sampleCount    Int
+  durationSec    Float
+  csvSummary     String?        @db.Text
+  qeegResultJson Json?
+  startedAt      DateTime       @default(now())
+  endedAt        DateTime?
+
+  @@index([deviceId, startedAt(sort: Desc)])
+  @@index([ownerId, startedAt(sort: Desc)])
 }

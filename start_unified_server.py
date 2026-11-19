@@ -1,12 +1,13 @@
-"""Unified Mega-Server launcher for NeuroLink (PBL4_Web + qEEG + Neural DB).
+"""Unified Mega-Server launcher for NeuroLink (PBL4_Web + qEEG + Neural DB + Node-RED IoT).
 
 Orchestrates on Windows (and POSIX):
   1. PostgreSQL 16 (:5432) — reuses running cluster or starts `npm run db:start -w server`
   2. Prisma migrations (`npx prisma migrate deploy`) & automatic seed when User count == 0
   3. Python FastAPI qEEG service (:8001) — warns gracefully if uvicorn/fastapi is missing
-  4. Express API server (:4000) & Vite React UI (:5173)
-  5. HTTP readiness polling across :4000/api/health, :4000/api/qeeg/health, and :5173
-  6. Graceful process-tree cleanup on Ctrl+C (SIGINT / SIGTERM)
+  4. Express API server (:4000, including direct RFC 6455 `/ws/hardware`) & Vite React UI (:5173)
+  5. Node-RED v5 IoT Visual Gateway (:1880) — warns gracefully if `node-red` is not installed
+  6. HTTP readiness polling across :4000/api/health, :4000/api/qeeg/health, and :5173
+  7. Graceful process-tree cleanup on Ctrl+C (SIGINT / SIGTERM)
 """
 
 from __future__ import annotations
@@ -32,12 +33,14 @@ ROOT_DIR = Path(__file__).resolve().parent
 SERVER_DIR = ROOT_DIR / "server"
 CLIENT_DIR = ROOT_DIR / "client"
 QEEG_DIR = ROOT_DIR / "qeeg_service"
+NODERED_DIR = ROOT_DIR / "node_red"
 
 PG_HOST = "127.0.0.1"
 PG_PORT = 5432
 QEEG_PORT = 8001
 API_PORT = 4000
 UI_PORT = 5173
+NODERED_PORT = 1880
 
 HEALTH_URLS = {
     "api": f"http://127.0.0.1:{API_PORT}/api/health",
@@ -107,6 +110,16 @@ def resolve_tool(name: str) -> str:
         if found:
             return found
     raise FileNotFoundError(f"Required executable '{name}' was not found in PATH.")
+
+
+def find_nodered_cli() -> Optional[str]:
+    """Locate the Node-RED CLI executable across Windows (.cmd/.exe) and POSIX."""
+    candidates = ["node-red.cmd", "node-red.exe", "node-red"] if os.name == "nt" else ["node-red"]
+    for candidate in candidates:
+        found = shutil.which(candidate)
+        if found:
+            return found
+    return None
 
 
 def find_qeeg_python() -> Optional[str]:
@@ -403,7 +416,11 @@ def wait_for_unified_health(
     raise TimeoutError(f"Timed out waiting for readiness of: {', '.join(missing)}")
 
 
-def print_summary_banner(qeeg_payload: Dict[str, object], python_qeeg_active: bool) -> None:
+def print_summary_banner(
+    qeeg_payload: Dict[str, object],
+    python_qeeg_active: bool,
+    nodered_active: bool = False,
+) -> None:
     """Print URLs, engine routing status, and seeded demo account credentials."""
     engine_source = qeeg_payload.get("engineSource", "ts_dsp_fallback")
     categories = qeeg_payload.get(
@@ -416,6 +433,11 @@ def print_summary_banner(qeeg_payload: Dict[str, object], python_qeeg_active: bo
     print(f"  Web Application (UI)    : http://127.0.0.1:{UI_PORT}")
     print(f"  Clinical Workstation    : http://127.0.0.1:{UI_PORT}/clinical-workstation")
     print(f"  Express API Health      : http://127.0.0.1:{API_PORT}/api/health")
+    print(f"  Hardware Direct WS      : ws://127.0.0.1:{API_PORT}/ws/hardware")
+    if nodered_active:
+        print(f"  Node-RED IoT Gateway    : http://127.0.0.1:{NODERED_PORT}")
+    else:
+        print(f"  Node-RED IoT Gateway    : NOT RUNNING (http://127.0.0.1:{NODERED_PORT})")
     print(f"  qEEG Gateway Health     : http://127.0.0.1:{API_PORT}/api/qeeg/health ({engine_source})")
     if python_qeeg_active:
         print(f"  Python qEEG Service     : http://127.0.0.1:{QEEG_PORT}/api/qeeg/health")
@@ -434,9 +456,11 @@ def print_summary_banner(qeeg_payload: Dict[str, object], python_qeeg_active: bo
 
 
 def run_preflight(node_cmd: str) -> int:
-    """Inspect environment, PostgreSQL port, User count, and Python uvicorn readiness."""
+    """Inspect environment, PostgreSQL port, User count, Python uvicorn, and Node-RED readiness."""
     pg_open = is_port_open(PG_HOST, PG_PORT)
     py_exe = find_qeeg_python()
+    nodered_cli = find_nodered_cli()
+    nodered_open = is_port_open("127.0.0.1", NODERED_PORT)
     print(f"[preflight] Root dir        : {ROOT_DIR}")
     print(f"[preflight] server/.env     : {(SERVER_DIR / '.env').exists()}")
     print(f"[preflight] Postgres :5432  : {'OPEN' if pg_open else 'CLOSED'}")
@@ -447,19 +471,34 @@ def run_preflight(node_cmd: str) -> int:
         except Exception as exc:
             print(f"[preflight] User count err  : {exc}")
     print(f"[preflight] Python qEEG env : {py_exe or 'NOT AVAILABLE (TS DSP fallback ready)'}")
+    print(
+        f"[preflight] Node-RED CLI    : {nodered_cli or 'NOT INSTALLED (direct WS :4000 still available)'}"
+    )
+    print(
+        f"[preflight] Node-RED :1880  : {'OPEN' if nodered_open else 'CLOSED'} "
+        f"(flows={'OK' if (NODERED_DIR / 'flows.json').exists() else 'MISSING'})"
+    )
     return 0
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Launch the unified NeuroLink Mega-Server (PostgreSQL + FastAPI qEEG + Express + Vite)."
+        description=(
+            "Launch the unified NeuroLink Mega-Server "
+            "(PostgreSQL + FastAPI qEEG + Express + Node-RED IoT + Vite)."
+        )
     )
     parser.add_argument("--skip-seed", action="store_true", help="Do not auto-seed if User count is 0.")
     parser.add_argument("--no-qeeg", action="store_true", help="Skip Python qEEG service and force TS fallback.")
     parser.add_argument(
+        "--no-nodered",
+        action="store_true",
+        help="Skip Node-RED IoT Visual Gateway (:1880); direct Express WS (:4000) stays active.",
+    )
+    parser.add_argument(
         "--preflight",
         action="store_true",
-        help="Check ports, Prisma DB user count, and Python uvicorn availability without starting servers.",
+        help="Check ports, Prisma DB user count, Python uvicorn, and Node-RED availability without starting servers.",
     )
     return parser.parse_args()
 
@@ -575,9 +614,88 @@ def main() -> int:
             managed_procs.append(("ui", ui_proc))
             watched_critical.append(("ui", ui_proc))
 
-        # (e) Poll unified endpoints and print banner
+        # (e) Node-RED IoT Visual Gateway on :1880 (optional; graceful warning if missing)
+        nodered_active = False
+        if is_port_open("127.0.0.1", NODERED_PORT):
+            print(
+                f"[node-red] Existing Node-RED gateway detected on 127.0.0.1:{NODERED_PORT}.",
+                flush=True,
+            )
+            nodered_active = True
+        elif args.no_nodered:
+            print(
+                "[node-red] --no-nodered enabled; direct Express WS (/ws/hardware on :4000) remains active.",
+                flush=True,
+            )
+        else:
+            nodered_cli = find_nodered_cli()
+            nodered_settings = NODERED_DIR / "settings.js"
+            if nodered_cli is None:
+                print(
+                    "[WARN] 'node-red' CLI was not found in PATH — skipping Node-RED IoT Gateway (:1880).\n"
+                    "[WARN] Install globally with `npm i -g node-red` or connect ESP32 directly to ws://127.0.0.1:4000/ws/hardware.",
+                    flush=True,
+                )
+            elif not nodered_settings.exists():
+                print(
+                    f"[WARN] Missing {nodered_settings}; skipping Node-RED IoT Gateway (:1880).",
+                    flush=True,
+                )
+            else:
+                print(
+                    f"[node-red] Starting Node-RED IoT Gateway on 127.0.0.1:{NODERED_PORT}...",
+                    flush=True,
+                )
+                nodered_proc = spawn_managed(
+                    "node-red",
+                    [
+                        nodered_cli,
+                        "-u",
+                        str(NODERED_DIR),
+                        "-s",
+                        str(nodered_settings),
+                        "--no-telemetry",
+                    ],
+                    ROOT_DIR,
+                    extra_env={
+                        "NODERED_PORT": str(NODERED_PORT),
+                        "NEUROLINK_API_URL": f"http://127.0.0.1:{API_PORT}",
+                    },
+                )
+                managed_procs.append(("node-red", nodered_proc))
+                nr_deadline = time.monotonic() + 12.0
+                while time.monotonic() < nr_deadline and not stop_event.is_set():
+                    if nodered_proc.poll() is not None:
+                        print(
+                            f"[WARN] Node-RED exited (code {nodered_proc.returncode}); continuing with direct Express WS (:4000).",
+                            flush=True,
+                        )
+                        break
+                    try:
+                        code, _ = http_get_json(
+                            f"http://127.0.0.1:{NODERED_PORT}/gateway/status",
+                            timeout=1.0,
+                        )
+                        if code == 200:
+                            nodered_active = True
+                            print(
+                                f"[ready] Node-RED IoT Gateway listening -> http://127.0.0.1:{NODERED_PORT}",
+                                flush=True,
+                            )
+                            break
+                    except Exception:
+                        pass
+                    time.sleep(0.5)
+                if not nodered_active and nodered_proc.poll() is None:
+                    nodered_active = is_port_open("127.0.0.1", NODERED_PORT)
+
+        # (f) Poll unified endpoints and print banner
         qeeg_payload = wait_for_unified_health(timeout_sec=60.0, watched_procs=watched_critical)
-        print_summary_banner(qeeg_payload, python_qeeg_active=python_qeeg_active)
+        print_summary_banner(
+            qeeg_payload,
+            python_qeeg_active=python_qeeg_active,
+            nodered_active=nodered_active,
+        )
 
         while not stop_event.is_set():
             for name, proc in watched_critical:

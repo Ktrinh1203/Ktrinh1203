@@ -2,6 +2,15 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { AppError, badRequest, notFound } from '../../lib/errors.js';
 import { assertVerifiedProfessional } from '../contributions/contributions.service.js';
+import { realtimeBus } from '../realtime/realtime.bus.js';
+import {
+  appendChainedLedgerEntry,
+  computeInternalSpendDeduction,
+  formatFullWalletDto,
+  lockWalletForUpdate,
+  verifyWalletIntegrity,
+  type CreditBucket,
+} from './ledger.crypto.js';
 import type {
   AdjustWalletInput,
   CreateRewardCatalogInput,
@@ -12,33 +21,10 @@ import type {
 
 const ONBOARDING_GRANT_AMOUNT = 250;
 
-function formatWalletDto(wallet: {
-  id: string;
-  balance: number;
-  totalEarned: number;
-  totalSpent: number;
-  updatedAt: Date;
-}) {
-  return {
-    id: wallet.id,
-    balance: wallet.balance,
-    totalEarned: wallet.totalEarned,
-    totalSpent: wallet.totalSpent,
-    updatedAt: wallet.updatedAt,
-  };
-}
+export { verifyWalletIntegrity };
 
 export async function getOrCreateUserWallet(userId: string) {
-  return prisma.creditWallet.upsert({
-    where: { userId },
-    create: {
-      userId,
-      balance: 0,
-      totalEarned: 0,
-      totalSpent: 0,
-    },
-    update: {},
-  });
+  return prisma.$transaction((tx) => lockWalletForUpdate(tx, userId));
 }
 
 export async function getUserWalletWithHistory(userId: string) {
@@ -46,12 +32,12 @@ export async function getUserWalletWithHistory(userId: string) {
 
   const transactions = await prisma.creditTransaction.findMany({
     where: { walletId: wallet.id },
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 50,
   });
 
   return {
-    wallet: formatWalletDto(wallet),
+    wallet: formatFullWalletDto(wallet),
     transactions,
   };
 }
@@ -61,50 +47,46 @@ export async function claimOnboardingGrant(userId: string) {
 
   try {
     return await prisma.$transaction(async (tx) => {
+      const wallet = await lockWalletForUpdate(tx, userId);
+
       const existingTx = await tx.creditTransaction.findUnique({
         where: { idempotencyKey },
-      });
-
-      const wallet = await tx.creditWallet.upsert({
-        where: { userId },
-        create: {
-          userId,
-          balance: existingTx ? 0 : ONBOARDING_GRANT_AMOUNT,
-          totalEarned: existingTx ? 0 : ONBOARDING_GRANT_AMOUNT,
-          totalSpent: 0,
-        },
-        update: existingTx
-          ? {}
-          : {
-              balance: { increment: ONBOARDING_GRANT_AMOUNT },
-              totalEarned: { increment: ONBOARDING_GRANT_AMOUNT },
-            },
       });
 
       if (existingTx) {
         return {
           granted: false,
           amount: 0,
-          wallet: formatWalletDto(wallet),
+          wallet: formatFullWalletDto(wallet),
         };
       }
 
-      await tx.creditTransaction.create({
+      const nextBalance = wallet.balance + ONBOARDING_GRANT_AMOUNT;
+      const updated = await tx.creditWallet.update({
+        where: { id: wallet.id },
         data: {
-          walletId: wallet.id,
-          amount: ONBOARDING_GRANT_AMOUNT,
-          type: 'STARTER_GRANT',
-          referenceId: userId,
-          idempotencyKey,
-          description: `Cấp credit khởi đầu hệ sinh thái NeuroLink (+${ONBOARDING_GRANT_AMOUNT} credit)`,
-          actorId: userId,
+          balance: nextBalance,
+          promoCredits: wallet.promoCredits + ONBOARDING_GRANT_AMOUNT,
+          totalEarned: wallet.totalEarned + ONBOARDING_GRANT_AMOUNT,
         },
+      });
+
+      const { wallet: sealedWallet } = await appendChainedLedgerEntry(tx, {
+        wallet: updated,
+        amount: ONBOARDING_GRANT_AMOUNT,
+        balanceAfter: nextBalance,
+        bucket: 'PROMO',
+        type: 'STARTER_GRANT',
+        referenceId: userId,
+        idempotencyKey,
+        description: `Cấp Credit khởi đầu hệ sinh thái NeuroLink (+${ONBOARDING_GRANT_AMOUNT} Credit)`,
+        actorId: userId,
       });
 
       return {
         granted: true,
         amount: ONBOARDING_GRANT_AMOUNT,
-        wallet: formatWalletDto(wallet),
+        wallet: formatFullWalletDto(sealedWallet),
       };
     });
   } catch (err) {
@@ -113,7 +95,7 @@ export async function claimOnboardingGrant(userId: string) {
       return {
         granted: false,
         amount: 0,
-        wallet: formatWalletDto(wallet),
+        wallet: formatFullWalletDto(wallet),
       };
     }
     throw err;
@@ -131,8 +113,6 @@ export async function getActiveRewardCatalog(category?: string) {
 }
 
 export async function redeemReward(userId: string, input: RedeemRewardInput) {
-  await assertVerifiedProfessional(userId);
-
   const reward = await prisma.rewardCatalog.findUnique({
     where: { id: input.rewardId },
   });
@@ -141,76 +121,79 @@ export async function redeemReward(userId: string, input: RedeemRewardInput) {
     throw badRequest('Phần thưởng này hiện không khả dụng hoặc đã ngừng cung cấp.');
   }
 
+  // Only require verified professional credential for accredited CME courses & clinical conferences
+  if (reward.category === 'CONFERENCE_ACCESS' || reward.category === 'PROFESSIONAL_COURSE') {
+    await assertVerifiedProfessional(userId);
+  }
+
   // Strict Monetary Protection Guard
   if (reward.isMonetary && !reward.payoutEnabled) {
     throw new AppError(
       400,
       'MONETARY_PAYOUT_DISABLED',
-      'Đổi thưởng tiền mặt hiện chưa được kích hoạt trên hệ thống do đang chờ hoàn tất chính sách kiểm toán & thuế.',
+      'Đổi thưởng tiền mặt trực tiếp qua danh mục hiện chưa được kích hoạt. Bác sĩ & tác giả vui lòng sử dụng tính năng Rút về ngân hàng cho Credit thu nhập.',
     );
   }
 
-  // Check inventory stock
-  if (reward.stockQuantity !== null && reward.redeemedCount >= reward.stockQuantity) {
-    throw new AppError(
-      400,
-      'OUT_OF_STOCK',
-      'Phần thưởng này đã hết số lượng đăng ký cho đợt hiện tại.',
-    );
-  }
-
-  // Atomically debit credits and create redemption record
-  return prisma.$transaction(async (tx) => {
-    // Lock wallet record for update (prevent race conditions / double-spending)
-    const wallet = await tx.creditWallet.findUnique({
-      where: { userId },
+  const result = await prisma.$transaction(async (tx) => {
+    const freshReward = await tx.rewardCatalog.findUnique({
+      where: { id: reward.id },
     });
-
-    if (!wallet || wallet.balance < reward.creditCost) {
+    if (!freshReward || !freshReward.isActive) {
+      throw badRequest('Phần thưởng này hiện không khả dụng.');
+    }
+    if (freshReward.stockQuantity !== null && freshReward.redeemedCount >= freshReward.stockQuantity) {
       throw new AppError(
         400,
-        'INSUFFICIENT_CREDITS',
-        `Số dư credit không đủ. Cần ${reward.creditCost} credit nhưng số dư hiện tại chỉ có ${wallet?.balance ?? 0} credit.`,
+        'OUT_OF_STOCK',
+        'Phần thưởng này đã hết số lượng đăng ký cho đợt hiện tại.',
       );
     }
 
-    // 1. Debit wallet
+    // Lock wallet record FOR UPDATE (prevent race conditions / double-spending)
+    const wallet = await lockWalletForUpdate(tx, userId);
+    const deduction = computeInternalSpendDeduction(wallet, freshReward.creditCost);
+
+    // 1. Debit wallet buckets atomically
     const updatedWallet = await tx.creditWallet.update({
       where: { id: wallet.id },
       data: {
-        balance: { decrement: reward.creditCost },
-        totalSpent: { increment: reward.creditCost },
+        balance: deduction.nextBalance,
+        promoCredits: deduction.nextPromo,
+        purchasedCredits: deduction.nextPurchased,
+        earnedCredits: deduction.nextEarned,
+        totalSpent: { increment: freshReward.creditCost },
       },
     });
 
     // 2. Create Redemption Request
     const redemption = await tx.rewardRedemption.create({
       data: {
-        rewardId: reward.id,
+        rewardId: freshReward.id,
         userId,
-        creditCost: reward.creditCost,
+        creditCost: freshReward.creditCost,
         status: 'REQUESTED',
         userNote: input.userNote || null,
       },
     });
 
-    // 3. Record Immutable Ledger Transaction
-    await tx.creditTransaction.create({
-      data: {
-        walletId: wallet.id,
-        amount: -reward.creditCost,
-        type: 'REWARD_REDEMPTION',
-        referenceId: redemption.id,
-        idempotencyKey: `redemption:${redemption.id}`,
-        description: `Đổi phần thưởng: ${reward.name} (-${reward.creditCost} credit)`,
-        actorId: userId,
-        redemptionId: redemption.id,
-      },
+    // 3. Record Chained Immutable Ledger Transaction
+    await appendChainedLedgerEntry(tx, {
+      wallet: updatedWallet,
+      amount: -freshReward.creditCost,
+      balanceAfter: deduction.nextBalance,
+      bucket: deduction.bucket,
+      type: 'REWARD_REDEMPTION',
+      referenceId: redemption.id,
+      idempotencyKey: `redemption:${redemption.id}`,
+      description: `Đổi ưu đãi: ${freshReward.name} (-${freshReward.creditCost} Credit)`,
+      actorId: userId,
+      redemptionId: redemption.id,
     });
 
     // 4. Increment redeemed count on catalog
     await tx.rewardCatalog.update({
-      where: { id: reward.id },
+      where: { id: freshReward.id },
       data: { redeemedCount: { increment: 1 } },
     });
 
@@ -226,9 +209,12 @@ export async function redeemReward(userId: string, input: RedeemRewardInput) {
 
     return {
       redemption,
-      remainingBalance: updatedWallet.balance,
+      remainingBalance: deduction.nextBalance,
     };
   });
+
+  realtimeBus.emitToUser(userId, 'wallet:updated', { balance: result.remainingBalance });
+  return result;
 }
 
 export async function getUserRedemptions(userId: string) {
@@ -272,7 +258,7 @@ export async function adminCreateReward(adminId: string, input: CreateRewardCata
       terms: input.terms || null,
       imageUrl: input.imageUrl || null,
       isMonetary: input.isMonetary,
-      payoutEnabled: false, // Strict: never enable payout blindly
+      payoutEnabled: false,
     },
   });
 }
@@ -301,7 +287,7 @@ export async function adminUpdateReward(
       imageUrl: input.imageUrl !== undefined ? input.imageUrl : existing.imageUrl,
       isActive: input.isActive !== undefined ? input.isActive : existing.isActive,
       isMonetary: input.isMonetary !== undefined ? input.isMonetary : existing.isMonetary,
-      payoutEnabled: false, // Strict: remain disabled
+      payoutEnabled: false,
     },
   });
 }
@@ -344,7 +330,7 @@ export async function adminReviewRedemption(
 
   if (!redemption) throw notFound('Yêu cầu đổi thưởng không tồn tại');
 
-  return prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     let nextStatus = redemption.status;
 
     if (input.action === 'APPROVE') {
@@ -357,7 +343,6 @@ export async function adminReviewRedemption(
       nextStatus = 'CANCELLED';
     }
 
-    // If REJECT or CANCEL: Refund credits back to wallet atomically!
     if (nextStatus === 'REJECTED' || nextStatus === 'CANCELLED') {
       const refundIdempotencyKey = `refund-redemption:${redemptionId}`;
 
@@ -366,30 +351,31 @@ export async function adminReviewRedemption(
       });
 
       if (!existingRefund) {
-        // Refund wallet balance
-        const wallet = await tx.creditWallet.update({
-          where: { userId: redemption.userId },
+        const locked = await lockWalletForUpdate(tx, redemption.userId);
+        const nextBalance = locked.balance + redemption.creditCost;
+
+        const refundedWallet = await tx.creditWallet.update({
+          where: { id: locked.id },
           data: {
-            balance: { increment: redemption.creditCost },
-            totalSpent: { decrement: redemption.creditCost },
+            balance: nextBalance,
+            promoCredits: locked.promoCredits + redemption.creditCost,
+            totalSpent: Math.max(0, locked.totalSpent - redemption.creditCost),
           },
         });
 
-        // Record refund ledger entry
-        await tx.creditTransaction.create({
-          data: {
-            walletId: wallet.id,
-            amount: redemption.creditCost,
-            type: 'REFUND',
-            referenceId: redemptionId,
-            idempotencyKey: refundIdempotencyKey,
-            description: `Hoàn trả credit đổi quà không thành công: ${redemption.reward.name} (+${redemption.creditCost} credit). Lý do: ${input.adminNote || 'Yêu cầu bị từ chối'}`,
-            actorId: adminId,
-            redemptionId,
-          },
+        await appendChainedLedgerEntry(tx, {
+          wallet: refundedWallet,
+          amount: redemption.creditCost,
+          balanceAfter: nextBalance,
+          bucket: 'PROMO',
+          type: 'REFUND',
+          referenceId: redemptionId,
+          idempotencyKey: refundIdempotencyKey,
+          description: `Hoàn trả Credit đổi ưu đãi không thành công: ${redemption.reward.name} (+${redemption.creditCost} Credit). Lý do: ${input.adminNote || 'Yêu cầu bị từ chối'}`,
+          actorId: adminId,
+          redemptionId,
         });
 
-        // Decrement redeemedCount in catalog if possible
         if (redemption.reward.redeemedCount > 0) {
           await tx.rewardCatalog.update({
             where: { id: redemption.rewardId },
@@ -399,7 +385,7 @@ export async function adminReviewRedemption(
       }
     }
 
-    const updated = await tx.rewardRedemption.update({
+    const updatedRecord = await tx.rewardRedemption.update({
       where: { id: redemptionId },
       data: {
         status: nextStatus,
@@ -420,7 +406,6 @@ export async function adminReviewRedemption(
       },
     });
 
-    // Notify user
     await tx.notification.create({
       data: {
         recipientId: redemption.userId,
@@ -430,8 +415,11 @@ export async function adminReviewRedemption(
       },
     });
 
-    return updated;
+    return updatedRecord;
   });
+
+  realtimeBus.emitToUser(redemption.userId, 'wallet:updated', { redemptionId });
+  return updated;
 }
 
 export async function adminGetWallets(search?: string) {
@@ -463,49 +451,74 @@ export async function adminGetWallets(search?: string) {
       },
       transactions: {
         take: 5,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       },
     },
   });
 }
 
 export async function adminAdjustWallet(adminId: string, walletId: string, input: AdjustWalletInput) {
-  const wallet = await prisma.creditWallet.findUnique({
+  const existing = await prisma.creditWallet.findUnique({
     where: { id: walletId },
   });
 
-  if (!wallet) throw notFound('Ví credit không tồn tại');
+  if (!existing) throw notFound('Ví Credit không tồn tại');
 
-  if (wallet.balance + input.amount < 0) {
-    throw new AppError(
-      400,
-      'NEGATIVE_BALANCE_NOT_ALLOWED',
-      `Không thể điều chỉnh số dư âm. Số dư hiện tại là ${wallet.balance}, điều chỉnh ${input.amount} sẽ dẫn đến số dư âm.`,
-    );
-  }
+  const result = await prisma.$transaction(async (tx) => {
+    const locked = await lockWalletForUpdate(tx, existing.userId);
 
-  return prisma.$transaction(async (tx) => {
+    if (locked.balance + input.amount < 0) {
+      throw new AppError(
+        400,
+        'NEGATIVE_BALANCE_NOT_ALLOWED',
+        `Không thể điều chỉnh số dư âm. Số dư hiện tại là ${locked.balance}, điều chỉnh ${input.amount} sẽ dẫn đến số dư âm.`,
+      );
+    }
+
+    let nextBalance = locked.balance + input.amount;
+    let nextPromo = locked.promoCredits;
+    let nextPurchased = locked.purchasedCredits;
+    let nextEarned = locked.earnedCredits;
+    let bucket: CreditBucket = 'PROMO';
+
+    if (input.amount > 0) {
+      nextPromo += input.amount;
+    } else {
+      const deduction = computeInternalSpendDeduction(locked, Math.abs(input.amount));
+      nextBalance = deduction.nextBalance;
+      nextPromo = deduction.nextPromo;
+      nextPurchased = deduction.nextPurchased;
+      nextEarned = deduction.nextEarned;
+      bucket = deduction.bucket;
+    }
+
     const updated = await tx.creditWallet.update({
-      where: { id: walletId },
+      where: { id: locked.id },
       data: {
-        balance: { increment: input.amount },
+        balance: nextBalance,
+        promoCredits: nextPromo,
+        purchasedCredits: nextPurchased,
+        earnedCredits: nextEarned,
         totalEarned: input.amount > 0 ? { increment: input.amount } : undefined,
         totalSpent: input.amount < 0 ? { increment: Math.abs(input.amount) } : undefined,
       },
     });
 
-    const txRecord = await tx.creditTransaction.create({
-      data: {
-        walletId,
-        amount: input.amount,
-        type: 'ADMIN_ADJUSTMENT',
-        description: `Quản trị viên điều chỉnh số dư ví: ${input.amount > 0 ? '+' : ''}${input.amount} credit. Lý do: ${input.reason}`,
-        actorId: adminId,
-      },
+    const { transaction: txRecord, wallet: sealedWallet } = await appendChainedLedgerEntry(tx, {
+      wallet: updated,
+      amount: input.amount,
+      balanceAfter: nextBalance,
+      bucket,
+      type: 'ADMIN_ADJUSTMENT',
+      description: `Quản trị viên điều chỉnh số dư ví: ${input.amount > 0 ? '+' : ''}${input.amount} Credit. Lý do: ${input.reason}`,
+      actorId: adminId,
     });
 
-    return { wallet: updated, transaction: txRecord };
+    return { wallet: sealedWallet, transaction: txRecord };
   });
+
+  realtimeBus.emitToUser(existing.userId, 'wallet:updated', { balance: result.wallet.balance });
+  return result;
 }
 
 export async function adminGetOverviewStats() {

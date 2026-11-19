@@ -7,6 +7,7 @@ const SLIDE_HTML = path.join(BASE_DIR, 'bmc_v2_investor_slide.html');
 const REPORT_MD = path.join(BASE_DIR, 'BAO_CAO_PHAN_TICH_BMC_CHITIET_V2.md');
 const REPORT_HTML = path.join(BASE_DIR, 'bao_cao_bmc_chitiet_v2.html');
 const REPORT_PDF = path.join(BASE_DIR, 'BAO_CAO_PHAN_TICH_BMC_CHITIET_V2.pdf');
+const MOATS_MD = path.join(BASE_DIR, 'MOATS_COMPETITORS_SURVIVAL_ANALYSIS.md');
 const SURVEY_HTML = path.join(BASE_DIR, 'neurolink_market_survey.html');
 
 const FORBIDDEN_AI_PHRASES = [
@@ -21,6 +22,7 @@ const FORBIDDEN_AI_PHRASES = [
   'không ngừng nâng cao',
 ];
 
+const VC_TERMS = ['ltv/cac', 'unbundling', 'razor-blade', 'b2b2e', '16.200 tỷ'];
 const EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
 function checkForbiddenPhrases(text, filename) {
@@ -35,13 +37,31 @@ function checkForbiddenPhrases(text, filename) {
   if (khongChiPattern.test(text)) {
     issues.push(`Found pattern "không chỉ...mà còn" in ${filename}`);
   }
+  if (lower.includes('đánhслід') || lower.includes('слід')) {
+    issues.push(`Found typo "đánhслід" in ${filename}`);
+  }
+  if (EMOJI_REGEX.test(text)) {
+    issues.push(`Found emoji in ${filename}`);
+  }
+  return issues;
+}
+
+function checkVcTerms(text, filename) {
+  const issues = [];
+  const lower = text.toLowerCase();
+  for (const term of VC_TERMS) {
+    if (lower.includes(term)) {
+      issues.push(`Found VC jargon "${term}" in ${filename}`);
+    }
+  }
   return issues;
 }
 
 async function run() {
-  console.log('=== STARTING RENDER AND VERIFY (V2.1 - REPORT & MONOCHROME) ===');
+  console.log('=== STARTING RENDER AND VERIFY (V2.2 - MOATS & FULL CONSISTENCY) ===');
   const results = {
     ai_rules: { passed: false, checks: [] },
+    moats_check: { passed: false, checks: [] },
     report_html_style: { passed: false, checks: [] },
     bmc_slide_monochrome: { passed: false, checks: [] },
     slide_render: { passed: false, checks: [] },
@@ -52,7 +72,7 @@ async function run() {
   // -------------------------------------------------------------
   // STEP 1: SCAN FORBIDDEN AI PHRASES & TEXT RULES
   // -------------------------------------------------------------
-  console.log('\n--- Step 1: Checking AI forbidden phrases in MD & HTML ---');
+  console.log('\n--- Step 1: Checking AI forbidden phrases, typos & VC terms ---');
   let textIssues = [];
   if (fs.existsSync(REPORT_MD)) {
     const mdContent = fs.readFileSync(REPORT_MD, 'utf8');
@@ -72,8 +92,23 @@ async function run() {
     textIssues.push(`File missing: ${REPORT_HTML}`);
   }
 
+  // Check MOATS_COMPETITORS_SURVIVAL_ANALYSIS.md
+  let moatsIssues = [];
+  if (fs.existsSync(MOATS_MD)) {
+    const moatsContent = fs.readFileSync(MOATS_MD, 'utf8');
+    const mAiIssues = checkForbiddenPhrases(moatsContent, 'MOATS_COMPETITORS_SURVIVAL_ANALYSIS.md');
+    const mVcIssues = checkVcTerms(moatsContent, 'MOATS_COMPETITORS_SURVIVAL_ANALYSIS.md');
+    moatsIssues.push(...mAiIssues, ...mVcIssues);
+    console.log(`MOATS_MD issues: ${moatsIssues.length}`);
+  } else {
+    moatsIssues.push(`File missing: ${MOATS_MD}`);
+  }
+
   results.ai_rules.checks = textIssues;
   results.ai_rules.passed = textIssues.length === 0;
+
+  results.moats_check.checks = moatsIssues;
+  results.moats_check.passed = moatsIssues.length === 0;
 
   // -------------------------------------------------------------
   // STEP 2: PLAYWRIGHT BROWSER VERIFICATIONS
@@ -121,10 +156,9 @@ async function run() {
         passed: !hasEmoji,
       });
 
-      // Verify color palette (no colorful hex codes in inline styles or computed styles)
+      // Verify color palette
       const colorCheck = await reportPage.evaluate(() => {
         const text = document.documentElement.innerHTML;
-        // Search for colorful hex patterns like #0284c7, #10b981, #ef4444, #f59e0b, #3b82f6, etc.
         const colorfulMatches = text.match(/#(?:[0-9a-f]{6}|[0-9a-f]{3})\b/gi) || [];
         const nonMono = [];
         for (const hex of colorfulMatches) {
@@ -141,7 +175,6 @@ async function run() {
           } else {
             continue;
           }
-          // In pure monochrome, r == g == b (or max diff <= 10 for very subtle grays)
           if (Math.abs(r - g) > 15 || Math.abs(r - b) > 15 || Math.abs(g - b) > 15) {
             nonMono.push(hex);
           }
@@ -178,7 +211,7 @@ async function run() {
       await reportPage.screenshot({ path: previewP1Path, fullPage: false });
       console.log(`Saved screenshot: ${previewP1Path}`);
 
-      // Capture report preview Section II.1 (Customer Segments & Bottom-Up Market Size)
+      // Capture report preview Section II.1
       console.log('Scrolling to Section II.1 (Customer Segments & Market Size) ...');
       await reportPage.evaluate(() => {
         const seg1Header = Array.from(document.querySelectorAll('h1, h2, h3, h4, p, div')).find(el => 
@@ -193,15 +226,13 @@ async function run() {
       await reportPage.screenshot({ path: previewSeg1Path, fullPage: false });
       console.log(`Saved screenshot: ${previewSeg1Path}`);
 
-      // Capture report preview Table (Unit Economics in Section III)
-      console.log('Scrolling to Unit Economics table in Section III ...');
-      const tableFound = await reportPage.evaluate(() => {
+      // Capture report preview Table (Unit Economics / Section IV / Section III)
+      console.log('Scrolling to Table in report ...');
+      await reportPage.evaluate(() => {
         const table = document.querySelector('table');
         if (table) {
           table.scrollIntoView({ behavior: 'instant', block: 'center' });
-          return true;
         }
-        return false;
       });
       await reportPage.waitForTimeout(400);
 
@@ -235,7 +266,12 @@ async function run() {
         const allowedPalette = new Set([
           '#111827', '#1f2937', '#374151', '#4b5563', '#6b7280',
           '#9ca3af', '#d1d5db', '#e5e7eb', '#f3f4f6', '#f9fafb',
-          '#ffffff', '#000000', '#fff', '#000', '#0f172a', '#1e293b'
+          '#ffffff', '#000000', '#fff', '#000', '#0f172a', '#1e293b',
+          '#111111', '#222222', '#333333', '#444444', '#555555',
+          '#666666', '#777777', '#888888', '#999999', '#aaaaaa',
+          '#cccccc', '#dddddd', '#eeeeee', '#f4f4f5', '#e4e4e7',
+          '#d4d4d8', '#a1a1aa', '#71717a', '#52525b', '#3f3f46',
+          '#27272a', '#18181b', '#09090b'
         ]);
         const nonMono = [];
         for (const hex of hexMatches) {
@@ -336,6 +372,7 @@ async function run() {
   fs.writeFileSync(path.join(BASE_DIR, 'verification_results_v2.json'), JSON.stringify(results, null, 2), 'utf8');
 
   const allPassed = results.ai_rules.passed &&
+                    results.moats_check.passed &&
                     results.report_html_style.passed &&
                     results.bmc_slide_monochrome.passed &&
                     results.slide_render.passed &&

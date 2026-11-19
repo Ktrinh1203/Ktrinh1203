@@ -288,17 +288,18 @@ describe('Unified qEEG Workstation, Neural DB & 4 Startup Pillars', () => {
     expect(parsedLine.featureVector).toHaveLength(80);
   });
 
-  it('grants idempotent +250 STARTER_GRANT credits via /api/rewards/claim-onboarding-grant without affecting initial balance=0', async () => {
+  it('auto-grants +250 STARTER_GRANT promoCredits on register and makes /api/rewards/claim-onboarding-grant idempotent', async () => {
     const user = await registerUser({ username: 'onboarding_user' });
 
-    // Initial wallet must start at 0 (preserving existing reward tests)
+    // Universal Auto-Wallet: starts with 250 promoCredits on registration
     const initialWallet = (await user.get('/api/rewards/wallet').expect(200)).body.wallet;
-    expect(initialWallet.balance).toBe(0);
+    expect(initialWallet.balance).toBe(250);
+    expect(initialWallet.promoCredits).toBe(250);
 
-    // First claim -> +250
+    // Subsequent claim -> idempotent no-op (does not double-grant)
     const first = (await user.post('/api/rewards/claim-onboarding-grant').expect(200)).body;
-    expect(first.granted).toBe(true);
-    expect(first.amount).toBe(250);
+    expect(first.granted).toBe(false);
+    expect(first.amount).toBe(0);
     expect(first.wallet.balance).toBe(250);
 
     // Second claim -> idempotent no-op
@@ -421,7 +422,8 @@ describe('Unified qEEG Workstation, Neural DB & 4 Startup Pillars', () => {
     expect(accepted.body.ticket.acceptedReplyId).toBe(replied.body.reply.id);
 
     const docWallet = (await residentDoc.get('/api/rewards/wallet').expect(200)).body;
-    expect(docWallet.wallet.balance).toBe(100);
+    expect(docWallet.wallet.balance).toBe(350);
+    expect(docWallet.wallet.earnedCredits).toBe(100);
     expect(docWallet.transactions[0].type).toBe('CONSULTATION_EARNING');
 
     // Scope queries
@@ -501,10 +503,24 @@ describe('Unified qEEG Workstation, Neural DB & 4 Startup Pillars', () => {
     expect(detailBefore.hasAccess).toBe(false);
     expect(detailBefore.payloadCsv).toBeNull();
 
-    // Insufficient credits check
-    await buyer.post(`/api/databank/${paidId}/purchase`).expect(400);
+    // Insufficient credits check when listing price exceeds buyer balance
+    const expensiveRes = await researcher
+      .post('/api/databank', {
+        title: 'Gói dữ liệu ICU lớn vượt số dư khởi đầu',
+        summary: 'Gói dữ liệu kiểm tra từ chối khi không đủ Credit.',
+        clinicalCategory: 'EPILEPSY_ICU',
+        methodologyNote: 'Ghi ở 500 Hz.',
+        sampleCount: 100,
+        channelsSpec: '19 kênh',
+        samplingRateHz: 500,
+        priceCredits: 500,
+        previewMetrics: { meanDar: 1.5, meanBsi: 0.1, meanTar: 1.4, meanWpli: 0.4, dominantBand: 'Theta' },
+        payloadCsv: paidCsv,
+      })
+      .expect(201);
+    await buyer.post(`/api/databank/${expensiveRes.body.listing.id}/purchase`).expect(400);
 
-    // Grant 250 credits and purchase
+    // Buyer uses 250 starter credits to purchase 120-credit listing -> remaining 130
     await buyer.post('/api/rewards/claim-onboarding-grant').expect(200);
     const purchaseRes = (await buyer.post(`/api/databank/${paidId}/purchase`).expect(200)).body;
     expect(purchaseRes.remainingBalance).toBe(130);
@@ -512,9 +528,10 @@ describe('Unified qEEG Workstation, Neural DB & 4 Startup Pillars', () => {
     expect(purchaseRes.listing.payloadCsv).toBe(paidCsv);
     expect(purchaseRes.listing.downloadsCount).toBe(1);
 
-    // Author received +120 royalty
+    // Author received +120 royalty (250 starter + 120 earned = 370)
     const authorWallet = (await researcher.get('/api/rewards/wallet').expect(200)).body;
-    expect(authorWallet.wallet.balance).toBe(120);
+    expect(authorWallet.wallet.balance).toBe(370);
+    expect(authorWallet.wallet.earnedCredits).toBe(120);
     expect(authorWallet.transactions[0].type).toBe('DATABANK_ROYALTY');
 
     // Detail now exposes payloadCsv; duplicate purchase returns 409

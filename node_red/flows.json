@@ -1,0 +1,839 @@
+[
+  {
+    "id": "tab-esp32-gateway",
+    "type": "tab",
+    "label": "ESP32 Hardware Gateway",
+    "disabled": false,
+    "info": "Receives live 197-byte ADS1299 binary frames and JSON telemetry from ESP32-ADS1299 v3 over WebSocket (/ws/hardware), forwards to NeuroLink Express (:4000), and exposes /device/command & /gateway/status HTTP bridges.",
+    "env": []
+  },
+  {
+    "id": "tab-edge-ai-alerts",
+    "type": "tab",
+    "label": "Edge AI & Alert Router",
+    "disabled": false,
+    "info": "Evaluates incoming ESP32 telemetry for STROKE_ALERT, low battery (<3450 mV), and electrode lead-off (loff_p > 0) with 30s debounce and posts structured alerts to NeuroLink Express.",
+    "env": []
+  },
+  {
+    "id": "tab-qeeg-epoch",
+    "type": "tab",
+    "label": "qEEG Epoch Forwarder",
+    "disabled": false,
+    "info": "Buffers rolling 4-second 8-channel EEG epochs (F3,F4,C3,C4,O1,O2,T3,T4), submits CSV to /api/qeeg/analyze-csv, and persists analyzed sessions to /api/devices/ingest/epoch.",
+    "env": []
+  },
+  {
+    "id": "tab-esp32-simulator",
+    "type": "tab",
+    "label": "ESP32 Test Simulator",
+    "disabled": false,
+    "info": "One-click visual test triggers generating sinusoidal normal EEG, acute stroke delta asymmetry, and critical 3.38V low-battery telemetry directly into NeuroLink Express (:4000).",
+    "env": []
+  },
+  {
+    "id": "ws-listener-hw",
+    "type": "websocket-listener",
+    "path": "/ws/hardware",
+    "wholemsg": "false"
+  },
+  {
+    "id": "cmt-gateway-overview",
+    "type": "comment",
+    "z": "tab-esp32-gateway",
+    "name": "ESP32-ADS1299 v3 Gateway: Binary 197B (0xA5 C2 11 D3 + 48xF32LE + 0x5A) & JSON Telemetry -> Express :4000",
+    "info": "Connect ESP32 to ws://<host>:1880/ws/hardware. Node-RED decodes binary waveform frames and JSON heartbeats and forwards them with x-nodered-secret to http://127.0.0.1:4000/api/devices/ingest/*.",
+    "x": 420,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "ws-in-gateway",
+    "type": "websocket in",
+    "z": "tab-esp32-gateway",
+    "name": "ESP32 WS /ws/hardware",
+    "server": "ws-listener-hw",
+    "client": "",
+    "x": 150,
+    "y": 140,
+    "wires": [
+      [
+        "fn-decode-esp32"
+      ]
+    ]
+  },
+  {
+    "id": "fn-decode-esp32",
+    "type": "function",
+    "z": "tab-esp32-gateway",
+    "name": "Decode 197B Binary & JSON Telemetry",
+    "func": "const apiUrl = (global.get(\"neurolinkApiUrl\") || \"http://127.0.0.1:4000\").replace(/\\/+$/, \"\");\nconst secret = global.get(\"ingestSecret\") || \"neurolink-nodered-dev-secret\";\nconst defaultCode = global.get(\"defaultDeviceCode\") || \"NL-HOLTER-01\";\nconst headers = {\n    \"x-nodered-secret\": secret,\n    \"Content-Type\": \"application/json\"\n};\n\nconst raw = msg.payload;\nconst buf = Buffer.isBuffer(raw) ? raw : null;\n\n// 1) Binary 197-byte ESP32-ADS1299 frame: 0xA5 0xC2 0x11 0xD3 [48 float32 LE = 6x8ch uV] 0x5A\nif (\n    buf &&\n    buf.length >= 197 &&\n    buf[0] === 0xA5 &&\n    buf[1] === 0xC2 &&\n    buf[2] === 0x11 &&\n    buf[3] === 0xD3 &&\n    buf[196] === 0x5A\n) {\n    const samples = [];\n    for (let offset = 0; offset + 197 <= buf.length; offset += 197) {\n        if (\n            buf[offset] !== 0xA5 ||\n            buf[offset + 1] !== 0xC2 ||\n            buf[offset + 2] !== 0x11 ||\n            buf[offset + 3] !== 0xD3 ||\n            buf[offset + 196] !== 0x5A\n        ) {\n            break;\n        }\n        for (let s = 0; s < 6; s++) {\n            const row = [];\n            for (let ch = 0; ch < 8; ch++) {\n                const val = buf.readFloatLE(offset + 4 + (s * 8 + ch) * 4);\n                row.push(Number.isFinite(val) ? Number(val.toFixed(3)) : 0);\n            }\n            samples.push(row);\n        }\n    }\n    if (samples.length === 0) return null;\n\n    const deviceCode = global.get(\"hwActiveDeviceCode\") || defaultCode;\n    const sampleRateSps = global.get(\"hwLastRateSps\") || 500;\n    msg.topic = \"samples\";\n    msg.url = apiUrl + \"/api/devices/ingest/samples\";\n    msg.headers = headers;\n    msg.payload = {\n        deviceCode,\n        montage: \"neurolink6\",\n        sampleRateSps,\n        source: \"NODERED\",\n        samples\n    };\n    return msg;\n}\n\n// 2) JSON telemetry heartbeat (String, UTF-8 Buffer, or pre-parsed Object)\nlet telemetry = null;\nif (raw && typeof raw === \"object\" && !Buffer.isBuffer(raw)) {\n    telemetry = raw;\n} else {\n    const text = buf ? buf.toString(\"utf8\").trim() : (typeof raw === \"string\" ? raw.trim() : \"\");\n    if (!text.startsWith(\"{\")) return null;\n    try {\n        telemetry = JSON.parse(text);\n    } catch (_err) {\n        node.warn(\"Ignored malformed JSON frame on /ws/hardware\");\n        return null;\n    }\n}\n\nconst deviceCode = telemetry.deviceCode || telemetry.device_code || global.get(\"hwActiveDeviceCode\") || defaultCode;\nglobal.set(\"hwActiveDeviceCode\", deviceCode);\nif (Number.isFinite(Number(telemetry.rate_sps)) && Number(telemetry.rate_sps) > 0) {\n    global.set(\"hwLastRateSps\", Number(telemetry.rate_sps));\n}\n\nmsg.topic = \"telemetry\";\nmsg.url = apiUrl + \"/api/devices/ingest/telemetry\";\nmsg.headers = headers;\nmsg.payload = {\n    deviceCode,\n    source: \"NODERED\",\n    telemetry\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 140,
+    "wires": [
+      [
+        "sw-gateway-route"
+      ]
+    ]
+  },
+  {
+    "id": "sw-gateway-route",
+    "type": "switch",
+    "z": "tab-esp32-gateway",
+    "name": "Route Telemetry vs Samples",
+    "property": "topic",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "telemetry",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "samples",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 2,
+    "x": 700,
+    "y": 140,
+    "wires": [
+      [
+        "http-post-telemetry"
+      ],
+      [
+        "http-post-samples"
+      ]
+    ]
+  },
+  {
+    "id": "http-post-telemetry",
+    "type": "http request",
+    "z": "tab-esp32-gateway",
+    "name": "POST /api/devices/ingest/telemetry",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 990,
+    "y": 100,
+    "wires": [
+      [
+        "dbg-telemetry-resp"
+      ]
+    ]
+  },
+  {
+    "id": "http-post-samples",
+    "type": "http request",
+    "z": "tab-esp32-gateway",
+    "name": "POST /api/devices/ingest/samples",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 990,
+    "y": 180,
+    "wires": [
+      [
+        "dbg-samples-resp"
+      ]
+    ]
+  },
+  {
+    "id": "dbg-telemetry-resp",
+    "type": "debug",
+    "z": "tab-esp32-gateway",
+    "name": "Telemetry Ingest Ack",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1260,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "dbg-samples-resp",
+    "type": "debug",
+    "z": "tab-esp32-gateway",
+    "name": "Samples Ingest Ack",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1260,
+    "y": 180,
+    "wires": []
+  },
+  {
+    "id": "http-in-cmd",
+    "type": "http in",
+    "z": "tab-esp32-gateway",
+    "name": "POST /device/command",
+    "url": "/device/command",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 150,
+    "y": 300,
+    "wires": [
+      [
+        "fn-build-cmd"
+      ]
+    ]
+  },
+  {
+    "id": "fn-build-cmd",
+    "type": "function",
+    "z": "tab-esp32-gateway",
+    "name": "Build ESP32 CLI Command",
+    "func": "const body = msg.payload && typeof msg.payload === \"object\" ? msg.payload : {};\nconst command = typeof body.command === \"string\" ? body.command.trim() : \"\";\nconst deviceCode = typeof body.deviceCode === \"string\" && body.deviceCode.trim()\n    ? body.deviceCode.trim()\n    : (global.get(\"defaultDeviceCode\") || \"NL-HOLTER-01\");\n\nif (!command || command.length > 128) {\n    msg.statusCode = 400;\n    msg.headers = { \"Content-Type\": \"application/json\" };\n    msg.payload = { ok: false, forwarded: false, error: \"Invalid or missing command\" };\n    return [null, msg];\n}\n\n// Output 1: clean text frame broadcast to connected ESP32 WebSocket clients (no _session lock)\nconst wsMsg = { payload: command };\n\n// Output 2: HTTP JSON confirmation back to caller (Express backend or operator)\nmsg.statusCode = 200;\nmsg.headers = { \"Content-Type\": \"application/json\" };\nmsg.payload = {\n    ok: true,\n    forwarded: true,\n    command,\n    deviceCode\n};\nreturn [wsMsg, msg];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 300,
+    "wires": [
+      [
+        "ws-out-cmd"
+      ],
+      [
+        "http-resp-cmd"
+      ]
+    ]
+  },
+  {
+    "id": "ws-out-cmd",
+    "type": "websocket out",
+    "z": "tab-esp32-gateway",
+    "name": "Push CLI to /ws/hardware",
+    "server": "ws-listener-hw",
+    "client": "",
+    "x": 710,
+    "y": 260,
+    "wires": []
+  },
+  {
+    "id": "http-resp-cmd",
+    "type": "http response",
+    "z": "tab-esp32-gateway",
+    "name": "HTTP Command Response",
+    "statusCode": "",
+    "headers": {},
+    "x": 710,
+    "y": 340,
+    "wires": []
+  },
+  {
+    "id": "http-in-status",
+    "type": "http in",
+    "z": "tab-esp32-gateway",
+    "name": "GET /gateway/status",
+    "url": "/gateway/status",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 140,
+    "y": 440,
+    "wires": [
+      [
+        "fn-gateway-status"
+      ]
+    ]
+  },
+  {
+    "id": "fn-gateway-status",
+    "type": "function",
+    "z": "tab-esp32-gateway",
+    "name": "Format Gateway Status JSON",
+    "func": "let startedAt = flow.get(\"startedAt\");\nif (!startedAt) {\n    startedAt = Date.now();\n    flow.set(\"startedAt\", startedAt);\n}\nmsg.statusCode = 200;\nmsg.headers = { \"Content-Type\": \"application/json\" };\nmsg.payload = {\n    status: \"online\",\n    runtime: \"Node-RED\",\n    targetApi: (global.get(\"neurolinkApiUrl\") || \"http://127.0.0.1:4000\").replace(/\\/+$/, \"\"),\n    wsPath: \"/ws/hardware\",\n    defaultDeviceCode: global.get(\"defaultDeviceCode\") || \"NL-HOLTER-01\",\n    uptimeSec: Math.max(0, Math.round((Date.now() - startedAt) / 1000))\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 440,
+    "wires": [
+      [
+        "http-resp-status"
+      ]
+    ]
+  },
+  {
+    "id": "http-resp-status",
+    "type": "http response",
+    "z": "tab-esp32-gateway",
+    "name": "HTTP Status Response",
+    "statusCode": "",
+    "headers": {},
+    "x": 700,
+    "y": 440,
+    "wires": []
+  },
+  {
+    "id": "cmt-alerts-overview",
+    "type": "comment",
+    "z": "tab-edge-ai-alerts",
+    "name": "Clinical Safety Rules: STROKE_ALERT (CRITICAL), VBAT < 3450 mV (LOW_BATTERY), Lead-Off Mask > 0 (LEAD_OFF)",
+    "info": "Monitors live ESP32 telemetry with 30-second per-code debounce and routes structured clinical alerts to POST /api/devices/ingest/alert.",
+    "x": 430,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "ws-in-alerts",
+    "type": "websocket in",
+    "z": "tab-edge-ai-alerts",
+    "name": "ESP32 Telemetry Stream",
+    "server": "ws-listener-hw",
+    "client": "",
+    "x": 150,
+    "y": 150,
+    "wires": [
+      [
+        "fn-eval-alerts"
+      ]
+    ]
+  },
+  {
+    "id": "fn-eval-alerts",
+    "type": "function",
+    "z": "tab-edge-ai-alerts",
+    "name": "Evaluate Edge AI, Battery & Lead-Off Rules",
+    "func": "const raw = msg.payload;\nconst buf = Buffer.isBuffer(raw) ? raw : null;\n\n// Ignore 197-byte binary EEG waveform frames\nif (buf && buf.length >= 197 && buf[0] === 0xA5 && buf[1] === 0xC2 && buf[2] === 0x11 && buf[3] === 0xD3) {\n    return null;\n}\n\nlet t = null;\nif (raw && typeof raw === \"object\" && !Buffer.isBuffer(raw)) {\n    t = raw;\n} else {\n    const text = buf ? buf.toString(\"utf8\").trim() : (typeof raw === \"string\" ? raw.trim() : \"\");\n    if (!text.startsWith(\"{\")) return null;\n    try {\n        t = JSON.parse(text);\n    } catch (_err) {\n        return null;\n    }\n}\n\nconst apiUrl = (global.get(\"neurolinkApiUrl\") || \"http://127.0.0.1:4000\").replace(/\\/+$/, \"\");\nconst secret = global.get(\"ingestSecret\") || \"neurolink-nodered-dev-secret\";\nconst deviceCode = t.deviceCode || t.device_code || global.get(\"hwActiveDeviceCode\") || global.get(\"defaultDeviceCode\") || \"NL-HOLTER-01\";\nconst now = Date.now();\nconst debounceMap = flow.get(\"alertDebounce\") || {};\nconst DEBOUNCE_MS = 30000;\n\nconst candidates = [];\n\nif (t.ai_state === \"STROKE_ALERT\") {\n    const rf = Number(t.ai_rf_prob ?? 0).toFixed(2);\n    const bsi = Number(t.ai_bsi ?? 0).toFixed(2);\n    const dar = Number(t.ai_dar ?? 0).toFixed(2);\n    candidates.push({\n        severity: \"CRITICAL\",\n        code: \"STROKE_ALERT\",\n        message: \"Edge AI phát hiện cảnh báo đột quỵ cấp (RF=\" + rf + \", BSI=\" + bsi + \", DAR=\" + dar + \").\"\n    });\n}\n\nconst vbatMv = Number(t.vbat_mv ?? 0);\nif (Number.isFinite(vbatMv) && vbatMv > 0 && vbatMv < 3450) {\n    const pct = Number(t.bat_pct ?? 0);\n    candidates.push({\n        severity: vbatMv < 3350 ? \"CRITICAL\" : \"WARNING\",\n        code: \"LOW_BATTERY\",\n        message: \"Pin thiết bị Holter thấp (\" + vbatMv + \" mV / \" + pct + \"%). Vui lòng sạc pin sớm.\"\n    });\n}\n\nconst loffMask = Number(t.loff_p ?? 0);\nif (Number.isFinite(loffMask) && loffMask > 0) {\n    candidates.push({\n        severity: \"WARNING\",\n        code: \"LEAD_OFF\",\n        message: \"Phát hiện tuột điện cực (Lead-Off mask: 0x\" + loffMask.toString(16).toUpperCase() + \").\"\n    });\n}\n\nconst outgoing = [];\nfor (const alert of candidates) {\n    const key = deviceCode + \":\" + alert.code;\n    const lastTs = debounceMap[key] || 0;\n    if (now - lastTs < DEBOUNCE_MS) continue;\n    debounceMap[key] = now;\n    outgoing.push({\n        topic: alert.severity,\n        url: apiUrl + \"/api/devices/ingest/alert\",\n        headers: {\n            \"x-nodered-secret\": secret,\n            \"Content-Type\": \"application/json\"\n        },\n        payload: {\n            deviceCode,\n            severity: alert.severity,\n            code: alert.code,\n            message: alert.message\n        }\n    });\n}\n\nflow.set(\"alertDebounce\", debounceMap);\nif (outgoing.length === 0) return null;\nreturn [outgoing];",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 440,
+    "y": 150,
+    "wires": [
+      [
+        "sw-alert-severity"
+      ]
+    ]
+  },
+  {
+    "id": "sw-alert-severity",
+    "type": "switch",
+    "z": "tab-edge-ai-alerts",
+    "name": "Split CRITICAL vs WARNING",
+    "property": "topic",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "CRITICAL",
+        "vt": "str"
+      },
+      {
+        "t": "else"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 2,
+    "x": 740,
+    "y": 150,
+    "wires": [
+      [
+        "http-post-alert-crit"
+      ],
+      [
+        "http-post-alert-warn"
+      ]
+    ]
+  },
+  {
+    "id": "http-post-alert-crit",
+    "type": "http request",
+    "z": "tab-edge-ai-alerts",
+    "name": "POST CRITICAL Alert -> Express",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1020,
+    "y": 110,
+    "wires": [
+      [
+        "dbg-alert-crit"
+      ]
+    ]
+  },
+  {
+    "id": "http-post-alert-warn",
+    "type": "http request",
+    "z": "tab-edge-ai-alerts",
+    "name": "POST WARNING Alert -> Express",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1020,
+    "y": 190,
+    "wires": [
+      [
+        "dbg-alert-warn"
+      ]
+    ]
+  },
+  {
+    "id": "dbg-alert-crit",
+    "type": "debug",
+    "z": "tab-edge-ai-alerts",
+    "name": "CRITICAL Alert Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1280,
+    "y": 110,
+    "wires": []
+  },
+  {
+    "id": "dbg-alert-warn",
+    "type": "debug",
+    "z": "tab-edge-ai-alerts",
+    "name": "WARNING Alert Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1280,
+    "y": 190,
+    "wires": []
+  },
+  {
+    "id": "cmt-epoch-overview",
+    "type": "comment",
+    "z": "tab-qeeg-epoch",
+    "name": "Rolling 4s Epoch Buffer (F3,F4,C3,C4,O1,O2,T3,T4) -> /api/qeeg/analyze-csv -> /api/devices/ingest/epoch",
+    "info": "Collects 4 seconds of 8-channel ADS1299 waveforms in flow context, runs automated qEEG DSP analysis, and persists DeviceRecordingSession results.",
+    "x": 430,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "ws-in-epoch",
+    "type": "websocket in",
+    "z": "tab-qeeg-epoch",
+    "name": "ESP32 Binary Stream",
+    "server": "ws-listener-hw",
+    "client": "",
+    "x": 140,
+    "y": 140,
+    "wires": [
+      [
+        "fn-buffer-epoch"
+      ]
+    ]
+  },
+  {
+    "id": "inj-flush-epoch",
+    "type": "inject",
+    "z": "tab-qeeg-epoch",
+    "name": "Flush Buffered Epoch Now",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "flush",
+    "payload": "flush",
+    "payloadType": "str",
+    "x": 160,
+    "y": 220,
+    "wires": [
+      [
+        "fn-buffer-epoch"
+      ]
+    ]
+  },
+  {
+    "id": "fn-buffer-epoch",
+    "type": "function",
+    "z": "tab-qeeg-epoch",
+    "name": "Buffer 8-Ch EEG -> 4s CSV Epoch",
+    "func": "const apiUrl = (global.get(\"neurolinkApiUrl\") || \"http://127.0.0.1:4000\").replace(/\\/+$/, \"\");\nconst deviceCode = global.get(\"hwActiveDeviceCode\") || global.get(\"defaultDeviceCode\") || \"NL-HOLTER-01\";\nconst sampleRateSps = global.get(\"hwLastRateSps\") || 500;\nconst channelNames = [\"F3\", \"F4\", \"C3\", \"C4\", \"O1\", \"O2\", \"T3\", \"T4\"];\nconst targetSamples = Math.max(250, Math.round(sampleRateSps * 4)); // 4-second epoch\n\nlet buffer = flow.get(\"epochBuffer\") || [];\n\nif (msg.topic !== \"flush\") {\n    const raw = msg.payload;\n    if (!Buffer.isBuffer(raw) || raw.length < 197) return null;\n    if (raw[0] !== 0xA5 || raw[1] !== 0xC2 || raw[2] !== 0x11 || raw[3] !== 0xD3 || raw[196] !== 0x5A) {\n        return null;\n    }\n    for (let offset = 0; offset + 197 <= raw.length; offset += 197) {\n        if (\n            raw[offset] !== 0xA5 ||\n            raw[offset + 1] !== 0xC2 ||\n            raw[offset + 2] !== 0x11 ||\n            raw[offset + 3] !== 0xD3 ||\n            raw[offset + 196] !== 0x5A\n        ) {\n            break;\n        }\n        for (let s = 0; s < 6; s++) {\n            const row = [];\n            for (let ch = 0; ch < 8; ch++) {\n                const val = raw.readFloatLE(offset + 4 + (s * 8 + ch) * 4);\n                row.push(Number.isFinite(val) ? Number(val.toFixed(3)) : 0);\n            }\n            buffer.push(row);\n        }\n    }\n}\n\nconst ready = (msg.topic === \"flush\" && buffer.length >= 64) || buffer.length >= targetSamples;\nif (!ready) {\n    if (buffer.length > targetSamples * 2) {\n        buffer = buffer.slice(-targetSamples);\n    }\n    flow.set(\"epochBuffer\", buffer);\n    return null;\n}\n\nconst epoch = buffer.slice(0, targetSamples);\nflow.set(\"epochBuffer\", buffer.slice(epoch.length));\n\nconst headerLine = channelNames.join(\",\");\nconst csvLines = [headerLine];\nfor (let i = 0; i < epoch.length; i++) {\n    csvLines.push(epoch[i].join(\",\"));\n}\nconst csvFull = csvLines.join(\"\\n\");\nconst csvSummary = csvLines.slice(0, Math.min(csvLines.length, 61)).join(\"\\n\");\nconst durationSec = Number((epoch.length / sampleRateSps).toFixed(2));\n\nmsg.url = apiUrl + \"/api/qeeg/analyze-csv\";\nmsg.headers = { \"Content-Type\": \"application/json\" };\nmsg._epochMeta = {\n    deviceCode,\n    montage: \"neurolink6\",\n    sampleRateSps,\n    channelNames,\n    sampleCount: epoch.length,\n    durationSec,\n    csvSummary\n};\nmsg.payload = {\n    filename: deviceCode + \"_epoch_\" + Date.now() + \".csv\",\n    csvText: csvFull,\n    samplingRateHz: sampleRateSps,\n    clinicalCategory: \"HARDWARE_BCI\"\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 430,
+    "y": 160,
+    "wires": [
+      [
+        "http-post-qeeg-csv"
+      ]
+    ]
+  },
+  {
+    "id": "http-post-qeeg-csv",
+    "type": "http request",
+    "z": "tab-qeeg-epoch",
+    "name": "POST /api/qeeg/analyze-csv",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 710,
+    "y": 160,
+    "wires": [
+      [
+        "fn-wrap-epoch"
+      ]
+    ]
+  },
+  {
+    "id": "fn-wrap-epoch",
+    "type": "function",
+    "z": "tab-qeeg-epoch",
+    "name": "Package Epoch + qEEG Result",
+    "func": "const apiUrl = (global.get(\"neurolinkApiUrl\") || \"http://127.0.0.1:4000\").replace(/\\/+$/, \"\");\nconst secret = global.get(\"ingestSecret\") || \"neurolink-nodered-dev-secret\";\nconst meta = msg._epochMeta || {\n    deviceCode: global.get(\"defaultDeviceCode\") || \"NL-HOLTER-01\",\n    montage: \"neurolink6\",\n    sampleRateSps: 500,\n    channelNames: [\"F3\", \"F4\", \"C3\", \"C4\", \"O1\", \"O2\", \"T3\", \"T4\"],\n    sampleCount: 0,\n    durationSec: 4,\n    csvSummary: \"\"\n};\n\nmsg.url = apiUrl + \"/api/devices/ingest/epoch\";\nmsg.headers = {\n    \"x-nodered-secret\": secret,\n    \"Content-Type\": \"application/json\"\n};\nmsg.payload = {\n    deviceCode: meta.deviceCode,\n    title: \"Node-RED 4s qEEG Epoch (\" + meta.deviceCode + \")\",\n    montage: meta.montage,\n    sampleRateSps: meta.sampleRateSps,\n    channelNames: meta.channelNames,\n    sampleCount: Math.max(1, Number(meta.sampleCount) || 1),\n    durationSec: Math.max(0.01, Number(meta.durationSec) || 4),\n    csvSummary: meta.csvSummary,\n    qeegResultJson: msg.payload\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 970,
+    "y": 160,
+    "wires": [
+      [
+        "http-post-ingest-epoch"
+      ]
+    ]
+  },
+  {
+    "id": "http-post-ingest-epoch",
+    "type": "http request",
+    "z": "tab-qeeg-epoch",
+    "name": "POST /api/devices/ingest/epoch",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1230,
+    "y": 160,
+    "wires": [
+      [
+        "dbg-epoch-resp"
+      ]
+    ]
+  },
+  {
+    "id": "dbg-epoch-resp",
+    "type": "debug",
+    "z": "tab-qeeg-epoch",
+    "name": "Epoch Persisted Ack",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1470,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "cmt-sim-overview",
+    "type": "comment",
+    "z": "tab-esp32-simulator",
+    "name": "One-Click Hardware Pipeline Demo (No Physical ESP32 Required) -> Express :4000",
+    "info": "Click any inject button below to push realistic telemetry, 250-sample 8-ch waveforms, and clinical alerts straight into NeuroLink WebApp & PostgreSQL.",
+    "x": 340,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "inj-sim-normal",
+    "type": "inject",
+    "z": "tab-esp32-simulator",
+    "name": "Sim: Normal Sinusoidal EEG",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "sim",
+    "payload": "normal",
+    "payloadType": "str",
+    "x": 170,
+    "y": 120,
+    "wires": [
+      [
+        "fn-sim-generator"
+      ]
+    ]
+  },
+  {
+    "id": "inj-sim-stroke",
+    "type": "inject",
+    "z": "tab-esp32-simulator",
+    "name": "Sim: Acute Stroke Alert",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "sim",
+    "payload": "stroke_alert",
+    "payloadType": "str",
+    "x": 160,
+    "y": 200,
+    "wires": [
+      [
+        "fn-sim-generator"
+      ]
+    ]
+  },
+  {
+    "id": "inj-sim-battery",
+    "type": "inject",
+    "z": "tab-esp32-simulator",
+    "name": "Sim: Critical Battery 3.38V",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "sim",
+    "payload": "low_battery",
+    "payloadType": "str",
+    "x": 170,
+    "y": 280,
+    "wires": [
+      [
+        "fn-sim-generator"
+      ]
+    ]
+  },
+  {
+    "id": "fn-sim-generator",
+    "type": "function",
+    "z": "tab-esp32-simulator",
+    "name": "Synthesize ESP32 Telemetry + 8ch Waveforms + Alerts",
+    "func": "const scenario = String(msg.payload || \"normal\");\nconst apiUrl = (global.get(\"neurolinkApiUrl\") || \"http://127.0.0.1:4000\").replace(/\\/+$/, \"\");\nconst secret = global.get(\"ingestSecret\") || \"neurolink-nodered-dev-secret\";\nconst deviceCode = global.get(\"defaultDeviceCode\") || \"NL-HOLTER-01\";\nconst headers = {\n    \"x-nodered-secret\": secret,\n    \"Content-Type\": \"application/json\"\n};\n\nconst sampleRateSps = 500;\nconst nSamples = 250; // 0.5s realistic burst @ 500 Hz\nconst samples = [];\n\nfor (let i = 0; i < nSamples; i++) {\n    const t = i / sampleRateSps;\n    const row = [];\n    for (let ch = 0; ch < 8; ch++) {\n        const isLeft = ch % 2 === 0;\n        const isOccipital = ch === 4 || ch === 5;\n        let val = 0;\n        if (scenario === \"stroke_alert\" && isLeft) {\n            val = 52 * Math.sin(2 * Math.PI * 2.2 * t + ch * 0.3)\n                + 11 * Math.sin(2 * Math.PI * 4.5 * t)\n                + (Math.random() - 0.5) * 4;\n        } else {\n            const alphaAmp = isOccipital ? 20 : 11;\n            val = alphaAmp * Math.sin(2 * Math.PI * 10.0 * t + ch * 0.25)\n                + 5.5 * Math.sin(2 * Math.PI * 6.0 * t + ch * 0.5)\n                + 2.5 * Math.sin(2 * Math.PI * 20.0 * t)\n                + (Math.random() - 0.5) * 2.5;\n        }\n        row.push(Number(val.toFixed(3)));\n    }\n    samples.push(row);\n}\n\nlet telemetry = {\n    type: \"telemetry\",\n    fw: \"V3.0.0\",\n    mode: \"EEG\",\n    rate_sps: sampleRateSps,\n    pga: 24,\n    sps: 499.8,\n    sd_rec: true,\n    markers: 1,\n    usb_only: false,\n    vbat_mv: 3920,\n    bat_pct: 84,\n    loff_p: 0,\n    ai_state: \"NORMAL\",\n    ai_rf_prob: 0.09,\n    ai_lr_prob: 0.07,\n    ai_bsi: 0.15,\n    ai_dar: 1.38,\n    ai_usable_ch: 8\n};\n\nlet alertMsg = null;\n\nif (scenario === \"stroke_alert\") {\n    telemetry = {\n        ...telemetry,\n        vbat_mv: 3810,\n        bat_pct: 72,\n        ai_state: \"STROKE_ALERT\",\n        ai_rf_prob: 0.91,\n        ai_lr_prob: 0.87,\n        ai_bsi: 0.68,\n        ai_dar: 5.42\n    };\n    alertMsg = {\n        url: apiUrl + \"/api/devices/ingest/alert\",\n        headers,\n        payload: {\n            deviceCode,\n            severity: \"CRITICAL\",\n            code: \"STROKE_ALERT\",\n            message: \"[Node-RED Sim] Cảnh báo đột quỵ cấp: bất đối xứng Delta bán cầu trái (RF=0.91, BSI=0.68, DAR=5.42).\"\n        }\n    };\n} else if (scenario === \"low_battery\") {\n    telemetry = {\n        ...telemetry,\n        vbat_mv: 3380,\n        bat_pct: 12,\n        sd_rec: false\n    };\n    alertMsg = {\n        url: apiUrl + \"/api/devices/ingest/alert\",\n        headers,\n        payload: {\n            deviceCode,\n            severity: \"WARNING\",\n            code: \"LOW_BATTERY\",\n            message: \"[Node-RED Sim] Pin Holter giảm xuống 3.38V (12%). Khuyến nghị sạc pin ngay.\"\n        }\n    };\n}\n\nconst telemetryMsg = {\n    url: apiUrl + \"/api/devices/ingest/telemetry\",\n    headers,\n    payload: {\n        deviceCode,\n        source: \"NODERED\",\n        telemetry\n    }\n};\n\nconst samplesMsg = {\n    url: apiUrl + \"/api/devices/ingest/samples\",\n    headers,\n    payload: {\n        deviceCode,\n        montage: \"neurolink6\",\n        sampleRateSps,\n        source: \"NODERED\",\n        samples\n    }\n};\n\nreturn [telemetryMsg, samplesMsg, alertMsg];",
+    "outputs": 3,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 500,
+    "y": 200,
+    "wires": [
+      [
+        "http-sim-telemetry"
+      ],
+      [
+        "http-sim-samples"
+      ],
+      [
+        "http-sim-alert"
+      ]
+    ]
+  },
+  {
+    "id": "http-sim-telemetry",
+    "type": "http request",
+    "z": "tab-esp32-simulator",
+    "name": "POST Telemetry -> :4000",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 840,
+    "y": 120,
+    "wires": [
+      [
+        "dbg-sim-out"
+      ]
+    ]
+  },
+  {
+    "id": "http-sim-samples",
+    "type": "http request",
+    "z": "tab-esp32-simulator",
+    "name": "POST 8ch Samples -> :4000",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 840,
+    "y": 200,
+    "wires": [
+      [
+        "dbg-sim-out"
+      ]
+    ]
+  },
+  {
+    "id": "http-sim-alert",
+    "type": "http request",
+    "z": "tab-esp32-simulator",
+    "name": "POST Clinical Alert -> :4000",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 840,
+    "y": 280,
+    "wires": [
+      [
+        "dbg-sim-out"
+      ]
+    ]
+  },
+  {
+    "id": "dbg-sim-out",
+    "type": "debug",
+    "z": "tab-esp32-simulator",
+    "name": "Simulator Response",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1120,
+    "y": 200,
+    "wires": []
+  }
+]
