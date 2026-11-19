@@ -26,7 +26,7 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -122,6 +122,23 @@ def find_nodered_cli() -> Optional[str]:
     return None
 
 
+def find_cloudflared_cli() -> Optional[str]:
+    """Locate cloudflared executable across project tools/, system PATH, and Program Files."""
+    candidates = [
+        ROOT_DIR / "tools" / "cloudflared.exe",
+        ROOT_DIR / "tools" / "cloudflared",
+        Path("C:/Program Files/cloudflared/cloudflared.exe"),
+        Path("C:/Program Files (x86)/cloudflared/cloudflared.exe"),
+    ]
+    which_cf = shutil.which("cloudflared")
+    if which_cf:
+        candidates.append(Path(which_cf))
+    for c in candidates:
+        if c.exists():
+            return str(c)
+    return None
+
+
 def find_qeeg_python() -> Optional[str]:
     """Locate a Python interpreter that can import uvicorn and fastapi."""
     candidates: List[Path] = [
@@ -156,7 +173,11 @@ def find_qeeg_python() -> Optional[str]:
     return None
 
 
-def _stream_output(proc: subprocess.Popen[str], tag: str) -> None:
+def _stream_output(
+    proc: subprocess.Popen[str],
+    tag: str,
+    on_line: Optional[Callable[[str], None]] = None,
+) -> None:
     """Stream child stdout/stderr lines with a consistent component prefix."""
     if proc.stdout is None:
         return
@@ -165,6 +186,11 @@ def _stream_output(proc: subprocess.Popen[str], tag: str) -> None:
             text = line.rstrip("\r\n")
             if text:
                 print(f"[{tag}] {text}", flush=True)
+                if on_line:
+                    try:
+                        on_line(text)
+                    except Exception:
+                        pass
     except Exception:
         pass
 
@@ -174,6 +200,7 @@ def spawn_managed(
     cmd: List[str],
     cwd: Path,
     extra_env: Optional[Dict[str, str]] = None,
+    on_line: Optional[Callable[[str], None]] = None,
 ) -> subprocess.Popen[str]:
     """Spawn a managed subprocess in its own process group with prefixed log streaming."""
     env = os.environ.copy()
@@ -198,7 +225,7 @@ def spawn_managed(
         creationflags=creationflags,
         start_new_session=(os.name != "nt"),
     )
-    reader = threading.Thread(target=_stream_output, args=(proc, tag), daemon=True)
+    reader = threading.Thread(target=_stream_output, args=(proc, tag, on_line), daemon=True)
     reader.start()
     return proc
 
@@ -420,8 +447,10 @@ def print_summary_banner(
     qeeg_payload: Dict[str, object],
     python_qeeg_active: bool,
     nodered_active: bool = False,
+    tunnel_url: Optional[str] = None,
+    tunnel_enabled: bool = True,
 ) -> None:
-    """Print URLs, engine routing status, and seeded demo account credentials."""
+    """Print URLs, engine routing status, public tunnel, and seeded demo account credentials."""
     engine_source = qeeg_payload.get("engineSource", "ts_dsp_fallback")
     categories = qeeg_payload.get(
         "categories",
@@ -431,6 +460,12 @@ def print_summary_banner(
     print("  NEUROLINK UNIFIED MEGA-SERVER IS ONLINE")
     print("=" * 72)
     print(f"  Web Application (UI)    : http://127.0.0.1:{UI_PORT}")
+    if tunnel_url:
+        print(f"  Public Web Access       : {tunnel_url}  <-- LINK CHO BAN BE")
+    elif tunnel_enabled:
+        print("  Public Web Access       : DANG TAO DUONG DAN... (Kiem tra log [tunnel])")
+    else:
+        print("  Public Web Access       : DA TAT (--no-share)")
     print(f"  Clinical Workstation    : http://127.0.0.1:{UI_PORT}/clinical-workstation")
     print(f"  Express API Health      : http://127.0.0.1:{API_PORT}/api/health")
     print(f"  Hardware Direct WS      : ws://127.0.0.1:{API_PORT}/ws/hardware")
@@ -460,6 +495,7 @@ def run_preflight(node_cmd: str) -> int:
     pg_open = is_port_open(PG_HOST, PG_PORT)
     py_exe = find_qeeg_python()
     nodered_cli = find_nodered_cli()
+    cf_cli = find_cloudflared_cli()
     nodered_open = is_port_open("127.0.0.1", NODERED_PORT)
     print(f"[preflight] Root dir        : {ROOT_DIR}")
     print(f"[preflight] server/.env     : {(SERVER_DIR / '.env').exists()}")
@@ -478,6 +514,9 @@ def run_preflight(node_cmd: str) -> int:
         f"[preflight] Node-RED :1880  : {'OPEN' if nodered_open else 'CLOSED'} "
         f"(flows={'OK' if (NODERED_DIR / 'flows.json').exists() else 'MISSING'})"
     )
+    print(
+        f"[preflight] Cloudflare Tun  : {cf_cli or 'NOT FOUND (localtunnel fallback ready)'}"
+    )
     return 0
 
 
@@ -485,7 +524,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Launch the unified NeuroLink Mega-Server "
-            "(PostgreSQL + FastAPI qEEG + Express + Node-RED IoT + Vite)."
+            "(PostgreSQL + FastAPI qEEG + Express + Node-RED IoT + Vite + Cloudflare Tunnel)."
         )
     )
     parser.add_argument("--skip-seed", action="store_true", help="Do not auto-seed if User count is 0.")
@@ -494,6 +533,11 @@ def parse_args() -> argparse.Namespace:
         "--no-nodered",
         action="store_true",
         help="Skip Node-RED IoT Visual Gateway (:1880); direct Express WS (:4000) stays active.",
+    )
+    parser.add_argument(
+        "--no-share",
+        action="store_true",
+        help="Disable public Cloudflare/localtunnel sharing (enabled by default).",
     )
     parser.add_argument(
         "--preflight",
@@ -689,12 +733,74 @@ def main() -> int:
                 if not nodered_active and nodered_proc.poll() is None:
                     nodered_active = is_port_open("127.0.0.1", NODERED_PORT)
 
-        # (f) Poll unified endpoints and print banner
+        # (f) Public Share Tunnel (Cloudflare Tunnel or localtunnel)
+        tunnel_urls: List[str] = []
+        if not args.no_share:
+            cf_cli = find_cloudflared_cli()
+
+            def _on_tunnel_line(line: str) -> None:
+                m_cf = re.search(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com", line)
+                if m_cf and not tunnel_urls:
+                    url = m_cf.group(0)
+                    tunnel_urls.append(url)
+                    print(
+                        f"\n{'=' * 72}\n"
+                        f"  >>> LINK PUBLIC INTERNET CHO BAN BE: {url} <<<\n"
+                        f"{'=' * 72}\n",
+                        flush=True,
+                    )
+                m_lt = re.search(r"https://[a-zA-Z0-9-]+\.loca\.lt", line)
+                if m_lt and not tunnel_urls:
+                    url = m_lt.group(0)
+                    tunnel_urls.append(url)
+                    print(
+                        f"\n{'=' * 72}\n"
+                        f"  >>> LINK PUBLIC INTERNET CHO BAN BE: {url} <<<\n"
+                        f"{'=' * 72}\n",
+                        flush=True,
+                    )
+
+            if cf_cli:
+                print(
+                    f"[tunnel] Starting Cloudflare Public Tunnel -> 127.0.0.1:{UI_PORT}...",
+                    flush=True,
+                )
+                tunnel_proc = spawn_managed(
+                    "tunnel",
+                    [cf_cli, "tunnel", "--url", f"http://127.0.0.1:{UI_PORT}", "--no-autoupdate"],
+                    ROOT_DIR,
+                    on_line=_on_tunnel_line,
+                )
+                managed_procs.append(("tunnel", tunnel_proc))
+            else:
+                print(
+                    f"[tunnel] Cloudflare binary not found; starting localtunnel -> 127.0.0.1:{UI_PORT}...",
+                    flush=True,
+                )
+                tunnel_proc = spawn_managed(
+                    "tunnel",
+                    [npx_cmd, "--yes", "localtunnel", "--port", str(UI_PORT), "--subdomain", "neurolink-eeg"],
+                    ROOT_DIR,
+                    on_line=_on_tunnel_line,
+                )
+                managed_procs.append(("tunnel", tunnel_proc))
+
+        # (g) Poll unified endpoints and print banner
         qeeg_payload = wait_for_unified_health(timeout_sec=60.0, watched_procs=watched_critical)
+
+        # Brief wait if tunnel url is still registering with edge
+        if not args.no_share and not tunnel_urls:
+            t_wait_deadline = time.monotonic() + 4.0
+            while time.monotonic() < t_wait_deadline and not tunnel_urls and not stop_event.is_set():
+                time.sleep(0.5)
+
+        active_tunnel_url = tunnel_urls[0] if tunnel_urls else None
         print_summary_banner(
             qeeg_payload,
             python_qeeg_active=python_qeeg_active,
             nodered_active=nodered_active,
+            tunnel_url=active_tunnel_url,
+            tunnel_enabled=not args.no_share,
         )
 
         while not stop_event.is_set():

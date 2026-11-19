@@ -42,5 +42,6 @@ node_red/.sessions.json
 node_red/flows_cred.json
 node_red/lib/
 node_red/node_modules/
+tools/
 *.zip
 !hardware/**/*.zip
