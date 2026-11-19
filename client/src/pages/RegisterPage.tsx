@@ -76,19 +76,19 @@ export function RegisterPage() {
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         {formError && <Alert>{formError}</Alert>}
         <Field label="Tên hiển thị" htmlFor="displayName" error={errors.displayName}>
-          <Input id="displayName" value={form.displayName} onChange={set('displayName')} invalid={!!errors.displayName} autoComplete="name" />
+          <Input id="displayName" name="displayName" value={form.displayName} onChange={set('displayName')} invalid={!!errors.displayName} autoComplete="name" required />
         </Field>
         <Field label="Tên người dùng" htmlFor="username" error={errors.username} hint="Dùng trong đường dẫn trang cá nhân, ví dụ: /u/nguyen_an">
-          <Input id="username" value={form.username} onChange={set('username')} invalid={!!errors.username} autoComplete="username" />
+          <Input id="username" name="username" value={form.username} onChange={set('username')} invalid={!!errors.username} autoComplete="username" spellCheck={false} autoCapitalize="none" autoCorrect="off" required />
         </Field>
         <Field label="E-mail" htmlFor="email" error={errors.email}>
-          <Input id="email" type="email" value={form.email} onChange={set('email')} invalid={!!errors.email} autoComplete="email" />
+          <Input id="email" name="email" type="email" value={form.email} onChange={set('email')} invalid={!!errors.email} autoComplete="email" required />
         </Field>
         <Field label="Mật khẩu" htmlFor="password" error={errors.password}>
-          <Input id="password" type="password" value={form.password} onChange={set('password')} invalid={!!errors.password} autoComplete="new-password" />
+          <Input id="password" name="password" type="password" value={form.password} onChange={set('password')} invalid={!!errors.password} autoComplete="new-password" required />
         </Field>
         <Field label="Xác nhận mật khẩu" htmlFor="confirm" error={errors.confirm}>
-          <Input id="confirm" type="password" value={form.confirm} onChange={set('confirm')} invalid={!!errors.confirm} autoComplete="new-password" />
+          <Input id="confirm" name="confirm" type="password" value={form.confirm} onChange={set('confirm')} invalid={!!errors.confirm} autoComplete="new-password" required />
         </Field>
         <Button type="submit" className="w-full" loading={submitting}>
           Đăng ký
