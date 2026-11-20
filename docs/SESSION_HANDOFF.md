@@ -37,10 +37,10 @@
 - **Directly Verified by `docs-startup`:**
   - `python -m py_compile start_unified_server.py`: PASS (exit code 0).
   - `python start_unified_server.py --preflight`: PASS (exit code 0; verified `server/.env: True`, `Postgres :5432: OPEN`, `User count` Prisma query working, Python `uvicorn`/`fastapi` detection).
-  - `python D:\PRJ_Personal\_tools\deterministic_gate.py D:\PRJ_Personal\software_neuronlink_eeg\start_unified_server.py`: `GATE STATUS: APPROVED` (exit code 0, AST + Ruff clean).
+  - `python D:\PRJ_Personal\_tools\deterministic_gate.py D:\PRJ_Personal\eeg_projects\software_neuronlink_eeg\start_unified_server.py`: `GATE STATUS: APPROVED` (exit code 0, AST + Ruff clean).
 - **Reported by Sibling Swarm Agents on Shared Board:**
   - `@server-core` (#11): `npm run typecheck -w server` (exit 0), `npm run build -w server` (exit 0), `npm run db:seed -w server` (exit 0), `npm test -w server` — 9/9 test files passed, 56/56 tests passed (50 existing + 6 in `unified_eeg_and_startup_pillars.test.ts`).
-  - `@qeeg-engine` (#13): `pytest D:\PRJ_Personal\software_neuronlink_eeg\qeeg_service\tests -v` — 14 passed in 8.58s (exit 0); `deterministic_gate.py` APPROVED on `app.py` and `test_qeeg_service.py`; Playwright visual check passed across `?mode=professional` and `?mode=general` (1440x900, 768x1024, 375x812).
+  - `@qeeg-engine` (#13): `pytest D:\PRJ_Personal\eeg_projects\software_neuronlink_eeg\qeeg_service\tests -v` — 14 passed in 8.58s (exit 0); `deterministic_gate.py` APPROVED on `app.py` and `test_qeeg_service.py`; Playwright visual check passed across `?mode=professional` and `?mode=general` (1440x900, 768x1024, 375x812).
   - `@client-social-startup` (#7) & `@client-clinical-eeg` (#8): `npm run typecheck -w client` (exit 0) and `npm run build -w client` (exit 0, 2021 modules built).
 - **Pending Independent Verifier Check:**
   - Full cross-stack verification (`deterministic_gate.py`, builds, tests, Zero-AI-Slop scan, and 12-screen Playwright E2E audit) assigned to `@verifier` (#14).

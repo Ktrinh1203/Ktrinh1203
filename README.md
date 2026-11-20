@@ -22,7 +22,7 @@ Chiến lược kinh doanh chi tiết và phân tích rủi ro pháp lý - lâm 
 
 ## 1. Khởi động Toàn Hệ thống bằng 1 Lệnh (Unified Mega-Server)
 
-Từ thư mục gốc dự án (`D:\PRJ_Personal\software_neuronlink_eeg`), chạy lệnh sau hoặc nhấp đúp vào [start.bat](./start.bat) trên Windows:
+Từ thư mục gốc dự án (`D:\PRJ_Personal\eeg_projects\software_neuronlink_eeg`), chạy lệnh sau hoặc nhấp đúp vào [start.bat](./start.bat) trên Windows:
 
 ```powershell
 python start_unified_server.py

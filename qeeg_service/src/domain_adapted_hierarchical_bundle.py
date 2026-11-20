@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-File: d:/PRJ_Personal/acute_stroke_eeg/src/domain_adapted_hierarchical_bundle.py
+File: d:/PRJ_Personal/eeg_projects/acute_stroke_eeg/src/domain_adapted_hierarchical_bundle.py
 Description:
     Unified Production-Grade Domain-Adapted Hierarchical Stroke Classifier Bundle.
     Combines:
@@ -458,7 +458,7 @@ def test_bundle_end_to_end():
 
     # 1. Load canonical production model
     bundle = DomainAdaptedHierarchicalBundle()
-    model_path = Path("D:/PRJ_Personal/acute_stroke_eeg/models/stroke_3class_production_model.joblib")
+    model_path = Path("D:/PRJ_Personal/eeg_projects/acute_stroke_eeg/models/stroke_3class_production_model.joblib")
     bundle.load(model_path)
     print(f"[+] Production bundle loaded successfully! Features count: {len(bundle.feature_names)}")
 

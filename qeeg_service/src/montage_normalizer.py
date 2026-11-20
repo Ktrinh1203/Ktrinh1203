@@ -1,7 +1,7 @@
 """
 Montage Normalizer & Spherical Splines Interpolator (Milestone 2 - Pillar 1)
 Project: Acute Stroke EEG AI Research (19-Channel Real-time Detection & Benchmarking)
-Location: D:/PRJ_Personal/acute_stroke_eeg/src/montage_normalizer.py
+Location: D:/PRJ_Personal/eeg_projects/acute_stroke_eeg/src/montage_normalizer.py
 
 Key Capabilities & Electrophysiological Foundations:
 1. Global Average Reference (GAR):

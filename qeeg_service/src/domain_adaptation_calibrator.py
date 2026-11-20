@@ -1,7 +1,7 @@
 """
 Domain Adaptation & Test-Time Baseline Calibrator (Milestone 2 - Pillar 2)
 Project: Autonomous Acute Stroke EEG AI Research (19-Channel Real-time Detection & Benchmarking)
-Location: D:/PRJ_Personal/acute_stroke_eeg/src/domain_adaptation_calibrator.py
+Location: D:/PRJ_Personal/eeg_projects/acute_stroke_eeg/src/domain_adaptation_calibrator.py
 
 Implements Unsupervised Test-Time Domain Adaptation (TDA) & Baseline Calibration:
 Addresses severe cross-center hardware, montage, and population domain shift observed when

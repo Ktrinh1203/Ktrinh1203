@@ -80,7 +80,7 @@ if os.path.exists("C:/Windows/Fonts/arial.ttf") and os.path.exists("C:/Windows/F
 # ---------------------------------------------------------------------------
 MODEL_PATH = os.path.join(QEEG_DIR, "models", "stroke_3class_production_model.joblib")
 N1_LOCAL_BUNDLE_PATH = os.path.join(QEEG_DIR, "models", "hospital_grade_n1_3state_bundle.joblib")
-N1_FALLBACK_BUNDLE_PATH = r"D:\PRJ_Personal\acute_stroke_eeg\models\hospital_grade_n1_3state_bundle.joblib"
+N1_FALLBACK_BUNDLE_PATH = r"D:\PRJ_Personal\eeg_projects\acute_stroke_eeg\models\hospital_grade_n1_3state_bundle.joblib"
 N1_BENCHMARK_PATH = os.path.join(QEEG_DIR, "results", "hospital_grade_n1_benchmark_results.json")
 ADS1299_SAMPLE_PATH = os.path.join(QEEG_DIR, "sample_data", "ads1299_500hz_sample.csv")
 STATIC_DIR = os.path.join(QEEG_DIR, "static")

@@ -3051,5 +3051,5 @@
       }
     }
   },
-  "bundle_path": "D:\\PRJ_Personal\\acute_stroke_eeg\\models\\hospital_grade_n1_3state_bundle.joblib"
+  "bundle_path": "D:\\PRJ_Personal\\eeg_projects\\acute_stroke_eeg\\models\\hospital_grade_n1_3state_bundle.joblib"
 }

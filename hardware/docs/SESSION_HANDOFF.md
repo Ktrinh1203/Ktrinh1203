@@ -10,8 +10,8 @@
   - `src/pc_eeg_studio.py`: Đầy đủ lệnh v3 (`info`, `ai`, `pwr`, `sd-list`, `wifi-config`, `recover`, `record --montage`, `convert-bin --montage`, `bridge`), khóa cứng `COM10` trên mọi lệnh mở serial.
   - `src/hw_test_runner.py`: Khóa `COM10`, thêm parser JSON v3 (`AI`, `PWR`, `WIFI_STATUS`, `SD_LIST`, `RECOVER`) và đánh giá `v3_telemetry` (`vbat_v`, `vbat_pct`, `ai_ok`, `wifi_state`, ngưỡng pin `>= 3.42 V`) giữ tương thích ngược v2.
 - **Kiểm thử & Cổng tĩnh**:
-  - `python D:\PRJ_Personal\_tools\deterministic_gate.py D:\PRJ_Personal\esp32_ads1299_holter\src`: Exit `0`.
-  - `pytest D:\PRJ_Personal\esp32_ads1299_holter\tests -v`: Toàn bộ test pass (gồm guard `COM10`, montage `raw/glasses/neurolink6`, v3 JSON & đánh giá phần cứng, RFC 6455 WS handshake + binary frame + mock HTTP `/api/qeeg/analyze-csv`, SOS zero-transient DSP và guard `4000 SPS`).
+  - `python D:\PRJ_Personal\_tools\deterministic_gate.py D:\PRJ_Personal\eeg_projects\esp32_ads1299_holter\src`: Exit `0`.
+  - `pytest D:\PRJ_Personal\eeg_projects\esp32_ads1299_holter\tests -v`: Toàn bộ test pass (gồm guard `COM10`, montage `raw/glasses/neurolink6`, v3 JSON & đánh giá phần cứng, RFC 6455 WS handshake + binary frame + mock HTTP `/api/qeeg/analyze-csv`, SOS zero-transient DSP và guard `4000 SPS`).
 
 ## Lịch sử nghiệm thu phần cứng thực tế (`COM11` — v2 baseline, `COM11` hiện đang rút cáp)
 - Bản v2 trước đó đã pass 8/8 POST checks trên `COM11` @ `921600 bps`: ADS1299 ID `0x3E`, shorted noise `0.22–0.30 µVrms`, test signal `3769–3787 µVpp`, live stream `500 SPS` & `2000 SPS` ổn định `0 dropped`.
