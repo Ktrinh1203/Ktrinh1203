@@ -1,6 +1,12 @@
 import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { Logo } from '../../components/layout/AppShell';
 
+interface NodeSpoke {
+  angle: number;
+  len: number;
+  hasTip: boolean;
+}
+
 interface MeshPoint {
   xFrac: number;
   yFrac: number;
@@ -10,6 +16,8 @@ interface MeshPoint {
   vy: number;
   radius: number;
   highlight: number;
+  phase: number;
+  spokes: NodeSpoke[];
 }
 
 interface MeshPulse {
@@ -20,24 +28,34 @@ interface MeshPulse {
   alpha: number;
 }
 
-const POINT_COUNT = 82;
-const LINK_DISTANCE = 148;
-const CURSOR_REVEAL_RADIUS = 230;
-const CURSOR_DIRECT_LINK_RADIUS = 185;
+const POINT_COUNT = 128;
+const LINK_DISTANCE = 195;
+const CURSOR_REVEAL_RADIUS = 270;
+const CURSOR_DIRECT_LINK_RADIUS = 235;
 
 function createMeshPoints(width: number, height: number): MeshPoint[] {
-  return Array.from({ length: POINT_COUNT }, () => {
+  return Array.from({ length: POINT_COUNT }, (_, idx) => {
     const xFrac = Math.random();
     const yFrac = Math.random();
+    const spokeCount = 6 + (idx % 4); // 6 to 9 radiating filaments per node
+    const baseAngle = Math.random() * Math.PI * 2;
+    const spokes: NodeSpoke[] = Array.from({ length: spokeCount }, (__, s) => ({
+      angle: baseAngle + (s / spokeCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.32,
+      len: 12 + Math.random() * 18,
+      hasTip: s % 2 === 0,
+    }));
+
     return {
       xFrac,
       yFrac,
       x: xFrac * width,
       y: yFrac * height,
-      vx: (Math.random() - 0.5) * 0.45,
-      vy: (Math.random() - 0.5) * 0.45,
-      radius: 1.6 + Math.random() * 1.4,
+      vx: (Math.random() - 0.5) * 0.42,
+      vy: (Math.random() - 0.5) * 0.42,
+      radius: 1.8 + Math.random() * 1.4,
       highlight: 0,
+      phase: Math.random() * Math.PI * 2,
+      spokes,
     };
   });
 }
@@ -102,7 +120,10 @@ export function AuthLayout({
       typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
     observer?.observe(container);
 
-    const drawFrame = () => {
+    const startTime = performance.now();
+
+    const drawFrame = (now: number) => {
+      const t = (now - startTime) / 1000;
       const mouse = mouseRef.current;
       const pulses = pulsesRef.current;
 
@@ -111,13 +132,13 @@ export function AuthLayout({
       // Update expanding click pulses
       for (let i = pulses.length - 1; i >= 0; i--) {
         const rp = pulses[i];
-        rp.radius += 5.5;
+        rp.radius += 6;
         rp.alpha = Math.max(0, 0.55 * (1 - rp.radius / rp.maxRadius));
 
         ctx.beginPath();
         ctx.arc(rp.x, rp.y, rp.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(22, 163, 74, ${rp.alpha * 0.45})`;
-        ctx.lineWidth = 1.25;
+        ctx.strokeStyle = `rgba(22, 163, 74, ${rp.alpha * 0.48})`;
+        ctx.lineWidth = 1.3;
         ctx.stroke();
 
         if (rp.radius >= rp.maxRadius || rp.alpha <= 0.01) {
@@ -149,25 +170,25 @@ export function AuthLayout({
         }
 
         // Smooth decay so threads appear as mouse glides over and fade gently away
-        p.highlight *= 0.92;
+        p.highlight *= 0.93;
 
         if (mouse.active) {
           const dist = Math.hypot(mouse.x - p.x, mouse.y - p.y);
           if (dist < CURSOR_REVEAL_RADIUS) {
-            const intensity = Math.pow(1 - dist / CURSOR_REVEAL_RADIUS, 1.3);
+            const intensity = Math.pow(1 - dist / CURSOR_REVEAL_RADIUS, 1.2);
             p.highlight = Math.max(p.highlight, intensity);
           }
         }
 
         for (const rp of pulses) {
           const dRp = Math.hypot(p.x - rp.x, p.y - rp.y);
-          if (Math.abs(dRp - rp.radius) < 32) {
-            p.highlight = Math.max(p.highlight, 0.95);
+          if (Math.abs(dRp - rp.radius) < 36) {
+            p.highlight = Math.max(p.highlight, 0.98);
           }
         }
       }
 
-      // Draw multi-strand network edges radiating from each node
+      // Draw dense multi-strand neural edges radiating between neighboring nodes
       const maxDistSq = LINK_DISTANCE * LINK_DISTANCE;
       for (let i = 0; i < points.length; i++) {
         const a = points[i];
@@ -182,20 +203,31 @@ export function AuthLayout({
             const distRatio = 1 - dist / LINK_DISTANCE;
             const pairHighlight = Math.max(a.highlight, b.highlight);
 
-            // Whisper-quiet ambient web at rest; vividly revealed around mouse cursor
-            const alpha = distRatio * (0.065 + pairHighlight * 0.46);
+            // Subtle ambient mesh at rest; rich multi-strand web around cursor/pulse
+            const alpha = distRatio * (0.07 + pairHighlight * 0.5);
             if (alpha < 0.015) continue;
 
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(b.x, b.y);
             ctx.strokeStyle = `rgba(22, 163, 74, ${alpha})`;
-            ctx.lineWidth = 0.7 + pairHighlight * 0.95;
+            ctx.lineWidth = 0.65 + pairHighlight * 0.95;
             ctx.stroke();
+
+            // Travelling neural signal dot along active strands
+            if (!reducedMotion && pairHighlight > 0.3 && (i + j) % 2 === 0) {
+              const travel = ((t * 0.65 + a.phase) % 1 + 1) % 1;
+              const px = a.x + dx * travel;
+              const py = a.y + dy * travel;
+              ctx.beginPath();
+              ctx.arc(px, py, 1.35, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(16, 185, 129, ${pairHighlight * 0.85})`;
+              ctx.fill();
+            }
           }
         }
 
-        // Connect nearby nodes directly to cursor to complete radiating strands
+        // Connect nearby nodes directly to cursor for dense multi-spoke pointer web
         if (mouse.active) {
           const mdx = mouse.x - a.x;
           const mdy = mouse.y - a.y;
@@ -205,22 +237,48 @@ export function AuthLayout({
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(mouse.x, mouse.y);
-            ctx.strokeStyle = `rgba(21, 128, 61, ${ratio * 0.45})`;
-            ctx.lineWidth = 0.9 + ratio * 0.8;
+            ctx.strokeStyle = `rgba(21, 128, 61, ${ratio * 0.5})`;
+            ctx.lineWidth = 0.85 + ratio * 0.85;
             ctx.stroke();
           }
         }
       }
 
-      // Draw crisp network points (vertices)
+      // Draw each node + its own 6-9 radiating neural filaments (spokes)
       for (const p of points) {
-        const dotAlpha = 0.14 + p.highlight * 0.72;
-        const dotRadius = p.radius + p.highlight * 1.45;
+        const dotAlpha = 0.16 + p.highlight * 0.75;
+        const dotRadius = p.radius + p.highlight * 1.4;
+        const driftRot = reducedMotion ? 0 : Math.sin(t * 0.7 + p.phase) * 0.12;
+
+        // Radiating terminal filaments around every vertex
+        const spokeAlpha = 0.06 + p.highlight * 0.52;
+        if (spokeAlpha > 0.04) {
+          for (const sp of p.spokes) {
+            const ang = sp.angle + driftRot;
+            const len = sp.len * (0.72 + p.highlight * 0.55);
+            const sx = p.x + Math.cos(ang) * len;
+            const sy = p.y + Math.sin(ang) * len;
+
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(sx, sy);
+            ctx.strokeStyle = `rgba(22, 163, 74, ${spokeAlpha})`;
+            ctx.lineWidth = 0.55 + p.highlight * 0.55;
+            ctx.stroke();
+
+            if (sp.hasTip && p.highlight > 0.12) {
+              ctx.beginPath();
+              ctx.arc(sx, sy, 0.9 + p.highlight * 0.6, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(16, 185, 129, ${p.highlight * 0.7})`;
+              ctx.fill();
+            }
+          }
+        }
 
         if (p.highlight > 0.25) {
           ctx.beginPath();
-          ctx.arc(p.x, p.y, dotRadius * 2.4, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(34, 197, 94, ${p.highlight * 0.14})`;
+          ctx.arc(p.x, p.y, dotRadius * 2.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(34, 197, 94, ${p.highlight * 0.15})`;
           ctx.fill();
         }
 
@@ -235,7 +293,7 @@ export function AuthLayout({
       }
     };
 
-    drawFrame();
+    drawFrame(performance.now());
 
     return () => {
       cancelAnimationFrame(rafId);
@@ -267,7 +325,7 @@ export function AuthLayout({
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
       radius: 4,
-      maxRadius: 240,
+      maxRadius: 280,
       alpha: 0.55,
     });
     if (pulsesRef.current.length > 10) {
@@ -283,7 +341,7 @@ export function AuthLayout({
       onClick={handleClick}
       className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#F5FAF7] px-4 py-10 text-[#141413]"
     >
-      {/* Interactive Multi-Point Radiating Mesh Canvas (Revealed on Hover/Move) */}
+      {/* Interactive Multi-Point Radiating Neural Mesh Canvas */}
       <canvas
         ref={canvasRef}
         aria-hidden="true"
