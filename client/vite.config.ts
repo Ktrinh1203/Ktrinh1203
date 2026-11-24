@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 // In development the Vite dev server proxies API, upload, and clinical workstation
 // requests to the Express backend, so the browser sees a single origin (cookies stay first-party).
 export default defineConfig({
+  base: process.env.VITE_BASE_PATH || '/',
   plugins: [react(), tailwindcss()],
   server: {
     host: true,

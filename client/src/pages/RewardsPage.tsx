@@ -36,6 +36,7 @@ import type {
 import { Button, Card, EmptyState, Input, Spinner, Textarea } from '../components/ui';
 import { useAuth } from '../features/auth/AuthContext';
 import { DeterministicQrMatrixSvg, EmbeddedQrCode } from '../features/wallet/EmbeddedQrCode';
+import { assetUrl } from '../lib/assets';
 
 type WalletTab = 'topup' | 'transfer' | 'catalog' | 'ledger';
 
@@ -784,7 +785,7 @@ export function RewardsPage() {
                       onClick={() =>
                         copyText(
                           'receiveLink',
-                          `${window.location.origin}/rewards?tab=transfer&to=${encodeURIComponent(user.username)}`,
+                          `${window.location.origin}${assetUrl(`rewards?tab=transfer&to=${encodeURIComponent(user.username)}`)}`,
                         )
                       }
                       className="inline-flex items-center gap-1 rounded-lg border border-[#DCE6DF] bg-white px-3 py-1.5 text-xs font-semibold text-[#111827] hover:bg-[#ECFDF3] transition-colors"

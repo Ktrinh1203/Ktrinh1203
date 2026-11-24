@@ -99,3 +99,16 @@
   - `start.bat`: Kiểm tra sẵn các cổng `:4000`, `:5173`, `:5174` ở chế độ Node.js fallback để tránh khởi chạy chồng chéo khi dịch vụ đang chạy, đồng thời bổ sung `--preflight` kiểm tra trạng thái cổng và `server/.env`.
   - `start_mobile.bat`: Tự động nhận diện Mobile `:5174` hoặc API `:4000` đang chạy sẵn để mở thẳng trình duyệt hoặc chỉ bật `npm run dev:mobile` thay vì khởi động lại toàn bộ stack.
   - `server/scripts/pg-daemon.ts`: Kiểm tra TCP `127.0.0.1:5432` / `::1:5432` trước khi `initialise()`/`start()` để tái sử dụng PostgreSQL đang mở an toàn và xử lý shutdown idempotent.
+
+---
+
+## 8. Plug-and-Play & UI De-clutter across Clinical Workstation, Web (`:5173`), Mobile (`:5174`) (`2026-11-24`)
+
+- **Phạm vi cập nhật (11 files trong working tree, không chỉnh sửa thêm code sau kiểm định):**
+  - **Clinical Workstation (`qeeg_service/static/index.html`):** Tinh gọn và tối ưu hóa giao diện Plug-and-Play / UI de-clutter cho trạm phân tích lâm sàng.
+  - **Web SPA (`:5173` — `client/src/features/eeg/{DataBankMarketplacePanel.tsx,HardwareDevicePanel.tsx,NeuralDatabasePanel.tsx,QeegStudioPanel.tsx,eegLabels.ts}`, `client/src/pages/{ConsultationsPage.tsx,ContributionsPage.tsx,MyHealthPage.tsx,SettingsPage.tsx}`):** Giảm nhiễu thị giác, đơn giản hóa nhãn tiếng Việt và luồng thao tác Plug-and-Play thiết bị phần cứng trên Web.
+  - **Mobile SPA (`:5174` — `mobile/src/pages/EegPage.tsx`):** Chuẩn hóa giao diện và luồng kết nối thiết bị EEG / qEEG trên Mobile.
+- **Bằng chứng kiểm định (`2026-11-24`):**
+  - **Adversarial Review Gate:** `🟢 [GATE_STATUS: APPROVED]` (`2026-11-24`).
+  - **Ảnh chụp kiểm chứng Mobile & Responsive (`docs/verification_screenshots/mobile/`):** Đã cập nhật bộ ảnh kiểm chứng ngày `2026-11-24` (`01_mobile_login_375.png` – `18_mobile_story_bubbles_zoom_375.png`, gồm `04_mobile_eeg_general_375.png`, `10_mobile_pro_eeg_375.png`, `10b_mobile_pro_eeg_topomap_375.png`, `10c_mobile_pro_device_375.png`, `12_tablet_768.png`, `13_desktop_1440.png`).
+  - **Trạng thái Git (`git status --short`):** 11 file đã chỉnh sửa ở tầng UI (`client/`, `mobile/`, `qeeg_service/static/index.html`), được giữ nguyên vẹn sau phê duyệt của Adversarial Review Gate.

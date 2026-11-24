@@ -21,6 +21,7 @@ import { ProfessionalBadge } from '../../components/user/ProfessionalBadge';
 import { useAuth } from '../auth/AuthContext';
 import { useMode } from '../../context/ModeContext';
 import { CommentSection } from './CommentSection';
+import { assetUrl } from '../../lib/assets';
 import type { PostItem } from '../../api/types';
 
 export function PostCard({
@@ -181,7 +182,7 @@ export function PostCard({
   });
 
   const handleCopyLink = () => {
-    const postUrl = `${window.location.origin}/u/${post.author.username}`;
+    const postUrl = `${window.location.origin}${assetUrl(`u/${post.author.username}`)}`;
     navigator.clipboard.writeText(postUrl).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

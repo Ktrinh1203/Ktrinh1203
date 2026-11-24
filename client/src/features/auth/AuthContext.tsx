@@ -15,14 +15,23 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 export const ME_QUERY_KEY = ['auth', 'me'] as const;
+const isStaticHost = import.meta.env.VITE_STATIC_HOST === 'true';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUserState] = useState<SelfUser | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(() => !isStaticHost);
 
-  // Check active session on initial mount
+  // Check active session on initial mount (skipped on static GitHub Pages host)
   useEffect(() => {
+    if (isStaticHost) {
+      setCsrfToken(null);
+      setUserState(null);
+      queryClient.setQueryData(ME_QUERY_KEY, null);
+      setIsLoading(false);
+      return;
+    }
+
     let active = true;
     authApi
       .me()
@@ -49,6 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback<AuthContextValue['login']>(
     async (identifier, password) => {
+      if (isStaticHost) {
+        throw new Error(
+          'Phiên bản GitHub Pages là bản xem trước tĩnh; vui lòng chạy backend tại local để đăng nhập.',
+        );
+      }
       const data = await authApi.login({ identifier, password });
       setCsrfToken(data.csrfToken);
       setUserState(data.user);
@@ -61,6 +75,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback<AuthContextValue['register']>(
     async (input) => {
+      if (isStaticHost) {
+        throw new Error(
+          'Phiên bản GitHub Pages là bản xem trước tĩnh; vui lòng chạy backend tại local để đăng ký.',
+        );
+      }
       const data = await authApi.register(input);
       setCsrfToken(data.csrfToken);
       setUserState(data.user);

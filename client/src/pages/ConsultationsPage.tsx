@@ -70,8 +70,8 @@ const CLINICAL_CATEGORY_OPTIONS: {
   },
   {
     value: 'HARDWARE_BCI',
-    label: 'Phần cứng ADS1299 & Giao diện Não-Máy (Hardware / BCI)',
-    shortLabel: 'Phần cứng ADS1299 & BCI',
+    label: 'Phần cứng đo sóng não & Giao diện Não-Máy (BCI)',
+    shortLabel: 'Phần cứng & BCI',
     badgeClass: 'bg-[#EFF6F1] text-[#15803D] border-[#DCE6DF]',
   },
 ];
@@ -165,6 +165,7 @@ export function ConsultationsPage() {
     >
   >({});
   const [replyRatings, setReplyRatings] = useState<Record<string, number>>({});
+  const [expandedReplyIds, setExpandedReplyIds] = useState<Record<string, boolean>>({});
 
   // Feedback alerts
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
@@ -307,9 +308,10 @@ export function ConsultationsPage() {
 
   const claimTicketMutation = useMutation({
     mutationFn: (ticketId: string) => consultationsApi.claim(ticketId),
-    onSuccess: () => {
+    onSuccess: (_res, ticketId) => {
       setFeedbackError(null);
-      setFeedbackSuccess('Đã nhận đọc ca. Hãy đối chiếu chỉ số hoặc mở Trạm qEEG.');
+      setFeedbackSuccess('Đã nhận đọc ca. Hãy đối chiếu chỉ số hoặc viết phân tích.');
+      setExpandedReplyIds((prev) => ({ ...prev, [ticketId]: true }));
       invalidateConsultationQueries();
     },
     onError: (err) => {
@@ -338,6 +340,7 @@ export function ConsultationsPage() {
         delete next[vars.ticketId];
         return next;
       });
+      setExpandedReplyIds((prev) => ({ ...prev, [vars.ticketId]: false }));
       invalidateConsultationQueries();
     },
     onError: (err) => {
@@ -551,25 +554,9 @@ export function ConsultationsPage() {
 
       {/* Concise 1-line clinical triage safety alert for Queue tab */}
       {isQueueView && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50/70 px-3.5 py-2 text-xs text-red-900">
-          <div className="flex items-center gap-2 font-semibold">
-            <ShieldCheck className="size-4 text-red-700 shrink-0" aria-hidden />
-            <span>BSI ≥ 0.22 / DAR ≥ 3.2 → Gọi 115 / CT khẩn</span>
-          </div>
-          <div className="flex items-center gap-3 text-[11px] font-semibold">
-            <a
-              href="/clinical-workstation?mode=professional"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[#15803D] hover:underline"
-            >
-              <Activity className="size-3.5" aria-hidden />
-              <span>Trạm qEEG</span>
-            </a>
-            <Link to="/rewards" className="text-[#575652] hover:text-[#141413]">
-              Ví Credit
-            </Link>
-          </div>
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50/80 px-3.5 py-2 text-xs font-semibold text-red-900">
+          <ShieldCheck className="size-4 text-red-700 shrink-0" aria-hidden />
+          <span>BSI ≥ 0.22 / DAR ≥ 3.2 → Gọi 115 / CT khẩn</span>
         </div>
       )}
 
@@ -1064,22 +1051,51 @@ export function ConsultationsPage() {
                     </div>
                   )}
 
-                  {/* Doctor / Scientist Reply Form (when claimed by current professional) */}
-                  {canWriteReply && (
+                  {/* Doctor / Scientist Reply Form (collapsed by default unless just claimed or toggled) */}
+                  {canWriteReply && !expandedReplyIds[ticket.id] && (
+                    <div className="flex justify-end pt-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setExpandedReplyIds((prev) => ({ ...prev, [ticket.id]: true }))
+                        }
+                        icon={<Stethoscope className="size-3.5 text-[#16A34A]" aria-hidden />}
+                      >
+                        Viết phân tích ca bệnh
+                      </Button>
+                    </div>
+                  )}
+
+                  {canWriteReply && expandedReplyIds[ticket.id] && (
                     <div className="rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] p-4 space-y-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <h4 className="text-xs font-semibold uppercase tracking-wider text-[#141413]">
                           Gửi phân tích cho người bệnh
                         </h4>
-                        <a
-                          href="/clinical-workstation?mode=professional"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[11px] font-semibold text-[#16A34A] hover:text-[#15803D] hover:underline inline-flex items-center gap-1"
-                        >
-                          <span>Mở Trạm qEEG</span>
-                          <ArrowUpRight className="size-3" aria-hidden />
-                        </a>
+                        <div className="flex items-center gap-3">
+                          {!ticket.neuralSample && (
+                            <a
+                              href={workstationHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-semibold text-[#16A34A] hover:text-[#15803D] hover:underline inline-flex items-center gap-1"
+                            >
+                              <span>Soi trên Trạm qEEG</span>
+                              <ArrowUpRight className="size-3" aria-hidden />
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedReplyIds((prev) => ({ ...prev, [ticket.id]: false }))
+                            }
+                            className="text-[11px] font-medium text-[#6E6D68] hover:text-[#141413]"
+                          >
+                            Thu gọn
+                          </button>
+                        </div>
                       </div>
 
                       <Field

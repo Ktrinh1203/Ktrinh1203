@@ -28,6 +28,7 @@ import {
   DATASET_SPLIT_ORDER,
   NEURAL_LABEL_META,
   NEURAL_LABEL_ORDER,
+  sanitizeClinicalDisplayText,
 } from './eegLabels';
 
 export interface NeuralDatabasePanelProps {
@@ -35,10 +36,10 @@ export interface NeuralDatabasePanelProps {
 }
 
 const FEATURE_GROUPS = [
-  { start: 0, end: 20, title: 'F01–F20 · Phổ công suất chuẩn hóa theo dải tần & kênh (PSD)' },
-  { start: 20, end: 40, title: 'F21–F40 · Tỷ số lâm sàng (DAR, TAR, PRI) & Phổ đỉnh Alpha' },
-  { start: 40, end: 60, title: 'F41–F60 · Bất đối xứng bán cầu (BSI) & Đồng bộ pha (wPLI)' },
-  { start: 60, end: 80, title: 'F61–F80 · Thống kê miền thời gian, Độ dốc phổ & Cổng chất lượng' },
+  { start: 0, end: 20, title: 'Nhóm 1 · Năng lượng dải sóng theo từng kênh' },
+  { start: 20, end: 40, title: 'Nhóm 2 · Tỷ số lâm sàng (DAR, TAR) & nhịp Alpha' },
+  { start: 40, end: 60, title: 'Nhóm 3 · Cân bằng hai bán cầu (BSI) & liên kết vùng' },
+  { start: 60, end: 80, title: 'Nhóm 4 · Độ ổn định & chất lượng tín hiệu' },
 ];
 
 export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePanelProps) {
@@ -190,7 +191,7 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
               className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50 shadow-2xs transition-colors"
             >
               <Download className="size-3.5 text-teal-700" aria-hidden />
-              <span>Xuất CSV</span>
+              <span>Xuất bảng số liệu (.csv)</span>
             </a>
             <a
               href={exportJsonlHref}
@@ -201,7 +202,7 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
               )}
             >
               <FileCode2 className="size-3.5" aria-hidden />
-              <span>Xuất JSONL</span>
+              <span>Xuất dữ liệu huấn luyện</span>
             </a>
           </div>
         </div>
@@ -303,7 +304,7 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
 
           <div className="space-y-1">
             <label htmlFor="ndb-filter-split" className="font-bold text-slate-700 block">
-              Tập chia
+              Tập dữ liệu đã phân chia
             </label>
             <select
               id="ndb-filter-split"
@@ -311,7 +312,7 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
               onChange={(e) => setSplitFilter(e.target.value)}
               className="h-9.5 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-800"
             >
-              <option value="">Tất cả tập chia</option>
+              <option value="">Tất cả tập dữ liệu</option>
               {DATASET_SPLIT_ORDER.map((sp) => (
                 <option key={sp} value={sp}>
                   {DATASET_SPLIT_META[sp].label}
@@ -339,7 +340,7 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
       <Card className="p-0 overflow-hidden border-slate-300 shadow-2xs">
         <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-2">
           <h3 className="text-xs sm:text-sm font-bold text-slate-900">
-            Mẫu đặc trưng 80 chiều ({samples.length})
+            Dữ liệu sóng não chuẩn hóa ({samples.length})
           </h3>
           <span className="text-[11px] font-mono text-slate-500">
             Đã ẩn danh cá nhân
@@ -371,7 +372,7 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
                   <th className="py-2.5 px-3.5">Mã mẫu</th>
                   <th className="py-2.5 px-3.5">Nhóm bệnh lý</th>
                   <th className="py-2.5 px-3.5">Nhãn chuẩn</th>
-                  <th className="py-2.5 px-3.5">Tập chia</th>
+                  <th className="py-2.5 px-3.5">Tập dữ liệu</th>
                   <th className="py-2.5 px-3.5 text-right">DAR</th>
                   <th className="py-2.5 px-3.5 text-right">BSI</th>
                   <th className="py-2.5 px-3.5 text-right">TAR</th>
@@ -491,11 +492,10 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
             <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200 bg-[#162B47] px-5 py-3.5 text-white">
               <div>
                 <h3 id="neural-sample-dialog-title" className="text-sm sm:text-base font-bold">
-                  Kiểm tra Mẫu Mạng Nơ-ron: {inspectedSample.subjectCode}
+                  Chi tiết mẫu sóng não: {sanitizeClinicalDisplayText(inspectedSample.subjectCode)}
                 </h3>
                 <p className="text-[11px] text-slate-300 font-mono">
-                  {inspectedSample.montage} · {inspectedSample.samplingRateHz} Hz ·{' '}
-                  {inspectedSample.featureVector.length} đặc trưng số thực
+                  {inspectedSample.montage} · {inspectedSample.samplingRateHz} Hz · Dữ liệu sóng não chuẩn hóa
                 </p>
               </div>
               <button
@@ -575,7 +575,7 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
                     </div>
                     <div className="space-y-1">
                       <label htmlFor="verify-split-select" className="font-bold text-slate-700 block">
-                        Tập Dữ liệu
+                        Tập dữ liệu đã phân chia
                       </label>
                       <select
                         id="verify-split-select"
@@ -614,7 +614,7 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h4 className="text-xs sm:text-sm font-bold text-slate-900">
-                    Vector 80 chiều ({inspectedSample.featureVector.length})
+                    Dữ liệu sóng não chuẩn hóa ({inspectedSample.featureVector.length} chỉ số)
                   </h4>
                   <Button
                     type="button"

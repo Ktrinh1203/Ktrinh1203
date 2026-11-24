@@ -1222,99 +1222,42 @@ export function MyHealthPage() {
             })()}
           </div>
 
-          {/* Right 4 Columns: Latest EEG Record, Direct Links & Brain Guides */}
+          {/* Right 4 Columns: Latest EEG Record Summary & Brain Guides */}
           <div className="lg:col-span-4 space-y-6">
-            {isProfessional ? (
-              <>
-                {/* Latest Personal EEG Summary */}
-                <Card className="p-5 border-[#DCE6DF] bg-white space-y-3">
-                  <div className="flex items-center gap-2.5">
-                    <Activity className="size-4 text-[#16A34A] shrink-0" aria-hidden />
-                    <div>
-                      <h2 className="text-sm font-semibold text-[#141413]">Bản ghi EEG gần nhất</h2>
-                      <p className="text-[11px] text-[#6E6D68]">
-                        {latestDataset
-                          ? `${latestDataset.patientCode} · ${latestDataset.date}`
-                          : 'Chưa có bản ghi'}
-                      </p>
-                    </div>
-                  </div>
-                  {latestDataset && (
-                    <p className="text-xs text-[#575652] line-clamp-2">{latestDataset.clinicalNote}</p>
+            <Card className="p-4 sm:p-5 border-[#DCE6DF] bg-white space-y-2.5">
+              <div className="flex items-center gap-2.5">
+                <Activity className="size-4 text-[#16A34A] shrink-0" aria-hidden />
+                <div>
+                  <h2 className="text-sm font-semibold text-[#141413]">Bản ghi sóng não gần nhất</h2>
+                  <p className="text-[11px] text-[#6E6D68]">
+                    {latestDataset
+                      ? `${latestDataset.patientCode} · ${latestDataset.date}`
+                      : 'Chưa có bản ghi cá nhân'}
+                  </p>
+                </div>
+              </div>
+              {latestDataset ? (
+                <div className="space-y-1.5 text-xs text-[#575652]">
+                  {latestDataset.title && (
+                    <p className="font-medium text-[#141413] truncate">{latestDataset.title}</p>
                   )}
-                  <Link to="/eeg-hub?view=personal" className="block">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="w-full"
-                      icon={<ChevronRight className="size-3.5" aria-hidden />}
-                    >
-                      Mở hồ sơ sóng não
-                    </Button>
-                  </Link>
-                </Card>
-
-                {/* Direct Link to Remote Consultations */}
-                <Card className="p-5 border-[#DCE6DF] bg-[#F5FAF7] space-y-3">
-                  <div className="flex items-center gap-2 text-[#141413] font-semibold text-sm">
-                    <MessageSquarePlus className="size-4 text-[#16A34A]" aria-hidden />
-                    <span>Hỏi bác sĩ từ xa</span>
-                  </div>
-                  <div className="space-y-2">
-                    <Link to="/consultations" className="block">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="primary"
-                        className="w-full text-xs"
-                      >
-                        Đặt câu hỏi
-                      </Button>
-                    </Link>
-                    <Link to="/eeg-hub" className="block">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="w-full text-xs"
-                      >
-                        Đo sóng não
-                      </Button>
-                    </Link>
-                  </div>
-                </Card>
-              </>
-            ) : (
-              <Card className="p-4 border-[#DCE6DF] space-y-2.5">
-                <h2 className="text-sm font-semibold text-[#141413]">Sóng não &amp; Tư vấn</h2>
-                <p className="text-xs text-[#6E6D68]">
-                  {latestDataset ? `Bản ghi gần nhất: ${latestDataset.patientCode}` : 'Chưa có bản ghi cá nhân'}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Link to="/eeg-hub?tab=personal" className="flex-1 min-w-[116px]">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="w-full text-xs whitespace-nowrap"
-                    >
-                      Hồ sơ sóng não
-                    </Button>
-                  </Link>
-                  <Link to="/consultations?ask=1" className="flex-1 min-w-[100px]">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="primary"
-                      className="w-full text-xs whitespace-nowrap"
-                    >
-                      Hỏi Bác sĩ
-                    </Button>
+                  {latestDataset.clinicalNote && (
+                    <p className="line-clamp-2">{latestDataset.clinicalNote}</p>
+                  )}
+                  <Link
+                    to="/eeg-hub?tab=personal"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#15803D] hover:underline pt-0.5"
+                  >
+                    <span>Xem chi tiết hồ sơ</span>
+                    <ChevronRight className="size-3.5" aria-hidden />
                   </Link>
                 </div>
-              </Card>
-            )}
+              ) : (
+                <p className="text-xs text-[#6E6D68]">
+                  Lưu kết quả từ mục Đo sóng não để theo dõi tiến triển tại đây.
+                </p>
+              )}
+            </Card>
 
             {/* Brain Health Guides — compact accordion */}
             <Card className="p-0 overflow-hidden border-[#DCE6DF]">

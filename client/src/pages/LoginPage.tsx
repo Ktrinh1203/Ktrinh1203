@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { Eye, EyeOff, Lock, LogIn, User } from 'lucide-react';
+import { Eye, EyeOff, Info, Lock, LogIn, User } from 'lucide-react';
 import { errorMessage } from '../api/client';
 import { useAuth } from '../features/auth/AuthContext';
 import { AuthLayout } from '../features/auth/AuthLayout';
+
+const isStaticHost = import.meta.env.VITE_STATIC_HOST === 'true';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -20,6 +22,12 @@ export function LoginPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (isStaticHost) {
+      setError(
+        'Bản xem trước GitHub Pages không kết nối máy chủ API. Vui lòng chạy backend tại local (npm run dev:all hoặc start.bat) để đăng nhập.',
+      );
+      return;
+    }
     if (!identifier.trim() || !password) {
       setError('Vui lòng nhập e-mail/tên người dùng và mật khẩu.');
       return;
@@ -53,6 +61,36 @@ export function LoginPage() {
       }
     >
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
+        {isStaticHost && (
+          <div
+            role="status"
+            className="flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-[#F5FAF7] px-3.5 py-3 text-xs leading-relaxed text-[#14532D] sm:text-sm"
+          >
+            <Info className="mt-0.5 size-4 shrink-0 text-[#16A34A]" aria-hidden="true" />
+            <div className="space-y-1">
+              <p className="font-semibold">Bản xem trước tĩnh (GitHub Pages)</p>
+              <p className="text-[#374151]">
+                Trang này chỉ giới thiệu giao diện <strong>Landing Page</strong>. Để đăng nhập,
+                dùng CSDL PostgreSQL và Trạm qEEG, vui lòng chạy đầy đủ backend tại local (
+                <code className="rounded bg-white px-1 py-0.5 font-mono text-[11px] text-[#14532D] ring-1 ring-[#DCE6DF]">
+                  npm run dev:all
+                </code>{' '}
+                hoặc{' '}
+                <code className="rounded bg-white px-1 py-0.5 font-mono text-[11px] text-[#14532D] ring-1 ring-[#DCE6DF]">
+                  start.bat
+                </code>
+                ).
+              </p>
+              <Link
+                to="/"
+                className="inline-block font-semibold text-[#15803D] hover:underline"
+              >
+                ← Quay lại Landing Page
+              </Link>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div
             role="alert"

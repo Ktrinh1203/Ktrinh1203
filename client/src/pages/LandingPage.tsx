@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 
 import { Link, useSearchParams } from 'react-router';
 import { ArrowDown, ArrowRight, Menu, X } from 'lucide-react';
 import { useAuth } from '../features/auth/AuthContext';
+import { assetUrl } from '../lib/assets';
 import { LANDING_COPY, type ExperienceTabId, type LandingLang } from './landingContent';
 
 const LANG_STORAGE_KEY = 'neurolink_landing_lang';
@@ -102,7 +103,7 @@ function LandingLogo({ href = '#top' }: { href?: string }) {
       className="group inline-flex shrink-0 items-center gap-2 sm:gap-2.5 select-none rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#16A34A]"
     >
       <img
-        src="/logo.svg"
+        src={assetUrl('logo.svg')}
         alt="NeuroLink"
         width={34}
         height={34}
@@ -519,7 +520,7 @@ export function LandingPage() {
 
           <div className="relative aspect-[16/9] w-full lg:aspect-auto lg:absolute lg:inset-0 lg:z-0">
             <img
-              src="/landing/story/hero-editorial.jpg"
+              src={assetUrl('landing/story/hero-editorial.jpg')}
               alt={copy.hero.imageAlt}
               width={1920}
               height={1080}
@@ -539,7 +540,7 @@ export function LandingPage() {
         <section id="why" className="scroll-mt-16 relative overflow-hidden bg-[#0E341E] text-white">
           <div className="relative aspect-[16/9] w-full md:aspect-auto md:absolute md:inset-0 md:z-0">
             <img
-              src="/landing/story/why-brain-poster.jpg"
+              src={assetUrl('landing/story/why-brain-poster.jpg')}
               alt={copy.why.imageAlt}
               width={1920}
               height={1080}
@@ -583,7 +584,7 @@ export function LandingPage() {
             <div className="grid items-stretch gap-6 lg:grid-cols-12">
               <div className="lg:col-span-8 overflow-hidden rounded-3xl bg-[#F5F7F5] shadow-[0_24px_60px_-28px_rgba(14,52,30,0.16)]">
                 <img
-                  src="/landing/story/device-prototype-studio.jpg"
+                  src={assetUrl('landing/story/device-prototype-studio.jpg')}
                   alt={copy.signal.studioImageAlt}
                   width={1920}
                   height={1080}
@@ -596,7 +597,7 @@ export function LandingPage() {
               <div className="lg:col-span-4 flex flex-col gap-5">
                 <div className="flex-1 overflow-hidden rounded-3xl bg-[#F5F7F5] shadow-[0_20px_50px_-26px_rgba(14,52,30,0.14)] aspect-[4/3] lg:aspect-auto">
                   <img
-                    src="/landing/story/device-sensor-macro.jpg"
+                    src={assetUrl('landing/story/device-sensor-macro.jpg')}
                     alt={copy.signal.macroImageAlt}
                     width={1200}
                     height={900}
@@ -636,7 +637,7 @@ export function LandingPage() {
                 <article key={item.id} className="flex flex-col">
                   <div className="aspect-[4/3] w-full overflow-hidden rounded-2xl bg-[#E8EFEA] shadow-[0_18px_44px_-24px_rgba(14,52,30,0.16)]">
                     <img
-                      src={item.image}
+                      src={assetUrl(item.image)}
                       alt={item.imageAlt}
                       width={1200}
                       height={900}
@@ -722,7 +723,7 @@ export function LandingPage() {
                   </span>
                   <BrowserFrame
                     title={activeExperience.desktopPath}
-                    src={activeExperience.desktopImage}
+                    src={assetUrl(activeExperience.desktopImage)}
                     alt={activeExperience.desktopAlt}
                   />
                 </div>
@@ -733,7 +734,7 @@ export function LandingPage() {
                   </span>
                   <div className="w-[216px] sm:w-[236px]">
                     <PhoneFrame
-                      src={activeExperience.mobileImage}
+                      src={assetUrl(activeExperience.mobileImage)}
                       alt={activeExperience.mobileAlt}
                     />
                   </div>
@@ -759,7 +760,7 @@ export function LandingPage() {
             className="mx-auto max-w-3xl px-4 text-center sm:px-6 space-y-6"
           >
             <img
-              src="/logo.svg"
+              src={assetUrl('logo.svg')}
               alt=""
               aria-hidden="true"
               width={44}

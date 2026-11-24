@@ -33,6 +33,7 @@ import {
   DATASET_SPLIT_ORDER,
   NEURAL_LABEL_META,
   NEURAL_LABEL_ORDER,
+  formatSafetyStatusLabel,
 } from './eegLabels';
 
 export interface QeegStudioPanelProps {
@@ -1075,15 +1076,12 @@ export function QeegStudioPanel({
               Thông số chuyên sâu ▾
             </summary>
             <div className="px-4 pb-4 pt-2 space-y-4">
-              {/* Full biomarker numbers */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs font-mono tabular-nums">
+              {/* Deep biomarker numbers (excluding DAR, BSI, Alpha already shown above) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs font-mono tabular-nums">
                 {(isProfessional
                   ? [
-                      { label: 'DAR', val: analysis.biomarkers.meanDar.toFixed(2), sub: 'Chuẩn < 1.50' },
-                      { label: 'BSI', val: analysis.biomarkers.meanBsi.toFixed(3), sub: 'Ngưỡng > 0.150' },
                       { label: 'TAR', val: analysis.biomarkers.meanTar.toFixed(2), sub: 'Mệt mỏi nhận thức' },
                       { label: 'wPLI', val: analysis.biomarkers.wpli.toFixed(2), sub: `PRI: ${analysis.biomarkers.pri.toFixed(2)}` },
-                      { label: 'Alpha IAF', val: `${analysis.biomarkers.alphaPeakHz.toFixed(1)} Hz`, sub: `Chất lượng: ${(analysis.biomarkers.signalQualityScore * 100).toFixed(0)}%` },
                       {
                         label: 'Khóa tPA / CT khẩn',
                         val: analysis.biomarkers.tpaLockoutTriggered
@@ -1091,20 +1089,10 @@ export function QeegStudioPanel({
                           : analysis.biomarkers.cusumAlarm
                             ? 'Cảnh báo sớm'
                             : 'Bình thường',
-                        sub: analysis.safetyStatus,
+                        sub: `${formatSafetyStatusLabel(analysis.safetyStatus, true)} · Chất lượng ${(analysis.biomarkers.signalQualityScore * 100).toFixed(0)}%`,
                       },
                     ]
                   : [
-                      {
-                        label: 'Chỉ số sóng chậm',
-                        val: analysis.biomarkers.meanDar.toFixed(2),
-                        sub: analysis.biomarkers.meanDar > 1.5 ? 'Tăng cao (chuẩn < 1.50)' : 'Ổn định (chuẩn < 1.50)',
-                      },
-                      {
-                        label: 'Cân bằng 2 bán cầu',
-                        val: analysis.biomarkers.meanBsi.toFixed(3),
-                        sub: analysis.biomarkers.meanBsi > 0.15 ? 'Có chênh lệch trái – phải' : 'Hai bên cân đối',
-                      },
                       {
                         label: 'Chỉ số mệt mỏi',
                         val: analysis.biomarkers.meanTar.toFixed(2),
@@ -1113,11 +1101,6 @@ export function QeegStudioPanel({
                       {
                         label: 'Kết nối vùng não',
                         val: analysis.biomarkers.wpli.toFixed(2),
-                        sub: 'Độ đồng bộ tín hiệu giữa các vùng',
-                      },
-                      {
-                        label: 'Nhịp thư thái',
-                        val: `${analysis.biomarkers.alphaPeakHz.toFixed(1)} Hz`,
                         sub: `Độ rõ tín hiệu: ${(analysis.biomarkers.signalQualityScore * 100).toFixed(0)}%`,
                       },
                       {
@@ -1127,7 +1110,7 @@ export function QeegStudioPanel({
                           : analysis.biomarkers.cusumAlarm
                             ? 'Cảnh báo sớm'
                             : 'Bình thường',
-                        sub: analysis.safetyStatus,
+                        sub: formatSafetyStatusLabel(analysis.safetyStatus, false),
                       },
                     ]
                 ).map((b) => (

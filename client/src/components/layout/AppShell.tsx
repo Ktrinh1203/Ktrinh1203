@@ -27,6 +27,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Avatar, cn } from '../ui';
+import { assetUrl } from '../../lib/assets';
 import { useAuth } from '../../features/auth/AuthContext';
 import { ACCOUNT_ROLE_LABELS, useMode } from '../../context/ModeContext';
 import { notificationsApi, messagesApi, rewardsApi } from '../../api/endpoints';
@@ -85,7 +86,7 @@ export function Logo({
       className={cn('group inline-flex items-center gap-1.5 sm:gap-2.5 select-none min-w-0', className)}
     >
       <img
-        src="/logo.svg"
+        src={assetUrl('logo.svg')}
         alt="NeuroLink Logo"
         width={34}
         height={34}

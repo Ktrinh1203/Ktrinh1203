@@ -69,3 +69,15 @@ All platform layers operate as one cohesive stack orchestrated by [start_unified
 - **Bundle & Runtime (`npm run dev:all`):**
   - Chunk `LandingPage` sau build đạt `44.80 kB` (`12.62 kB` gzip).
   - Toàn bộ stack `dev:all` chạy ổn định trên 4 cổng: `:5432` (PostgreSQL TCP `True`), `:4000` (`/api/health` HTTP `200` `{"status":"ok"}`), `:5173` (Web SPA HTTP `200`), và `:5174` (Mobile SPA HTTP `200`), đã kiểm chứng tải trang sạch qua Playwright (`0` page errors, `0` failed requests, ảnh hero `naturalWidth > 0`).
+
+---
+
+## Section 7 — Plug-and-Play & UI De-clutter across Clinical Workstation, Web (`:5173`), Mobile (`:5174`) (`2026-11-24`)
+
+- **Mục tiêu & Phạm vi:** Tinh gọn giao diện (UI de-clutter) và tối ưu trải nghiệm Plug-and-Play trên cả 3 bề mặt người dùng:
+  - **Clinical Workstation:** [qeeg_service/static/index.html](../qeeg_service/static/index.html)
+  - **Web SPA (`:5173`):** [HardwareDevicePanel.tsx](../client/src/features/eeg/HardwareDevicePanel.tsx), [QeegStudioPanel.tsx](../client/src/features/eeg/QeegStudioPanel.tsx), [NeuralDatabasePanel.tsx](../client/src/features/eeg/NeuralDatabasePanel.tsx), [DataBankMarketplacePanel.tsx](../client/src/features/eeg/DataBankMarketplacePanel.tsx), [eegLabels.ts](../client/src/features/eeg/eegLabels.ts), [ConsultationsPage.tsx](../client/src/pages/ConsultationsPage.tsx), [ContributionsPage.tsx](../client/src/pages/ContributionsPage.tsx), [MyHealthPage.tsx](../client/src/pages/MyHealthPage.tsx), [SettingsPage.tsx](../client/src/pages/SettingsPage.tsx).
+  - **Mobile SPA (`:5174`):** [mobile/src/pages/EegPage.tsx](../mobile/src/pages/EegPage.tsx).
+- **Bằng chứng kiểm định (`2026-11-24`):**
+  - **Adversarial Review Gate:** `🟢 [GATE_STATUS: APPROVED]` (`2026-11-24`).
+  - **Visual Artifacts:** Bộ ảnh kiểm chứng ngày `2026-11-24` tại `docs/verification_screenshots/mobile/` (`01`–`18`, bao gồm `04_mobile_eeg_general_375.png`, `10_mobile_pro_eeg_375.png`, `10b_mobile_pro_eeg_topomap_375.png`, `10c_mobile_pro_device_375.png`, `12_tablet_768.png`, `13_desktop_1440.png`).

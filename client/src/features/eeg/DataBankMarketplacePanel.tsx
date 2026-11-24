@@ -23,6 +23,7 @@ import { useAuth } from '../auth/AuthContext';
 import {
   CLINICAL_CATEGORY_META,
   CLINICAL_CATEGORY_ORDER,
+  sanitizeClinicalDisplayText,
   triggerCsvDownload,
 } from './eegLabels';
 
@@ -111,7 +112,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
       queryClient.invalidateQueries({ queryKey: ['rewards-wallet'] });
       setFeedback({
         tone: 'success',
-        text: `Đã mở khóa "${res.listing.title}". Số dư còn lại: ${res.remainingBalance} Credit. Bạn có thể tải CSV ngay.`,
+        text: `Đã mở khóa "${sanitizeClinicalDisplayText(res.listing.title)}". Số dư còn lại: ${res.remainingBalance} Credit. Bạn có thể tải bảng số liệu ngay.`,
       });
     },
     onError: (err) => {
@@ -169,14 +170,14 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
       if (!csv) {
         setFeedback({
           tone: 'error',
-          text: 'Dữ liệu CSV đang được khóa hoặc chưa có nội dung tải về.',
+          text: 'Bảng số liệu đang được khóa hoặc chưa có nội dung tải về.',
         });
         return;
       }
       triggerCsvDownload(`neurolink-databank-${listing.id.slice(0, 8)}.csv`, csv);
       setFeedback({
         tone: 'success',
-        text: `Đã tải xuống tệp dữ liệu CSV của "${listing.title}".`,
+        text: `Đã tải xuống bảng số liệu của "${sanitizeClinicalDisplayText(listing.title)}".`,
       });
     } catch (err) {
       setFeedback({ tone: 'error', text: errorMessage(err) });
@@ -197,7 +198,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
     if (title.trim().length < 5 || summary.trim().length < 10 || !payloadCsv.trim()) {
       setFeedback({
         tone: 'error',
-        text: 'Vui lòng nhập đầy đủ tiêu đề (>=5 ký tự), tóm tắt (>=10 ký tự) và nội dung CSV.',
+        text: 'Vui lòng nhập đầy đủ tiêu đề (>=5 ký tự), tóm tắt (>=10 ký tự) và bảng số liệu.',
       });
       return;
     }
@@ -363,7 +364,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
                   id="db-pub-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="VD: 24 ca Thiếu máu não LVO (ADS1299 500Hz)"
+                  placeholder="VD: 24 ca Thiếu máu não LVO (6 kênh 500Hz)"
                   className="bg-white"
                 />
               </div>
@@ -561,14 +562,14 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
               <div className="sm:col-span-6 space-y-1">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <label htmlFor="db-pub-csv" className="font-bold text-slate-700">
-                    Nội dung CSV (Đã ẩn danh cá nhân) *
+                    Bảng số liệu đã ẩn danh cá nhân *
                   </label>
                   <label
                     htmlFor="db-pub-csv-file"
                     className="cursor-pointer inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100"
                   >
                     <FileSpreadsheet className="size-3.5" aria-hidden />
-                    <span>Nạp tệp .CSV</span>
+                    <span>Nạp tệp bảng số liệu (.csv)</span>
                     <input
                       id="db-pub-csv-file"
                       type="file"
@@ -669,7 +670,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
                   {/* Title & Author */}
                   <div>
                     <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
-                      {item.title}
+                      {sanitizeClinicalDisplayText(item.title)}
                     </h3>
                     <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-600">
                       <span className="font-semibold text-slate-800">{item.author.displayName}</span>
@@ -685,10 +686,12 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
                   </div>
 
                   {/* Summary & Methodology */}
-                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">{item.summary}</p>
+                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                    {sanitizeClinicalDisplayText(item.summary)}
+                  </p>
                   <div className="rounded-md bg-slate-50 border border-slate-200/80 px-3 py-2 text-[11px] text-slate-600 line-clamp-2">
                     <strong className="text-slate-800">Xử lý tín hiệu: </strong>
-                    {item.methodologyNote}
+                    {sanitizeClinicalDisplayText(item.methodologyNote)}
                   </div>
 
                   {/* Specs + Open Preview Biomarkers */}
@@ -736,7 +739,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
                         onClick={() => handleDownloadCsv(item)}
                         icon={<Download className="size-3.5" aria-hidden />}
                       >
-                        Tải CSV
+                        Xuất bảng số liệu
                       </Button>
                     </div>
                   ) : isConfirming ? (
@@ -780,7 +783,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
                     </div>
                   ) : (
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-[11px] text-slate-500">Mở khóa để tải CSV</span>
+                      <span className="text-[11px] text-slate-500">Mở khóa để xuất bảng số liệu</span>
                       <Button
                         type="button"
                         size="sm"

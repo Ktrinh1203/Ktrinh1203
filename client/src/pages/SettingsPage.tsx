@@ -543,9 +543,9 @@ function VerificationTab() {
 
   return (
     <div id="verification-center" className="rounded-xl border border-[#DCE6DF] bg-white p-5 space-y-5">
-      <p className="text-sm text-[#4B5563]">
-        Dành cho bác sĩ và nhà nghiên cứu muốn gắn tích xanh chuyên môn.
-      </p>
+      <div className="rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] px-3.5 py-2.5 text-xs sm:text-sm text-[#374151] leading-relaxed">
+        Xác minh hồ sơ giúp bác sĩ và nhà nghiên cứu gắn tích xanh, đọc ca tư vấn và đóng góp dữ liệu. Hãy tải lên ảnh hoặc PDF giấy tờ hợp lệ để được xét duyệt.
+      </div>
 
       {existingProfiles.length > 0 && (
         <div className="space-y-2">

@@ -40,9 +40,9 @@ export const CLINICAL_CATEGORY_META: Record<
     badgeCls: 'bg-sky-50 text-sky-800 border-sky-200',
   },
   HARDWARE_BCI: {
-    label: 'Phần cứng ADS1299 & BCI',
+    label: 'Phần cứng & Giao diện Não-Máy (BCI)',
     shortLabel: 'Phần cứng & BCI',
-    description: 'Bản ghi chuẩn 24-bit TI ADS1299 500 Hz và tín hiệu vận động Motor Imagery.',
+    description: 'Bản ghi sóng não chuẩn 24-bit 500 Hz và tín hiệu vận động Motor Imagery.',
     badgeCls: 'bg-teal-50 text-teal-800 border-teal-200',
   },
 };
@@ -118,23 +118,23 @@ export const DATASET_SPLIT_META: Record<
   }
 > = {
   TRAIN: {
-    label: 'Huấn luyện (TRAIN)',
-    shortLabel: 'TRAIN',
+    label: 'Tập huấn luyện',
+    shortLabel: 'Huấn luyện',
     badgeCls: 'bg-slate-100 text-slate-800 border-slate-300',
   },
   VALIDATION: {
-    label: 'Kiểm định (VALIDATION)',
-    shortLabel: 'VAL',
+    label: 'Tập kiểm định',
+    shortLabel: 'Kiểm định',
     badgeCls: 'bg-sky-50 text-sky-800 border-sky-200',
   },
   TEST: {
-    label: 'Kiểm thử (TEST)',
-    shortLabel: 'TEST',
+    label: 'Tập kiểm thử',
+    shortLabel: 'Kiểm thử',
     badgeCls: 'bg-teal-50 text-teal-800 border-teal-200',
   },
   EXTERNAL_HOLDOUT: {
-    label: 'Ngoại kiểm độc lập (HOLDOUT)',
-    shortLabel: 'HOLDOUT',
+    label: 'Tập đối chứng độc lập',
+    shortLabel: 'Đối chứng',
     badgeCls: 'bg-amber-50 text-amber-800 border-amber-200',
   },
 };
@@ -219,6 +219,51 @@ export const EEG_ACCESS_ACTION_LABELS: Record<string, string> = {
 
 export function formatEegAccessAction(action: string): string {
   return EEG_ACCESS_ACTION_LABELS[action] ?? action;
+}
+
+export function sanitizeClinicalDisplayText(text: string | null | undefined): string {
+  if (!text) return '';
+  return text
+    .replace(/CM\s*\[\s*2\s*,\s*1\s*\]\s*=\s*0/gi, 'chuẩn an toàn xuất huyết')
+    .trim();
+}
+
+export function formatSafetyStatusLabel(
+  status: string | null | undefined,
+  isProfessional = false,
+): string {
+  const normalized = (status ?? '').trim().toUpperCase();
+  if (!normalized) return 'Đang theo dõi an toàn';
+  switch (normalized) {
+    case 'HOLD_TPA_CT_REQUIRED':
+      return isProfessional
+        ? 'Chờ chụp CT trước tPA'
+        : 'Cần chụp CT loại trừ xuất huyết';
+    case 'ICH_LOCKED_CT_REQUIRED':
+      return 'Khóa tPA · Chụp CT khẩn';
+    case 'MONITORING_EPILEPSY':
+      return 'Theo dõi sóng động kinh';
+    case 'PASS_MIMIC_SUPPRESSED':
+      return 'Chưa ghi nhận nguy cơ cấp';
+    case 'PASS':
+      return 'An toàn';
+    default:
+      if (normalized.includes('ICH') || normalized.includes('LOCK')) {
+        return 'Khóa an toàn · Cần chụp CT khẩn';
+      }
+      if (normalized.includes('HOLD') || normalized.includes('CT')) {
+        return isProfessional
+          ? 'Chờ chụp CT đánh giá'
+          : 'Cần chụp CT kiểm tra';
+      }
+      if (normalized.includes('MONITOR') || normalized.includes('EPILEP')) {
+        return 'Cần theo dõi chuyên khoa';
+      }
+      if (normalized.includes('PASS')) {
+        return 'An toàn';
+      }
+      return 'Đang theo dõi an toàn';
+  }
 }
 
 export function triggerCsvDownload(filename: string, csvContent: string) {

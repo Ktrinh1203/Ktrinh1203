@@ -89,6 +89,40 @@ function buildDatasetPreview(rec: EegDatasetRecord) {
   return { time, channels, filtered };
 }
 
+function buildDeviceWaveform(
+  bufferedSamples: number[][] | undefined,
+  sampleRateSps: number,
+  pulse: number,
+) {
+  const channels = ['F3', 'F4', 'C3', 'C4', 'O1', 'O2'];
+  if (bufferedSamples && bufferedSamples.length >= 20) {
+    const slice = bufferedSamples.slice(-250);
+    const rate = sampleRateSps || 500;
+    const time = slice.map((_, i) => Number((i / rate).toFixed(3)));
+    const filtered: Record<string, number[]> = {};
+    channels.forEach((ch, ci) => {
+      filtered[ch] = slice.map((row) => Number((row[ci] ?? 0).toFixed(2)));
+    });
+    return { time, channels, filtered };
+  }
+
+  const n = 200;
+  const time = Array.from({ length: n }, (_, i) => Number(((i / (n - 1)) * 2).toFixed(3)));
+  const phaseShift = pulse * 0.65;
+  const filtered: Record<string, number[]> = {};
+  channels.forEach((ch, ci) => {
+    filtered[ch] = time.map((t) =>
+      Number(
+        (
+          (ch.startsWith('O') ? 22 : 12) * Math.sin(2 * Math.PI * 10.0 * t + ci * 0.45 + phaseShift) +
+          7 * Math.sin(2 * Math.PI * 18.0 * t + ci + phaseShift * 0.5)
+        ).toFixed(2),
+      ),
+    );
+  });
+  return { time, channels, filtered };
+}
+
 function formatRatio(val: number): string {
   if (!Number.isFinite(val)) return '--';
   if (val >= 1000) return '>999';
@@ -110,6 +144,14 @@ function formatAiState(state?: string | null): string {
   return state;
 }
 
+function formatPlainAlertMessage(message: string): string {
+  return message
+    .replace(/\bTI\s+ADS1299\b/gi, 'cảm biến sóng não')
+    .replace(/\bESP32[-_]?ADS1299(?:_V\d+)?\b/gi, 'thiết bị đo')
+    .replace(/\bADS1299\b/gi, 'thiết bị đo')
+    .replace(/\s*\(CH\d+\)/gi, '');
+}
+
 export function EegPage() {
   const { isProfessional } = useMode();
   const queryClient = useQueryClient();
@@ -127,6 +169,9 @@ export function EegPage() {
   // Device & saved feedback
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [deviceNotice, setDeviceNotice] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [demoStreaming, setDemoStreaming] = useState(false);
+  const [deviceWaveVisible, setDeviceWaveVisible] = useState(false);
+  const [deviceWavePulse, setDeviceWavePulse] = useState(0);
 
   // Saved datasets modal
   const [selectedRecId, setSelectedRecId] = useState<string | null>(null);
@@ -191,9 +236,12 @@ export function EegPage() {
   const simMut = useMutation({
     mutationFn: ({ id, scenario }: { id: string; scenario: 'normal' | 'stroke_alert' }) =>
       devicesApi.simulate(id, scenario),
-    onSuccess: (res) => {
+    onSuccess: (res, vars) => {
+      setDeviceWaveVisible(true);
+      setDeviceWavePulse((p) => p + 1);
       showDeviceNotice('ok', `Đã nhận ${res.samplesIngested} mẫu tín hiệu`);
       void queryClient.invalidateQueries({ queryKey: ['devices'] });
+      void queryClient.invalidateQueries({ queryKey: ['device-telemetry', vars.id] });
     },
     onError: (e) => showDeviceNotice('err', errorMessage(e)),
   });
@@ -277,40 +325,55 @@ export function EegPage() {
   const alerts = (devicesQuery.data?.alerts ?? []).filter((a) => !a.acknowledged);
   const primaryDevice = devices.find((d) => d.id === selectedDeviceId) ?? devices[0];
 
+  const telemetryQuery = useQuery({
+    queryKey: ['device-telemetry', primaryDevice?.id],
+    queryFn: () => devicesApi.getTelemetry(primaryDevice!.id),
+    enabled: subTab === 'device' && Boolean(primaryDevice?.id) && (deviceWaveVisible || demoStreaming),
+    refetchInterval: subTab === 'device' && demoStreaming ? 4500 : false,
+  });
+
+  const deviceWaveform = useMemo(
+    () =>
+      buildDeviceWaveform(
+        telemetryQuery.data?.bufferedSamples,
+        primaryDevice?.sampleRateSps ?? 500,
+        deviceWavePulse,
+      ),
+    [telemetryQuery.data?.bufferedSamples, primaryDevice?.sampleRateSps, deviceWavePulse],
+  );
+
+  useEffect(() => {
+    if (isProfessional || subTab !== 'device') {
+      setDemoStreaming(false);
+    }
+  }, [isProfessional, subTab]);
+
+  useEffect(() => {
+    if (!demoStreaming || isProfessional || subTab !== 'device' || !primaryDevice?.id) return;
+    const timer = setInterval(() => {
+      if (!simMut.isPending) {
+        simMut.mutate({ id: primaryDevice.id, scenario: 'normal' });
+      }
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [demoStreaming, isProfessional, subTab, primaryDevice?.id]);
+
   return (
     <div className="px-3.5 pt-3.5 space-y-3.5">
-      {/* Sub-view switcher */}
-      <PillTabs<EegSubTab>
-        items={[
-          { id: 'analyze', label: 'Phân tích' },
-          { id: 'device', label: 'Thiết bị' },
-          { id: 'saved', label: 'Đã lưu' },
-        ]}
-        value={subTab}
-        onChange={setSubTab}
-        dark={isProfessional}
-      />
-
-      {/* TAB 1: Minimal Glanceable qEEG */}
-      {subTab === 'analyze' && (
-        <div className="space-y-3">
-          {/* Case Preset Strip + CSV Upload */}
-          <div className="flex items-center gap-1.5">
-            <div
-              className="flex-1 min-w-0"
-              style={{
-                maskImage: 'linear-gradient(to right, black 86%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to right, black 86%, transparent 100%)',
-              }}
-            >
-              <PillTabs
-                items={isProfessional ? PRO_CASES : GENERAL_CASES}
-                value={analysisSource === 'csv' ? '' : caseId}
-                onChange={handleSelectCase}
-                dark={isProfessional}
-                className="pr-5"
-              />
-            </div>
+      {/* Sub-view switcher + CSV upload */}
+      <div className="flex items-center justify-between gap-1.5">
+        <PillTabs<EegSubTab>
+          items={[
+            { id: 'analyze', label: 'Phân tích' },
+            { id: 'device', label: 'Thiết bị' },
+            { id: 'saved', label: 'Đã lưu' },
+          ]}
+          value={subTab}
+          onChange={setSubTab}
+          dark={isProfessional}
+        />
+        {subTab === 'analyze' && (
+          <>
             <input
               ref={csvInputRef}
               type="file"
@@ -324,14 +387,37 @@ export function EegPage() {
               aria-label="Tải tệp CSV"
               title="Tải tệp CSV"
               className={cn(
-                'flex size-9 shrink-0 items-center justify-center rounded-full border active:scale-95 transition-all cursor-pointer',
+                'inline-flex h-9 shrink-0 items-center justify-center gap-1 rounded-full border px-2.5 text-xs font-semibold active:scale-95 transition-all cursor-pointer',
                 analysisSource === 'csv'
                   ? 'border-[#16A34A] bg-[#16A34A] text-white'
                   : 'border-[#DCE6DF] bg-white text-[#15803D] hover:border-[#16A34A]',
               )}
             >
-              <FileUp className="size-4" aria-hidden />
+              <FileUp className="size-3.5" aria-hidden />
+              <span>Tải CSV</span>
             </button>
+          </>
+        )}
+      </div>
+
+      {/* TAB 1: Minimal Glanceable qEEG */}
+      {subTab === 'analyze' && (
+        <div className="space-y-3">
+          {/* Case Preset Strip */}
+          <div
+            className="min-w-0"
+            style={{
+              maskImage: 'linear-gradient(to right, black 92%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, black 92%, transparent 100%)',
+            }}
+          >
+            <PillTabs
+              items={isProfessional ? PRO_CASES : GENERAL_CASES}
+              value={analysisSource === 'csv' ? '' : caseId}
+              onChange={handleSelectCase}
+              dark={isProfessional}
+              className="pr-4"
+            />
           </div>
 
           {analysisSource === 'csv' && csvFileName && (
@@ -540,7 +626,10 @@ export function EegPage() {
             <>
               {devices.length > 1 && (
                 <PillTabs
-                  items={devices.map((d) => ({ id: d.id, label: d.deviceCode }))}
+                  items={devices.map((d, idx) => ({
+                    id: d.id,
+                    label: isProfessional ? d.deviceCode : `Thiết bị ${idx + 1}`,
+                  }))}
                   value={primaryDevice.id}
                   onChange={setSelectedDeviceId}
                   dark={isProfessional}
@@ -549,28 +638,43 @@ export function EegPage() {
               <div className="rounded-2xl border border-[#DCE6DF] bg-white p-4 space-y-4">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <h2 className="text-[15px] font-bold text-[#111827] truncate">{primaryDevice.name}</h2>
-                    <p className="font-mono text-xs text-[#5B6860]">{primaryDevice.deviceCode}</p>
+                    {isProfessional ? (
+                      <>
+                        <h2 className="text-[15px] font-bold text-[#111827] truncate">{primaryDevice.name}</h2>
+                        <p className="font-mono text-xs text-[#5B6860]">{primaryDevice.deviceCode}</p>
+                      </>
+                    ) : (
+                      <>
+                        <h2 className="text-[14px] font-bold text-[#111827] truncate">
+                          Thiết bị đo sóng não · {primaryDevice.sampleRateSps} Hz
+                        </h2>
+                        <p className="mt-0.5 text-xs text-[#5B6860]">
+                          {demoStreaming ? 'Đang chạy mô phỏng trực tiếp' : 'Sẵn sàng mô phỏng 1 chạm'}
+                        </p>
+                      </>
+                    )}
                   </div>
                   <span
                     className={cn(
                       'inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold',
                       primaryDevice.status === 'ALERT'
                         ? 'bg-red-50 text-red-700'
-                        : primaryDevice.status === 'STREAMING' || primaryDevice.status === 'ONLINE'
+                        : demoStreaming || primaryDevice.status === 'STREAMING' || primaryDevice.status === 'ONLINE'
                           ? 'bg-[#ECFDF3] text-[#15803D]'
                           : 'bg-[#F5FAF7] text-[#5B6860]',
                     )}
                   >
-                    <Radio className="size-3" aria-hidden />
+                    <Radio className={cn('size-3', demoStreaming && 'animate-pulse')} aria-hidden />
                     <span>
-                      {primaryDevice.status === 'STREAMING'
-                        ? 'Đang phát'
-                        : primaryDevice.status === 'ONLINE'
-                          ? 'Trực tuyến'
-                          : primaryDevice.status === 'ALERT'
-                            ? 'Cảnh báo'
-                            : 'Chờ kết nối'}
+                      {demoStreaming && !isProfessional
+                        ? 'Đang đo'
+                        : primaryDevice.status === 'STREAMING'
+                          ? 'Đang phát'
+                          : primaryDevice.status === 'ONLINE'
+                            ? 'Trực tuyến'
+                            : primaryDevice.status === 'ALERT'
+                              ? 'Cảnh báo'
+                              : 'Chờ kết nối'}
                     </span>
                   </span>
                 </div>
@@ -601,26 +705,84 @@ export function EegPage() {
                 </div>
 
                 {/* One-tap Hardware Controls */}
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    disabled={simMut.isPending}
-                    onClick={() => simMut.mutate({ id: primaryDevice.id, scenario: 'normal' })}
-                    className="h-10.5 rounded-full bg-[#16A34A] text-xs font-semibold text-white hover:bg-[#15803D] active:scale-95 transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    Đo mẫu ổn định
-                  </button>
-                  <button
-                    type="button"
-                    disabled={captureMut.isPending}
-                    onClick={() => captureMut.mutate(primaryDevice.id)}
-                    className="inline-flex items-center justify-center gap-1.5 h-10.5 rounded-full border border-[#DCE6DF] bg-[#F5FAF7] text-xs font-semibold text-[#111827] active:scale-95 transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    <Camera className="size-3.5 text-[#16A34A]" aria-hidden />
-                    <span>Lưu phiên</span>
-                  </button>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      disabled={simMut.isPending}
+                      onClick={() => {
+                        setDeviceWaveVisible(true);
+                        simMut.mutate({ id: primaryDevice.id, scenario: 'normal' });
+                      }}
+                      className="h-10.5 rounded-full bg-[#16A34A] text-xs font-semibold text-white hover:bg-[#15803D] active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      Đo mẫu ổn định
+                    </button>
+                    <button
+                      type="button"
+                      disabled={captureMut.isPending}
+                      onClick={() => captureMut.mutate(primaryDevice.id)}
+                      className="inline-flex items-center justify-center gap-1.5 h-10.5 rounded-full border border-[#DCE6DF] bg-[#F5FAF7] text-xs font-semibold text-[#111827] active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <Camera className="size-3.5 text-[#16A34A]" aria-hidden />
+                      <span>Lưu phiên</span>
+                    </button>
+                  </div>
+
+                  {!isProfessional && (
+                    <button
+                      type="button"
+                      disabled={simMut.isPending}
+                      onClick={() => {
+                        const next = !demoStreaming;
+                        setDemoStreaming(next);
+                        if (next) {
+                          setDeviceWaveVisible(true);
+                          simMut.mutate({ id: primaryDevice.id, scenario: 'normal' });
+                        } else {
+                          showDeviceNotice('ok', 'Đã dừng mô phỏng');
+                        }
+                      }}
+                      className={cn(
+                        'inline-flex w-full items-center justify-center gap-2 h-10 rounded-full border text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50',
+                        demoStreaming
+                          ? 'border-[#16A34A] bg-[#ECFDF3] text-[#15803D]'
+                          : 'border-[#DCE6DF] bg-[#F5FAF7] text-[#15803D] hover:border-[#16A34A]',
+                      )}
+                    >
+                      <Radio className={cn('size-3.5', demoStreaming && 'animate-pulse')} aria-hidden />
+                      <span>
+                        {demoStreaming ? 'Đang bật mô phỏng (Demo) · Bấm để dừng' : 'Bật mô phỏng (Demo)'}
+                      </span>
+                    </button>
+                  )}
                 </div>
               </div>
+
+              {(deviceWaveVisible || demoStreaming) && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between px-1 text-xs">
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-[#111827]">
+                      <span
+                        className={cn(
+                          'size-2 rounded-full bg-[#16A34A]',
+                          demoStreaming && 'animate-pulse',
+                        )}
+                        aria-hidden
+                      />
+                      <span>{isProfessional ? 'Tín hiệu điện não trực tiếp' : 'Sóng não trực tiếp · 6 kênh'}</span>
+                    </span>
+                    <span className="font-mono text-[11px] text-[#5B6860] tabular-nums">
+                      {primaryDevice.sampleRateSps} Hz
+                    </span>
+                  </div>
+                  <CompactWaveform
+                    waveforms={deviceWaveform}
+                    dark={isProfessional}
+                    plainLanguage={!isProfessional}
+                  />
+                </div>
+              )}
 
               {/* Active Alerts */}
               {alerts.length > 0 && (
@@ -632,7 +794,7 @@ export function EegPage() {
                     >
                       <AlertTriangle className="size-4.5 text-amber-600 shrink-0" aria-hidden />
                       <p className="flex-1 text-xs font-medium text-amber-950 line-clamp-2">
-                        {al.message}
+                        {isProfessional ? al.message : formatPlainAlertMessage(al.message)}
                       </p>
                       <button
                         type="button"
@@ -696,7 +858,8 @@ export function EegPage() {
                         />
                       </div>
                       <p className="mt-1 font-mono text-[11px] text-[#5B6860] tabular-nums">
-                        {rec.patientCode} · {rec.channelsCount} kênh · {rec.samplingRate}
+                        {isProfessional ? `${rec.patientCode} · ` : ''}
+                        {rec.channelsCount} kênh · {rec.samplingRate}
                       </p>
                     </button>
                   );

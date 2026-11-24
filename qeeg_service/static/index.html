@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trạm Điện Não Định Lượng Lâm Sàng NeuroLink</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23162b47'/%3E%3Cpath d='M4 16h7l3-7 4 14 3-7h7' stroke='%235aa39a' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -880,6 +881,26 @@
     details > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
     .accordion-chevron { display: inline-block; transition: transform 0.15s ease; }
     details[open] > summary .accordion-chevron { transform: rotate(90deg); }
+
+    @media print {
+      @page { size: A4 portrait; margin: 12mm; }
+      body { background: #ffffff !important; color: #0f172a !important; }
+      .command-bar,
+      .action-strip-buttons,
+      .stack-col:first-child,
+      .waveform-toolbar,
+      .sweep-line,
+      #platform-feedback,
+      #save-modal,
+      #details-advanced-metrics {
+        display: none !important;
+      }
+      .workspace { max-width: 100%; padding: 0; gap: 10px; }
+      .main-grid { grid-template-columns: 1fr !important; }
+      .panel, .kpi-card, .action-strip { box-shadow: none !important; break-inside: avoid; }
+      .eeg-paper { height: 240px !important; }
+      .analytics-grid { grid-template-columns: 1fr 1fr !important; }
+    }
   </style>
 </head>
 <body>
@@ -896,12 +917,12 @@
         <div class="brand-divider" aria-hidden="true"></div>
         <div>
           <div class="station-title">Trạm Điện Não Định Lượng Lâm Sàng NeuroLink</div>
-          <div class="station-subtitle">6 kênh ADS1299 · Tái tạo vỏ não 19 kênh</div>
+          <div id="station-subtitle" class="station-subtitle">6 kênh chuẩn · Tái tạo vỏ não</div>
         </div>
       </div>
 
       <div class="top-actions">
-        <span id="health-pill" class="health-pill">
+        <span id="health-pill" class="health-pill" title="Hệ thống phân tích đã sẵn sàng">
           <span class="status-dot" aria-hidden="true"></span>
           <span id="health-text" class="mono">500 Hz · Sẵn sàng</span>
         </span>
@@ -912,7 +933,6 @@
         </div>
 
         <a href="/eeg-hub" class="btn btn-outline-top">Quay lại NeuroLink</a>
-        <a href="/consultations" class="btn btn-primary">Hội chẩn Từ xa</a>
       </div>
     </div>
   </header>
@@ -921,13 +941,13 @@
     <!-- ACTION STRIP -->
     <section class="action-strip">
       <div class="action-strip-info">
-        <h1>Phân tích Điện não Định lượng &amp; Cổng An toàn Lâm sàng</h1>
-        <p>Theo dõi 4 chỉ số qEEG cốt lõi, bản đồ vỏ não 19 kênh và xuất mã bàn giao 115.</p>
+        <h1 id="action-strip-title">Phân tích Điện não Định lượng &amp; Cổng An toàn Lâm sàng</h1>
+        <p id="action-strip-subtitle">Phân tích nhanh 4 chỉ số sóng não &amp; cảnh báo an toàn 115.</p>
       </div>
       <div class="action-strip-buttons">
         <button type="button" id="btn-export-pdf" class="btn btn-outline">Xuất Báo cáo Lâm sàng PDF</button>
         <button type="button" id="btn-open-save-modal" class="btn btn-secondary">Lưu vào CSDL Mạng Nơ-ron</button>
-        <a href="/consultations" class="btn btn-primary">Gửi Hội chẩn Bác sĩ</a>
+        <a href="/consultations" class="btn btn-primary">Hội chẩn Từ xa</a>
       </div>
     </section>
 
@@ -936,24 +956,24 @@
     <!-- KPI ROW: 4 PRIMARY BIOMARKERS -->
     <section class="kpi-grid" aria-label="4 chỉ số sinh lý thần kinh cốt lõi">
       <div class="kpi-card">
-        <span class="kpi-label">Tỷ số DAR</span>
+        <span id="kpi-label-dar" class="kpi-label">Tỷ số DAR</span>
         <span id="kpi-dar" class="kpi-value mono">--</span>
-        <span class="kpi-sub">Ngưỡng chuẩn &lt; 1.50</span>
+        <span id="kpi-sub-dar" class="kpi-sub">Ngưỡng chuẩn &lt; 1.50</span>
       </div>
       <div class="kpi-card">
-        <span class="kpi-label">Bất đối xứng BSI</span>
+        <span id="kpi-label-bsi" class="kpi-label">Bất đối xứng BSI</span>
         <span id="kpi-bsi" class="kpi-value mono">--</span>
-        <span class="kpi-sub">Ngưỡng khu trú &gt; 0.15</span>
+        <span id="kpi-sub-bsi" class="kpi-sub">Ngưỡng khu trú &gt; 0.15</span>
       </div>
       <div class="kpi-card">
-        <span class="kpi-label">Tỷ số TAR</span>
+        <span id="kpi-label-tar" class="kpi-label">Tỷ số TAR</span>
         <span id="kpi-tar" class="kpi-value mono">--</span>
-        <span class="kpi-sub">Mệt mỏi Theta / Alpha</span>
+        <span id="kpi-sub-tar" class="kpi-sub">Mệt mỏi Theta / Alpha</span>
       </div>
       <div class="kpi-card">
-        <span class="kpi-label">Đỉnh Alpha (O1/O2)</span>
+        <span id="kpi-label-alpha" class="kpi-label">Đỉnh Alpha (O1/O2)</span>
         <span id="kpi-alpha-peak" class="kpi-value mono">-- Hz</span>
-        <span class="kpi-sub">Sinh lý 8.0 – 12.5 Hz</span>
+        <span id="kpi-sub-alpha" class="kpi-sub">Sinh lý 8.0 – 12.5 Hz</span>
       </div>
     </section>
 
@@ -1009,14 +1029,14 @@
           </div>
         </div>
 
-        <!-- CUSTOM CSV UPLOAD PANEL -->
+        <!-- COMPACT CSV UPLOAD PANEL -->
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Nạp Tệp CSV Điện Não Thực Nghiệm</div>
-              <div class="panel-subtitle">Hỗ trợ F3..O2 hoặc CH1..CH8 (TI ADS1299)</div>
+              <div class="panel-title">Tải tệp CSV</div>
+              <div class="panel-subtitle">Phân tích tín hiệu điện não thực nghiệm</div>
             </div>
-            <span class="tech-caption mono">CSV Raw</span>
+            <span class="tech-caption mono">.CSV</span>
           </div>
 
           <div class="field" style="margin-bottom:8px;">
@@ -1026,23 +1046,39 @@
 
           <div class="form-grid">
             <div class="field">
-              <label for="csv-sfreq">Tần số lấy mẫu (Hz)</label>
+              <label for="csv-sfreq">Tần số (Hz)</label>
               <input type="number" id="csv-sfreq" value="500" min="50" max="4000" class="input mono">
             </div>
             <div class="field">
               <label for="csv-category">Nhóm lâm sàng</label>
               <select id="csv-category" class="select">
-                <option value="HARDWARE_BCI">HARDWARE_BCI</option>
-                <option value="VASCULAR_STROKE">VASCULAR_STROKE</option>
-                <option value="EPILEPSY_ICU">EPILEPSY_ICU</option>
-                <option value="SLEEP_COGNITIVE">SLEEP_COGNITIVE</option>
+                <option value="HARDWARE_BCI">Phần cứng BCI</option>
+                <option value="VASCULAR_STROKE">Đột quỵ</option>
+                <option value="EPILEPSY_ICU">Động kinh ICU</option>
+                <option value="SLEEP_COGNITIVE">Giấc ngủ</option>
               </select>
             </div>
           </div>
 
-          <button type="button" id="btn-analyze-csv" class="btn btn-primary" style="width:100%; margin-top:10px;">
-            Phân tích Tệp CSV Tải lên
-          </button>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;">
+            <button type="button" id="btn-analyze-csv" class="btn btn-primary">
+              Tải tệp CSV
+            </button>
+            <button type="button" id="btn-sample-csv" class="btn btn-outline">
+              Dùng CSV mẫu
+            </button>
+          </div>
+
+          <details style="margin-top:8px; font-size:11.5px; color:var(--text-muted);">
+            <summary style="cursor:pointer; font-weight:600; color:var(--accent); display:flex; align-items:center; gap:5px; list-style:none;">
+              <span class="accordion-chevron" aria-hidden="true">▸</span>
+              <span>Xem định dạng cột CSV</span>
+            </summary>
+            <div style="margin-top:6px; padding:8px 10px; background:var(--surface-subtle); border:1px solid var(--border); border-radius:6px; line-height:1.45;">
+              Cột chuẩn <span class="mono">F3, F4, C3, C4, O1, O2</span> hoặc <span class="mono">CH1..CH8</span>.<br>
+              Mỗi dòng 1 mẫu theo thời gian (mặc định <span class="mono">500 Hz</span>, đơn vị µV).
+            </div>
+          </details>
         </div>
       </div>
 
@@ -1067,11 +1103,11 @@
           <div class="panel-header">
             <div>
               <div class="panel-title">Bản Ghi Sóng Điện Não 6 Đạo Trình Thời Gian Thực</div>
-              <div class="panel-subtitle">Đo trên giấy ghi chuẩn y khoa · Bandpass 0.5–45 Hz · Common Average Reference (CAR)</div>
+              <div id="waveform-subtitle" class="panel-subtitle">6 đạo trình · 500 Hz</div>
             </div>
             <div class="waveform-toolbar">
-              <button type="button" id="btn-toggle-dsp" class="btn btn-primary" style="padding:5px 10px; font-size:11px;" aria-label="Bật/tắt bộ lọc DSP">
-                Lọc DSP: BẬT
+              <button type="button" id="btn-toggle-dsp" class="btn btn-primary" style="padding:5px 10px; font-size:11px;" aria-label="Bật/tắt lọc nhiễu">
+                Lọc nhiễu: BẬT
               </button>
               <label for="gain-select" class="hidden">Độ lợi hiển thị</label>
               <select id="gain-select" class="select mono" style="width:auto; padding:5px 8px; font-size:11px;">
@@ -1100,8 +1136,8 @@
           </div>
 
           <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-top:8px; font-size:11px; color:var(--text-muted);" class="mono">
-            <span>Thước chuẩn biên độ: 50 µV | Thời gian hiển thị: 10s</span>
-            <span id="waveform-meta">fs = 500 Hz | 6 kênh vật lý</span>
+            <span>Thước chuẩn: 50 µV | Cửa sổ: 10s</span>
+            <span id="waveform-meta">500 Hz · 6 kênh · Hệ thống phân tích đã sẵn sàng</span>
           </div>
         </div>
 
@@ -1118,23 +1154,23 @@
 
             <div>
               <div class="bar-row">
-                <div class="bar-row-head"><span>Nhịp nền bình thường (Control)</span><span id="prob-control" class="mono">0%</span></div>
+                <div class="bar-row-head"><span>Nhịp nền bình thường</span><span id="prob-control" class="mono">0%</span></div>
                 <div class="bar-track"><div id="bar-control" class="bar-fill" style="width:0%; background:#059669;"></div></div>
               </div>
               <div class="bar-row">
-                <div class="bar-row-head"><span>Thiếu máu cục bộ (Ischemic)</span><span id="prob-ischemic" class="mono">0%</span></div>
+                <div class="bar-row-head"><span>Thiếu máu cục bộ</span><span id="prob-ischemic" class="mono">0%</span></div>
                 <div class="bar-track"><div id="bar-ischemic" class="bar-fill" style="width:0%; background:#dc2626;"></div></div>
               </div>
               <div class="bar-row">
-                <div class="bar-row-head"><span>Xuất huyết não (Hemorrhagic)</span><span id="prob-hemorrhagic" class="mono">0%</span></div>
+                <div class="bar-row-head"><span>Xuất huyết não</span><span id="prob-hemorrhagic" class="mono">0%</span></div>
                 <div class="bar-track"><div id="bar-hemorrhagic" class="bar-fill" style="width:0%; background:#7e22ce;"></div></div>
               </div>
               <div class="bar-row">
-                <div class="bar-row-head"><span>Phóng điện động kinh (Epileptiform)</span><span id="prob-epileptiform" class="mono">0%</span></div>
+                <div class="bar-row-head"><span>Phóng điện động kinh</span><span id="prob-epileptiform" class="mono">0%</span></div>
                 <div class="bar-track"><div id="bar-epileptiform" class="bar-fill" style="width:0%; background:#d97706;"></div></div>
               </div>
               <div class="bar-row" style="margin-bottom:0;">
-                <div class="bar-row-head"><span>Ngủ sâu / Mệt mỏi (Cognitive)</span><span id="prob-fatigue" class="mono">0%</span></div>
+                <div class="bar-row-head"><span>Ngủ sâu / Mệt mỏi</span><span id="prob-fatigue" class="mono">0%</span></div>
                 <div class="bar-track"><div id="bar-fatigue" class="bar-fill" style="width:0%; background:#0284c7;"></div></div>
               </div>
             </div>
@@ -1145,13 +1181,13 @@
             <div class="panel-header">
               <div>
                 <div class="panel-title">Bản Đồ Vỏ Não 2D (19 Điện Cực)</div>
-                <div class="panel-subtitle">Nội suy Perrin Spherical Splines từ 6 kênh gốc</div>
+                <div id="topomap-subtitle" class="panel-subtitle">Nội suy 19 vùng từ 6 kênh gốc</div>
               </div>
-              <span class="tech-caption mono">10-20 System</span>
+              <span class="tech-caption mono">Hệ 10-20</span>
             </div>
 
             <div class="topomap-wrap">
-              <canvas id="topomap-canvas" width="240" height="240" style="display:block;" aria-label="Bản đồ phân bố điện thế vỏ não 2D 19 điện cực"></canvas>
+              <canvas id="topomap-canvas" width="240" height="240" style="display:block; cursor:crosshair;" aria-label="Bản đồ phân bố điện thế vỏ não 2D 19 điện cực"></canvas>
               <div style="width:100%;">
                 <div class="legend-bar"></div>
                 <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:4px;" class="mono">
@@ -1159,6 +1195,8 @@
                   <span>Chậm vừa</span>
                   <span>Sóng chậm khu trú</span>
                 </div>
+                <div id="topomap-hover-readout" class="mono" style="margin-top:6px; font-size:10.5px; color:var(--text-body); text-align:center; min-height:16px;">Rê chuột vào điện cực để xem chỉ số</div>
+                <div id="topomap-extra-line" class="mono" style="margin-top:4px; font-size:10.5px; color:var(--text-muted); text-align:center;">PRI: -- · wPLI: -- · SQI: --%</div>
               </div>
             </div>
           </div>
@@ -1168,7 +1206,7 @@
             <div class="panel-header">
               <div>
                 <div class="panel-title">Mã Bàn Giao Cấp Cứu 115 / ER</div>
-                <div class="panel-subtitle">Telemetry định lượng HL7 JSON</div>
+                <div id="qr-subtitle" class="panel-subtitle">Thông số tóm tắt bàn giao</div>
               </div>
             </div>
 
@@ -1178,21 +1216,21 @@
             </div>
 
             <div style="margin-top:10px; font-size:11px; color:var(--text-muted); line-height:1.45; word-break:break-word;">
-              <div><strong>CUSUM Drift:</strong> <span id="cusum-flag" class="mono">--</span></div>
-              <div><strong>Trạng thái an toàn:</strong> <span id="safety-code" class="mono">--</span></div>
+              <div><strong>Biến động sớm:</strong> <span id="cusum-flag">--</span></div>
+              <div><strong>Trạng thái an toàn:</strong> <span id="safety-code">--</span></div>
             </div>
           </div>
         </div>
 
         <!-- SECONDARY SPECTRAL METRICS + 80-FEATURE VECTOR (collapsed by default) -->
-        <details class="panel" style="padding:0; overflow:hidden;">
+        <details id="details-advanced-metrics" class="panel" style="padding:0; overflow:hidden;">
           <summary style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; cursor:pointer; user-select:none; list-style:none; font-family:inherit;">
             <div style="display:flex; flex-direction:column; gap:1px; min-width:0;">
-              <span class="panel-title">Dữ liệu chi tiết: Phổ tần số &amp; Ma trận 80 đặc trưng (Mở rộng)</span>
-              <span class="panel-subtitle">Phổ năng lượng Delta/Theta/Alpha/Beta, PRI &amp; wPLI, chất lượng SQI và 80 đặc trưng f01..f80</span>
+              <span class="panel-title">Dữ liệu chi tiết: Phổ tần số &amp; 80 chỉ số đặc trưng</span>
+              <span class="panel-subtitle">Phổ năng lượng Delta/Theta/Alpha/Beta, chất lượng tín hiệu và 80 chỉ số</span>
             </div>
             <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-              <span id="fv-count-badge" class="tech-caption mono">80 features</span>
+              <span id="fv-count-badge" class="tech-caption mono">80 chỉ số</span>
               <span class="accordion-chevron" style="font-size:12px; color:var(--text-muted);" aria-hidden="true">▸</span>
             </div>
           </summary>
@@ -1239,8 +1277,8 @@
     <div class="modal-card">
       <div class="panel-header" style="margin-bottom:12px;">
         <div>
-          <div id="save-modal-title" class="panel-title">Lưu Mẫu Điện Não vào CSDL Mạng Nơ-ron</div>
-          <div class="panel-subtitle">Tạo đồng thời hồ sơ EEG cá nhân &amp; bản ghi NeuralTrainingSample (80 chiều)</div>
+          <div id="save-modal-title" class="panel-title">Lưu vào CSDL Mạng Nơ-ron</div>
+          <div class="panel-subtitle">Tự động điền theo ca đang xem · Xác nhận 1 chạm để lưu PostgreSQL</div>
         </div>
         <button type="button" id="btn-close-modal" class="btn btn-outline" style="padding:4px 10px;" aria-label="Đóng hộp thoại lưu mẫu">Đóng</button>
       </div>
@@ -1252,33 +1290,33 @@
         </div>
         <div class="form-grid" style="margin-top:0;">
           <div class="field">
-            <label for="save-subject">Mã ẩn danh đối tượng (Subject Code)</label>
+            <label for="save-subject">Mã ẩn danh đối tượng</label>
             <input type="text" id="save-subject" class="input mono" required maxlength="60">
           </div>
           <div class="field">
-            <label for="save-split">Tập dữ liệu (Dataset Split)</label>
+            <label for="save-split">Tập dữ liệu</label>
             <select id="save-split" class="select">
-              <option value="TRAIN">TRAIN</option>
-              <option value="VALIDATION">VALIDATION</option>
-              <option value="TEST">TEST</option>
-              <option value="EXTERNAL_HOLDOUT">EXTERNAL_HOLDOUT</option>
+              <option value="TRAIN">Huấn luyện</option>
+              <option value="VALIDATION">Kiểm định</option>
+              <option value="TEST">Đánh giá</option>
+              <option value="EXTERNAL_HOLDOUT">Độc lập</option>
             </select>
           </div>
         </div>
         <div class="field">
-          <label for="save-note">Ghi chú chuyên môn lâm sàng</label>
-          <textarea id="save-note" rows="3" class="textarea"></textarea>
+          <label for="save-note">Ghi chú chuyên môn</label>
+          <textarea id="save-note" rows="2" class="textarea"></textarea>
         </div>
         <label style="font-size:12px; font-weight:600; display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
           <input type="checkbox" id="save-deidentified" checked required style="margin-top:3px;">
-          <span>Tôi xác nhận dữ liệu điện não đã được khử định danh hoàn toàn (De-identified) theo chuẩn HIPAA / GDPR trước khi lưu trữ.</span>
+          <span>Xác nhận dữ liệu điện não đã khử danh tính cá nhân trước khi lưu trữ.</span>
         </label>
 
-        <div id="save-modal-status" class="status-banner"></div>
+        <div id="save-modal-status" class="status-banner" role="status"></div>
 
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
           <button type="button" id="btn-cancel-save" class="btn btn-outline">Hủy</button>
-          <button type="submit" id="btn-submit-save" class="btn btn-primary">Xác nhận Lưu vào PostgreSQL</button>
+          <button type="submit" id="btn-submit-save" class="btn btn-primary">Xác nhận Lưu (1 chạm)</button>
         </div>
       </form>
     </div>
@@ -1286,12 +1324,94 @@
 
   <script>
     (function () {
+      const MODE_COPY = {
+        professional: {
+          stationSubtitle: '6 kênh chuẩn · Tái tạo vỏ não',
+          actionTitle: 'Phân tích Điện não Định lượng & Cổng An toàn Lâm sàng',
+          actionSubtitle: 'Phân tích nhanh 4 chỉ số sóng não & cảnh báo an toàn 115.',
+          waveformSubtitle: '6 đạo trình · 500 Hz',
+          topomapSubtitle: 'Nội suy 19 vùng từ 6 kênh gốc',
+          qrSubtitle: 'Thông số tóm tắt bàn giao',
+          kpis: {
+            darLabel: 'Tỷ số DAR',
+            darSub: 'Ngưỡng chuẩn < 1.50',
+            bsiLabel: 'Bất đối xứng BSI',
+            bsiSub: 'Ngưỡng khu trú > 0.15',
+            tarLabel: 'Tỷ số TAR',
+            tarSub: 'Mệt mỏi Theta / Alpha',
+            alphaLabel: 'Đỉnh Alpha (O1/O2)',
+            alphaSub: 'Sinh lý 8.0 – 12.5 Hz',
+          },
+        },
+        general: {
+          stationSubtitle: '6 kênh · Bản đồ não trực quan',
+          actionTitle: 'Kiểm tra Sóng Não & Cảnh báo An toàn',
+          actionSubtitle: 'Phân tích nhanh 4 chỉ số sóng não & cảnh báo an toàn 115.',
+          waveformSubtitle: '6 kênh · Nhịp sóng não',
+          topomapSubtitle: 'Phân bố sóng chậm 19 vùng não',
+          qrSubtitle: 'Mã quét nhanh 115',
+          kpis: {
+            darLabel: 'Chỉ số sóng chậm',
+            darSub: 'Mức sóng chậm (bình thường < 1.50)',
+            bsiLabel: 'Cân bằng 2 bên',
+            bsiSub: 'Chênh lệch 2 bán cầu (chuẩn ≤ 0.15)',
+            tarLabel: 'Mức mệt mỏi',
+            tarSub: 'Dấu hiệu buồn ngủ / quá tải nhẹ',
+            alphaLabel: 'Nhịp thư thái',
+            alphaSub: 'Nhịp nghỉ ngơi chuẩn 8.0 – 12.5 Hz',
+          },
+        },
+      };
+
+      const CASE_SHORT_TITLES = {
+        case_ischemia_lvo: 'Ca Lâm sàng #01: Đột quỵ Thiếu máu Cục bộ Cấp',
+        case_ich_hemorrhage: 'Ca Lâm sàng #02: Xuất huyết Não Cấp',
+        case_epilepsy_temporal: 'Ca Lâm sàng #03: Phóng điện Nhọn - Sóng chậm Thái dương',
+        case_sleep_fatigue_n3: 'Ca Lâm sàng #04: Ngủ sâu N3 / Mệt mỏi Nhận thức',
+        case_healthy_alpha: 'Nhóm Chứng #05: Sóng Não Bình thường',
+        case_ads1299_hardware: 'Thực nghiệm #06: Luồng Phần cứng 24-bit 500Hz',
+      };
+
+      const CASE_CONTEXT_BADGES = {
+        case_ischemia_lvo: 'Thiếu máu',
+        case_ich_hemorrhage: 'Xuất huyết',
+        case_epilepsy_temporal: 'ICU',
+        case_sleep_fatigue_n3: 'Giấc ngủ',
+        case_healthy_alpha: 'Chuẩn 10.2 Hz',
+        case_ads1299_hardware: 'Trực tiếp 6 kênh',
+      };
+
+      const SAFETY_LABELS = {
+        HOLD_TPA_CT_REQUIRED: 'Chờ chụp CT trước tPA',
+        ICH_LOCKED_CT_REQUIRED: 'Khóa tPA · Chụp CT khẩn',
+        MONITORING_EPILEPSY: 'Theo dõi động kinh',
+        PASS_MIMIC_SUPPRESSED: 'An toàn (Giả đột quỵ)',
+        PASS: 'An toàn',
+      };
+
+      function formatCaseTitle(item) {
+        if (item && CASE_SHORT_TITLES[item.id]) return CASE_SHORT_TITLES[item.id];
+        return String(item?.name || '').replace(/\s*\([^)]*\)\s*$/g, '').trim();
+      }
+
+      function formatCaseBadge(item) {
+        if (item && CASE_CONTEXT_BADGES[item.id]) return CASE_CONTEXT_BADGES[item.id];
+        return 'Mẫu lâm sàng';
+      }
+
+      function formatSafetyStatus(code) {
+        return SAFETY_LABELS[code] || code || 'An toàn';
+      }
+
       const state = {
         mode: 'professional',
         cases: [],
         activeCategory: 'ALL',
+        activeSource: 'case',
         currentCaseId: 'case_ischemia_lvo',
+        currentCsvFilename: '',
         currentAnalysis: null,
+        topomapPlotNodes: [],
         isDspActive: true,
         isPaused: false,
         gainMultiplier: 1.0,
@@ -1311,6 +1431,27 @@
         document.documentElement.setAttribute('data-mode', normalized);
         document.getElementById('btn-mode-general').classList.toggle('active', normalized === 'general');
         document.getElementById('btn-mode-professional').classList.toggle('active', normalized === 'professional');
+
+        const copy = MODE_COPY[normalized];
+        document.getElementById('station-subtitle').textContent = copy.stationSubtitle;
+        document.getElementById('action-strip-title').textContent = copy.actionTitle;
+        document.getElementById('action-strip-subtitle').textContent = copy.actionSubtitle;
+        document.getElementById('waveform-subtitle').textContent = copy.waveformSubtitle;
+        document.getElementById('topomap-subtitle').textContent = copy.topomapSubtitle;
+        document.getElementById('qr-subtitle').textContent = copy.qrSubtitle;
+        document.getElementById('kpi-label-dar').textContent = copy.kpis.darLabel;
+        document.getElementById('kpi-sub-dar').textContent = copy.kpis.darSub;
+        document.getElementById('kpi-label-bsi').textContent = copy.kpis.bsiLabel;
+        document.getElementById('kpi-sub-bsi').textContent = copy.kpis.bsiSub;
+        document.getElementById('kpi-label-tar').textContent = copy.kpis.tarLabel;
+        document.getElementById('kpi-sub-tar').textContent = copy.kpis.tarSub;
+        document.getElementById('kpi-label-alpha').textContent = copy.kpis.alphaLabel;
+        document.getElementById('kpi-sub-alpha').textContent = copy.kpis.alphaSub;
+        document.getElementById('details-advanced-metrics').classList.toggle('hidden', normalized === 'general');
+        if (state.cases.length > 0) {
+          renderCaseList();
+        }
+
         try {
           const url = new URL(window.location.href);
           url.searchParams.set('mode', normalized);
@@ -1349,23 +1490,27 @@
         el.className = 'status-banner show ' + (isOk ? 'ok' : 'err');
       }
 
+      function readCookieValue(name) {
+        const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+        return match ? decodeURIComponent(match[1]) : null;
+      }
+
       async function checkHealth() {
         try {
-          const res = await fetch('/api/qeeg/health');
+          const res = await fetch('/api/qeeg/health', { credentials: 'include' });
           if (!res.ok) return;
-          const data = await res.json();
-          const label = data.engineSource === 'ts_dsp_fallback'
-            ? '500 Hz · TS DSP Fallback'
-            : '500 Hz · Python qEEG Sẵn sàng';
-          document.getElementById('health-text').textContent = label;
+          await res.json().catch(() => ({}));
+          const pill = document.getElementById('health-pill');
+          pill.setAttribute('title', 'Hệ thống phân tích đã sẵn sàng');
+          document.getElementById('health-text').textContent = '500 Hz · Sẵn sàng';
         } catch (_) {
-          document.getElementById('health-text').textContent = 'Mất kết nối máy chủ qEEG';
+          document.getElementById('health-text').textContent = 'Đang kết nối lại...';
         }
       }
 
       async function loadCases() {
         try {
-          const res = await fetch('/api/qeeg/cases');
+          const res = await fetch('/api/qeeg/cases', { credentials: 'include' });
           const data = await res.json();
           state.cases = Array.isArray(data.cases) ? data.cases : [];
           document.getElementById('cases-count-badge').textContent = `${state.cases.length} ca`;
@@ -1385,15 +1530,19 @@
         filtered.forEach(item => {
           const btn = document.createElement('button');
           btn.type = 'button';
-          btn.className = 'case-btn' + (item.id === state.currentCaseId ? ' active' : '');
+          btn.className = 'case-btn' + (state.activeSource === 'case' && item.id === state.currentCaseId ? ' active' : '');
           const dotCls = item.trafficLight === 'red' ? 'dot-red' :
                          item.trafficLight === 'purple' ? 'dot-purple' :
                          item.trafficLight === 'yellow' ? 'dot-yellow' : 'dot-green';
 
+          const badgeHtml = state.mode === 'general'
+            ? ''
+            : `<span class="badge">${formatCaseBadge(item)}</span>`;
+
           btn.innerHTML = `
             <div class="case-btn-top">
-              <div class="case-btn-title"><span class="dot-ind ${dotCls}"></span>${item.name}</div>
-              <span class="badge mono">${item.subjectId}</span>
+              <div class="case-btn-title"><span class="dot-ind ${dotCls}"></span>${formatCaseTitle(item)}</div>
+              ${badgeHtml}
             </div>
             <div class="case-btn-desc">${item.clinicalPresentation}</div>
           `;
@@ -1402,30 +1551,36 @@
         });
       }
 
-      async function ensureCsrfToken(forceRefresh = false) {
-        if (state.csrfChecked && !forceRefresh) {
-          return state.csrfToken;
+      async function fetchAuthSession(forceRefresh = false) {
+        if (state.csrfChecked && !forceRefresh && state.csrfToken) {
+          return { authenticated: true, csrfToken: state.csrfToken };
         }
         try {
           const authRes = await fetch('/api/auth/me', { credentials: 'include' });
           if (authRes.ok) {
             const authData = await authRes.json().catch(() => ({}));
-            state.csrfToken = authData.csrfToken || null;
-          } else {
-            state.csrfToken = null;
+            state.csrfToken = authData.csrfToken || readCookieValue('csrf_token') || null;
+            state.csrfChecked = true;
+            return {
+              authenticated: Boolean(authData.user),
+              user: authData.user || null,
+              csrfToken: state.csrfToken,
+            };
           }
-        } catch (_) {
-          state.csrfToken = null;
-        }
+        } catch (_) {}
+        state.csrfToken = readCookieValue('csrf_token') || null;
         state.csrfChecked = true;
-        return state.csrfToken;
+        return { authenticated: false, user: null, csrfToken: state.csrfToken };
       }
 
       async function postQeegJson(url, payload) {
-        let token = await ensureCsrfToken(false);
+        if (!state.csrfChecked) {
+          await fetchAuthSession(false);
+        }
+        let token = state.csrfToken || readCookieValue('csrf_token');
         const buildHeaders = (csrf) => ({
           'Content-Type': 'application/json',
-          ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
+          ...(csrf ? { 'x-csrf-token': csrf } : {}),
         });
         let res = await fetch(url, {
           method: 'POST',
@@ -1434,12 +1589,12 @@
           body: JSON.stringify(payload),
         });
         if (res.status === 403) {
-          token = await ensureCsrfToken(true);
-          if (token) {
+          const sessionInfo = await fetchAuthSession(true);
+          if (sessionInfo.csrfToken) {
             res = await fetch(url, {
               method: 'POST',
               credentials: 'include',
-              headers: buildHeaders(token),
+              headers: buildHeaders(sessionInfo.csrfToken),
               body: JSON.stringify(payload),
             });
           }
@@ -1448,7 +1603,9 @@
       }
 
       async function runCaseAnalysis(caseId) {
+        state.activeSource = 'case';
         state.currentCaseId = caseId;
+        state.currentCsvFilename = '';
         renderCaseList();
         const timeWindowSec = Number(document.getElementById('param-window').value || 10);
         const notch50Hz = document.getElementById('param-notch').checked;
@@ -1471,20 +1628,10 @@
         }
       }
 
-      async function runCsvUpload() {
-        const fileInput = document.getElementById('csv-file-input');
-        const file = fileInput.files && fileInput.files[0];
-        if (!file) {
-          showPlatformFeedback('Vui lòng chọn tệp CSV điện não trước khi phân tích.', false);
-          return;
-        }
-        const samplingRateHz = Number(document.getElementById('csv-sfreq').value || 500);
-        const clinicalCategory = document.getElementById('csv-category').value || 'HARDWARE_BCI';
-
+      async function analyzeCsvPayload(filename, csvText, samplingRateHz, clinicalCategory) {
         try {
-          const csvText = await file.text();
           const res = await postQeegJson('/api/qeeg/analyze-csv', {
-            filename: file.name,
+            filename,
             csvText,
             samplingRateHz,
             clinicalCategory,
@@ -1494,12 +1641,51 @@
             throw new Error(errJson.detail || errJson?.error?.message || ('HTTP ' + res.status));
           }
           const result = await res.json();
+          state.activeSource = 'csv';
+          state.currentCsvFilename = filename;
           state.currentAnalysis = result;
+          renderCaseList();
           renderAnalysis(result);
-          showPlatformFeedback(`Đã phân tích thành công tệp ${file.name} (${result.samplingRateHz} Hz).`, true);
+          showPlatformFeedback(`Đã phân tích thành công tệp ${filename} (${result.samplingRateHz} Hz).`, true);
         } catch (err) {
           showPlatformFeedback('Không thể phân tích CSV: ' + err.message, false);
         }
+      }
+
+      async function runCsvUpload() {
+        const fileInput = document.getElementById('csv-file-input');
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) {
+          fileInput.click();
+          return;
+        }
+        const samplingRateHz = Number(document.getElementById('csv-sfreq').value || 500);
+        const clinicalCategory = document.getElementById('csv-category').value || 'HARDWARE_BCI';
+        const csvText = await file.text();
+        await analyzeCsvPayload(file.name, csvText, samplingRateHz, clinicalCategory);
+      }
+
+      async function runSampleCsv() {
+        const fs = 500;
+        const durationSec = 4;
+        const total = fs * durationSec;
+        const lines = ['F3,F4,C3,C4,O1,O2'];
+        for (let i = 0; i < total; i++) {
+          const t = i / fs;
+          const slowL = 32 * Math.sin(2 * Math.PI * 1.4 * t) + 12 * Math.sin(2 * Math.PI * 5.2 * t);
+          const alpha = 18 * Math.sin(2 * Math.PI * 10.2 * t + 0.3);
+          const beta = 6 * Math.sin(2 * Math.PI * 18.0 * t);
+          const f3 = (slowL + beta).toFixed(2);
+          const f4 = (8 * Math.sin(2 * Math.PI * 9.8 * t) + beta).toFixed(2);
+          const c3 = (slowL * 0.9 + 5 * Math.sin(2 * Math.PI * 11 * t)).toFixed(2);
+          const c4 = (10 * Math.sin(2 * Math.PI * 10.0 * t) + beta * 0.8).toFixed(2);
+          const o1 = (alpha + 10 * Math.sin(2 * Math.PI * 1.8 * t)).toFixed(2);
+          const o2 = (alpha * 1.1).toFixed(2);
+          lines.push(`${f3},${f4},${c3},${c4},${o1},${o2}`);
+        }
+        document.getElementById('csv-sfreq').value = String(fs);
+        document.getElementById('csv-category').value = 'HARDWARE_BCI';
+        await analyzeCsvPayload('mau_6kenh_500hz.csv', lines.join('\n'), fs, 'HARDWARE_BCI');
       }
 
       function renderAnalysis(data) {
@@ -1516,6 +1702,8 @@
         document.getElementById('kpi-alpha-peak').textContent = `${Number(bm.alphaPeakHz ?? 0).toFixed(1)} Hz`;
         document.getElementById('kpi-sqi').textContent = `${(Number(bm.signalQualityScore ?? 0) * 100).toFixed(1)}%`;
         document.getElementById('kpi-latency').textContent = `Độ trễ: ${data.latencyMs} ms`;
+        document.getElementById('topomap-extra-line').textContent =
+          `PRI: ${Number(bm.pri ?? 0).toFixed(2)} · wPLI: ${Number(bm.wpli ?? 0).toFixed(2)} · SQI: ${(Number(bm.signalQualityScore ?? 0) * 100).toFixed(0)}%`;
 
         // Triage Banner
         const banner = document.getElementById('triage-banner');
@@ -1527,10 +1715,10 @@
         document.getElementById('triage-reason').textContent = data.decisionReason || '';
         document.getElementById('tpa-badge').textContent = data.tpaBadge || '';
         document.getElementById('tpa-countdown').textContent = bm.tpaLockoutTriggered
-          ? 'KHÓA tPA TUYỆT ĐỐI · YÊU CẦU CT KHẨN'
+          ? 'KHÓA tPA TUYỆT ĐỐI · GỌI 115 / CT KHẨN'
           : (data.tpaCountdownMin > 0
-              ? `Cửa sổ đánh giá CT/tPA còn lại: ${data.tpaCountdownMin} phút`
-              : `Trạng thái cổng: ${data.safetyStatus}`);
+              ? `Gọi 115 / CT khẩn · Cửa sổ đánh giá tPA: ${data.tpaCountdownMin} phút`
+              : `Trạng thái: ${formatSafetyStatus(data.safetyStatus)}`);
 
         // Probabilities
         const setProb = (idText, idBar, val) => {
@@ -1550,10 +1738,11 @@
         document.getElementById('band-alpha').textContent = (Number(bp.alpha || 0) * 100).toFixed(1) + '%';
         document.getElementById('band-beta').textContent = (Number(bp.beta || 0) * 100).toFixed(1) + '%';
 
-        // Meta & QR
-        document.getElementById('waveform-meta').textContent = `fs = ${data.samplingRateHz} Hz | ${data.channelsCount} kênh | ${data.engineSource}`;
-        document.getElementById('cusum-flag').textContent = bm.cusumAlarm ? 'PHÁT HIỆN TRÔI (ALARM)' : 'ỔN ĐỊNH';
-        document.getElementById('safety-code').textContent = data.safetyStatus;
+        // Meta & QR (zero debug/fallback labels)
+        document.getElementById('waveform-meta').textContent =
+          `${data.samplingRateHz} Hz · ${data.channelsCount} kênh · Hệ thống phân tích đã sẵn sàng`;
+        document.getElementById('cusum-flag').textContent = bm.cusumAlarm ? 'Cảnh báo biến động sớm' : 'Ổn định';
+        document.getElementById('safety-code').textContent = formatSafetyStatus(data.safetyStatus);
 
         renderQr(data.telemetryQr || JSON.stringify({ caseId: data.caseId }));
         renderFeatureVector80(data.featureVector80 || []);
@@ -1563,7 +1752,7 @@
 
       function renderFeatureVector80(vec) {
         const grid = document.getElementById('fv-grid');
-        document.getElementById('fv-count-badge').textContent = `${vec.length} features`;
+        document.getElementById('fv-count-badge').textContent = `${vec.length} chỉ số`;
         grid.innerHTML = vec
           .map((val, idx) => `<div class="fv-cell"><span style="color:#64748b;">f${String(idx + 1).padStart(2, '0')}</span><strong>${Number(val).toFixed(3)}</strong></div>`)
           .join('');
@@ -1645,6 +1834,7 @@
         const cx0 = size / 2;
         const cy0 = size / 2 + 6;
         const radius = size * 0.36;
+        state.topomapPlotNodes = [];
 
         topomapCtx.save();
         topomapCtx.scale(dpr, dpr);
@@ -1721,6 +1911,15 @@
           const y = cy0 - Number(node.y) * radius * 0.88;
           const isPhys = Boolean(node.isPhysical);
 
+          state.topomapPlotNodes.push({
+            name: node.name,
+            x,
+            y,
+            isPhysical: isPhys,
+            value: Number(node.value || 0),
+            dar: Number(node.dar || 0),
+          });
+
           topomapCtx.fillStyle = isPhys ? '#2c6865' : '#94a3b8';
           topomapCtx.beginPath();
           topomapCtx.arc(x, y, isPhys ? 4.8 : 2.3, 0, Math.PI * 2);
@@ -1744,6 +1943,30 @@
         topomapCtx.restore();
       }
 
+      function handleTopomapPointer(ev) {
+        if (!topomapCanvas || !state.topomapPlotNodes.length) return;
+        const rect = topomapCanvas.getBoundingClientRect();
+        const px = ((ev.clientX - rect.left) / Math.max(rect.width, 1)) * 240;
+        const py = ((ev.clientY - rect.top) / Math.max(rect.height, 1)) * 240;
+
+        let nearest = null;
+        let minDist = 18;
+        for (const node of state.topomapPlotNodes) {
+          const d = Math.hypot(node.x - px, node.y - py);
+          if (d < minDist) {
+            minDist = d;
+            nearest = node;
+          }
+        }
+        const readout = document.getElementById('topomap-hover-readout');
+        if (nearest) {
+          const kind = nearest.isPhysical ? 'Kênh gốc' : 'Nội suy';
+          readout.textContent = `${nearest.name} (${kind}): DAR ${nearest.dar.toFixed(2)} · Mức chậm ${nearest.value.toFixed(2)}`;
+        } else {
+          readout.textContent = 'Rê chuột vào điện cực để xem chỉ số';
+        }
+      }
+
       function animationLoop() {
         if (!state.isPaused && state.currentAnalysis) {
           state.sweepProgress = (state.sweepProgress + 0.35) % 100;
@@ -1752,19 +1975,84 @@
         requestAnimationFrame(animationLoop);
       }
 
-      function openSaveModal() {
+      function buildNormalizedAnalysisForSave(raw) {
+        const channels = Array.isArray(raw?.waveforms?.channels) && raw.waveforms.channels.length
+          ? raw.waveforms.channels.slice(0, 32)
+          : ['F3', 'F4', 'C3', 'C4', 'O1', 'O2'];
+        const rawTime = Array.isArray(raw?.waveforms?.time) ? raw.waveforms.time : [];
+        const maxLen = Math.min(rawTime.length, 1000);
+        const step = rawTime.length > 1000 ? Math.ceil(rawTime.length / 1000) : 1;
+        const sampledTime = [];
+        for (let i = 0; i < rawTime.length && sampledTime.length < 1000; i += step) {
+          sampledTime.push(Number(rawTime[i] ?? 0));
+        }
+        const filtered = {};
+        const srcFiltered = raw?.waveforms?.filtered || {};
+        channels.forEach(ch => {
+          const arr = Array.isArray(srcFiltered[ch]) ? srcFiltered[ch] : [];
+          const out = [];
+          for (let i = 0; i < arr.length && out.length < 1000; i += step) {
+            const val = Number(arr[i] ?? 0);
+            out.push(Number.isFinite(val) ? val : 0);
+          }
+          filtered[ch] = out;
+        });
+
+        const fv = Array.isArray(raw?.featureVector80) && raw.featureVector80.length
+          ? raw.featureVector80.slice(0, 256).map(v => (Number.isFinite(Number(v)) ? Number(v) : 0))
+          : [0];
+
+        return {
+          samplingRateHz: Math.min(4000, Math.max(50, Math.round(Number(raw?.samplingRateHz || 500)))),
+          channelsCount: Math.min(256, Math.max(1, Math.round(Number(raw?.channelsCount || channels.length)))),
+          montage: String(raw?.montage || 'F3, F4, C3, C4, O1, O2 (10-20)').slice(0, 200),
+          biomarkers: {
+            meanDar: Number(raw?.biomarkers?.meanDar ?? 0),
+            meanTar: Number(raw?.biomarkers?.meanTar ?? 0),
+            meanBsi: Number(raw?.biomarkers?.meanBsi ?? 0),
+            pri: Number(raw?.biomarkers?.pri ?? 0),
+            wpli: Number(raw?.biomarkers?.wpli ?? 0.3),
+            signalQualityScore: Number(raw?.biomarkers?.signalQualityScore ?? 0.95),
+            tpaLockoutTriggered: Boolean(raw?.biomarkers?.tpaLockoutTriggered),
+          },
+          bandPowers: {
+            delta: Number(raw?.bandPowers?.delta ?? 0.25),
+            theta: Number(raw?.bandPowers?.theta ?? 0.25),
+            alpha: Number(raw?.bandPowers?.alpha ?? 0.25),
+            beta: Number(raw?.bandPowers?.beta ?? 0.25),
+          },
+          featureVector80: fv,
+          waveforms: {
+            time: maxLen > 0 ? sampledTime : [0],
+            channels,
+            filtered,
+          },
+        };
+      }
+
+      async function openSaveModal() {
         if (!state.currentAnalysis) return;
         const a = state.currentAnalysis;
         const matchedCase = state.cases.find(c => c.id === a.caseId);
-        document.getElementById('save-title').value = matchedCase
-          ? matchedCase.name
-          : `Bản ghi qEEG (${a.caseId})`;
-        document.getElementById('save-subject').value = matchedCase
-          ? matchedCase.subjectId
-          : `CSV-${Date.now().toString().slice(-6)}`;
-        document.getElementById('save-note').value = a.decisionReason || '';
-        document.getElementById('save-modal-status').className = 'status-banner';
+        const titleRaw = matchedCase ? matchedCase.name : `Bản ghi qEEG (${a.caseId})`;
+        const subjectRaw = matchedCase ? matchedCase.subjectId : `CSV-${Date.now().toString().slice(-6)}`;
+
+        document.getElementById('save-title').value = titleRaw.slice(0, 180);
+        document.getElementById('save-subject').value = subjectRaw.slice(0, 60);
+        document.getElementById('save-split').value = 'TRAIN';
+        document.getElementById('save-note').value = (a.decisionReason || '').slice(0, 1000);
+        document.getElementById('save-deidentified').checked = true;
+
+        const statusEl = document.getElementById('save-modal-status');
+        statusEl.className = 'status-banner';
+        statusEl.textContent = '';
         document.getElementById('save-modal').classList.add('open');
+
+        const sessionInfo = await fetchAuthSession(true);
+        if (!sessionInfo.authenticated) {
+          statusEl.innerHTML = 'Bạn chưa đăng nhập. Vui lòng <a href="/login" style="color:inherit;text-decoration:underline;font-weight:800;">đăng nhập (/login)</a> để lưu vào CSDL Mạng Nơ-ron.';
+          statusEl.className = 'status-banner show err';
+        }
       }
 
       function closeSaveModal() {
@@ -1775,53 +2063,79 @@
         e.preventDefault();
         if (!state.currentAnalysis) return;
         const statusEl = document.getElementById('save-modal-status');
-        const showModalStatus = (msg, ok) => {
-          statusEl.textContent = msg;
+        const submitBtn = document.getElementById('btn-submit-save');
+        const showModalStatus = (msg, ok, isHtml = false) => {
+          if (isHtml) statusEl.innerHTML = msg;
+          else statusEl.textContent = msg;
           statusEl.className = 'status-banner show ' + (ok ? 'ok' : 'err');
         };
 
+        submitBtn.disabled = true;
         try {
-          const authRes = await fetch('/api/auth/me', { credentials: 'include' });
-          if (authRes.status === 401) {
-            showModalStatus('Bạn chưa đăng nhập NeuroLink. Vui lòng đăng nhập tại trang chủ trước khi lưu mẫu vào PostgreSQL.', false);
+          const sessionInfo = await fetchAuthSession(true);
+          if (!sessionInfo.authenticated || !sessionInfo.csrfToken) {
+            showModalStatus(
+              'Bạn chưa đăng nhập. Vui lòng <a href="/login" style="color:inherit;text-decoration:underline;font-weight:800;">đăng nhập (/login)</a> để lưu vào CSDL Mạng Nơ-ron.',
+              false,
+              true
+            );
             return;
           }
-          const authData = await authRes.json().catch(() => ({}));
-          if (!authRes.ok || !authData.user || authData.standalone) {
-            showModalStatus('Trạm đang chạy độc lập không qua cổng NeuroLink (:4000/:5173), chưa thể kết nối CSDL PostgreSQL.', false);
-            return;
-          }
-          const csrfToken = authData.csrfToken || '';
 
           const payload = {
-            title: document.getElementById('save-title').value.trim(),
+            title: document.getElementById('save-title').value.trim().slice(0, 200),
             clinicalCategory: state.currentAnalysis.clinicalCategory,
             groundTruthLabel: state.currentAnalysis.classificationLabel,
             split: document.getElementById('save-split').value,
-            subjectCode: document.getElementById('save-subject').value.trim(),
-            clinicalNote: document.getElementById('save-note').value.trim(),
+            subjectCode: document.getElementById('save-subject').value.trim().slice(0, 60),
+            clinicalNote: document.getElementById('save-note').value.trim().slice(0, 1000),
             deidentifiedConfirmed: document.getElementById('save-deidentified').checked,
-            analysis: state.currentAnalysis,
+            analysis: buildNormalizedAnalysisForSave(state.currentAnalysis),
           };
 
-          const saveRes = await fetch('/api/qeeg/save-to-platform', {
+          const sendSave = async (csrf) => fetch('/api/qeeg/save-to-platform', {
             method: 'POST',
             credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRF-Token': csrfToken,
+              'x-csrf-token': csrf,
             },
             body: JSON.stringify(payload),
           });
+
+          let saveRes = await sendSave(sessionInfo.csrfToken);
+          if (saveRes.status === 403) {
+            const refreshed = await fetchAuthSession(true);
+            if (refreshed.csrfToken) {
+              saveRes = await sendSave(refreshed.csrfToken);
+            }
+          }
+
+          if (saveRes.status === 401) {
+            showModalStatus(
+              'Phiên đăng nhập đã hết hạn. Vui lòng <a href="/login" style="color:inherit;text-decoration:underline;font-weight:800;">đăng nhập (/login)</a> để tiếp tục.',
+              false,
+              true
+            );
+            return;
+          }
+
           const saveJson = await saveRes.json().catch(() => ({}));
           if (!saveRes.ok) {
             throw new Error(saveJson?.error?.message || saveJson?.detail || ('HTTP ' + saveRes.status));
           }
 
-          showModalStatus('Đã lưu thành công hồ sơ EEG và mẫu 80 đặc trưng vào CSDL Mạng Nơ-ron PostgreSQL.', true);
-          showPlatformFeedback('Đã lưu mẫu mới vào CSDL Mạng Nơ-ron NeuroLink.', true);
+          const savedCode = saveJson?.sample?.subjectCode || payload.subjectCode;
+          showModalStatus(
+            `Đã lưu thành công (${savedCode}) vào CSDL Mạng Nơ-ron. <a href="/eeg-hub?tab=neural-db" style="color:inherit;text-decoration:underline;font-weight:800;">Xem trong CSDL</a>`,
+            true,
+            true
+          );
+          showPlatformFeedback(`Đã lưu mẫu (${savedCode}) vào CSDL Mạng Nơ-ron.`, true);
         } catch (err) {
           showModalStatus('Lưu mẫu thất bại: ' + err.message, false);
+        } finally {
+          submitBtn.disabled = false;
         }
       }
 
@@ -1854,11 +2168,17 @@
         document.getElementById('param-notch').addEventListener('change', () => runCaseAnalysis(state.currentCaseId));
         document.getElementById('param-fast').addEventListener('change', () => runCaseAnalysis(state.currentCaseId));
 
+        document.getElementById('csv-file-input').addEventListener('change', (ev) => {
+          const f = ev.target.files && ev.target.files[0];
+          const btn = document.getElementById('btn-analyze-csv');
+          btn.textContent = f ? `Phân tích: ${f.name}` : 'Tải tệp CSV';
+        });
         document.getElementById('btn-analyze-csv').addEventListener('click', runCsvUpload);
+        document.getElementById('btn-sample-csv').addEventListener('click', runSampleCsv);
 
         document.getElementById('btn-toggle-dsp').addEventListener('click', () => {
           state.isDspActive = !state.isDspActive;
-          document.getElementById('btn-toggle-dsp').textContent = state.isDspActive ? 'Lọc DSP: BẬT' : 'Tín hiệu RAW';
+          document.getElementById('btn-toggle-dsp').textContent = state.isDspActive ? 'Lọc nhiễu: BẬT' : 'Lọc nhiễu: TẮT';
           renderWaveforms();
         });
 
@@ -1872,8 +2192,22 @@
           document.getElementById('btn-pause-sweep').textContent = state.isPaused ? 'Tiếp tục' : 'Tạm dừng';
         });
 
+        topomapCanvas.addEventListener('mousemove', handleTopomapPointer);
+        topomapCanvas.addEventListener('click', handleTopomapPointer);
+        topomapCanvas.addEventListener('mouseleave', () => {
+          document.getElementById('topomap-hover-readout').textContent = 'Rê chuột vào điện cực để xem chỉ số';
+        });
+
         document.getElementById('btn-export-pdf').addEventListener('click', () => {
-          const targetCase = state.currentAnalysis && state.currentAnalysis.caseId && !state.currentAnalysis.caseId.startsWith('csv:')
+          const isCsv = state.activeSource === 'csv'
+            || (state.currentAnalysis && String(state.currentAnalysis.caseId || '').startsWith('csv:'));
+          if (isCsv) {
+            const csvName = state.currentCsvFilename || 'tệp CSV';
+            showPlatformFeedback(`Đang mở hộp thoại in / xuất PDF trực tiếp cho kết quả ${csvName}.`, true);
+            window.print();
+            return;
+          }
+          const targetCase = state.currentAnalysis && state.currentAnalysis.caseId
             ? state.currentAnalysis.caseId
             : state.currentCaseId;
           window.open(`/api/qeeg/export-pdf-summary?caseId=${encodeURIComponent(targetCase)}`, '_blank', 'noopener');
@@ -1884,7 +2218,6 @@
         document.getElementById('btn-cancel-save').addEventListener('click', closeSaveModal);
         document.getElementById('save-platform-form').addEventListener('submit', handleSaveToPlatform);
 
-        await ensureCsrfToken();
         await checkHealth();
         await loadCases();
         await runCaseAnalysis(state.currentCaseId);

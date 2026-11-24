@@ -184,12 +184,12 @@ export function ContributionsPage() {
             Chương trình Khen thưởng Đóng góp hiện áp dụng độc quyền cho các chuyên gia Y tế (Bác sĩ có CCHN) và Nhà nghiên cứu khoa học (có hồ sơ ORCID) đã được Hội đồng Thẩm định duyệt tích xanh.
           </p>
           <div className="pt-1">
-            <a
-              href="/settings"
+            <Link
+              to="/settings"
               className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:underline"
             >
               Đến trang Cài đặt để nộp hồ sơ xác minh chuyên gia →
-            </a>
+            </Link>
           </div>
         </Card>
       )}
@@ -327,12 +327,10 @@ export function ContributionsPage() {
                   {/* Concise 1-line score chip + expand toggle */}
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                     {latestReview ? (
-                      <div className="inline-flex flex-wrap items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] text-slate-700 tabular-nums">
+                      <div className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] text-slate-700 tabular-nums">
                         <CheckCircle2 className="size-3.5 text-brand-600 shrink-0" />
-                        <strong className="text-slate-900">{latestReview.scoreOverall}/5.0</strong>
-                        <span className="text-slate-400">·</span>
                         <span>
-                          CX {latestReview.scoreAccuracy} · PH {latestReview.scoreRelevance} · HI {latestReview.scoreUsefulness} · NB {latestReview.scoreOriginality} · TĐ {latestReview.scoreImpact}
+                          Điểm TB: <strong className="text-slate-900">{latestReview.scoreOverall}/5</strong>
                         </span>
                       </div>
                     ) : (
