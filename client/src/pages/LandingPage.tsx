@@ -183,63 +183,6 @@ function AlphaWaveLine({
   );
 }
 
-function BrowserFrame({
-  title,
-  src,
-  alt,
-}: {
-  title: string;
-  src: string;
-  alt: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-[#DCE6DF] bg-white shadow-[0_24px_60px_-26px_rgba(20,83,45,0.18)] overflow-hidden">
-      <div className="flex h-8 items-center gap-3 border-b border-[#DCE6DF] bg-[#F8FAF9] px-3.5">
-        <span className="flex items-center gap-1.5 shrink-0" aria-hidden="true">
-          <span className="size-2 rounded-full bg-[#DCE6DF]" />
-          <span className="size-2 rounded-full bg-[#DCE6DF]" />
-          <span className="size-2 rounded-full bg-[#DCE6DF]" />
-        </span>
-        <span className="truncate text-[11px] font-medium text-[#526058]">{title}</span>
-      </div>
-      <div className="aspect-[16/10] w-full bg-[#F5FAF7]">
-        <img
-          key={src}
-          src={src}
-          alt={alt}
-          width={1440}
-          height={900}
-          loading="lazy"
-          decoding="async"
-          className="block h-full w-full object-cover object-top"
-        />
-      </div>
-    </div>
-  );
-}
-
-function PhoneFrame({ src, alt }: { src: string; alt: string }) {
-  return (
-    <div className="rounded-[28px] border-[5px] border-[#111827] bg-white shadow-[0_24px_48px_-16px_rgba(17,24,39,0.28)] overflow-hidden">
-      <div className="flex h-4 items-center justify-center bg-[#111827]" aria-hidden="true">
-        <span className="h-1 w-10 rounded-full bg-[#374151]" />
-      </div>
-      <div className="aspect-[375/812] w-full bg-[#F5FAF7]">
-        <img
-          key={src}
-          src={src}
-          alt={alt}
-          width={375}
-          height={812}
-          loading="lazy"
-          decoding="async"
-          className="block h-full w-full object-cover object-top"
-        />
-      </div>
-    </div>
-  );
-}
-
 export function LandingPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -309,9 +252,13 @@ export function LandingPage() {
   }
 
   const primaryDestination = user ? '/feed' : '/register';
+  const displayHeadingTypography =
+    lang === 'vi'
+      ? 'tracking-[-0.015em] leading-[1.16]'
+      : 'tracking-[-0.028em] leading-[1.08]';
 
   return (
-    <div id="top" className="min-h-screen bg-white text-[#1F2937] overflow-x-clip">
+    <div id="top" className="landing-editorial min-h-screen bg-white text-[#1F2937] overflow-x-clip">
       <style>{`
         @keyframes alpha-slide {
           from { transform: translateX(0); }
@@ -493,10 +440,10 @@ export function LandingPage() {
         <section className="relative overflow-hidden bg-[#F7FAF8]">
           <div className="relative z-10 mx-auto max-w-6xl px-4 pt-12 pb-8 sm:px-6 sm:pt-16 sm:pb-10 lg:flex lg:min-h-[620px] xl:min-h-[660px] lg:items-center lg:py-24">
             <div className="max-w-[540px] space-y-6">
-              <h1 className="text-[clamp(2.35rem,5vw,4rem)] font-bold tracking-[-0.035em] leading-[1.06] text-[#111827]">
+              <h1 className={`text-[clamp(2.35rem,5vw,4rem)] font-bold text-[#111827] ${displayHeadingTypography}`}>
                 {copy.hero.headline}
               </h1>
-              <p className="max-w-[44ch] text-base sm:text-lg leading-relaxed text-[#2D3B32]">
+              <p className="max-w-[44ch] text-base sm:text-lg leading-[1.68] text-[#334155]">
                 {copy.hero.support}
               </p>
               <div className="flex flex-wrap items-center gap-5 pt-2">
@@ -559,10 +506,10 @@ export function LandingPage() {
             className="relative z-10 mx-auto max-w-6xl px-4 pt-6 pb-16 sm:px-6 sm:pt-8 sm:pb-20 md:flex md:min-h-[560px] lg:min-h-[620px] md:items-center md:py-24"
           >
             <div className="md:ml-auto md:max-w-[390px] lg:max-w-[530px] space-y-6">
-              <h2 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-[-0.03em] leading-[1.12] text-white">
+              <h2 className={`text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-white ${displayHeadingTypography}`}>
                 {copy.why.headline}
               </h2>
-              <p className="max-w-[52ch] text-base sm:text-lg leading-relaxed text-[#E6F4EB]">
+              <p className="max-w-[52ch] text-base sm:text-lg leading-[1.68] text-[#E6F4EB]">
                 {copy.why.body}
               </p>
             </div>
@@ -573,10 +520,10 @@ export function LandingPage() {
         <section id="signal" className="scroll-mt-16 bg-white py-20 sm:py-28">
           <RevealBlock reducedMotion={reducedMotion} className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center space-y-4 mb-12 sm:mb-16">
-              <h2 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-[-0.03em] leading-[1.12] text-[#111827]">
+              <h2 className={`text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-[#111827] ${displayHeadingTypography}`}>
                 {copy.signal.headline}
               </h2>
-              <p className="mx-auto max-w-[56ch] text-base sm:text-lg leading-relaxed text-[#374151]">
+              <p className="mx-auto max-w-[56ch] text-base sm:text-lg leading-[1.68] text-[#475569]">
                 {copy.signal.lead}
               </p>
             </div>
@@ -614,7 +561,7 @@ export function LandingPage() {
               </div>
             </div>
 
-            <p className="mx-auto mt-8 max-w-2xl text-center text-xs sm:text-sm leading-relaxed text-[#526058]">
+            <p className="mx-auto mt-8 max-w-2xl text-center text-xs sm:text-sm leading-[1.68] text-[#475569]">
               {copy.signal.prototypeNote}
             </p>
           </RevealBlock>
@@ -624,10 +571,10 @@ export function LandingPage() {
         <section id="ecosystem" className="scroll-mt-16 bg-[#F6FAF7] py-20 sm:py-28">
           <RevealBlock reducedMotion={reducedMotion} className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center space-y-4 mb-14 sm:mb-16">
-              <h2 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-[-0.03em] leading-[1.12] text-[#111827]">
+              <h2 className={`text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-[#111827] ${displayHeadingTypography}`}>
                 {copy.ecosystem.headline}
               </h2>
-              <p className="mx-auto max-w-[54ch] text-base sm:text-lg leading-relaxed text-[#374151]">
+              <p className="mx-auto max-w-[54ch] text-base sm:text-lg leading-[1.68] text-[#475569]">
                 {copy.ecosystem.lead}
               </p>
             </div>
@@ -646,10 +593,10 @@ export function LandingPage() {
                       className="block h-full w-full object-cover object-[50%_20%]"
                     />
                   </div>
-                  <h3 className="mt-6 text-xl font-bold tracking-[-0.02em] text-[#111827]">
+                  <h3 className="mt-6 text-xl font-bold tracking-[-0.015em] leading-[1.3] text-[#111827]">
                     {item.role}
                   </h3>
-                  <p className="mt-2.5 text-sm sm:text-base leading-relaxed text-[#374151]">
+                  <p className="mt-2.5 text-sm sm:text-base leading-[1.68] text-[#334155]">
                     {item.description}
                   </p>
                 </article>
@@ -662,92 +609,114 @@ export function LandingPage() {
           </RevealBlock>
         </section>
 
-        {/* SECTION 05 — EXPERIENCE NEUROLINK (ONLY Software UI Showcase) */}
-        <section id="experience" className="scroll-mt-16 bg-white py-20 sm:py-28">
+        {/* SECTION 05 — EXPERIENCE NEUROLINK (Studio UI Showcase) */}
+        <section id="experience" className="scroll-mt-16 bg-[#F5F7F5] border-y border-[#E5EBE7] py-24 sm:py-32">
           <RevealBlock reducedMotion={reducedMotion} className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-xl space-y-3">
-                <h2 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-[-0.03em] leading-[1.12] text-[#111827]">
-                  {copy.experience.headline}
-                </h2>
-                <p className="text-base sm:text-lg leading-relaxed text-[#374151]">
-                  {copy.experience.lead}
-                </p>
-              </div>
+            <div className="max-w-2xl space-y-3">
+              <h2 className={`text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-[#111827] ${displayHeadingTypography}`}>
+                {copy.experience.headline}
+              </h2>
+              <p className="text-base sm:text-lg leading-[1.68] text-[#475569]">
+                {copy.experience.lead}
+              </p>
+            </div>
 
-              <div
-                role="tablist"
-                aria-label={copy.experience.tabsLabel}
-                className="flex flex-wrap sm:inline-flex sm:flex-nowrap shrink-0 items-center gap-1 rounded-xl border border-[#DCE6DF] bg-[#F8FAF9] p-1"
-              >
-                {copy.experience.items.map((tab, idx) => {
-                  const selected = tab.id === activeExperience.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      ref={(el) => {
-                        tabRefs.current[tab.id] = el;
-                      }}
-                      id={`exp-tab-${tab.id}`}
-                      type="button"
-                      role="tab"
-                      aria-selected={selected}
-                      aria-controls="experience-preview-panel"
-                      tabIndex={selected ? 0 : -1}
-                      onClick={() => setActiveExpId(tab.id)}
-                      onKeyDown={(e) => onTabKeyDown(e, idx)}
-                      className={[
-                        'min-h-9 whitespace-nowrap rounded-lg px-3.5 py-2 text-center text-xs sm:text-sm font-semibold transition-colors cursor-pointer',
-                        selected
-                          ? 'bg-[#15803D] text-white'
-                          : 'text-[#374151] hover:bg-white hover:text-[#14532D]',
-                      ].join(' ')}
-                    >
-                      {tab.tabLabel}
-                    </button>
-                  );
-                })}
-              </div>
+            <div
+              role="tablist"
+              aria-label={copy.experience.tabsLabel}
+              className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-[#DCE4DE] pb-2 sm:flex-nowrap sm:gap-8 sm:pb-0"
+            >
+              {copy.experience.items.map((tab, idx) => {
+                const selected = tab.id === activeExperience.id;
+                return (
+                  <button
+                    key={tab.id}
+                    ref={(el) => {
+                      tabRefs.current[tab.id] = el;
+                    }}
+                    id={`exp-tab-${tab.id}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    aria-controls="experience-preview-panel"
+                    tabIndex={selected ? 0 : -1}
+                    onClick={() => setActiveExpId(tab.id)}
+                    onKeyDown={(e) => onTabKeyDown(e, idx)}
+                    className={[
+                      'relative sm:-mb-px whitespace-nowrap pb-2 sm:pb-3.5 text-[13.5px] sm:text-[15px] transition-colors cursor-pointer',
+                      selected
+                        ? 'font-semibold text-[#111827]'
+                        : 'font-medium text-[#475569] hover:text-[#111827]',
+                    ].join(' ')}
+                  >
+                    <span>{tab.tabLabel}</span>
+                    {selected && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-x-0 bottom-0 h-[2px] bg-[#15803D]"
+                      />
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             <div
               id="experience-preview-panel"
               role="tabpanel"
               aria-labelledby={`exp-tab-${activeExperience.id}`}
-              className="mt-10 rounded-3xl border border-[#DCE6DF] bg-[#F8FAF9] p-5 sm:p-8 lg:p-10"
             >
-              <div className="grid items-center gap-8 lg:grid-cols-12">
-                <div className="lg:col-span-8 space-y-2.5">
-                  <span className="inline-block text-xs font-semibold text-[#15803D]">
-                    {copy.experience.desktopBadge}
-                  </span>
-                  <BrowserFrame
-                    title={activeExperience.desktopPath}
-                    src={assetUrl(activeExperience.desktopImage)}
-                    alt={activeExperience.desktopAlt}
-                  />
-                </div>
-
-                <div className="lg:col-span-4 flex flex-col items-center space-y-2.5">
-                  <span className="text-xs font-semibold text-[#15803D]">
-                    {copy.experience.mobileBadge}
-                  </span>
-                  <div className="w-[216px] sm:w-[236px]">
-                    <PhoneFrame
-                      src={assetUrl(activeExperience.mobileImage)}
-                      alt={activeExperience.mobileAlt}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-7 border-t border-[#DCE6DF] pt-5 space-y-1">
-                <h3 className="text-base sm:text-lg font-semibold text-[#111827]">
+              <div className="mt-6 mb-10 max-w-2xl space-y-2">
+                <h3 className="text-xl sm:text-2xl font-semibold tracking-[-0.015em] leading-[1.3] text-[#111827]">
                   {activeExperience.title}
                 </h3>
-                <p className="text-sm sm:text-base text-[#374151] max-w-[68ch]">
+                <p className="text-sm sm:text-base leading-[1.68] text-[#475569]">
                   {activeExperience.caption}
                 </p>
+              </div>
+
+              <div className="grid items-end gap-8 lg:gap-10 lg:grid-cols-12">
+                <div className="lg:col-span-9">
+                  <div className="rounded-xl sm:rounded-2xl overflow-hidden bg-white ring-1 ring-[#0F172A]/[0.08] shadow-[0_24px_64px_-32px_rgba(15,23,42,0.22)]">
+                    <div className="aspect-[16/10] w-full bg-white">
+                      <img
+                        key={activeExperience.desktopImage}
+                        src={assetUrl(activeExperience.desktopImage)}
+                        alt={activeExperience.desktopAlt}
+                        width={1440}
+                        height={900}
+                        loading="lazy"
+                        decoding="async"
+                        className="block h-full w-full object-cover object-top"
+                      />
+                    </div>
+                  </div>
+                  <p className="mt-3 text-[13px] font-medium text-[#64748B]">
+                    {copy.experience.desktopBadge}
+                  </p>
+                </div>
+
+                <div className="lg:col-span-3">
+                  <div className="w-[220px] sm:w-[238px] lg:w-full max-w-[248px] mx-auto rounded-[32px] p-[6px] bg-[#1C211E] ring-1 ring-black/15 shadow-[0_24px_48px_-24px_rgba(15,23,42,0.3)]">
+                    <div className="rounded-[26px] overflow-hidden bg-white">
+                      <div className="aspect-[375/812] w-full bg-white">
+                        <img
+                          key={activeExperience.mobileImage}
+                          src={assetUrl(activeExperience.mobileImage)}
+                          alt={activeExperience.mobileAlt}
+                          width={375}
+                          height={812}
+                          loading="lazy"
+                          decoding="async"
+                          className="block h-full w-full object-cover object-top"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-center text-[13px] font-medium text-[#64748B]">
+                    {copy.experience.mobileBadge}
+                  </p>
+                </div>
               </div>
             </div>
           </RevealBlock>
@@ -767,10 +736,10 @@ export function LandingPage() {
               height={44}
               className="mx-auto size-11"
             />
-            <h2 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-[-0.03em] leading-[1.12] text-[#111827]">
+            <h2 className={`text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-[#111827] ${displayHeadingTypography}`}>
               {copy.ctaFooter.headline}
             </h2>
-            <p className="mx-auto max-w-[48ch] text-base sm:text-lg leading-relaxed text-[#374151]">
+            <p className="mx-auto max-w-[48ch] text-base sm:text-lg leading-[1.68] text-[#334155]">
               {copy.ctaFooter.support}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-5 pt-2">
@@ -800,7 +769,7 @@ export function LandingPage() {
           <div className="flex flex-col gap-8 py-10 md:flex-row md:items-start md:justify-between">
             <div className="space-y-2.5 max-w-sm">
               <LandingLogo href="#top" />
-              <p className="text-xs sm:text-sm leading-relaxed text-[#4B5563]">
+              <p className="text-xs sm:text-sm leading-[1.68] text-[#475569]">
                 {copy.ctaFooter.brandTagline}
               </p>
             </div>
@@ -836,7 +805,7 @@ export function LandingPage() {
           </div>
 
           <div className="border-t border-[#DCE6DF] py-6">
-            <p className="text-xs leading-relaxed text-[#4B5563]">{copy.ctaFooter.disclaimer}</p>
+            <p className="text-xs leading-[1.68] text-[#475569]">{copy.ctaFooter.disclaimer}</p>
           </div>
         </div>
       </footer>

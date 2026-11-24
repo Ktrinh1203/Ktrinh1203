@@ -246,16 +246,16 @@ export const LANDING_COPY: Record<LandingLang, LandingCopy> = {
     },
   },
   vi: {
-    metaTitle: 'NeuroLink — Hiểu rõ sức khỏe não bộ',
+    metaTitle: 'NeuroLink — Chăm sóc sức khỏe não bộ rõ ràng hơn mỗi ngày',
     nav: {
       primaryAria: 'Điều hướng chính',
       mobileAria: 'Điều hướng di động',
       footerAria: 'Điều hướng chân trang',
-      why: 'Vì sao NeuroLink',
-      signal: 'Tín hiệu & Thiết bị',
-      experience: 'Trải nghiệm',
+      why: 'Về NeuroLink',
+      signal: 'Thiết bị',
+      experience: 'Giao diện',
       signIn: 'Đăng nhập',
-      getStarted: 'Bắt đầu ngay',
+      getStarted: 'Bắt đầu',
       openWorkspace: 'Vào Bảng tin',
       langToggleLabel: 'Chọn ngôn ngữ',
       menuOpenLabel: 'Mở menu điều hướng',
@@ -263,135 +263,135 @@ export const LANDING_COPY: Record<LandingLang, LandingCopy> = {
       skipToContent: 'Chuyển tới nội dung chính',
     },
     hero: {
-      headline: 'Hiểu rõ sức khỏe não bộ.',
+      headline: 'Chăm sóc não bộ, nhẹ nhàng và rõ ràng hơn.',
       support:
-        'Theo dõi giấc ngủ và sự tỉnh táo hằng ngày, xem tín hiệu sóng não thật và kết nối với bác sĩ xác minh trong một không gian nhẹ nhàng.',
-      primaryCta: 'Khám phá NeuroLink',
+        'Theo dõi giấc ngủ và mức độ tập trung mỗi ngày, xem nhịp sóng não dễ hiểu và hỏi ý kiến bác sĩ đã được xác thực ngay trên một ứng dụng.',
+      primaryCta: 'Bắt đầu ngay',
       primaryCtaAuthed: 'Vào Bảng tin',
-      scrollCta: 'Xem câu chuyện',
+      scrollCta: 'Tìm hiểu thêm',
       imageAlt:
-        'Người phụ nữ đeo vòng đeo cảm biến vải mềm tối giản trong ánh sáng ban mai ấm áp và thư thái.',
+        'Người dùng đeo vòng cảm biến vải mềm tối giản trong ánh sáng tự nhiên buổi sáng.',
     },
     why: {
-      headline: 'Chăm sóc não bộ không nên mù mờ hay xa cách.',
-      body: 'Thông tin về giấc ngủ và sức khỏe não bộ trên mạng thường rời rạc, dễ gây nhiễu, trong khi việc đo sóng não chuyên sâu lại khó tiếp cận ngoài các bệnh viện lớn. Đồng thời, bác sĩ và nhà nghiên cứu vẫn thiếu một không gian chung để trao đổi. NeuroLink kết nối việc theo dõi hằng ngày, hình ảnh sóng não dễ hiểu và sự đồng hành của chuyên gia vào một nơi tin cậy.',
+      headline: 'Chăm sóc sức khỏe não bộ không nên quá khó hiểu.',
+      body: 'Thông tin về giấc ngủ hay căng thẳng trên mạng thường thiếu nhất quán, còn đo điện não chuyên sâu lại chủ yếu chỉ có ở bệnh viện lớn. Trong khi đó, bác sĩ và người nghiên cứu cũng cần một nơi trao đổi chuyên môn thuận tiện hơn. NeuroLink gom việc theo dõi hằng ngày, hình ảnh sóng não dễ đọc và tư vấn từ bác sĩ về chung một chỗ.',
       imageAlt:
-        'Tác phẩm đồ họa tối giản hình bóng khuôn mặt và những dải sóng xanh ngọc dịu nhẹ trên nền xanh rừng sâu.',
+        'Hình ảnh minh họa nhịp sóng não trên nền xanh đậm tối giản.',
     },
     signal: {
-      headline: 'Từ tín hiệu tinh tế đến sự thấu hiểu.',
-      lead: 'Nguyên mẫu vòng đeo cảm biến ngoài da không xâm lấn ghi nhận các tín hiệu nhỏ bé và biến chúng thành biểu đồ sóng não rõ ràng cho việc tự theo dõi và tham vấn bác sĩ.',
+      headline: 'Đọc nhịp sóng não dễ hiểu ngay tại nhà.',
+      lead: 'Nguyên mẫu vòng đeo cảm biến ngoài da không xâm lấn giúp ghi nhận tín hiệu điện não nhẹ nhàng, hiển thị thành biểu đồ trực quan để bạn tự theo dõi hoặc gửi bác sĩ xem trước.',
       studioImageAlt:
-        'Ảnh studio nguyên mẫu vòng đeo vải xám kèm hộp thu tín hiệu nhôm bạc phủ xanh và dây cảm biến tiếp xúc ngoài da.',
+        'Nguyên mẫu thiết bị đo điện não ngoài da tối giản gồm vòng đeo vải mềm và mô-đun cảm biến nhỏ gọn.',
       macroImageAlt:
-        'Ảnh cận cảnh các điện cực tiếp xúc tròn bằng kim loại mịn gắn trên dây đeo vải xanh xám của nguyên mẫu NeuroLink.',
-      waveLabel: 'Minh họa nhịp sóng Alpha êm dịu',
-      waveCaption: 'Nhịp sóng Alpha êm dịu',
+        'Ảnh chụp cận cảnh sắc nét các điện cực khô ngoài da gắn trên dây vải kỹ thuật.',
+      waveLabel: 'Minh họa nhịp sóng Alpha',
+      waveCaption: 'Nhịp sóng Alpha khi thư giãn',
       prototypeNote:
-        'Lưu ý minh bạch: Đây là nguyên mẫu nghiên cứu cảm biến ngoài da không xâm lấn — chưa thương mại hóa và không phải thiết bị chẩn đoán y khoa.',
+        'Nguyên mẫu nghiên cứu không xâm lấn — hiện đang hoàn thiện, chưa thương mại hóa và không thay thế chẩn đoán y khoa.',
     },
     ecosystem: {
-      headline: 'Một hệ sinh thái kết nối.',
-      lead: 'Được thiết kế cho từng người dùng, bác sĩ và nhà nghiên cứu cùng đồng hành chăm sóc sức khỏe não bộ.',
+      headline: 'Dành cho mọi người cùng quan tâm đến não bộ.',
+      lead: 'Từ người muốn ngủ ngon hơn mỗi tối, bác sĩ chuyên khoa cho đến sinh viên và nhà nghiên cứu thần kinh.',
       closingNote:
-        'Chung một nền tảng — tự điều chỉnh trải nghiệm phù hợp với từng vai trò.',
+        'Cùng một ứng dụng — giao diện tự điều chỉnh gọn gàng theo đúng nhu cầu của bạn.',
       items: [
         {
           id: 'general',
-          role: 'Người dùng phổ thông',
+          role: 'Người dùng hằng ngày',
           description:
-            'Theo dõi giấc ngủ và độ tỉnh táo hằng ngày, xem các bản ghi sóng não mẫu hoặc cá nhân và gửi câu hỏi tới bác sĩ xác minh.',
+            'Ghi lại giấc ngủ và độ tỉnh táo mỗi ngày, xem biểu đồ sóng não dễ đọc và gửi câu hỏi tới bác sĩ đã được xác thực.',
           image: '/landing/story/persona-user.jpg',
           imageAlt:
-            'Người dùng trẻ thư giãn bên cửa sổ ngập nắng sớm trong không gian sống yên tĩnh.',
+            'Người trẻ nghỉ ngơi thư giãn bên cửa sổ tràn ngập ánh nắng sớm trong không gian yên tĩnh.',
         },
         {
           id: 'doctor',
           role: 'Bác sĩ & Chuyên gia',
           description:
-            'Tiếp nhận các ca tư vấn sóng não từ xa được người dùng chia sẻ và đưa ra hướng dẫn y khoa rõ ràng, đáng tin cậy.',
+            'Xem nhanh hồ sơ sóng não người dùng chia sẻ từ xa và phản hồi hướng dẫn y khoa rõ ràng, đúng trọng tâm.',
           image: '/landing/story/persona-doctor.jpg',
           imageAlt:
-            'Nữ bác sĩ mỉm cười thân thiện trong áo blouse trắng tại phòng khám sáng thoáng và ấm áp.',
+            'Bác sĩ mặc áo blouse trắng mỉm cười thân thiện trong phòng khám sáng thoáng.',
         },
         {
           id: 'researcher',
           role: 'Nhà nghiên cứu & Sinh viên',
           description:
-            'Cùng trao đổi kiến thức khoa học thần kinh và khám phá các bộ dữ liệu sóng não đã ẩn danh trong một cộng đồng mở.',
+            'Thảo luận kiến thức thần kinh và tra cứu các bộ dữ liệu sóng não đã ẩn danh trong cộng đồng mở.',
           image: '/landing/story/persona-researcher.jpg',
           imageAlt:
-            'Nhà nghiên cứu trẻ đang xem lại bản ghi sóng não và ghi chép bên bàn gỗ nhiều ánh sáng tự nhiên.',
+            'Nhà nghiên cứu thần kinh xem bản in đường sóng não và ghi chép bên bàn gỗ.',
         },
       ],
     },
     experience: {
-      headline: 'Trải nghiệm NeuroLink',
-      lead: 'Ảnh chụp thực tế từ ứng dụng web máy tính và phiên bản di động đang vận hành.',
-      desktopBadge: 'Web Máy tính',
-      mobileBadge: 'Web Di động',
+      headline: 'Trải nghiệm đồng bộ trên web và điện thoại.',
+      lead: 'Giao diện thực tế đang vận hành — rộng rãi trên máy tính, gọn nhẹ khi mang theo trên điện thoại.',
+      desktopBadge: 'Bản web máy tính',
+      mobileBadge: 'Ứng dụng di động',
       tabsLabel: 'Chọn màn hình trải nghiệm',
       items: [
         {
           id: 'brainwave',
-          tabLabel: 'Xem sóng não',
-          title: 'Biểu đồ sóng não và bản đồ trực quan',
+          tabLabel: 'Theo dõi sóng não',
+          title: 'Xem sóng não trực quan trên cả hai thiết bị',
           caption:
-            'Quan sát các dải sóng não nhiều kênh cùng bản đồ vùng hoạt động đồng bộ trên cả máy tính và điện thoại.',
+            'Biểu đồ sóng não 6 kênh và các chỉ số cơ bản hiển thị rõ ràng, đồng bộ từ máy tính sang điện thoại.',
           desktopImage: '/landing/desktop-qeeg-stroke.png',
           desktopAlt:
-            'Giao diện xem sóng não NeuroLink trên máy tính hiển thị các đường sóng và bản đồ vùng não trực quan.',
-          desktopPath: 'neurolink · Xem sóng não',
+            'Giao diện xem sóng não trên máy tính hiển thị biểu đồ 6 kênh và bản đồ vùng não trực quan.',
+          desktopPath: 'neurolink · Theo dõi sóng não',
           mobileImage: '/landing/mobile-qeeg.png',
           mobileAlt:
-            'Màn hình web di động NeuroLink hiển thị biểu đồ sóng não rõ nét và các dải tần số.',
+            'Màn hình ứng dụng di động hiển thị biểu đồ sóng não và các chỉ số cơ bản.',
         },
         {
           id: 'guidance',
-          tabLabel: 'Hỏi đáp Bác sĩ',
-          title: 'Gửi câu hỏi tới bác sĩ đã xác minh',
+          tabLabel: 'Hỏi đáp bác sĩ',
+          title: 'Gửi câu hỏi kèm kết quả sóng não tới bác sĩ',
           caption:
-            'Đính kèm thông tin sóng não vào câu hỏi tư vấn một cách mạch lạc, kèm nhắc nhở an toàn khi cần hỗ trợ khẩn cấp.',
+            'Đính kèm bản ghi sóng não trực tiếp vào câu hỏi tư vấn, kèm cảnh báo an toàn khi có dấu hiệu cần đi khám sớm.',
           desktopImage: '/landing/desktop-consultations.png',
           desktopAlt:
-            'Giao diện Hỏi đáp Bác sĩ trên máy tính hiển thị danh sách ca tư vấn và hướng dẫn an toàn.',
-          desktopPath: 'neurolink · Hỏi đáp Bác sĩ',
+            'Giao diện hỏi đáp bác sĩ trên máy tính hiển thị danh sách câu hỏi tư vấn kèm cảnh báo an toàn.',
+          desktopPath: 'neurolink · Hỏi đáp bác sĩ',
           mobileImage: '/landing/mobile-consult.png',
           mobileAlt:
-            'Danh sách câu hỏi tư vấn bác sĩ trên web di động NeuroLink.',
+            'Danh sách câu hỏi tư vấn bác sĩ và trạng thái phản hồi trên màn hình điện thoại.',
         },
         {
           id: 'community',
-          tabLabel: 'Cộng đồng Y khoa',
-          title: 'Trao đổi chuyên môn trong không gian bình tĩnh',
+          tabLabel: 'Cộng đồng y khoa',
+          title: 'Trao đổi chuyên môn trong môi trường tin cậy',
           caption:
-            'Theo dõi các chủ đề sức khỏe não bộ, đọc chia sẻ từ chuyên gia và trò chuyện trực tiếp mọi lúc.',
+            'Đọc bài chia sẻ đã kiểm duyệt, thảo luận ca lâm sàng và cập nhật kiến thức sức khỏe não bộ cùng chuyên gia.',
           desktopImage: '/landing/desktop-feed.png',
           desktopAlt:
-            'Bảng tin Cộng đồng Y khoa NeuroLink trên máy tính với bài viết từ các bác sĩ xác minh.',
-          desktopPath: 'neurolink · Cộng đồng Y khoa',
+            'Bảng tin cộng đồng y khoa trên máy tính với các bài chia sẻ đã kiểm duyệt từ chuyên gia.',
+          desktopPath: 'neurolink · Cộng đồng y khoa',
           mobileImage: '/landing/mobile-feed.png',
           mobileAlt:
-            'Bảng tin Cộng đồng Y khoa trên giao diện web di động NeuroLink.',
+            'Bảng tin cộng đồng y khoa gọn nhẹ trên giao diện điện thoại.',
         },
       ],
     },
     ctaFooter: {
-      headline: 'Bắt đầu hành trình chăm sóc não bộ rõ ràng hơn.',
+      headline: 'Bắt đầu theo dõi sức khỏe não bộ ngay hôm nay.',
       support:
-        'Tham gia nhanh chóng để theo dõi giấc ngủ, xem tín hiệu sóng não và trò chuyện cùng các chuyên gia tin cậy.',
-      primaryCta: 'Tham gia ngay',
+        'Tạo tài khoản trong vài giây để ghi lại giấc ngủ, xem thử biểu đồ sóng não và kết nối với bác sĩ.',
+      primaryCta: 'Tạo tài khoản',
       primaryCtaAuthed: 'Vào Bảng tin',
       secondaryCta: 'Đăng nhập',
-      brandTagline: 'Hiểu rõ sức khỏe não bộ, tín hiệu và chăm sóc tin cậy.',
+      brandTagline: 'Theo dõi sóng não dễ hiểu, kết nối bác sĩ tin cậy.',
       disclaimer:
-        'NeuroLink hỗ trợ theo dõi sức khỏe cá nhân, học tập và định hướng ban đầu — không thay thế chẩn đoán tại bệnh viện hay dịch vụ cấp cứu 115.',
+        'Các thông tin về phần cứng đề cập đến nguyên mẫu nghiên cứu đang phát triển. NeuroLink không thay thế chẩn đoán hay điều trị y khoa.',
       links: {
-        why: 'Vì sao NeuroLink',
-        signal: 'Tín hiệu & Thiết bị',
-        experience: 'Trải nghiệm',
+        why: 'Về NeuroLink',
+        signal: 'Thiết bị',
+        experience: 'Giao diện',
         signIn: 'Đăng nhập',
-        register: 'Bắt đầu ngay',
+        register: 'Bắt đầu',
         workspace: 'Vào Bảng tin',
       },
     },
