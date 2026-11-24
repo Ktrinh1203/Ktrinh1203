@@ -334,7 +334,7 @@ export function PostCard({
                   className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[#15803D] hover:bg-[#EFF6F1] transition-colors"
                 >
                   <Award className="size-3.5 text-[#16A34A]" aria-hidden />
-                  <span>Nộp xét duyệt Research Hub</span>
+                  <span>Nộp xét duyệt Trung tâm Nghiên cứu</span>
                 </Link>
               )}
 
@@ -522,7 +522,7 @@ export function PostCard({
             className="w-full rounded-md border border-[#DCE6DF] bg-white px-2.5 py-1.5 text-xs text-[#141413] focus:border-[#16A34A] focus:outline-none"
           >
             <option value="Thông tin y khoa chưa kiểm chứng">Thông tin y khoa chưa kiểm chứng</option>
-            <option value="Tiết lộ dữ liệu định danh bệnh nhân (PHI)">Tiết lộ dữ liệu định danh bệnh nhân (PHI)</option>
+            <option value="Tiết lộ dữ liệu định danh bệnh nhân (thông tin cá nhân)">Tiết lộ dữ liệu định danh bệnh nhân (thông tin cá nhân)</option>
             <option value="Quảng cáo thương mại / Spam">Quảng cáo thương mại / Spam</option>
             <option value="Ngôn từ không chuẩn mực">Ngôn từ không chuẩn mực</option>
           </select>

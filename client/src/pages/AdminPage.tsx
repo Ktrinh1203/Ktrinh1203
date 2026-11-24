@@ -23,6 +23,8 @@ import {
   Coins,
   Star,
   Plus,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { adminApi, adminRewardsApi } from '../api/endpoints';
 import { Avatar, Button, Card, EmptyState, Input, Spinner, Textarea } from '../components/ui';
@@ -83,22 +85,26 @@ const STATUS_BADGE_STYLE: Record<
 
 const TIER_META: Record<
   'TIER_1' | 'TIER_2' | 'TIER_3' | 'FLAGGED',
-  { label: string; className: string }
+  { label: string; description: string; className: string }
 > = {
   TIER_1: {
-    label: 'TIER 1 — Định danh chuẩn (CCHN / ORCID khớp mẫu)',
+    label: 'TIER 1 · Khớp chuẩn',
+    description: 'Định danh chuẩn (CCHN / ORCID khớp mẫu)',
     className: 'bg-emerald-50 text-emerald-800 border-emerald-200',
   },
   TIER_2: {
-    label: 'TIER 2 — Văn bằng / Giấy xác nhận cơ sở (Cần đối chiếu)',
+    label: 'TIER 2 · Đối chiếu',
+    description: 'Văn bằng / Giấy xác nhận cơ sở (Cần đối chiếu)',
     className: 'bg-blue-50 text-blue-800 border-blue-200',
   },
   TIER_3: {
-    label: 'TIER 3 — Tài liệu bổ trợ / Cần đọc thủ công',
+    label: 'TIER 3 · Thủ công',
+    description: 'Tài liệu bổ trợ / Cần đọc thủ công',
     className: 'bg-amber-50 text-amber-800 border-amber-200',
   },
   FLAGGED: {
-    label: 'FLAGGED — Cảnh báo tài liệu bất thường / Sai lệch nội dung / Không đúng chuyên môn',
+    label: 'FLAGGED · Cảnh báo',
+    description: 'Cảnh báo tài liệu bất thường / Sai lệch nội dung / Không đúng chuyên môn',
     className: 'bg-red-50 text-red-800 border-red-300',
   },
 };
@@ -127,6 +133,7 @@ function DossierCard({
   ) => void;
   isPending: boolean;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const [rationale, setRationale] = useState('');
   const [showAudit, setShowAudit] = useState(false);
 
@@ -134,413 +141,481 @@ function DossierCard({
   const primaryDoc = req.documents[0] ?? null;
   const ocr = primaryDoc?.ocrData ?? null;
   const statusMeta = STATUS_BADGE_STYLE[req.status];
+  const tierMeta = ocr ? TIER_META[ocr.sourceReliabilityTier] : null;
 
   return (
-    <Card className="p-5 space-y-4 border-slate-200/90 shadow-xs">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-3.5">
-        <div className="flex items-center gap-3">
-          <Avatar name={req.user.displayName} src={req.user.avatarUrl} size="md" />
-          <div>
+    <Card className="p-3.5 sm:px-4 space-y-3 border-slate-200/90 shadow-2xs">
+      {/* Compact Summary Row (Default View) */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <Avatar name={req.user.displayName} src={req.user.avatarUrl} size="sm" />
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-bold text-slate-900">{req.user.displayName}</span>
+              <span className="font-bold text-sm text-slate-900 truncate">{req.user.displayName}</span>
               <span className="text-xs text-slate-400">@{req.user.username}</span>
               <ProfessionalBadge
                 type={req.profile.type}
                 status={req.profile.verificationStatus}
+                compact
               />
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Nộp lúc: {new Date(req.updatedAt).toLocaleString('vi-VN')}
-              {req.reviewer && ` · Người duyệt: @${req.reviewer.username}`}
+            <p className="text-xs text-slate-600 truncate mt-0.5">
+              {req.claimedSpecialty} · {req.claimedTitle}
             </p>
           </div>
         </div>
 
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}
-        >
-          {statusMeta.label}
-        </span>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {tierMeta && (
+            <span
+              title={tierMeta.description}
+              className={`rounded-md border px-2 py-0.5 text-[11px] font-semibold cursor-help ${tierMeta.className}`}
+            >
+              {tierMeta.label}
+            </span>
+          )}
+          <span
+            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${statusMeta.className}`}
+          >
+            {statusMeta.label}
+          </span>
+
+          {isSelfRequest ? (
+            <span
+              title="Bạn không thể tự phê duyệt hồ sơ của chính mình"
+              className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-800"
+            >
+              <Lock className="size-3" /> Hồ sơ của bạn
+            </span>
+          ) : (
+            <>
+              {req.status === 'PENDING_REVIEW' && (
+                <Button
+                  variant="outline"
+                  size="xs"
+                  loading={isPending}
+                  onClick={() => onDecision(req.id, 'CLAIM', rationale || 'Tiếp nhận thẩm định hồ sơ')}
+                >
+                  Tiếp nhận
+                </Button>
+              )}
+              {(req.status === 'PENDING_REVIEW' || req.status === 'IN_REVIEW') && (
+                <Button
+                  size="xs"
+                  loading={isPending}
+                  onClick={() =>
+                    onDecision(
+                      req.id,
+                      'APPROVE',
+                      rationale || 'Đã đối chiếu tài liệu minh chứng hợp lệ',
+                    )
+                  }
+                  icon={<Check className="size-3" />}
+                >
+                  Phê duyệt
+                </Button>
+              )}
+            </>
+          )}
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            onClick={() => setExpanded((v) => !v)}
+            icon={expanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+          >
+            {expanded ? 'Thu gọn' : 'Xem chi tiết'}
+          </Button>
+        </div>
       </div>
 
-      {/* Side-by-Side Reviewer Dossier Grid */}
-      <div className="grid gap-4 lg:grid-cols-12">
-        {/* Left Column: Claimed Credentials & Private Document Vault (5 cols) */}
-        <div className="lg:col-span-5 space-y-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-            <Building2 className="size-3.5 text-brand-600" /> 1. Thông tin ứng viên tự khai
-          </h3>
+      {/* Expanded Dossier: Credentials, OCR Comparison Table, Decision Controls & Audit Log */}
+      {expanded && (
+        <div className="space-y-4 border-t border-slate-100 pt-3.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+            <span>
+              Nộp lúc: {new Date(req.updatedAt).toLocaleString('vi-VN')}
+              {req.reviewer && ` · Người duyệt: @${req.reviewer.username}`}
+            </span>
+            {tierMeta && <span className="text-slate-600 font-medium">{tierMeta.description}</span>}
+          </div>
 
-          <dl className="space-y-2 text-xs">
-            <div>
-              <dt className="text-slate-400">Họ và tên tài khoản:</dt>
-              <dd className="font-semibold text-slate-900">{req.user.displayName}</dd>
+          {/* Side-by-Side Reviewer Dossier Grid */}
+          <div className="grid gap-4 lg:grid-cols-12">
+            {/* Left Column: Claimed Credentials & Private Document Vault (5 cols) */}
+            <div className="lg:col-span-5 min-w-0 space-y-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Building2 className="size-3.5 text-brand-600" /> 1. Thông tin ứng viên tự khai
+              </h3>
+
+              <dl className="space-y-2 text-xs">
+                <div>
+                  <dt className="text-slate-400">Họ và tên tài khoản:</dt>
+                  <dd className="font-semibold text-slate-900">{req.user.displayName}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-400">Chức danh đề xuất:</dt>
+                  <dd className="font-semibold text-slate-800">{req.claimedTitle}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-400">Chuyên khoa / Lĩnh vực:</dt>
+                  <dd className="font-semibold text-slate-800">{req.claimedSpecialty}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-400">Đơn vị công tác:</dt>
+                  <dd className="font-medium text-slate-800">{req.claimedInstitution || '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-400">Số CCHN / Mã ORCID đăng ký:</dt>
+                  <dd className="font-mono font-semibold text-brand-800 bg-white px-2 py-0.5 rounded border border-slate-200 inline-block mt-0.5">
+                    {req.licenseOrOrcidNumber || 'Chưa cung cấp'}
+                  </dd>
+                </div>
+                {req.submissionNotes && (
+                  <div>
+                    <dt className="text-slate-400">Ghi chú giải trình của ứng viên:</dt>
+                    <dd className="italic text-slate-700 bg-white p-2 rounded border border-slate-200 mt-0.5">
+                      "{req.submissionNotes}"
+                    </dd>
+                  </div>
+                )}
+              </dl>
+
+              {/* Private Documents List */}
+              <div className="border-t border-slate-200 pt-3 space-y-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
+                  Tài liệu lưu trữ riêng tư ({req.documents.length})
+                </span>
+                {req.documents.length === 0 ? (
+                  <p className="text-xs text-amber-700">Chưa có tài liệu đính kèm.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {req.documents.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="rounded-lg border border-slate-200 bg-white p-2.5 text-xs space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold text-slate-800 truncate">
+                            {DOC_TYPE_SHORT[doc.documentType]}
+                          </span>
+                          <span className="text-[10px] text-slate-400 shrink-0">
+                            {(doc.sizeBytes / 1024).toFixed(1)} KB
+                          </span>
+                        </div>
+                        <a
+                          href={`/api/admin/verifications/requests/${req.id}/documents/${doc.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 text-brand-700 font-semibold hover:underline break-all"
+                        >
+                          <FileText className="size-3.5 shrink-0" />
+                          <span>{doc.fileName}</span>
+                          <ExternalLink className="size-3 shrink-0" />
+                        </a>
+                        <div className="text-[10px] text-slate-400 font-mono truncate" title={doc.sha256Hash}>
+                          SHA-256: {doc.sha256Hash.slice(0, 24)}...
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <dt className="text-slate-400">Chức danh đề xuất:</dt>
-              <dd className="font-semibold text-slate-800">{req.claimedTitle}</dd>
+
+            {/* Right Column: OCR Evidence & Comparison Dossier (7 cols) */}
+            <div className="lg:col-span-7 min-w-0 space-y-3 bg-white p-3.5 rounded-xl border border-slate-200">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                  <ScanSearch className="size-4 text-brand-600" /> 2. Đối chiếu Minh chứng OCR
+                </h3>
+                {tierMeta && (
+                  <span
+                    title={tierMeta.description}
+                    className={`rounded-md border px-2 py-0.5 text-[11px] font-semibold ${tierMeta.className}`}
+                  >
+                    {tierMeta.label}
+                  </span>
+                )}
+              </div>
+
+              {!ocr ? (
+                <div className="p-4 text-xs text-slate-500 bg-slate-50 rounded-lg border border-slate-200">
+                  Không có dữ liệu OCR. Vui lòng mở tài liệu gốc để kiểm tra thủ công.
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-lg bg-amber-50/70 border border-amber-200/80 px-3 py-2 text-[11px] text-amber-900 leading-relaxed space-y-1">
+                    <div>
+                      <strong>Chuyên viên đối chiếu:</strong> {ocr.disclaimer}
+                    </div>
+                    {ocr.comparisonFlags.domainRelevanceWarning && (
+                      <div className="text-red-700 font-semibold flex items-center gap-1.5 pt-1 border-t border-amber-200">
+                        <AlertCircle className="size-4 shrink-0" />
+                        <span>Cảnh báo: Nội dung tài liệu không khớp từ khóa Y tế / Học thuật.</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Side-by-Side Comparison Table */}
+                  <div className="overflow-x-auto rounded-lg border border-slate-200">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
+                        <tr>
+                          <th className="py-2 px-2.5 font-semibold">Trường đối chiếu</th>
+                          <th className="py-2 px-2.5 font-semibold">Ứng viên khai báo</th>
+                          <th className="py-2 px-2.5 font-semibold">OCR bóc tách</th>
+                          <th className="py-2 px-2.5 font-semibold">Đánh giá</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        <tr>
+                          <td className="py-2 px-2.5 font-medium text-slate-600">Họ và tên</td>
+                          <td className="py-2 px-2.5 text-slate-900 font-medium">{req.user.displayName}</td>
+                          <td className="py-2 px-2.5 font-mono text-slate-800">
+                            {ocr.extractedFields.fullName || '—'}
+                          </td>
+                          <td className="py-2 px-2.5">
+                            {ocr.extractedFields.fullName ? (
+                              ocr.comparisonFlags.nameMismatchWarning ? (
+                                <span className="inline-flex items-center gap-1 text-red-700 font-semibold">
+                                  <AlertCircle className="size-3.5" /> Sai lệch ({Math.round(ocr.comparisonFlags.nameMatchScore * 100)}%)
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                                  <CheckCircle2 className="size-3.5" /> Khớp ({Math.round(ocr.comparisonFlags.nameMatchScore * 100)}%)
+                                </span>
+                              )
+                            ) : (
+                              <span className="text-amber-700 font-medium flex items-center gap-1">
+                                <AlertCircle className="size-3.5" /> Không tìm thấy
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="py-2 px-2.5 font-medium text-slate-600">Số CCHN / ORCID</td>
+                          <td className="py-2 px-2.5 font-mono text-slate-900">
+                            {req.licenseOrOrcidNumber || '—'}
+                          </td>
+                          <td className="py-2 px-2.5 font-mono text-slate-800">
+                            {ocr.extractedFields.licenseNumber || '—'}
+                          </td>
+                          <td className="py-2 px-2.5">
+                            {ocr.extractedFields.licenseNumber ? (
+                              ocr.comparisonFlags.licenseDocumentMatch ? (
+                                <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                                  <CheckCircle2 className="size-3.5" /> Khớp mã
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-red-700 font-semibold">
+                                  <AlertCircle className="size-3.5" /> Không khớp
+                                </span>
+                              )
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-amber-700 font-medium">
+                                <AlertCircle className="size-3.5" /> Không tìm thấy
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="py-2 px-2.5 font-medium text-slate-600">Chuyên khoa</td>
+                          <td className="py-2 px-2.5 text-slate-900">{req.claimedSpecialty}</td>
+                          <td className="py-2 px-2.5 text-slate-800">
+                            {ocr.extractedFields.specialty || '—'}
+                          </td>
+                          <td className="py-2 px-2.5">
+                            {ocr.comparisonFlags.specialtyMatchWarning ? (
+                              <span className="text-amber-700 font-semibold">Khác từ khóa</span>
+                            ) : ocr.extractedFields.specialty ? (
+                              <span className="text-emerald-700 font-semibold">Tương thích</span>
+                            ) : (
+                              <span className="text-amber-700 font-medium flex items-center gap-1">
+                                <AlertCircle className="size-3.5" /> Không có
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="py-2 px-2.5 font-medium text-slate-600">Cơ quan & Ngày cấp</td>
+                          <td className="py-2 px-2.5 text-slate-900">{req.claimedInstitution || '—'}</td>
+                          <td className="py-2 px-2.5 text-slate-800">
+                            {[ocr.extractedFields.issuingAuthority, ocr.extractedFields.issueDate]
+                              .filter(Boolean)
+                              .join(' · ') || '—'}
+                          </td>
+                          <td className="py-2 px-2.5">
+                            {ocr.comparisonFlags.dateInvalidWarning ? (
+                              <span className="text-red-700 font-semibold">Ngày bất thường</span>
+                            ) : ocr.extractedFields.issueDate || ocr.extractedFields.issuingAuthority ? (
+                              <span className="text-emerald-700 font-semibold">Đã trích xuất</span>
+                            ) : (
+                              <span className="text-slate-400">Chưa đối chiếu</span>
+                            )}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Raw OCR Text Snippet */}
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-semibold text-slate-400 block">
+                      Văn bản trích xuất:
+                    </span>
+                    <pre className="max-h-24 overflow-y-auto overflow-x-auto rounded-lg bg-slate-900 text-slate-100 p-2.5 text-[11px] font-mono whitespace-pre-wrap break-all">
+                      {ocr.ocrRawSnippet}
+                    </pre>
+                  </div>
+                </>
+              )}
             </div>
-            <div>
-              <dt className="text-slate-400">Chuyên khoa / Lĩnh vực:</dt>
-              <dd className="font-semibold text-slate-800">{req.claimedSpecialty}</dd>
-            </div>
-            <div>
-              <dt className="text-slate-400">Đơn vị công tác:</dt>
-              <dd className="font-medium text-slate-800">{req.claimedInstitution || '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-slate-400">Số CCHN / Mã ORCID đăng ký:</dt>
-              <dd className="font-mono font-semibold text-brand-800 bg-white px-2 py-0.5 rounded border border-slate-200 inline-block mt-0.5">
-                {req.licenseOrOrcidNumber || 'Chưa cung cấp'}
-              </dd>
-            </div>
-            {req.submissionNotes && (
-              <div>
-                <dt className="text-slate-400">Ghi chú giải trình của ứng viên:</dt>
-                <dd className="italic text-slate-700 bg-white p-2 rounded border border-slate-200 mt-0.5">
-                  "{req.submissionNotes}"
-                </dd>
+          </div>
+
+          {/* Reviewer Decision Controls & Anti-Self-Approval Guard */}
+          <div className="border-t border-slate-100 pt-3.5 space-y-3">
+            {isSelfRequest ? (
+              <div className="flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 font-medium">
+                <Lock className="size-4 text-amber-700 shrink-0" />
+                <span>
+                  <strong>Chốt chặn Bảo mật (Anti-Self-Approval):</strong> Bạn không được phép tự tiếp nhận hoặc phê duyệt hồ sơ xác minh của chính mình.
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Ghi chú thẩm định hoặc lý do (bắt buộc khi Từ chối / Bổ sung / Thu hồi)..."
+                    value={rationale}
+                    onChange={(e) => setRationale(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {req.status === 'PENDING_REVIEW' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      loading={isPending}
+                      onClick={() => onDecision(req.id, 'CLAIM', rationale || 'Tiếp nhận thẩm định hồ sơ')}
+                      icon={<ClipboardCheck className="size-3.5 text-blue-600" />}
+                    >
+                      Tiếp nhận (CLAIM)
+                    </Button>
+                  )}
+
+                  {(req.status === 'PENDING_REVIEW' || req.status === 'IN_REVIEW') && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        loading={isPending}
+                        onClick={() => onDecision(req.id, 'REQUEST_INFO', rationale)}
+                        icon={<MessageSquareWarning className="size-3.5 text-orange-600" />}
+                      >
+                        Yêu cầu bổ sung
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        loading={isPending}
+                        onClick={() => onDecision(req.id, 'REJECT', rationale)}
+                        icon={<X className="size-3.5 text-red-600" />}
+                      >
+                        Từ chối
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        loading={isPending}
+                        onClick={() =>
+                          onDecision(
+                            req.id,
+                            'APPROVE',
+                            rationale || 'Đã đối chiếu tài liệu minh chứng hợp lệ',
+                          )
+                        }
+                        icon={<Check className="size-3.5" />}
+                      >
+                        Phê duyệt cấp tích xanh
+                      </Button>
+                    </>
+                  )}
+
+                  {req.status === 'ADDITIONAL_INFO_REQUIRED' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      loading={isPending}
+                      onClick={() => onDecision(req.id, 'REJECT', rationale)}
+                      icon={<X className="size-3.5 text-red-600" />}
+                    >
+                      Từ chối hồ sơ
+                    </Button>
+                  )}
+
+                  {req.status === 'VERIFIED' && (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      loading={isPending}
+                      onClick={() => onDecision(req.id, 'REVOKE', rationale)}
+                      icon={<RotateCcw className="size-3.5" />}
+                    >
+                      Thu hồi tích xanh (REVOKE)
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
-          </dl>
 
-          {/* Private Documents List */}
-          <div className="border-t border-slate-200 pt-3 space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
-              Tài liệu lưu trữ riêng tư ({req.documents.length})
-            </span>
-            {req.documents.length === 0 ? (
-              <p className="text-xs text-amber-700">Chưa có tài liệu đính kèm.</p>
-            ) : (
-              <div className="space-y-2">
-                {req.documents.map((doc) => (
+            {/* Audit Log Toggle */}
+            <div className="flex items-center justify-between text-xs pt-1">
+              <button
+                type="button"
+                onClick={() => setShowAudit((v) => !v)}
+                className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-800 font-medium"
+              >
+                <History className="size-3.5" />
+                <span>
+                  {showAudit ? 'Ẩn nhật ký kiểm toán' : `Xem nhật ký kiểm toán (${req.auditLogs.length})`}
+                </span>
+              </button>
+              {req.reviewNotes && (
+                <span className="text-slate-500 italic">
+                  Ghi chú: "{req.reviewNotes}"
+                </span>
+              )}
+            </div>
+
+            {showAudit && req.auditLogs.length > 0 && (
+              <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-1.5 text-xs">
+                {req.auditLogs.map((log) => (
                   <div
-                    key={doc.id}
-                    className="rounded-lg border border-slate-200 bg-white p-2.5 text-xs space-y-1.5"
+                    key={log.id}
+                    className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 last:border-none pb-1.5 last:pb-0"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-slate-800 truncate">
-                        {DOC_TYPE_SHORT[doc.documentType]}
-                      </span>
-                      <span className="text-[10px] text-slate-400 shrink-0">
-                        {(doc.sizeBytes / 1024).toFixed(1)} KB
-                      </span>
+                    <div>
+                      <span className="font-mono font-semibold text-slate-800">{log.action}</span>{' '}
+                      <span className="text-slate-500">
+                        ({log.previousState ?? 'NONE'} → <strong>{log.newState}</strong>)
+                      </span>{' '}
+                      bởi <span className="font-semibold text-slate-700">@{log.actor.username}</span>
+                      {log.reason && <span className="text-slate-600"> — "{log.reason}"</span>}
                     </div>
-                    <a
-                      href={`/api/admin/verifications/requests/${req.id}/documents/${doc.id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 text-brand-700 font-semibold hover:underline break-all"
-                    >
-                      <FileText className="size-3.5 shrink-0" />
-                      <span>{doc.fileName}</span>
-                      <ExternalLink className="size-3 shrink-0" />
-                    </a>
-                    <div className="text-[10px] text-slate-400 font-mono truncate" title={doc.sha256Hash}>
-                      SHA-256: {doc.sha256Hash.slice(0, 24)}...
-                    </div>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {new Date(log.timestamp).toLocaleString('vi-VN')}
+                    </span>
                   </div>
                 ))}
               </div>
             )}
           </div>
         </div>
-
-        {/* Right Column: OCR Evidence & Comparison Dossier (7 cols) */}
-        <div className="lg:col-span-7 space-y-3 bg-white p-3.5 rounded-xl border border-slate-200">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-              <ScanSearch className="size-4 text-brand-600" /> 2. Hồ sơ Đối chiếu Minh chứng OCR (Evidence Dossier)
-            </h3>
-            {ocr && (
-              <span
-                className={`rounded-md border px-2 py-0.5 text-[11px] font-semibold ${
-                  TIER_META[ocr.sourceReliabilityTier].className
-                }`}
-              >
-                {TIER_META[ocr.sourceReliabilityTier].label}
-              </span>
-            )}
-          </div>
-
-          {!ocr ? (
-            <div className="p-4 text-xs text-slate-500 bg-slate-50 rounded-lg border border-slate-200">
-              Không có dữ liệu OCR cho yêu cầu này. Vui lòng mở tài liệu gốc để kiểm tra thủ công.
-            </div>
-          ) : (
-            <>
-              {/* Mandatory Human-in-the-Loop Disclaimer */}
-              <div className="rounded-lg bg-amber-50/70 border border-amber-200/80 px-3 py-2 text-[11px] text-amber-900 leading-relaxed space-y-1">
-                <div>
-                  <strong>Nguyên tắc Thẩm định (Human-in-the-Loop):</strong> {ocr.disclaimer}
-                </div>
-                {ocr.comparisonFlags.domainRelevanceWarning && (
-                  <div className="text-red-700 font-semibold flex items-center gap-1.5 pt-1 border-t border-amber-200">
-                    <AlertCircle className="size-4 shrink-0" />
-                    <span>
-                      CẢNH BÁO TÀI LIỆU KHÔNG PHÙ HỢP: Nội dung tài liệu không chứa các từ khóa Y tế / Học thuật lâm sàng hoặc có dấu hiệu tệp kỹ thuật ngoài ngành (datasheet, phần cứng, tài liệu khác).
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Side-by-Side Comparison Table */}
-              <div className="overflow-x-auto rounded-lg border border-slate-200">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
-                    <tr>
-                      <th className="py-2 px-2.5 font-semibold">Trường đối chiếu</th>
-                      <th className="py-2 px-2.5 font-semibold">Ứng viên khai báo</th>
-                      <th className="py-2 px-2.5 font-semibold">OCR bóc tách từ tài liệu</th>
-                      <th className="py-2 px-2.5 font-semibold">Đánh giá tự động</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    <tr>
-                      <td className="py-2 px-2.5 font-medium text-slate-600">Họ và tên</td>
-                      <td className="py-2 px-2.5 text-slate-900 font-medium">{req.user.displayName}</td>
-                      <td className="py-2 px-2.5 font-mono text-slate-800">
-                        {ocr.extractedFields.fullName || '— (Chưa bóc tách)'}
-                      </td>
-                      <td className="py-2 px-2.5">
-                        {ocr.extractedFields.fullName ? (
-                          ocr.comparisonFlags.nameMismatchWarning ? (
-                            <span className="inline-flex items-center gap-1 text-red-700 font-semibold">
-                              <AlertCircle className="size-3.5" /> Sai lệch ({Math.round(ocr.comparisonFlags.nameMatchScore * 100)}%)
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
-                              <CheckCircle2 className="size-3.5" /> Khớp ({Math.round(ocr.comparisonFlags.nameMatchScore * 100)}%)
-                            </span>
-                          )
-                        ) : (
-                          <span className="text-amber-700 font-medium flex items-center gap-1">
-                            <AlertCircle className="size-3.5" /> Không tìm thấy trên file
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-2.5 font-medium text-slate-600">Số CCHN / ORCID</td>
-                      <td className="py-2 px-2.5 font-mono text-slate-900">
-                        {req.licenseOrOrcidNumber || '—'}
-                      </td>
-                      <td className="py-2 px-2.5 font-mono text-slate-800">
-                        {ocr.extractedFields.licenseNumber || '— (Chưa bóc tách)'}
-                      </td>
-                      <td className="py-2 px-2.5">
-                        {ocr.extractedFields.licenseNumber ? (
-                          ocr.comparisonFlags.licenseDocumentMatch ? (
-                            <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
-                              <CheckCircle2 className="size-3.5" /> Khớp mã trên tài liệu
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-red-700 font-semibold">
-                              <AlertCircle className="size-3.5" /> Mã không khớp tài liệu
-                            </span>
-                          )
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-amber-700 font-medium">
-                            <AlertCircle className="size-3.5" /> Mã chưa tìm thấy trong file
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-2.5 font-medium text-slate-600">Chuyên khoa / Lĩnh vực</td>
-                      <td className="py-2 px-2.5 text-slate-900">{req.claimedSpecialty}</td>
-                      <td className="py-2 px-2.5 text-slate-800">
-                        {ocr.extractedFields.specialty || '— (Chưa bóc tách)'}
-                      </td>
-                      <td className="py-2 px-2.5">
-                        {ocr.comparisonFlags.specialtyMatchWarning ? (
-                          <span className="text-amber-700 font-semibold">Khác biệt từ khóa</span>
-                        ) : ocr.extractedFields.specialty ? (
-                          <span className="text-emerald-700 font-semibold">Tương thích</span>
-                        ) : (
-                          <span className="text-amber-700 font-medium flex items-center gap-1">
-                            <AlertCircle className="size-3.5" /> Không có trong file
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-2.5 font-medium text-slate-600">Cơ quan & Ngày cấp</td>
-                      <td className="py-2 px-2.5 text-slate-900">{req.claimedInstitution || '—'}</td>
-                      <td className="py-2 px-2.5 text-slate-800">
-                        {[ocr.extractedFields.issuingAuthority, ocr.extractedFields.issueDate]
-                          .filter(Boolean)
-                          .join(' · ') || '— (Chưa bóc tách)'}
-                      </td>
-                      <td className="py-2 px-2.5">
-                        {ocr.comparisonFlags.dateInvalidWarning ? (
-                          <span className="text-red-700 font-semibold">Ngày cấp bất thường</span>
-                        ) : ocr.extractedFields.issueDate || ocr.extractedFields.issuingAuthority ? (
-                          <span className="text-emerald-700 font-semibold">Đã trích xuất</span>
-                        ) : (
-                          <span className="text-slate-400">Chưa đối chiếu</span>
-                        )}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Raw OCR Text Snippet */}
-              <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-slate-400 block">
-                  Văn bản trích xuất thô (OCR Raw Text Snippet — Untrusted Data):
-                </span>
-                <pre className="max-h-24 overflow-y-auto rounded-lg bg-slate-900 text-slate-100 p-2.5 text-[11px] font-mono whitespace-pre-wrap">
-                  {ocr.ocrRawSnippet}
-                </pre>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Reviewer Decision Controls & Anti-Self-Approval Guard */}
-      <div className="border-t border-slate-100 pt-3.5 space-y-3">
-        {isSelfRequest ? (
-          <div className="flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 font-medium">
-            <Lock className="size-4 text-amber-700 shrink-0" />
-            <span>
-              <strong>Chốt chặn Bảo mật (Anti-Self-Approval):</strong> Bạn không được phép tự tiếp nhận hoặc phê duyệt hồ sơ xác minh của chính mình. Một Quản trị viên độc lập khác phải thực hiện thẩm định này.
-            </span>
-          </div>
-        ) : (
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div className="flex-1">
-              <Input
-                placeholder="Nhập ghi chú thẩm định hoặc lý do từ chối / yêu cầu bổ sung / thu hồi (bắt buộc khi Từ chối/Thu hồi)..."
-                value={rationale}
-                onChange={(e) => setRationale(e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-              {req.status === 'PENDING_REVIEW' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  loading={isPending}
-                  onClick={() => onDecision(req.id, 'CLAIM', rationale || 'Tiếp nhận thẩm định hồ sơ')}
-                  icon={<ClipboardCheck className="size-3.5 text-blue-600" />}
-                >
-                  Tiếp nhận (CLAIM)
-                </Button>
-              )}
-
-              {(req.status === 'PENDING_REVIEW' || req.status === 'IN_REVIEW') && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    loading={isPending}
-                    onClick={() => onDecision(req.id, 'REQUEST_INFO', rationale)}
-                    icon={<MessageSquareWarning className="size-3.5 text-orange-600" />}
-                  >
-                    Yêu cầu bổ sung
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    loading={isPending}
-                    onClick={() => onDecision(req.id, 'REJECT', rationale)}
-                    icon={<X className="size-3.5 text-red-600" />}
-                  >
-                    Từ chối
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    loading={isPending}
-                    onClick={() =>
-                      onDecision(
-                        req.id,
-                        'APPROVE',
-                        rationale || 'Đã đối chiếu tài liệu minh chứng hợp lệ',
-                      )
-                    }
-                    icon={<Check className="size-3.5" />}
-                  >
-                    Phê duyệt cấp tích xanh
-                  </Button>
-                </>
-              )}
-
-              {req.status === 'ADDITIONAL_INFO_REQUIRED' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  loading={isPending}
-                  onClick={() => onDecision(req.id, 'REJECT', rationale)}
-                  icon={<X className="size-3.5 text-red-600" />}
-                >
-                  Từ chối hồ sơ
-                </Button>
-              )}
-
-              {req.status === 'VERIFIED' && (
-                <Button
-                  variant="danger"
-                  size="sm"
-                  loading={isPending}
-                  onClick={() => onDecision(req.id, 'REVOKE', rationale)}
-                  icon={<RotateCcw className="size-3.5" />}
-                >
-                  Thu hồi tích xanh (REVOKE)
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Audit Log Toggle */}
-        <div className="flex items-center justify-between text-xs pt-1">
-          <button
-            type="button"
-            onClick={() => setShowAudit((v) => !v)}
-            className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-800 font-medium"
-          >
-            <History className="size-3.5" />
-            <span>
-              {showAudit ? 'Ẩn nhật ký kiểm toán' : `Xem nhật ký kiểm toán bất biến (${req.auditLogs.length} bản ghi)`}
-            </span>
-          </button>
-          {req.reviewNotes && (
-            <span className="text-slate-500 italic">
-              Ghi chú gần nhất: "{req.reviewNotes}"
-            </span>
-          )}
-        </div>
-
-        {showAudit && req.auditLogs.length > 0 && (
-          <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-1.5 text-xs">
-            {req.auditLogs.map((log) => (
-              <div
-                key={log.id}
-                className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 last:border-none pb-1.5 last:pb-0"
-              >
-                <div>
-                  <span className="font-mono font-semibold text-slate-800">{log.action}</span>{' '}
-                  <span className="text-slate-500">
-                    ({log.previousState ?? 'NONE'} → <strong>{log.newState}</strong>)
-                  </span>{' '}
-                  bởi <span className="font-semibold text-slate-700">@{log.actor.username}</span>
-                  {log.reason && <span className="text-slate-600"> — "{log.reason}"</span>}
-                </div>
-                <span className="text-[11px] text-slate-400 font-mono">
-                  {new Date(log.timestamp).toLocaleString('vi-VN')}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
     </Card>
   );
 }
@@ -789,9 +864,6 @@ export function AdminPage() {
         <h1 className="text-2xl font-bold text-slate-900">
           Trung tâm Quản trị & Thẩm định NeuroLink
         </h1>
-        <p className="text-sm text-slate-500">
-          Hệ thống Thẩm định Chuyên môn, Khen thưởng Đóng góp Học thuật và Quản lý Credit
-        </p>
       </div>
 
       {/* Top Overview Metric Badges */}

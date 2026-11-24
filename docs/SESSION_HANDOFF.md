@@ -60,3 +60,42 @@
   - Added `NODERED_DIR`, `NODERED_PORT = 1880`, `--no-nodered`, `find_nodered_cli()`, graceful warning if `node-red` is absent, startup banner & `--preflight` Node-RED status, and clean process-tree shutdown.
   - Proxied `/ws/hardware` (`ws: true`) in `client/vite.config.ts` to Express `:4000` for direct RFC 6455 hardware WebSocket streaming.
   - Documented Node-RED `:1880`, direct RFC 6455 WS `/ws/hardware`, and Device DB endpoints (`HardwareDevice`, `DeviceTelemetryLog`, `DeviceAlert`, `DeviceRecordingSession`) in [README.md](../README.md) and [node_red/README.md](../node_red/README.md).
+
+---
+
+## 5. Standalone Mobile App (`5174`), Web Optimization & Secondary Pages Audit (Nov 2026)
+
+- **Live Runtime Topology:**
+  - Express API Gateway: `http://localhost:4000/api/health` (`200 OK`)
+  - Desktop/Responsive Web SPA: `http://localhost:5173` (`200 OK`, built with route-level `React.lazy` + `Suspense` code splitting in `client/src/App.tsx`; main entry chunk `320.84 kB` / gzip `98.30 kB`)
+  - Standalone Mobile SPA: `http://localhost:5174` (`200 OK`, workspace `mobile/`, launched via `start_mobile.bat` or `npm run dev:mobile`; main entry chunk `274.95 kB` / gzip `85.50 kB`)
+- **UI/UX & Copy Hardening:**
+  - **Sliding Pill Dock Toolbar (`mobile/src/components/MobileShell.tsx`):** Spring-eased sliding indicator with pointer scrub, preloaded dock tabs (`mobile/src/routePreloaders.ts`), and verification script `mobile/verify_toolbar_motion.mjs`.
+  - **Mobile 375px & Story Bubbles (`mobile/verify_mobile.mjs`):** Verified 375×812 header layout and unclipped story avatar rings across General & Professional modes.
+  - **Vietnamese Copy & Jargon Removal:** Replaced exposed technical/backend jargon (`HMAC`, `chuỗi băm`, `ts_dsp_fallback`, `RESEARCH_CONTRIBUTION`, `Sandbox`, `P2P`, `PHI`) across `client/src/` and `mobile/src/` with plain Vietnamese user-facing labels.
+  - **Secondary Pages Fix & Verification:** Inspected `/login`, `/register`, `/search`, `/notifications`, `/u/:username`, and `/settings?tab=verify` for `hoa_health` and `dr_minh` at `375×812` and `1440×900` (Web & Mobile). Fixed duplicate native `×` search clear button in [mobile/src/pages/SearchPage.tsx](../mobile/src/pages/SearchPage.tsx) (`type="text"` + `inputMode="search"`). Zero horizontal overflow (`scrollWidth <= clientWidth`), zero console/page errors, zero HTTP `>= 400` responses, and `typecheck` / `typecheck:mobile` / `build -w client` / `build -w mobile` all exited `0`.
+
+---
+
+## 6. Brand Landing Page Song Ngữ (`VI | EN`)
+
+- **Bilingual Brand Landing Page ([client/src/pages/LandingPage.tsx](../client/src/pages/LandingPage.tsx), [client/src/pages/landingContent.ts](../client/src/pages/landingContent.ts)):**
+  - Hỗ trợ chuyển đổi song ngữ `VI | EN` qua query parameter (`?lang=vi` / `?lang=en`) và lưu tùy chọn vào `localStorage` (`neurolink_landing_lang`), kèm `RevealBlock` tôn trọng `prefers-reduced-motion` và sơ đồ kiến trúc `EcosystemDiagram`.
+- **Real Product Visuals (`client/public/landing/`, 11 ảnh PNG):**
+  - Nhúng 11 ảnh chụp màn hình sản phẩm thực tế (`desktop-feed.png`, `desktop-qeeg-stable.png`, `desktop-qeeg-stroke.png`, `desktop-consultations.png`, `desktop-myhealth.png`, `desktop-pro-dashboard.png`, `desktop-doctor-profile.png`, `mobile-feed.png`, `mobile-qeeg.png`, `mobile-consult.png`, `mobile-topomap.png`).
+- **Build & Live `dev:all` Runtime Verification:**
+  - Production chunk của `LandingPage`: `44.80 kB` (`12.62 kB` gzip).
+  - Xác nhận runtime `npm run dev:all` hoạt động trên 4 cổng: PostgreSQL TCP `127.0.0.1:5432` (`True`), Express API `http://127.0.0.1:4000/api/health` (`200`, `{"status":"ok"}`), Desktop/Web SPA `http://127.0.0.1:5173/` (`200`), và Standalone Mobile SPA `http://127.0.0.1:5174/` (`200`).
+  - Playwright check trên `http://localhost:5173/?lang=vi`, `http://localhost:5173/?lang=en` (`1440×900`) và `http://localhost:5174/` (`375×812`): `0` page errors, `0` failed requests, `scrollWidth === clientWidth` (`1440` / `375`), ảnh hero hiển thị `naturalWidth > 0` (`desktop-feed.png`: `2880×1800`, `mobile-qeeg.png`: `750×1624`).
+
+---
+
+## 7. Visual Storytelling Landing Page Redesign & Launcher Resilience (Nov 2026)
+
+- **Visual Storytelling Landing Page ([client/src/pages/LandingPage.tsx](../client/src/pages/LandingPage.tsx), [client/src/pages/landingContent.ts](../client/src/pages/landingContent.ts)):**
+  - Tái thiết kế Landing Page theo cấu trúc kể chuyện trực quan song ngữ (`EN | VI`), giữ 7 ảnh story biên tập (`client/public/landing/story/*.jpg`) kết hợp các ảnh chụp sản phẩm thực tế (`client/public/landing/*.png`) và khu vực `Experience` tương tác theo tab (`brainwave`, `guidance`, `community`).
+  - Hỗ trợ `prefers-reduced-motion`, skip-to-content, điều hướng desktop/mobile drawer, và lưu ngôn ngữ qua `?lang=` + `localStorage` (`neurolink_landing_lang`).
+- **Launcher & Embedded Postgres Resilience ([start.bat](../start.bat), [start_mobile.bat](../start_mobile.bat), [server/scripts/pg-daemon.ts](../server/scripts/pg-daemon.ts)):**
+  - `start.bat`: Kiểm tra sẵn các cổng `:4000`, `:5173`, `:5174` ở chế độ Node.js fallback để tránh khởi chạy chồng chéo khi dịch vụ đang chạy, đồng thời bổ sung `--preflight` kiểm tra trạng thái cổng và `server/.env`.
+  - `start_mobile.bat`: Tự động nhận diện Mobile `:5174` hoặc API `:4000` đang chạy sẵn để mở thẳng trình duyệt hoặc chỉ bật `npm run dev:mobile` thay vì khởi động lại toàn bộ stack.
+  - `server/scripts/pg-daemon.ts`: Kiểm tra TCP `127.0.0.1:5432` / `::1:5432` trước khi `initialise()`/`start()` để tái sử dụng PostgreSQL đang mở an toàn và xử lý shutdown idempotent.

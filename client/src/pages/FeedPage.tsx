@@ -207,13 +207,13 @@ export function FeedPage() {
     <div className="space-y-3.5">
       {/* Top Tabs + Inline Composer Card */}
       <div className="rounded-xl border border-[#DCE6DF] bg-white shadow-[0_1px_2px_rgba(16,26,20,0.04)] overflow-hidden">
-        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 border-b border-[#EDF3EF]">
-          <div className="flex items-center gap-5">
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 px-3.5 sm:px-5 border-b border-[#EDF3EF]">
+          <div className="flex items-center gap-3.5 sm:gap-5 min-w-0 overflow-x-auto no-scrollbar scroll-smooth">
             <button
               type="button"
               onClick={() => setFeedType('community')}
               className={cn(
-                'py-3 text-sm transition-colors -mb-px whitespace-nowrap',
+                'py-3 text-sm transition-[color,border-color,transform] duration-150 ease-out active:scale-[0.98] -mb-px whitespace-nowrap shrink-0',
                 feedType === 'community'
                   ? 'border-b-2 border-[#16A34A] font-bold text-[#15803D]'
                   : 'text-[#6E6D68] hover:text-[#15803D]',
@@ -225,7 +225,7 @@ export function FeedPage() {
               type="button"
               onClick={() => setFeedType('following')}
               className={cn(
-                'py-3 text-sm transition-colors -mb-px whitespace-nowrap',
+                'py-3 text-sm transition-[color,border-color,transform] duration-150 ease-out active:scale-[0.98] -mb-px whitespace-nowrap shrink-0',
                 feedType === 'following'
                   ? 'border-b-2 border-[#16A34A] font-bold text-[#15803D]'
                   : 'text-[#6E6D68] hover:text-[#15803D]',
@@ -239,7 +239,7 @@ export function FeedPage() {
             aria-label="Lọc chủ đề"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value as 'ALL' | ClinicalCategory)}
-            className="text-xs text-[#575652] bg-transparent border border-[#DCE6DF] rounded-md px-2 py-1 focus:outline-none focus:border-[#16A34A]"
+            className="shrink-0 text-xs text-[#575652] bg-transparent border border-[#DCE6DF] rounded-md px-2 py-1 transition-colors focus:outline-none focus:border-[#16A34A]"
           >
             {MEDICAL_CATEGORY_FILTERS.map((cat) => (
               <option key={cat.id} value={cat.id}>
@@ -256,13 +256,13 @@ export function FeedPage() {
       {/* Posts Stream (Separated Individual Cards) */}
       {isLoading ? (
         <div className="rounded-xl border border-[#DCE6DF] bg-white p-6">
-          <Spinner label={isProMode ? 'Đang tải dữ liệu hội chẩn...' : 'Đang tải bài viết...'} />
+          <Spinner label={isProMode ? 'Đang tải...' : 'Đang tải bài viết...'} />
         </div>
       ) : isError ? (
         <div className="rounded-xl border border-[#DCE6DF] bg-white p-6">
           <EmptyState
             title="Không thể tải bảng tin"
-            description="Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau."
+            description="Kiểm tra kết nối và thử lại."
             action={
               <Button size="sm" onClick={() => void refetch()}>
                 Thử lại
@@ -276,24 +276,24 @@ export function FeedPage() {
             icon={<Newspaper className="size-6" />}
             title={
               selectedCategory !== 'ALL'
-                ? `Chưa có bài viết trong nhóm ${activeCategoryMeta?.label ?? ''}`
+                ? `Chưa có bài viết nhóm ${activeCategoryMeta?.label ?? ''}`
                 : feedType === 'following'
-                  ? 'Chưa có bài viết từ người bạn theo dõi'
-                  : 'Bảng tin chưa có bài đăng nào'
+                  ? 'Chưa có bài viết từ người đang theo dõi'
+                  : 'Chưa có bài đăng nào'
             }
             description={
               selectedCategory !== 'ALL'
-                ? 'Thử chọn lại tất cả chủ đề để xem toàn bộ bài viết.'
-                : 'Theo dõi các bác sĩ chuyên khoa hoặc chia sẻ ghi chú đầu tiên của bạn.'
+                ? 'Chọn "Tất cả" để xem toàn bộ.'
+                : 'Theo dõi chuyên gia hoặc chia sẻ ghi chú đầu tiên.'
             }
             action={
               selectedCategory !== 'ALL' ? (
                 <Button size="xs" variant="outline" onClick={() => setSelectedCategory('ALL')}>
-                  Xem tất cả chủ đề
+                  Xem tất cả
                 </Button>
               ) : feedType === 'following' ? (
                 <Button size="xs" variant="outline" onClick={() => setFeedType('community')}>
-                  {isProMode ? 'Xem tất cả ca lâm sàng' : 'Xem bảng tin chung'}
+                  {isProMode ? 'Xem ca lâm sàng' : 'Xem bảng tin'}
                 </Button>
               ) : null
             }
@@ -302,7 +302,9 @@ export function FeedPage() {
       ) : (
         <div className="space-y-3.5">
           {posts.map((post) => (
-            <PostCard key={post.id} post={post} onDeleted={handleDeletePost} />
+            <div key={post.id} className="feed-card-optimize">
+              <PostCard post={post} onDeleted={handleDeletePost} />
+            </div>
           ))}
 
           {hasNextPage && (
@@ -446,7 +448,7 @@ export function FeedPage() {
         />
 
         <section className="pb-2">
-          <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center justify-between mb-1.5">
             <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[#6E6D68]">
               Định mức CME
             </h2>
@@ -454,29 +456,11 @@ export function FeedPage() {
               Nộp bài
             </Link>
           </div>
-          <div className="divide-y divide-[#DCE6DF] text-xs tabular-nums">
-            <Link
-              to="/contributions"
-              className="py-2 flex items-center justify-between text-[#262624] hover:text-[#15803D]"
-            >
-              <span>Hội chẩn Ca lâm sàng</span>
-              <span className="font-medium text-[#141413]">+30 CME</span>
-            </Link>
-            <Link
-              to="/contributions"
-              className="py-2 flex items-center justify-between text-[#262624] hover:text-[#15803D]"
-            >
-              <span>Công bố Nghiên cứu BCI</span>
-              <span className="font-medium text-[#141413]">+50 CME</span>
-            </Link>
-            <Link
-              to="/rewards"
-              className="py-2 flex items-center justify-between text-[#262624] hover:text-[#15803D]"
-            >
-              <span>Phản biện Thuật toán EEG</span>
-              <span className="font-medium text-[#141413]">+20 CME</span>
-            </Link>
-          </div>
+          <p className="text-xs text-[#575652] leading-relaxed tabular-nums">
+            Hội chẩn <span className="font-semibold text-[#141413]">+30</span> · Nghiên cứu BCI{' '}
+            <span className="font-semibold text-[#141413]">+50</span> · Phản biện{' '}
+            <span className="font-semibold text-[#141413]">+20 CME</span>
+          </p>
         </section>
       </aside>
     </div>

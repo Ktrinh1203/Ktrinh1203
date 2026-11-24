@@ -130,74 +130,37 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
     split: splitFilter || undefined,
   });
 
-  const distributionCards = stats ? (
-    <div className="grid gap-4 lg:grid-cols-12">
-      <Card className="lg:col-span-7 p-4 sm:p-5 border-slate-200/90 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs sm:text-sm font-bold text-slate-900">Phân bố 5 nhãn</h3>
-          <span className="text-[11px] font-mono text-slate-500">Lớp 0 → 4</span>
-        </div>
-        <div className="space-y-2.5 text-xs">
-          {NEURAL_LABEL_ORDER.map((lbl) => {
-            const count = stats.byLabel[lbl] ?? 0;
-            const pct = Math.round((count / totalCount) * 100);
-            const meta = NEURAL_LABEL_META[lbl];
-            return (
-              <div key={lbl} className="space-y-1">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-slate-700">
-                    <span className="font-mono text-[11px] text-slate-400 mr-1.5">[{meta.numericId}]</span>
-                    {meta.label}
-                  </span>
-                  <span className="font-mono font-bold text-slate-900 tabular-nums">
-                    {count} mẫu ({pct}%)
-                  </span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className={cn('h-full rounded-full transition-all', meta.barCls)}
-                    style={{ width: `${Math.max(pct, count > 0 ? 4 : 0)}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-
-      <Card className="lg:col-span-5 p-4 sm:p-5 border-slate-200/90 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs sm:text-sm font-bold text-slate-900">Tập dữ liệu</h3>
-          <span className="text-[11px] font-mono text-slate-500">N = {stats.totalSamples}</span>
-        </div>
-        <div className="grid grid-cols-2 gap-2.5 text-xs">
-          {DATASET_SPLIT_ORDER.map((sp) => {
-            const count = stats.bySplit[sp] ?? 0;
-            const pct = Math.round((count / totalCount) * 100);
-            const meta = DATASET_SPLIT_META[sp];
-            return (
-              <div
-                key={sp}
-                className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 flex flex-col justify-between gap-2"
-              >
-                <span
-                  className={cn(
-                    'self-start inline-flex rounded border px-2 py-0.5 text-[10px] font-mono font-bold',
-                    meta.badgeCls,
-                  )}
-                >
-                  {meta.shortLabel}
+  const labelDistributionSummary = stats ? (
+    <details className="pt-2 border-t border-slate-100 text-xs">
+      <summary className="cursor-pointer font-semibold text-slate-600 hover:text-slate-900 select-none">
+        Phân bố 5 nhãn (Lớp 0 → 4) ▾
+      </summary>
+      <div className="grid gap-2 sm:grid-cols-5 pt-2.5">
+        {NEURAL_LABEL_ORDER.map((lbl) => {
+          const count = stats.byLabel[lbl] ?? 0;
+          const pct = Math.round((count / totalCount) * 100);
+          const meta = NEURAL_LABEL_META[lbl];
+          return (
+            <div key={lbl} className="rounded border border-slate-200 bg-slate-50/70 p-2 space-y-1">
+              <div className="flex items-center justify-between gap-1 text-[11px]">
+                <span className="font-semibold text-slate-700 truncate">
+                  [{meta.numericId}] {meta.shortLabel}
                 </span>
-                <div className="font-mono tabular-nums">
-                  <span className="text-lg font-extrabold text-slate-900">{count}</span>
-                  <span className="text-[11px] text-slate-500 ml-1.5">({pct}%)</span>
-                </div>
+                <span className="font-mono font-bold text-slate-900 tabular-nums shrink-0">
+                  {count} ({pct}%)
+                </span>
               </div>
-            );
-          })}
-        </div>
-      </Card>
-    </div>
+              <div className="h-1.5 w-full rounded-full bg-slate-200/70 overflow-hidden">
+                <div
+                  className={cn('h-full rounded-full', meta.barCls)}
+                  style={{ width: `${Math.max(pct, count > 0 ? 4 : 0)}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </details>
   ) : null;
 
   return (
@@ -243,61 +206,57 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
           </div>
         </div>
 
-        {/* Summary KPI Strip */}
+        {/* Unified Horizontal Summary Strip (6 KPI + 4 Splits) */}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-2 border-t border-slate-100 text-xs font-mono tabular-nums">
-            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-              <span className="block text-[10px] font-sans font-semibold text-slate-500">Tổng mẫu</span>
-              <strong className="text-base font-extrabold text-slate-900">{stats.totalSamples}</strong>
-            </div>
-            <div className="rounded-md border border-emerald-200 bg-emerald-50/70 px-3 py-2">
-              <span className="block text-[10px] font-sans font-semibold text-emerald-800">
-                Đã duyệt
+          <div className="pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5 text-xs font-mono tabular-nums">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <span className="inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-2 py-1">
+                <span className="font-sans text-[11px] text-slate-500">Tổng:</span>
+                <strong className="text-slate-900">{stats.totalSamples}</strong>
               </span>
-              <strong className="text-base font-extrabold text-emerald-900">
-                {stats.verifiedSamples} / {stats.totalSamples}
-              </strong>
+              <span className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50/70 px-2 py-1">
+                <span className="font-sans text-[11px] text-emerald-800">Duyệt:</span>
+                <strong className="text-emerald-900">
+                  {stats.verifiedSamples}/{stats.totalSamples}
+                </strong>
+              </span>
+              <span className="text-slate-700">
+                DAR <strong className="text-slate-900">{stats.averages.dar.toFixed(2)}</strong>
+              </span>
+              <span className="text-slate-700">
+                BSI <strong className="text-slate-900">{stats.averages.bsi.toFixed(3)}</strong>
+              </span>
+              <span className="text-slate-700">
+                TAR <strong className="text-slate-900">{stats.averages.tar.toFixed(2)}</strong>
+              </span>
+              <span className="text-slate-700">
+                wPLI <strong className="text-slate-900">{stats.averages.wpli.toFixed(2)}</strong>
+              </span>
             </div>
-            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
-              <span className="block text-[10px] font-sans font-semibold text-slate-500">Mean DAR</span>
-              <strong className="text-base font-extrabold text-slate-900">
-                {stats.averages.dar.toFixed(2)}
-              </strong>
-            </div>
-            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
-              <span className="block text-[10px] font-sans font-semibold text-slate-500">Mean BSI</span>
-              <strong className="text-base font-extrabold text-slate-900">
-                {stats.averages.bsi.toFixed(3)}
-              </strong>
-            </div>
-            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
-              <span className="block text-[10px] font-sans font-semibold text-slate-500">Mean TAR</span>
-              <strong className="text-base font-extrabold text-slate-900">
-                {stats.averages.tar.toFixed(2)}
-              </strong>
-            </div>
-            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
-              <span className="block text-[10px] font-sans font-semibold text-slate-500">Mean wPLI</span>
-              <strong className="text-base font-extrabold text-slate-900">
-                {stats.averages.wpli.toFixed(2)}
-              </strong>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {DATASET_SPLIT_ORDER.map((sp) => {
+                const count = stats.bySplit[sp] ?? 0;
+                const meta = DATASET_SPLIT_META[sp];
+                return (
+                  <span
+                    key={sp}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10.5px] font-bold',
+                      meta.badgeCls,
+                    )}
+                  >
+                    <span>{meta.shortLabel}</span>
+                    <span>{count}</span>
+                  </span>
+                );
+              })}
             </div>
           </div>
         )}
-      </Card>
 
-      {/* Distribution Cards: collapsed in General Mode, expanded in Professional Mode */}
-      {distributionCards &&
-        (isProfessional ? (
-          distributionCards
-        ) : (
-          <details className="rounded-lg border border-slate-200 bg-white">
-            <summary className="cursor-pointer px-4 py-2.5 text-xs font-semibold text-slate-700">
-              Xem biểu đồ phân bố nhãn &amp; tập chia ▾
-            </summary>
-            <div className="p-4 pt-1">{distributionCards}</div>
-          </details>
-        ))}
+        {labelDistributionSummary}
+      </Card>
 
       {feedback && <Alert tone={feedback.tone}>{feedback.text}</Alert>}
 
@@ -383,7 +342,7 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
             Mẫu đặc trưng 80 chiều ({samples.length})
           </h3>
           <span className="text-[11px] font-mono text-slate-500">
-            Khử định danh PHI
+            Đã ẩn danh cá nhân
           </span>
         </div>
 
@@ -397,7 +356,7 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
           <EmptyState
             icon={<Database className="size-6" />}
             title="Không có mẫu dữ liệu khớp bộ lọc"
-            description="Hãy điều chỉnh bộ lọc hoặc lưu mẫu mới từ Trạm Đọc Điện Não Định Lượng (Tab 1)."
+            description="Đổi bộ lọc hoặc lưu mẫu mới từ tab Đo & Đọc kết quả."
           />
         ) : (
           <div
@@ -495,7 +454,7 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
                             onClick={() => openInspection(sample)}
                             icon={<Eye className="size-3" aria-hidden />}
                           >
-                            Soi 80-D
+                            Xem chi tiết mẫu
                           </Button>
                           {isVerifiedHCP && !sample.verifiedById && (
                             <Button
@@ -664,7 +623,7 @@ export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePa
                     onClick={() => handleCopyVector(inspectedSample.featureVector)}
                     icon={<Copy className="size-3" aria-hidden />}
                   >
-                    {copiedVector ? 'Đã sao chép JSON' : 'Sao chép Vector JSON'}
+                    {copiedVector ? 'Đã sao chép dữ liệu' : 'Sao chép dữ liệu mẫu'}
                   </Button>
                 </div>
 

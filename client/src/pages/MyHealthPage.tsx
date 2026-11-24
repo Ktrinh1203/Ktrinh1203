@@ -19,7 +19,7 @@ import { Alert, Button, Card, Input, Spinner, Textarea, cn } from '../components
 import { useMode } from '../context/ModeContext';
 import { useAuth } from '../features/auth/AuthContext';
 import { PhysiologicalTrendChart } from '../features/eeg/PhysiologicalTrendChart';
-import { WORK_BLOCK_META, WORK_BLOCK_ORDER } from '../features/eeg/eegLabels';
+import { CLINICAL_CATEGORY_META, WORK_BLOCK_META, WORK_BLOCK_ORDER } from '../features/eeg/eegLabels';
 
 const DAYS_OF_WEEK = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
 
@@ -43,7 +43,7 @@ export function MyHealthPage() {
 
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
-  const [showCheckIn, setShowCheckIn] = useState(true);
+  const [showCheckIn, setShowCheckIn] = useState(false);
 
   // Check-in Form State
   const [focusScore, setFocusScore] = useState('82');
@@ -222,7 +222,7 @@ export function MyHealthPage() {
       alphaPeakHz: Math.max(5, Math.min(16, Number(alphaPeakHz) || 10.0)),
       sleepHours: Math.max(0, Math.min(16, Number(sleepHours) || 7.5)),
       stressLevel: Math.max(1, Math.min(10, Math.round(Number(stressLevel) || 3))),
-      notes: notes.trim() || 'Theo dõi sinh lý thần kinh hàng ngày.',
+      notes: notes.trim() || 'Theo dõi hàng ngày.',
     });
   };
 
@@ -372,7 +372,7 @@ export function MyHealthPage() {
       {feedback && <Alert tone={feedback.tone}>{feedback.text}</Alert>}
 
       {overviewQuery.isLoading ? (
-        <Spinner label="Đang tải dữ liệu theo dõi sinh lý & kế hoạch tuần..." />
+        <Spinner label="Đang tải..." />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left 8 Columns: Trends, Check-in Form, Working Plan CRUD */}
@@ -428,7 +428,7 @@ export function MyHealthPage() {
 
                   <div className="space-y-1">
                     <label htmlFor="mh-tar" className="font-bold text-slate-700 block">
-                      TAR
+                      {isProfessional ? 'TAR' : 'Mệt mỏi'}
                     </label>
                     <Input
                       id="mh-tar"
@@ -444,7 +444,7 @@ export function MyHealthPage() {
 
                   <div className="space-y-1">
                     <label htmlFor="mh-bsi" className="font-bold text-slate-700 block">
-                      BSI
+                      {isProfessional ? 'BSI' : 'Cân bằng 2 bên'}
                     </label>
                     <Input
                       id="mh-bsi"
@@ -460,7 +460,7 @@ export function MyHealthPage() {
 
                   <div className="space-y-1">
                     <label htmlFor="mh-alpha" className="font-bold text-slate-700 block">
-                      Alpha (Hz)
+                      {isProfessional ? 'Alpha (Hz)' : 'Nhịp thư thái'}
                     </label>
                     <Input
                       id="mh-alpha"
@@ -477,7 +477,7 @@ export function MyHealthPage() {
                   {samplesQuery.data?.samples && samplesQuery.data.samples.length > 0 && (
                     <div className="sm:col-span-3 space-y-1">
                       <label htmlFor="mh-sample-link" className="font-bold text-slate-700 block">
-                        Mẫu CSDL
+                        {isProfessional ? 'Mẫu CSDL' : 'Chọn mẫu tham khảo'}
                       </label>
                       <select
                         id="mh-sample-link"
@@ -488,7 +488,11 @@ export function MyHealthPage() {
                         <option value="">-- Nhập thủ công --</option>
                         {samplesQuery.data.samples.slice(0, 12).map((s) => (
                           <option key={s.id} value={s.id}>
-                            {s.subjectCode} · TAR {s.tar.toFixed(2)} · BSI {s.bsi.toFixed(3)} ({s.clinicalCategory})
+                            {s.subjectCode} ·{' '}
+                            {CLINICAL_CATEGORY_META[s.clinicalCategory]?.shortLabel ?? s.clinicalCategory} ·{' '}
+                            {isProfessional
+                              ? `TAR ${s.tar.toFixed(2)} · BSI ${s.bsi.toFixed(3)}`
+                              : `Mệt mỏi ${s.tar.toFixed(2)} · Cân bằng 2 bên ${s.bsi.toFixed(3)}`}
                           </option>
                         ))}
                       </select>
@@ -625,7 +629,8 @@ export function MyHealthPage() {
                             <option value="">-- Nhập thủ công --</option>
                             {samplesQuery.data.samples.slice(0, 12).map((s) => (
                               <option key={s.id} value={s.id}>
-                                {s.subjectCode} · TAR {s.tar.toFixed(2)} · BSI {s.bsi.toFixed(3)} ({s.clinicalCategory})
+                                {s.subjectCode} · TAR {s.tar.toFixed(2)} · BSI {s.bsi.toFixed(3)} (
+                                {CLINICAL_CATEGORY_META[s.clinicalCategory]?.shortLabel ?? s.clinicalCategory})
                               </option>
                             ))}
                           </select>
@@ -726,15 +731,10 @@ export function MyHealthPage() {
                     </Button>
                   </div>
 
-                  {/* Collapsed detailed numeric inputs */}
-                  <details className="rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] text-xs">
-                    <summary className="cursor-pointer px-3 py-1.5 font-medium text-[#575652]">
-                      Chỉnh thông số chi tiết ▾
-                    </summary>
-                    <div className="px-3 pb-3 pt-2 grid gap-3 sm:grid-cols-3">
-                      {detailedNumericFields}
-                    </div>
-                  </details>
+                  {/* Detailed numeric inputs */}
+                  <div className="rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] px-3 py-3 grid gap-3 sm:grid-cols-3 text-xs">
+                    {detailedNumericFields}
+                  </div>
                 </form>
               );
 
@@ -1074,9 +1074,8 @@ export function MyHealthPage() {
                                 >
                                   {block.title}
                                 </div>
-                                {isProfessional && (
-                                  <p className="text-xs text-[#575652] leading-relaxed">
-                                    <strong className="text-[#262624]">Cơ sở EEG: </strong>
+                                {isProfessional && block.eegRationale && (
+                                  <p className="text-xs text-[#575652] line-clamp-1">
                                     {block.eegRationale}
                                   </p>
                                 )}
@@ -1100,6 +1099,67 @@ export function MyHealthPage() {
                 </Card>
               );
 
+              const quickCheckInBar = (
+                <form onSubmit={handleCheckInSubmit} className="flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {MOOD_PRESETS.map((preset) => {
+                      const isActive =
+                        focusScore === preset.focus &&
+                        stressLevel === preset.stress &&
+                        fatigueIndexTar === preset.tar;
+                      return (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          aria-pressed={isActive}
+                          onClick={() => {
+                            setFocusScore(preset.focus);
+                            setStressLevel(preset.stress);
+                            setFatigueIndexTar(preset.tar);
+                          }}
+                          className={cn(
+                            'rounded-lg px-3 py-1.5 font-medium transition-colors',
+                            isActive
+                              ? 'bg-[#16A34A] text-white font-semibold'
+                              : 'bg-[#EFF6F1] text-[#374151] hover:bg-[#E2EFE6]',
+                          )}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                    <span className="text-[#DCE6DF] px-0.5">|</span>
+                    {SLEEP_PRESETS.map((preset) => {
+                      const isActive = sleepHours === preset.value;
+                      return (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          aria-pressed={isActive}
+                          onClick={() => setSleepHours(preset.value)}
+                          className={cn(
+                            'rounded-lg px-2.5 py-1.5 font-mono font-medium transition-colors',
+                            isActive
+                              ? 'bg-[#16A34A] text-white font-semibold'
+                              : 'bg-[#EFF6F1] text-[#374151] hover:bg-[#E2EFE6]',
+                          )}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    variant="primary"
+                    loading={addCheckInMutation.isPending}
+                  >
+                    Lưu nhanh
+                  </Button>
+                </form>
+              );
+
               if (isProfessional) {
                 return (
                   <>
@@ -1109,9 +1169,18 @@ export function MyHealthPage() {
                     </Card>
 
                     {/* Daily Check-in */}
-                    <Card className="p-5 sm:p-6 border-[#DCE6DF] bg-white space-y-4">
-                      <h2 className="text-base font-semibold text-[#141413]">Ghi nhận hôm nay</h2>
-                      {checkInFormSection}
+                    <Card className="p-5 sm:p-6 border-[#DCE6DF] bg-white space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <h2 className="text-base font-semibold text-[#141413]">Ghi nhận hôm nay</h2>
+                        <button
+                          type="button"
+                          onClick={() => setShowCheckIn((v) => !v)}
+                          className="rounded-md border border-[#DCE6DF] bg-white px-2.5 py-1 text-xs font-medium text-[#575652] hover:bg-[#F5FAF7] shrink-0"
+                        >
+                          {showCheckIn ? 'Thu gọn' : 'Tùy chỉnh chi tiết'}
+                        </button>
+                      </div>
+                      {showCheckIn ? checkInFormSection : quickCheckInBar}
                       {checkInTableSection}
                     </Card>
 
@@ -1124,7 +1193,7 @@ export function MyHealthPage() {
               return (
                 <>
                   {/* Card 1: Ghi nhận hôm nay */}
-                  <Card id="mh-checkin-card" className="p-5 sm:p-6 border-[#DCE6DF] bg-white space-y-4">
+                  <Card id="mh-checkin-card" className="p-5 sm:p-6 border-[#DCE6DF] bg-white space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <h2 className="text-base font-semibold text-[#141413]">
                         Ghi nhận hôm nay
@@ -1134,10 +1203,10 @@ export function MyHealthPage() {
                         onClick={() => setShowCheckIn((v) => !v)}
                         className="rounded-md border border-[#DCE6DF] bg-white px-2.5 py-1 text-xs font-medium text-[#575652] hover:bg-[#F5FAF7] shrink-0"
                       >
-                        {showCheckIn ? 'Thu gọn' : 'Mở'}
+                        {showCheckIn ? 'Thu gọn' : 'Tùy chỉnh chi tiết'}
                       </button>
                     </div>
-                    {showCheckIn && checkInFormSection}
+                    {showCheckIn ? checkInFormSection : quickCheckInBar}
                   </Card>
 
                   {/* Card 2: Lịch hôm nay */}
@@ -1192,9 +1261,6 @@ export function MyHealthPage() {
                     <MessageSquarePlus className="size-4 text-[#16A34A]" aria-hidden />
                     <span>Hỏi bác sĩ từ xa</span>
                   </div>
-                  <p className="text-xs text-[#575652]">
-                    Gửi bản ghi sóng não để bác sĩ chuyên khoa xem xét.
-                  </p>
                   <div className="space-y-2">
                     <Link to="/consultations" className="block">
                       <Button
@@ -1225,23 +1291,23 @@ export function MyHealthPage() {
                 <p className="text-xs text-[#6E6D68]">
                   {latestDataset ? `Bản ghi gần nhất: ${latestDataset.patientCode}` : 'Chưa có bản ghi cá nhân'}
                 </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Link to="/eeg-hub?tab=personal" className="block">
+                <div className="flex flex-wrap gap-2">
+                  <Link to="/eeg-hub?tab=personal" className="flex-1 min-w-[116px]">
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="w-full text-xs"
+                      className="w-full text-xs whitespace-nowrap"
                     >
                       Hồ sơ sóng não
                     </Button>
                   </Link>
-                  <Link to="/consultations?ask=1" className="block">
+                  <Link to="/consultations?ask=1" className="flex-1 min-w-[100px]">
                     <Button
                       type="button"
                       size="sm"
                       variant="primary"
-                      className="w-full text-xs"
+                      className="w-full text-xs whitespace-nowrap"
                     >
                       Hỏi Bác sĩ
                     </Button>
@@ -1256,27 +1322,25 @@ export function MyHealthPage() {
                 <summary className="cursor-pointer px-4 py-3 text-xs font-semibold text-[#141413] hover:bg-[#F5FAF7] flex items-center justify-between">
                   <span>Ý nghĩa chỉ số ▾</span>
                 </summary>
-                <div className="px-4 pb-4 pt-1 space-y-3 divide-y divide-[#DCE6DF] text-xs">
-                  <div className="space-y-0.5">
-                    <span className="font-semibold text-[#141413]">TAR (Theta/Alpha)</span>
-                    <p className="text-[#575652]">
-                      TAR &gt; 1.50 cho thấy não đang mệt, nên nghỉ mắt 15 phút.
-                    </p>
-                  </div>
-
-                  <div className="pt-2.5 space-y-0.5">
-                    <span className="font-semibold text-[#141413]">Giấc ngủ sâu (Delta N3)</span>
-                    <p className="text-[#575652]">
-                      Ngủ đúng giờ và tránh ánh sáng xanh 45 phút giúp phục hồi tốt hơn.
-                    </p>
-                  </div>
-
-                  <div className="pt-2.5 space-y-0.5">
-                    <span className="font-semibold text-[#141413]">BSI (Đối xứng bán cầu)</span>
-                    <p className="text-[#575652]">
-                      BSI dưới 0.15 là bình thường; lệch cao kéo dài cần đi khám.
-                    </p>
-                  </div>
+                <div className="px-4 pb-3 pt-1 space-y-2 divide-y divide-[#DCE6DF] text-xs">
+                  <p className="text-[#575652]">
+                    <strong className="text-[#141413]">
+                      {isProfessional ? 'TAR > 1.50:' : 'Mệt mỏi (> 1.50):'}
+                    </strong>{' '}
+                    Dấu hiệu mệt mỏi, nên nghỉ 15 phút.
+                  </p>
+                  <p className="pt-2 text-[#575652]">
+                    <strong className="text-[#141413]">
+                      {isProfessional ? 'Giấc ngủ (Delta N3):' : 'Giấc ngủ sâu:'}
+                    </strong>{' '}
+                    Ngủ đúng giờ để phục hồi sâu.
+                  </p>
+                  <p className="pt-2 text-[#575652]">
+                    <strong className="text-[#141413]">
+                      {isProfessional ? 'BSI > 0.15:' : 'Cân bằng 2 bên (> 0.15):'}
+                    </strong>{' '}
+                    Lệch bán cầu, cần theo dõi chuyên khoa.
+                  </p>
                 </div>
               </details>
             </Card>

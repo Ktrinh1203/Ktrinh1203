@@ -12,7 +12,6 @@ import {
   Cpu,
   ExternalLink,
   Flag,
-  HardDrive,
   Pause,
   Play,
   Plus,
@@ -21,7 +20,6 @@ import {
   Square,
   Trash2,
   Wifi,
-  WifiOff,
 } from 'lucide-react';
 import { devicesApi } from '../../api/endpoints';
 import { errorMessage } from '../../api/client';
@@ -163,15 +161,8 @@ function summarizeSessionQeeg(session: DeviceRecordingSessionItem): {
   return {
     label: title,
     tone: isDanger ? 'red' : isWarn ? 'amber' : 'emerald',
-    metrics: parts.length > 0 ? parts.join(' · ') : 'Hoàn tất DSP',
+    metrics: parts.length > 0 ? parts.join(' · ') : 'Đã hoàn tất phân tích',
   };
-}
-
-function formatShortTime(iso: string | null | undefined): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 function formatDateTime(iso: string | null | undefined): string {
@@ -194,7 +185,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
   const [scaleUv, setScaleUv] = useState<ScopeScaleUv>(100);
   const [scopePaused, setScopePaused] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showGatewayCenter, setShowGatewayCenter] = useState(true);
+  const [showGatewayCenter, setShowGatewayCenter] = useState(false);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error' | 'info'; text: string } | null>(
     null,
   );
@@ -564,15 +555,22 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
     },
   });
 
+  const COMMAND_LABELS: Record<string, string> = {
+    MKR: 'Đánh dấu sự kiện',
+    REC_START: 'Ghi thẻ nhớ',
+    REC_STOP: 'Dừng ghi',
+  };
+
   const commandMutation = useMutation({
     mutationFn: ({ id, command }: { id: string; command: string }) =>
       devicesApi.sendCommand(id, command),
     onSuccess: (res) => {
+      const cmdLabel = COMMAND_LABELS[res.command] ?? res.command;
       setFeedback({
         tone: res.dispatched ? 'success' : 'info',
         text: res.dispatched
-          ? `Đã gửi lệnh ${res.command} (${res.via}).`
-          : `Đã ghi nhận lệnh ${res.command} — thiết bị đang ngoại tuyến.`,
+          ? `Đã gửi lệnh ${cmdLabel}.`
+          : `Đã ghi nhận lệnh ${cmdLabel} — thiết bị đang ngoại tuyến.`,
       });
       void queryClient.invalidateQueries({ queryKey: ['devices'] });
     },
@@ -733,7 +731,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
                 <span>Khóa kết nối 1 lần · {createdCred.deviceCode}</span>
               </div>
               <p className="text-xs text-[#166534]">
-                Sao chép API Key ngay — hệ thống chỉ lưu mã băm SHA-256 và không hiển thị lại.
+                Sao chép API Key ngay — khóa kết nối này chỉ hiển thị một lần duy nhất để bảo mật.
               </p>
             </div>
             <button
@@ -787,19 +785,24 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
         </Card>
       )}
 
-      {/* TOP DEVICE STRIP */}
-      <Card className="p-4 border-[#DCE6DF] bg-white space-y-3">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          {/* Left: Device Selector + Live Badges */}
+      {/* TOP DEVICE TELEMETRY & ACTION BAR */}
+      <Card className="p-3.5 border-[#DCE6DF] bg-white">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-2.5">
+          {/* Left: Device Selector + Clean Single-Strip Telemetry (status, pin, Hz, AI state) */}
           <div className="flex flex-wrap items-center gap-2 min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
               <Cpu className="size-4 text-[#16A34A] shrink-0" aria-hidden />
               {devices.length > 0 ? (
                 <select
                   aria-label="Chọn thiết bị phần cứng"
+                  title={
+                    selectedDevice
+                      ? `${selectedDevice.model} · FW ${selectedDevice.firmwareVersion} · PGA ×${selectedDevice.pgaGain} · ${selectedDevice.montage}`
+                      : undefined
+                  }
                   value={selectedDevice?.id ?? ''}
                   onChange={(e) => setSelectedDeviceId(e.target.value)}
-                  className="h-9 max-w-[230px] sm:max-w-[280px] rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] px-2.5 text-sm font-semibold text-[#141413] focus:outline-none focus:ring-2 focus:ring-[#16A34A]/25"
+                  className="h-8.5 max-w-[220px] sm:max-w-[250px] rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] px-2.5 text-xs sm:text-sm font-semibold text-[#141413] focus:outline-none focus:ring-2 focus:ring-[#16A34A]/25"
                 >
                   {devices.map((dev) => (
                     <option key={dev.id} value={dev.id}>
@@ -813,64 +816,64 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
             </div>
 
             {selectedDevice && (
-              <>
+              <div className="inline-flex flex-wrap items-center gap-1.5 rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] px-2.5 py-1 text-xs font-mono tabular-nums">
                 <span
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold whitespace-nowrap',
-                    statusMeta.badge,
+                    'inline-flex items-center gap-1.5 font-sans font-semibold',
+                    selectedDevice.status === 'ALERT' ? 'text-red-700' : 'text-[#15803D]',
                   )}
                 >
                   <span className={cn('size-2 rounded-full', statusMeta.dot)} aria-hidden />
                   {statusMeta.label}
                 </span>
-
+                <span className="text-[#CBD5E1]" aria-hidden>·</span>
                 <span
                   className={cn(
-                    'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold font-mono tabular-nums whitespace-nowrap',
-                    batteryPct !== null && batteryPct < 20
-                      ? 'bg-amber-50 text-amber-800 border-amber-200'
-                      : 'bg-[#F5FAF7] text-[#262624] border-[#DCE6DF]',
+                    'inline-flex items-center gap-1 font-semibold',
+                    batteryPct !== null && batteryPct < 20 ? 'text-amber-700' : 'text-[#262624]',
                   )}
+                  title={batteryMv !== null ? `${batteryMv} mV` : undefined}
                 >
                   <Battery className="size-3.5 text-[#16A34A] shrink-0" aria-hidden />
                   {batteryPct !== null ? `${batteryPct}%` : '—'}
-                  {batteryMv !== null ? ` (${batteryMv} mV)` : ''}
                 </span>
-
-                <span className="inline-flex items-center gap-1 rounded-full border border-[#DCE6DF] bg-[#F5FAF7] px-2.5 py-1 text-xs font-mono font-semibold text-[#262624] tabular-nums whitespace-nowrap">
-                  <Activity className="size-3.5 text-[#16A34A] shrink-0" aria-hidden />
+                <span className="text-[#CBD5E1]" aria-hidden>·</span>
+                <span className="font-semibold text-[#262624]">
                   {selectedDevice.sampleRateSps} Hz
                 </span>
-
+                <span className="text-[#CBD5E1]" aria-hidden>·</span>
                 <span
                   className={cn(
-                    'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold whitespace-nowrap',
-                    selectedDevice.sdRecording
-                      ? 'bg-[#ECFDF3] text-[#15803D] border-[#BBF7D0]'
-                      : 'bg-[#F5FAF7] text-[#6E6D68] border-[#DCE6DF]',
+                    'inline-flex items-center gap-1 font-bold',
+                    isStrokeAlert ? 'text-red-700' : 'text-[#15803D]',
                   )}
                 >
-                  <HardDrive className="size-3.5 shrink-0" aria-hidden />
-                  {selectedDevice.sdRecording ? 'Đang ghi SD' : 'Tắt SD'}
-                </span>
-
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold whitespace-nowrap',
-                    isStrokeAlert
-                      ? 'bg-red-50 text-red-700 border-red-200'
-                      : 'bg-[#ECFDF3] text-[#15803D] border-[#BBF7D0]',
-                  )}
-                >
-                  <Radio className="size-3.5 shrink-0" aria-hidden />
+                  <Radio className="size-3 shrink-0" aria-hidden />
                   AI: {aiState}
                 </span>
-              </>
+              </div>
+            )}
+
+            {selectedDevice && (
+              <button
+                type="button"
+                disabled={deleteDeviceMutation.isPending}
+                onClick={() => {
+                  if (window.confirm(`Xóa thiết bị ${selectedDevice.deviceCode}?`)) {
+                    deleteDeviceMutation.mutate(selectedDevice.id);
+                  }
+                }}
+                aria-label={`Xóa thiết bị ${selectedDevice.deviceCode}`}
+                title="Xóa thiết bị"
+                className="inline-flex size-8 items-center justify-center rounded-lg border border-[#DCE6DF] bg-white text-[#6E6D68] hover:text-red-600 hover:border-red-200 transition-colors"
+              >
+                <Trash2 className="size-3.5" aria-hidden />
+              </button>
             )}
           </div>
 
           {/* Right: Clean Actions */}
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5 shrink-0">
             {selectedDevice && (
               <div className="inline-flex items-center gap-1.5 flex-wrap">
                 <select
@@ -893,7 +896,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
                   }
                   icon={<Activity className="size-3.5" aria-hidden />}
                 >
-                  Phát thử tín hiệu ESP32
+                  Phát thử tín hiệu
                 </Button>
               </div>
             )}
@@ -912,48 +915,13 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
               href={nodeRedUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-8.5 items-center justify-center gap-1.5 rounded-lg border border-[#DCE6DF] bg-white px-3 text-xs sm:text-sm font-medium text-[#1F2937] hover:bg-[#F5FAF7] hover:border-[#16A34A]/50 transition-colors whitespace-nowrap"
+              className="inline-flex h-8.5 items-center justify-center gap-1.5 rounded-lg border border-[#DCE6DF] bg-white px-2.5 text-xs font-medium text-[#1F2937] hover:bg-[#F5FAF7] hover:border-[#16A34A]/50 transition-colors whitespace-nowrap"
             >
-              <span>Mở Node-RED (:1880)</span>
+              <span>Node-RED</span>
               <ExternalLink className="size-3.5 text-[#16A34A]" aria-hidden />
             </a>
           </div>
         </div>
-
-        {/* Secondary device metadata strip */}
-        {selectedDevice && (
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-[#DCE6DF] text-xs text-[#6E6D68]">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="inline-flex items-center gap-1 font-medium text-[#262624]">
-                {selectedDevice.isWsConnected ? (
-                  <Wifi className="size-3.5 text-[#16A34A]" aria-hidden />
-                ) : (
-                  <WifiOff className="size-3.5 text-[#8A8882]" aria-hidden />
-                )}
-                {selectedDevice.isWsConnected ? 'WebSocket trực tiếp' : `Nguồn: ${selectedDevice.connectionSource}`}
-              </span>
-              <span>Model: {selectedDevice.model}</span>
-              <span>FW: {selectedDevice.firmwareVersion}</span>
-              <span>PGA: ×{selectedDevice.pgaGain}</span>
-              <span>Đạo trình: {selectedDevice.montage}</span>
-              <span>Cập nhật: {formatShortTime(selectedDevice.lastSeenAt)}</span>
-            </div>
-
-            <button
-              type="button"
-              disabled={deleteDeviceMutation.isPending}
-              onClick={() => {
-                if (window.confirm(`Xóa thiết bị ${selectedDevice.deviceCode}?`)) {
-                  deleteDeviceMutation.mutate(selectedDevice.id);
-                }
-              }}
-              className="inline-flex items-center gap-1 text-xs font-medium text-[#6E6D68] hover:text-red-600 transition-colors"
-            >
-              <Trash2 className="size-3.5" aria-hidden />
-              <span>Xóa thiết bị</span>
-            </button>
-          </div>
-        )}
       </Card>
 
       {/* INLINE ADD DEVICE FORM */}
@@ -1006,15 +974,15 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
                 onChange={(e) => setNewRate(e.target.value)}
                 className="h-9 w-full rounded-lg border border-slate-200/90 bg-white px-2.5 text-sm text-[#141413] focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20"
               >
-                <option value="250">250 SPS</option>
-                <option value="500">500 SPS</option>
-                <option value="1000">1000 SPS</option>
+                <option value="250">250 mẫu/giây (Hz)</option>
+                <option value="500">500 mẫu/giây (Hz)</option>
+                <option value="1000">1000 mẫu/giây (Hz)</option>
               </select>
             </div>
 
             <div className="space-y-1">
               <label htmlFor="hw-dev-pga" className="font-semibold text-[#262624] block">
-                PGA Gain / Đạo trình
+                Độ khuếch đại / Đạo trình
               </label>
               <div className="flex gap-1.5">
                 <select
@@ -1092,7 +1060,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
                   Dao động ký 8 kênh trực tiếp
                 </h2>
                 <span className="rounded-md border border-[#DCE6DF] bg-[#F5FAF7] px-2 py-0.5 font-mono text-xs font-semibold text-[#15803D] tabular-nums">
-                  {displaySps} SPS
+                  {displaySps} mẫu/giây (Hz)
                 </span>
                 <span className="font-mono text-xs text-[#6E6D68] tabular-nums">
                   {liveStats.total.toLocaleString('vi-VN')} mẫu
@@ -1152,7 +1120,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
             <div className="rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] p-3 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                 <span className="font-semibold text-[#141413]">
-                  Trạng thái tiếp xúc điện cực (Lead-Off)
+                  Độ bám điện cực
                 </span>
                 <span
                   className={cn(
@@ -1160,8 +1128,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
                     goodElectrodes === CHANNEL_COUNT ? 'text-[#15803D]' : 'text-amber-700',
                   )}
                 >
-                  {goodElectrodes}/{CHANNEL_COUNT} tiếp xúc tốt · Mask 0x
-                  {activeLoffMask.toString(16).toUpperCase().padStart(2, '0')}
+                  {goodElectrodes}/{CHANNEL_COUNT} điện cực bám tốt
                 </span>
               </div>
 
@@ -1186,7 +1153,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
                           'size-2 rounded-full shrink-0',
                           isLeadOff ? 'bg-red-600' : 'bg-[#16A34A]',
                         )}
-                        title={isLeadOff ? 'Mất tiếp xúc (Lead-Off)' : 'Tiếp xúc tốt'}
+                        title={isLeadOff ? 'Bong điện cực / Mất tiếp xúc' : 'Tiếp xúc tốt'}
                         aria-label={isLeadOff ? `${ch} mất tiếp xúc` : `${ch} tiếp xúc tốt`}
                       />
                     </div>
@@ -1205,9 +1172,6 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
                 <span className="rounded-md bg-[#F5FAF7] border border-[#DCE6DF] px-2 py-1">
                   BSI: {selectedDevice?.lastAiBsi !== null && selectedDevice?.lastAiBsi !== undefined ? selectedDevice.lastAiBsi.toFixed(2) : '—'}
                 </span>
-                <span className="rounded-md bg-[#F5FAF7] border border-[#DCE6DF] px-2 py-1">
-                  RF Prob: {selectedDevice?.lastAiRfProb !== null && selectedDevice?.lastAiRfProb !== undefined ? `${Math.round(selectedDevice.lastAiRfProb * 100)}%` : '—'}
-                </span>
               </div>
 
               {/* Remote controls */}
@@ -1223,7 +1187,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
                   }
                   icon={<Flag className="size-3.5 text-[#16A34A]" aria-hidden />}
                 >
-                  Gắn mốc sự kiện (MKR)
+                  Đánh dấu sự kiện
                 </Button>
                 <Button
                   type="button"
@@ -1237,7 +1201,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
                   }
                   icon={<Play className="size-3.5 text-[#16A34A]" aria-hidden />}
                 >
-                  Bắt đầu ghi SD
+                  Ghi thẻ nhớ
                 </Button>
                 <Button
                   type="button"
@@ -1251,7 +1215,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
                   }
                   icon={<Square className="size-3.5 text-[#575652]" aria-hidden />}
                 >
-                  Dừng ghi SD
+                  Dừng ghi
                 </Button>
                 <Button
                   type="button"
@@ -1278,7 +1242,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
               <div className="flex items-center gap-2 min-w-0">
                 <Wifi className="size-4 text-[#16A34A] shrink-0" aria-hidden />
                 <span className="text-sm font-bold text-[#141413] truncate">
-                  Trung tâm Kết nối ESP32 &amp; Node-RED
+                  Cấu hình kỹ thuật (Dành cho kỹ thuật viên)
                 </span>
               </div>
               {showGatewayCenter ? (

@@ -44,37 +44,37 @@ export interface QeegStudioPanelProps {
 const FALLBACK_CASES: QeegCaseItem[] = [
   {
     id: 'case_ischemia_lvo',
-    name: 'Ca 1: Thiếu máu não cục bộ LVO bán cầu trái (F3/C3)',
+    name: 'Ca 1: Thiếu máu LVO trái (F3/C3)',
     subjectId: 'BN-STROKE-01',
     clinicalCategory: 'VASCULAR_STROKE',
     groundTruthLabel: 'ISCHEMIC_STROKE',
-    clinicalPresentation: 'Liệt nửa người phải khởi phát giờ thứ 2, chậm khu trú Delta trái.',
+    clinicalPresentation: 'Liệt nửa người phải, chậm khu trú Delta trái.',
     trafficLight: 'red',
     tpaStatus: 'ELIGIBLE',
-    badge: 'Mạch máu não · Nghi LVO',
+    badge: 'Nghi LVO',
     samplingRateHz: 500,
     channelsCount: 6,
   },
   {
     id: 'case_ich_hemorrhage',
-    name: 'Ca 2: Nghi Xuất huyết não cấp (ICH) · Khóa tPA tuyệt đối',
+    name: 'Ca 2: Xuất huyết ICH · Khóa tPA',
     subjectId: 'BN-ICH-02',
     clinicalCategory: 'VASCULAR_STROKE',
     groundTruthLabel: 'HEMORRHAGIC_STROKE',
-    clinicalPresentation: 'Đau đầu dữ dội, tri giác giảm nhanh, sóng chậm lan tỏa hiệu ứng khối.',
+    clinicalPresentation: 'Đau đầu dữ dội, sóng chậm lan tỏa hiệu ứng khối.',
     trafficLight: 'purple',
     tpaStatus: 'ABSOLUTELY_CONTRAINDICATED',
-    badge: 'Khóa an toàn tPA CM[2,1]=0',
+    badge: 'Khóa an toàn tPA',
     samplingRateHz: 500,
     channelsCount: 6,
   },
   {
     id: 'case_epilepsy_temporal',
-    name: 'Ca 3: Phóng điện nhọn - sóng chậm Thùy thái dương',
+    name: 'Ca 3: Động kinh thùy thái dương',
     subjectId: 'BN-EPI-03',
     clinicalCategory: 'EPILEPSY_ICU',
     groundTruthLabel: 'EPILEPTIFORM_SLOWING',
-    clinicalPresentation: 'Cơn vắng ý thức tái diễn, phóng điện kịch phát vùng thái dương - trung tâm.',
+    clinicalPresentation: 'Phóng điện nhọn - sóng chậm thái dương - trung tâm.',
     trafficLight: 'yellow',
     tpaStatus: 'NOT_APPLICABLE',
     badge: 'Động kinh & ICU',
@@ -83,40 +83,40 @@ const FALLBACK_CASES: QeegCaseItem[] = [
   },
   {
     id: 'case_sleep_fatigue_n3',
-    name: 'Ca 4: Ngủ sâu pha N3 / Mệt mỏi nhận thức (Stroke Mimic)',
+    name: 'Ca 4: Ngủ N3 / Mệt mỏi não',
     subjectId: 'BN-SLEEP-04',
     clinicalCategory: 'SLEEP_COGNITIVE',
     groundTruthLabel: 'COGNITIVE_FATIGUE',
-    clinicalPresentation: 'Sóng Delta đối xứng hai bán cầu, BSI < 0.10, loại trừ tắc mạch cấp.',
+    clinicalPresentation: 'Delta đối xứng, BSI < 0.10, loại trừ tắc mạch cấp.',
     trafficLight: 'yellow',
     tpaStatus: 'NOT_APPLICABLE',
-    badge: 'Giấc ngủ & Nhận thức',
+    badge: 'Giấc ngủ',
     samplingRateHz: 500,
     channelsCount: 6,
   },
   {
     id: 'case_healthy_alpha',
-    name: 'Ca 5: Điện não đồ sinh lý bình thường (Alpha chẩm ưu thế)',
+    name: 'Ca 5: Sinh lý Alpha chẩm ổn định',
     subjectId: 'BN-CTRL-05',
     clinicalCategory: 'SLEEP_COGNITIVE',
     groundTruthLabel: 'CONTROL',
-    clinicalPresentation: 'Nhịp Alpha 10.2 Hz vùng chẩm O1/O2 rõ khi nhắm mắt thư giãn.',
+    clinicalPresentation: 'Nhịp Alpha 10.2 Hz vùng chẩm O1/O2 khi nhắm mắt.',
     trafficLight: 'green',
     tpaStatus: 'NOT_APPLICABLE',
-    badge: 'Đối chứng sinh lý',
+    badge: 'Sinh lý chuẩn',
     samplingRateHz: 500,
     channelsCount: 6,
   },
   {
     id: 'case_ads1299_hardware',
-    name: 'Ca 6: Luồng tín hiệu phần cứng TI ADS1299 24-bit 500 Hz',
+    name: 'Ca 6: Phần cứng ADS1299 500 Hz',
     subjectId: 'HW-ADS1299-06',
     clinicalCategory: 'HARDWARE_BCI',
     groundTruthLabel: 'CONTROL',
-    clinicalPresentation: 'Mẫu thu trực tiếp từ bo mạch TI ADS1299 6 kênh chuẩn 10-20.',
+    clinicalPresentation: 'Thu trực tiếp TI ADS1299 6 kênh 10-20 (500 Hz).',
     trafficLight: 'green',
     tpaStatus: 'MONITORING',
-    badge: 'Phần cứng TI ADS1299',
+    badge: 'TI ADS1299',
     samplingRateHz: 500,
     channelsCount: 6,
   },
@@ -126,7 +126,7 @@ function trafficBannerStyle(trafficLight: QeegAnalysisResult['trafficLight']) {
   if (trafficLight === 'purple') {
     return {
       dot: 'bg-red-700',
-      label: 'CHỐNG CHỈ ĐỊNH TUYỆT ĐỐI tPA (CM[2,1] = 0)',
+      label: 'CHỐNG CHỈ ĐỊNH TUYỆT ĐỐI tPA · KHÓA AN TOÀN',
     };
   }
   if (trafficLight === 'red') {
@@ -352,7 +352,7 @@ export function QeegStudioPanel({
     if (!deidentifiedConfirmed) {
       setSaveFeedback({
         tone: 'error',
-        text: 'Bắt buộc xác nhận dữ liệu đã khử định danh bệnh nhân (PHI Anonymized) trước khi lưu vào CSDL.',
+        text: 'Bắt buộc xác nhận dữ liệu đã ẩn danh cá nhân trước khi lưu vào hệ thống.',
       });
       return;
     }
@@ -757,7 +757,7 @@ export function QeegStudioPanel({
         </Alert>
       )}
 
-      {isBusy && !analysis && <Spinner label="Đang chạy xử lý tín hiệu số & phân tích qEEG..." />}
+      {isBusy && !analysis && <Spinner label="Đang phân tích sóng não..." />}
 
       {/* Main Analysis Result Workspace */}
       {analysis && banner && (
@@ -850,7 +850,7 @@ export function QeegStudioPanel({
             <Card className="p-5 border-[#DCE6DF] bg-[#F5FAF7] space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-semibold text-[#141413]">
-                  Lưu Kết quả qEEG vào Hồ sơ Cá nhân &amp; CSDL Mạng Nơ-ron (80-D Vector)
+                  Lưu kết quả đo sóng não
                 </h4>
                 <button
                   type="button"
@@ -960,7 +960,7 @@ export function QeegStudioPanel({
                       className="size-4 rounded border-[#DCE6DF] accent-[#16A34A] text-[#16A34A]"
                     />
                     <span>
-                      Xác nhận dữ liệu đã khử định danh hoàn toàn (không chứa tên thật, số CCCD hoặc hồ sơ bệnh án định danh)
+                      Xác nhận đã ẩn danh bệnh nhân (thông tin cá nhân)
                     </span>
                   </label>
 
@@ -981,22 +981,14 @@ export function QeegStudioPanel({
           {/* 12-col grid: waveform (8 cols) + topomap+biomarkers (4 cols) */}
           <div className="grid gap-4 lg:grid-cols-12 items-start">
             {/* Left 8 cols: Waveform */}
-            <div className="lg:col-span-8 min-w-0 space-y-1.5">
+            <div className="lg:col-span-8 min-w-0">
               <BrainWaveformViewer
                 waveforms={analysis.waveforms}
                 samplingRateHz={analysis.samplingRateHz}
                 isProfessional={isProfessional}
                 title={`Tín hiệu Điện não ${analysis.channelsCount} Kênh (${analysis.samplingRateHz} Hz)`}
-                subtitle={`10-20 · ${analysis.channelsCount}ch · Thô & DSP`}
+                subtitle={`${analysis.channelsCount} kênh · ${analysis.samplingRateHz} Hz`}
               />
-              <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px] font-mono text-slate-500 tabular-nums">
-                <span>
-                  {analysis.engineSource === 'python_qeeg_service'
-                    ? 'Python qEEG Service'
-                    : 'ts_dsp_fallback'}
-                </span>
-                <span>{analysis.latencyMs.toFixed(1)} ms</span>
-              </div>
             </div>
 
             {/* Right 4 cols: Topomap + 3 plain-language biomarker cards */}
@@ -1014,9 +1006,17 @@ export function QeegStudioPanel({
                 {/* DAR */}
                 <div className="px-4 py-3 flex items-center justify-between gap-2">
                   <div>
-                    <span className="block font-medium text-[#141413]">Mức sóng chậm (DAR)</span>
+                    <span className="block font-medium text-[#141413]">
+                      {isProfessional ? 'Mức sóng chậm (DAR)' : 'Chỉ số sóng chậm'}
+                    </span>
                     <span className="text-[11px] text-[#6E6D68]">
-                      {analysis.biomarkers.meanDar > 1.5 ? 'Tăng cao' : 'Bình thường'}
+                      {isProfessional
+                        ? analysis.biomarkers.meanDar > 1.5
+                          ? 'Tăng cao'
+                          : 'Bình thường'
+                        : analysis.biomarkers.meanDar > 1.5
+                          ? 'Tăng cao · Sóng chậm nhiều hơn bình thường'
+                          : 'Bình thường · Hoạt động não ổn định'}
                     </span>
                   </div>
                   <span className="font-mono text-base font-semibold text-[#141413] tabular-nums">
@@ -1027,9 +1027,17 @@ export function QeegStudioPanel({
                 {/* BSI */}
                 <div className="px-4 py-3 flex items-center justify-between gap-2">
                   <div>
-                    <span className="block font-medium text-[#141413]">Cân bằng Trái – Phải (BSI)</span>
+                    <span className="block font-medium text-[#141413]">
+                      {isProfessional ? 'Cân bằng Trái – Phải (BSI)' : 'Cân bằng 2 bán cầu'}
+                    </span>
                     <span className="text-[11px] text-[#6E6D68]">
-                      {analysis.biomarkers.meanBsi > 0.15 ? 'Lệch bán cầu' : 'Cân đối'}
+                      {isProfessional
+                        ? analysis.biomarkers.meanBsi > 0.15
+                          ? 'Lệch bán cầu'
+                          : 'Cân đối'
+                        : analysis.biomarkers.meanBsi > 0.15
+                          ? 'Có chênh lệch giữa trái và phải'
+                          : 'Cân đối · Hai bên não đồng đều'}
                     </span>
                   </div>
                   <span className="font-mono text-base font-semibold text-[#141413] tabular-nums">
@@ -1040,9 +1048,17 @@ export function QeegStudioPanel({
                 {/* Alpha Peak */}
                 <div className="px-4 py-3 flex items-center justify-between gap-2">
                   <div>
-                    <span className="block font-medium text-[#141413]">Nhịp Tỉnh táo Alpha</span>
+                    <span className="block font-medium text-[#141413]">
+                      {isProfessional ? 'Nhịp Tỉnh táo Alpha' : 'Nhịp thư thái'}
+                    </span>
                     <span className="text-[11px] text-[#6E6D68]">
-                      {analysis.biomarkers.alphaPeakHz >= 9 ? 'Tốt' : 'Đang mỏi não'}
+                      {isProfessional
+                        ? analysis.biomarkers.alphaPeakHz >= 9
+                          ? 'Tốt'
+                          : 'Đang mỏi não'
+                        : analysis.biomarkers.alphaPeakHz >= 9
+                          ? 'Tốt · Nhịp nghỉ ngơi rõ nét'
+                          : 'Đang mỏi não · Nhịp thư giãn chậm'}
                     </span>
                   </div>
                   <span className="font-mono text-base font-semibold text-[#141413] tabular-nums">
@@ -1061,18 +1077,60 @@ export function QeegStudioPanel({
             <div className="px-4 pb-4 pt-2 space-y-4">
               {/* Full biomarker numbers */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs font-mono tabular-nums">
-                {[
-                  { label: 'DAR', val: analysis.biomarkers.meanDar.toFixed(2), sub: 'Chuẩn < 1.50' },
-                  { label: 'BSI', val: analysis.biomarkers.meanBsi.toFixed(3), sub: 'Ngưỡng > 0.150' },
-                  { label: 'TAR', val: analysis.biomarkers.meanTar.toFixed(2), sub: 'Mệt mỏi nhận thức' },
-                  { label: 'wPLI', val: analysis.biomarkers.wpli.toFixed(2), sub: `PRI: ${analysis.biomarkers.pri.toFixed(2)}` },
-                  { label: 'Alpha IAF', val: `${analysis.biomarkers.alphaPeakHz.toFixed(1)} Hz`, sub: `Chất lượng: ${(analysis.biomarkers.signalQualityScore * 100).toFixed(0)}%` },
-                  {
-                    label: 'Khóa tPA',
-                    val: analysis.biomarkers.tpaLockoutTriggered ? 'LOCKOUT' : analysis.biomarkers.cusumAlarm ? 'CUSUM' : 'BÌNH THƯỜNG',
-                    sub: analysis.safetyStatus,
-                  },
-                ].map((b) => (
+                {(isProfessional
+                  ? [
+                      { label: 'DAR', val: analysis.biomarkers.meanDar.toFixed(2), sub: 'Chuẩn < 1.50' },
+                      { label: 'BSI', val: analysis.biomarkers.meanBsi.toFixed(3), sub: 'Ngưỡng > 0.150' },
+                      { label: 'TAR', val: analysis.biomarkers.meanTar.toFixed(2), sub: 'Mệt mỏi nhận thức' },
+                      { label: 'wPLI', val: analysis.biomarkers.wpli.toFixed(2), sub: `PRI: ${analysis.biomarkers.pri.toFixed(2)}` },
+                      { label: 'Alpha IAF', val: `${analysis.biomarkers.alphaPeakHz.toFixed(1)} Hz`, sub: `Chất lượng: ${(analysis.biomarkers.signalQualityScore * 100).toFixed(0)}%` },
+                      {
+                        label: 'Khóa tPA / CT khẩn',
+                        val: analysis.biomarkers.tpaLockoutTriggered
+                          ? 'Khóa an toàn'
+                          : analysis.biomarkers.cusumAlarm
+                            ? 'Cảnh báo sớm'
+                            : 'Bình thường',
+                        sub: analysis.safetyStatus,
+                      },
+                    ]
+                  : [
+                      {
+                        label: 'Chỉ số sóng chậm',
+                        val: analysis.biomarkers.meanDar.toFixed(2),
+                        sub: analysis.biomarkers.meanDar > 1.5 ? 'Tăng cao (chuẩn < 1.50)' : 'Ổn định (chuẩn < 1.50)',
+                      },
+                      {
+                        label: 'Cân bằng 2 bán cầu',
+                        val: analysis.biomarkers.meanBsi.toFixed(3),
+                        sub: analysis.biomarkers.meanBsi > 0.15 ? 'Có chênh lệch trái – phải' : 'Hai bên cân đối',
+                      },
+                      {
+                        label: 'Chỉ số mệt mỏi',
+                        val: analysis.biomarkers.meanTar.toFixed(2),
+                        sub: 'Tỷ lệ sóng buồn ngủ / tập trung',
+                      },
+                      {
+                        label: 'Kết nối vùng não',
+                        val: analysis.biomarkers.wpli.toFixed(2),
+                        sub: 'Độ đồng bộ tín hiệu giữa các vùng',
+                      },
+                      {
+                        label: 'Nhịp thư thái',
+                        val: `${analysis.biomarkers.alphaPeakHz.toFixed(1)} Hz`,
+                        sub: `Độ rõ tín hiệu: ${(analysis.biomarkers.signalQualityScore * 100).toFixed(0)}%`,
+                      },
+                      {
+                        label: 'An toàn',
+                        val: analysis.biomarkers.tpaLockoutTriggered
+                          ? 'Khóa an toàn'
+                          : analysis.biomarkers.cusumAlarm
+                            ? 'Cảnh báo sớm'
+                            : 'Bình thường',
+                        sub: analysis.safetyStatus,
+                      },
+                    ]
+                ).map((b) => (
                   <div key={b.label} className="rounded-lg border border-[#DCE6DF] bg-white p-3">
                     <span className="block text-[10px] font-sans font-medium text-[#6E6D68]">{b.label}</span>
                     <strong className="text-base font-semibold text-[#141413]">{b.val}</strong>

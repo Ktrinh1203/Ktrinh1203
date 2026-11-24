@@ -28,10 +28,11 @@ interface MeshPulse {
   alpha: number;
 }
 
-const POINT_COUNT = 128;
-const LINK_DISTANCE = 195;
+const POINT_COUNT = 56;
+const LINK_DISTANCE = 205;
 const CURSOR_REVEAL_RADIUS = 270;
 const CURSOR_DIRECT_LINK_RADIUS = 235;
+const FRAME_INTERVAL_MS = 1000 / 30;
 
 function createMeshPoints(width: number, height: number): MeshPoint[] {
   return Array.from({ length: POINT_COUNT }, (_, idx) => {
@@ -121,8 +122,19 @@ export function AuthLayout({
     observer?.observe(container);
 
     const startTime = performance.now();
+    let lastRenderTime = startTime - FRAME_INTERVAL_MS;
+    let isDisposed = false;
 
     const drawFrame = (now: number) => {
+      if (isDisposed || document.hidden) return;
+
+      if (!reducedMotion && now - lastRenderTime < FRAME_INTERVAL_MS) {
+        rafId = requestAnimationFrame(drawFrame);
+        return;
+      }
+
+      const dtScale = Math.min(2.5, Math.max(0.5, (now - lastRenderTime) / 16.67));
+      lastRenderTime = now;
       const t = (now - startTime) / 1000;
       const mouse = mouseRef.current;
       const pulses = pulsesRef.current;
@@ -132,7 +144,7 @@ export function AuthLayout({
       // Update expanding click pulses
       for (let i = pulses.length - 1; i >= 0; i--) {
         const rp = pulses[i];
-        rp.radius += 6;
+        rp.radius += 6 * dtScale;
         rp.alpha = Math.max(0, 0.55 * (1 - rp.radius / rp.maxRadius));
 
         ctx.beginPath();
@@ -147,10 +159,11 @@ export function AuthLayout({
       }
 
       // Update point positions & cursor/pulse highlight intensities
+      const decay = Math.pow(0.93, dtScale);
       for (const p of points) {
         if (!reducedMotion) {
-          p.x += p.vx;
-          p.y += p.vy;
+          p.x += p.vx * dtScale;
+          p.y += p.vy * dtScale;
           if (p.x <= 0) {
             p.x = 0;
             p.vx = Math.abs(p.vx);
@@ -170,13 +183,17 @@ export function AuthLayout({
         }
 
         // Smooth decay so threads appear as mouse glides over and fade gently away
-        p.highlight *= 0.93;
+        p.highlight *= decay;
 
         if (mouse.active) {
-          const dist = Math.hypot(mouse.x - p.x, mouse.y - p.y);
-          if (dist < CURSOR_REVEAL_RADIUS) {
-            const intensity = Math.pow(1 - dist / CURSOR_REVEAL_RADIUS, 1.2);
-            p.highlight = Math.max(p.highlight, intensity);
+          const mdx = mouse.x - p.x;
+          const mdy = mouse.y - p.y;
+          if (Math.abs(mdx) < CURSOR_REVEAL_RADIUS && Math.abs(mdy) < CURSOR_REVEAL_RADIUS) {
+            const dist = Math.hypot(mdx, mdy);
+            if (dist < CURSOR_REVEAL_RADIUS) {
+              const intensity = Math.pow(1 - dist / CURSOR_REVEAL_RADIUS, 1.2);
+              p.highlight = Math.max(p.highlight, intensity);
+            }
           }
         }
 
@@ -195,9 +212,11 @@ export function AuthLayout({
         for (let j = i + 1; j < points.length; j++) {
           const b = points[j];
           const dx = b.x - a.x;
+          if (dx > LINK_DISTANCE || dx < -LINK_DISTANCE) continue;
           const dy = b.y - a.y;
-          const dSq = dx * dx + dy * dy;
+          if (dy > LINK_DISTANCE || dy < -LINK_DISTANCE) continue;
 
+          const dSq = dx * dx + dy * dy;
           if (dSq < maxDistSq) {
             const dist = Math.sqrt(dSq);
             const distRatio = 1 - dist / LINK_DISTANCE;
@@ -231,15 +250,17 @@ export function AuthLayout({
         if (mouse.active) {
           const mdx = mouse.x - a.x;
           const mdy = mouse.y - a.y;
-          const mDist = Math.hypot(mdx, mdy);
-          if (mDist < CURSOR_DIRECT_LINK_RADIUS) {
-            const ratio = 1 - mDist / CURSOR_DIRECT_LINK_RADIUS;
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(mouse.x, mouse.y);
-            ctx.strokeStyle = `rgba(21, 128, 61, ${ratio * 0.5})`;
-            ctx.lineWidth = 0.85 + ratio * 0.85;
-            ctx.stroke();
+          if (Math.abs(mdx) < CURSOR_DIRECT_LINK_RADIUS && Math.abs(mdy) < CURSOR_DIRECT_LINK_RADIUS) {
+            const mDist = Math.hypot(mdx, mdy);
+            if (mDist < CURSOR_DIRECT_LINK_RADIUS) {
+              const ratio = 1 - mDist / CURSOR_DIRECT_LINK_RADIUS;
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(mouse.x, mouse.y);
+              ctx.strokeStyle = `rgba(21, 128, 61, ${ratio * 0.5})`;
+              ctx.lineWidth = 0.85 + ratio * 0.85;
+              ctx.stroke();
+            }
           }
         }
       }
@@ -288,15 +309,29 @@ export function AuthLayout({
         ctx.fill();
       }
 
-      if (!reducedMotion) {
+      if (!reducedMotion && !document.hidden) {
         rafId = requestAnimationFrame(drawFrame);
       }
     };
 
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(rafId);
+        return;
+      }
+      if (!reducedMotion && !isDisposed) {
+        lastRenderTime = performance.now() - FRAME_INTERVAL_MS;
+        rafId = requestAnimationFrame(drawFrame);
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
     drawFrame(performance.now());
 
     return () => {
+      isDisposed = true;
       cancelAnimationFrame(rafId);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       observer?.disconnect();
     };
   }, []);

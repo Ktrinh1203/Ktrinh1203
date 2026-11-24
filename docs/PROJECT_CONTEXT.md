@@ -16,7 +16,8 @@ All platform layers operate as one cohesive stack orchestrated by [start_unified
 1. **PostgreSQL 16 (`127.0.0.1:5432`):** Reuses an already-listening local cluster or spawns `npm run db:start -w server` (`server/scripts/pg-daemon.ts`), executes `npx prisma migrate deploy` inside `server/`, and inspects the `User` row count to automatically run `npm run db:seed -w server` on a fresh database.
 2. **Python FastAPI qEEG Service (`127.0.0.1:8001`):** Runs `uvicorn app:app --host 127.0.0.1 --port 8001` inside `qeeg_service/` (`QEEG_PORT=8001`), loading `stroke_3class_production_model.joblib`, `hospital_grade_n1_benchmark_results.json`, and `ads1299_500hz_sample.csv`. If `uvicorn`/`fastapi` is absent in the Python environment, the launcher emits a warning and continues smoothly because Express falls back to `qeeg-dsp.engine.ts`.
 3. **Express 5 API Gateway (`127.0.0.1:4000`):** Proxies `/api/qeeg/*` to `QEEG_SERVICE_URL` (`http://127.0.0.1:8001`) with a 1500 ms timeout and deterministic TypeScript DSP fallback (`ts_dsp_fallback`), serves `qeeg_service/static/index.html` at `/clinical-workstation`, and hosts all social, Neural DB, and 4-pillar REST endpoints.
-4. **Vite React 19 SPA (`127.0.0.1:5173`):** Proxies `/api`, `/uploads`, and `/clinical-workstation` to `http://127.0.0.1:4000` (`client/vite.config.ts`) so browser cookies and CSRF headers remain strictly first-party.
+4. **Vite React 19 Desktop/Responsive Web SPA (`127.0.0.1:5173`, `client/`):** Proxies `/api`, `/uploads`, `/clinical-workstation`, and `/ws/hardware` to `http://127.0.0.1:4000` (`client/vite.config.ts`) so browser cookies and CSRF headers remain strictly first-party. Uses `React.lazy` + `Suspense` route-level code splitting (`client/src/App.tsx`) and idle preloading for primary tabs.
+5. **Standalone Mobile Web SPA (`127.0.0.1:5174`, `mobile/`):** Dedicated mobile-first PWA/SPA (`mobile/vite.config.ts`, launched via `start_mobile.bat` or `npm run dev:mobile`) sharing the same Express `:4000` API gateway, with a sliding pill-indicator bottom dock (`MobileShell.tsx`), spring transitions, preloaded dock chunks (`routePreloaders.ts`), and responsive single-column mobile workflows.
 
 ---
 
@@ -51,3 +52,20 @@ All platform layers operate as one cohesive stack orchestrated by [start_unified
 ## Core Existing Modules & Access Control
 - **Mode & Role Resolution:** Deterministic backend `experience.resolver.ts` and frontend `ModeContext.tsx` separating `GENERAL_MODE` (`hoa_health`) from `PROFESSIONAL_MODE` (`dr_minh`, `prof_lan`, `bs_noitru_khang`) alongside `PENDING` (`tuan_bme`) and `REJECTED` verification workflows.
 - **Social, Messaging & Research Hub:** Cursor-paginated feed, 1-on-1 direct messaging (`directKey` 403 participant guard), notifications with `dedupeKey`, moderation reporting, 6-state credential dossier review with SHA-256 + OCR checks, and 5-criteria Research Hub peer review.
+- **Recent UX & Performance Hardening (Nov 2026):**
+  - Route-level code splitting (`React.lazy` + `Suspense`) on Web (`client/src/App.tsx`) and Mobile (`mobile/src/App.tsx`, `mobile/src/routePreloaders.ts`).
+  - Sliding pill dock toolbar with pointer-drag / spring motion on Mobile (`MobileShell.tsx`, `mobile/verify_toolbar_motion.mjs`).
+  - Vietnamese UI copy simplification across Web & Mobile (removing internal backend/crypto jargon such as `HMAC`, `ts_dsp_fallback`, `RESEARCH_CONTRIBUTION`, `Sandbox`, `P2P`, `PHI` from user-facing surfaces).
+  - Mobile 375px header spacing, unclipped story avatar bubbles (`verify_mobile.mjs`), and deduplicated search clear button (`mobile/src/pages/SearchPage.tsx`).
+
+---
+
+## Section 6 — Brand Landing Page Song Ngữ (`VI | EN`)
+
+- **Bilingual Implementation ([client/src/pages/LandingPage.tsx](../client/src/pages/LandingPage.tsx), [client/src/pages/landingContent.ts](../client/src/pages/landingContent.ts)):**
+  - Trang landing page thương hiệu hỗ trợ song ngữ `VI | EN` (`?lang=vi`, `?lang=en`, lưu qua `neurolink_landing_lang` trong `localStorage`), tối ưu chuyển động với `prefers-reduced-motion` (`RevealBlock`) và sơ đồ `EcosystemDiagram`.
+- **Product Screenshots (`client/public/landing/`, 11 files):**
+  - Sử dụng 11 ảnh chụp thật từ giao diện Desktop & Mobile: `desktop-feed.png`, `desktop-qeeg-stable.png`, `desktop-qeeg-stroke.png`, `desktop-consultations.png`, `desktop-myhealth.png`, `desktop-pro-dashboard.png`, `desktop-doctor-profile.png`, `mobile-feed.png`, `mobile-qeeg.png`, `mobile-consult.png`, `mobile-topomap.png`.
+- **Bundle & Runtime (`npm run dev:all`):**
+  - Chunk `LandingPage` sau build đạt `44.80 kB` (`12.62 kB` gzip).
+  - Toàn bộ stack `dev:all` chạy ổn định trên 4 cổng: `:5432` (PostgreSQL TCP `True`), `:4000` (`/api/health` HTTP `200` `{"status":"ok"}`), `:5173` (Web SPA HTTP `200`), và `:5174` (Mobile SPA HTTP `200`), đã kiểm chứng tải trang sạch qua Playwright (`0` page errors, `0` failed requests, ảnh hero `naturalWidth > 0`).

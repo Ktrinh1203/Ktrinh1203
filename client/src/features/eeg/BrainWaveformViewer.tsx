@@ -30,9 +30,13 @@ export function BrainWaveformViewer({
   const [gainUv, setGainUv] = useState<GainUv>(50);
   const [isPaused, setIsPaused] = useState<boolean>(true);
   const [inspectIdx, setInspectIdx] = useState<number | null>(null);
-  const [sweepFraction, setSweepFraction] = useState<number>(0);
 
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const sweepFractionRef = useRef<number>(0);
+  const sweepLineRef = useRef<SVGLineElement | null>(null);
+  const sweepDotRefs = useRef<(SVGCircleElement | null)[]>([]);
+  const readoutTimeRef = useRef<HTMLSpanElement | null>(null);
+  const readoutValRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
   const channels = waveforms.channels.length > 0 ? waveforms.channels : ['F3', 'F4', 'C3', 'C4', 'O1', 'O2'];
   const times = waveforms.time;
@@ -51,24 +55,6 @@ export function BrainWaveformViewer({
     }
   }, [hasRaw, signalMode]);
 
-  useEffect(() => {
-    if (isPaused || totalSamples < 2) return;
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return;
-    }
-
-    let rafId = 0;
-    let lastTs = performance.now();
-    const step = (now: number) => {
-      const dt = (now - lastTs) / 1000;
-      lastTs = now;
-      setSweepFraction((prev) => (prev + dt / Math.max(durationSec, 4)) % 1);
-      rafId = requestAnimationFrame(step);
-    };
-    rafId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafId);
-  }, [isPaused, durationSec, totalSamples]);
-
   const svgWidth = 880;
   const laneHeight = 50;
   const topPad = 10;
@@ -84,6 +70,71 @@ export function BrainWaveformViewer({
   const calibration50UvHeight = Math.min(40, Math.max(10, 50 * pxPerUv));
   const pxPerSec = plotWidth / Math.max(durationSec, 0.1);
   const calibration1SecWidth = Math.min(plotWidth * 0.3, Math.max(36, pxPerSec));
+
+  useEffect(() => {
+    if (isPaused || inspectIdx !== null || totalSamples < 2) return;
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+
+    let rafId = 0;
+    let lastTs = performance.now();
+    let lastSampleIdx = -1;
+
+    const updateSweepDom = (frac: number) => {
+      const idx = Math.min(totalSamples - 1, Math.floor(frac * totalSamples));
+      const x = labelWidth + (idx / (totalSamples - 1)) * plotWidth;
+      const xStr = x.toFixed(1);
+
+      if (sweepLineRef.current) {
+        sweepLineRef.current.setAttribute('x1', xStr);
+        sweepLineRef.current.setAttribute('x2', xStr);
+      }
+
+      if (idx === lastSampleIdx) return;
+      lastSampleIdx = idx;
+
+      for (let c = 0; c < channels.length; c++) {
+        const ch = channels[c]!;
+        const val = activeSignals[ch]?.[idx];
+        const dot = sweepDotRefs.current[c];
+        if (dot) {
+          if (val === undefined) {
+            dot.setAttribute('display', 'none');
+          } else {
+            const centerY = topPad + c * laneHeight + laneHeight / 2;
+            const clampedUv = Math.max(-gainUv * 1.12, Math.min(gainUv * 1.12, val));
+            const y = centerY - clampedUv * pxPerUv;
+            dot.removeAttribute('display');
+            dot.setAttribute('cx', xStr);
+            dot.setAttribute('cy', y.toFixed(1));
+          }
+        }
+        const valEl = readoutValRefs.current[c];
+        if (valEl && val !== undefined) {
+          valEl.textContent = `${val >= 0 ? `+${val.toFixed(1)}` : val.toFixed(1)} µV`;
+          valEl.className = val >= 0 ? 'text-teal-700' : 'text-sky-700';
+        }
+      }
+
+      if (readoutTimeRef.current) {
+        readoutTimeRef.current.textContent = `t = ${(times[idx] ?? 0).toFixed(2)}s`;
+      }
+    };
+
+    updateSweepDom(sweepFractionRef.current);
+
+    const step = (now: number) => {
+      const dt = (now - lastTs) / 1000;
+      lastTs = now;
+      const nextFrac = (sweepFractionRef.current + dt / Math.max(durationSec, 4)) % 1;
+      sweepFractionRef.current = nextFrac;
+      updateSweepDom(nextFrac);
+      rafId = requestAnimationFrame(step);
+    };
+    rafId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafId);
+  }, [isPaused, inspectIdx, durationSec, totalSamples, channels, activeSignals, times, gainUv, pxPerUv, plotWidth]);
 
   const channelStats = useMemo(() => {
     return channels.map((ch) => {
@@ -127,15 +178,20 @@ export function BrainWaveformViewer({
   }, [channels, activeSignals, totalSamples, plotWidth, gainUv, pxPerUv]);
 
   const activeInspectIndex = useMemo(() => {
-    if (totalSamples === 0) return null;
-    if (inspectIdx !== null) {
-      return Math.max(0, Math.min(totalSamples - 1, inspectIdx));
+    if (totalSamples === 0 || inspectIdx === null) return null;
+    return Math.max(0, Math.min(totalSamples - 1, inspectIdx));
+  }, [inspectIdx, totalSamples]);
+
+  const isSweepActive = !isPaused && activeInspectIndex === null && totalSamples > 1;
+
+  const togglePlay = () => {
+    if (isPaused) {
+      setInspectIdx(null);
+      setIsPaused(false);
+    } else {
+      setIsPaused(true);
     }
-    if (!isPaused) {
-      return Math.min(totalSamples - 1, Math.floor(sweepFraction * totalSamples));
-    }
-    return null;
-  }, [inspectIdx, isPaused, sweepFraction, totalSamples]);
+  };
 
   const handlePointerInspect = (clientX: number, lockPause: boolean) => {
     if (!svgRef.current || totalSamples < 2) return;
@@ -190,8 +246,7 @@ export function BrainWaveformViewer({
             <h3 className="text-xs sm:text-sm font-bold text-slate-900 truncate">{title}</h3>
           </div>
           <p className="text-[11px] text-slate-500">
-            {subtitle ||
-              `${samplingRateHz} Hz · ${durationSec.toFixed(1)}s · Nhấn lên giấy để soi điểm mẫu`}
+            {subtitle || `${samplingRateHz} Hz · ${durationSec.toFixed(1)}s`}
           </p>
         </div>
 
@@ -244,7 +299,7 @@ export function BrainWaveformViewer({
                     : 'text-slate-600 hover:bg-slate-100',
                 )}
               >
-                Đã lọc DSP
+                Đã lọc nhiễu
               </button>
               <button
                 type="button"
@@ -257,7 +312,7 @@ export function BrainWaveformViewer({
                     : 'text-slate-600 hover:bg-slate-100',
                 )}
               >
-                Tín hiệu Thô (50 Hz)
+                Tín hiệu gốc
               </button>
             </div>
           )}
@@ -266,7 +321,7 @@ export function BrainWaveformViewer({
           <button
             type="button"
             aria-pressed={isPaused}
-            onClick={() => setIsPaused((prev) => !prev)}
+            onClick={togglePlay}
             className={cn(
               'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] font-bold transition-colors',
               isPaused
@@ -277,12 +332,12 @@ export function BrainWaveformViewer({
             {isPaused ? (
               <>
                 <Play className="size-3.5" aria-hidden />
-                <span>Chạy quét nhịp</span>
+                <span>Chạy quét</span>
               </>
             ) : (
               <>
                 <Pause className="size-3.5" aria-hidden />
-                <span>Tạm dừng & Soi</span>
+                <span>Tạm dừng</span>
               </>
             )}
           </button>
@@ -307,7 +362,7 @@ export function BrainWaveformViewer({
               });
             } else if (e.key === ' ') {
               e.preventDefault();
-              setIsPaused((p) => !p);
+              togglePlay();
             }
           }}
           className="relative rounded border border-slate-200 bg-white overflow-x-auto focus-visible:outline-2 focus-visible:outline-[#2b4c7e]"
@@ -509,13 +564,44 @@ export function BrainWaveformViewer({
                     fontWeight={700}
                     fontFamily="JetBrains Mono, monospace"
                   >
-                    1.0 s (Độ nhạy ±{gainUv} µV)
+                    1.0 s · ±{gainUv} µV
                   </text>
                 </g>
               );
             })()}
 
-            {/* Inspection Crosshair or Sweep Cursor */}
+            {/* DOM-driven 60fps Sweep Cursor (0% React re-render) */}
+            {isSweepActive && (
+              <g>
+                <line
+                  ref={sweepLineRef}
+                  x1={labelWidth}
+                  y1={topPad}
+                  x2={labelWidth}
+                  y2={svgHeight - bottomPad}
+                  stroke="#0284c7"
+                  strokeWidth={1.3}
+                  strokeDasharray="4 2"
+                />
+                {channels.map((ch, idx) => (
+                  <circle
+                    key={`sweep-dot-${ch}`}
+                    ref={(el) => {
+                      sweepDotRefs.current[idx] = el;
+                    }}
+                    cx={labelWidth}
+                    cy={topPad + idx * laneHeight + laneHeight / 2}
+                    r={2.8}
+                    fill="#0284c7"
+                    stroke="#ffffff"
+                    strokeWidth={1}
+                    display="none"
+                  />
+                ))}
+              </g>
+            )}
+
+            {/* Static Paused Inspection Crosshair */}
             {activeInspectIndex !== null && totalSamples > 1 && (
               <g>
                 {(() => {
@@ -528,9 +614,8 @@ export function BrainWaveformViewer({
                         y1={topPad}
                         x2={x}
                         y2={svgHeight - bottomPad}
-                        stroke={isPaused ? '#dc2626' : '#0284c7'}
+                        stroke="#dc2626"
                         strokeWidth={1.3}
-                        strokeDasharray={isPaused ? undefined : '4 2'}
                       />
                       {channels.map((ch, idx) => {
                         const val = activeSignals[ch]?.[activeInspectIndex];
@@ -544,7 +629,7 @@ export function BrainWaveformViewer({
                             cx={x}
                             cy={y}
                             r={2.8}
-                            fill={isPaused ? '#dc2626' : '#0284c7'}
+                            fill="#dc2626"
                             stroke="#ffffff"
                             strokeWidth={1}
                           />
@@ -561,13 +646,13 @@ export function BrainWaveformViewer({
         {/* Live Sample Readout Strip */}
         <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono tabular-nums">
           <div className="flex items-center gap-2 text-slate-700 font-bold">
-            <span>
+            <span key={isSweepActive ? 'sweep-time' : 'static-time'} ref={readoutTimeRef}>
               {activeInspectIndex !== null
-                ? `Điểm soi t = ${(times[activeInspectIndex] ?? 0).toFixed(2)}s`
-                : 'Chế độ xem toàn dải · Di chuột hoặc nhấn để soi mẫu µV'}
+                ? `t = ${(times[activeInspectIndex] ?? 0).toFixed(2)}s`
+                : 'Toàn đoạn ghi · Di chuột hoặc nhấn để soi µV'}
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             {channels.map((ch, idx) => {
               const sampleVal =
                 activeInspectIndex !== null ? activeSignals[ch]?.[activeInspectIndex] : undefined;
@@ -583,7 +668,15 @@ export function BrainWaveformViewer({
                       {sampleVal >= 0 ? `+${sampleVal.toFixed(1)}` : sampleVal.toFixed(1)} µV
                     </span>
                   ) : (
-                    <span className="text-slate-500">RMS {stat?.rms.toFixed(1) ?? '0.0'} µV</span>
+                    <span
+                      key={isSweepActive ? `sweep-${ch}` : `static-${ch}`}
+                      ref={(el) => {
+                        readoutValRefs.current[idx] = el;
+                      }}
+                      className="text-slate-500"
+                    >
+                      RMS {stat?.rms.toFixed(1) ?? '0.0'} µV
+                    </span>
                   )}
                 </span>
               );

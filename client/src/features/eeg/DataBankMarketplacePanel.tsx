@@ -11,6 +11,7 @@ import {
   Search,
   ShieldCheck,
   Unlock,
+  X,
 } from 'lucide-react';
 import { dataBankApi, eegDatasetsApi, rewardsApi } from '../../api/endpoints';
 import { errorMessage } from '../../api/client';
@@ -234,7 +235,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
                   Số dư
                 </span>
                 <span className="font-mono text-sm font-extrabold text-slate-900 tabular-nums">
-                  {wallet ? `${wallet.balance} TC` : '—'}
+                  {wallet ? `${wallet.balance} Credit` : '—'}
                 </span>
               </div>
             </div>
@@ -256,11 +257,11 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
               <Button
                 type="button"
                 size="sm"
-                variant={showPublishForm ? 'outline' : 'primary'}
-                onClick={() => setShowPublishForm((v) => !v)}
+                variant="primary"
+                onClick={() => setShowPublishForm(true)}
                 icon={<Plus className="size-3.5" aria-hidden />}
               >
-                {showPublishForm ? 'Đóng biểu mẫu' : 'Đăng dữ liệu'}
+                Đóng góp dữ liệu
               </Button>
             )}
           </div>
@@ -324,259 +325,279 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
 
       {feedback && <Alert tone={feedback.tone}>{feedback.text}</Alert>}
 
-      {/* Publish New Dataset Form (Verified Professionals Only) */}
+      {/* Publish New Dataset Modal (Verified Professionals Only) */}
       {showPublishForm && isVerifiedHCP && (
-        <Card className="p-5 border-slate-300 bg-slate-50/60 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-            <h3 className="text-sm font-bold text-slate-900">
-              Đăng bộ dữ liệu mới
-            </h3>
-            <ShieldCheck className="size-5 text-teal-700 shrink-0" aria-hidden />
-          </div>
-
-          <form onSubmit={handlePublishSubmit} className="grid gap-3 sm:grid-cols-6 text-xs">
-            <div className="sm:col-span-4 space-y-1">
-              <label htmlFor="db-pub-title" className="font-bold text-slate-700 block">
-                Tiêu đề Bộ dữ liệu *
-              </label>
-              <Input
-                id="db-pub-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ví dụ: Bộ dữ liệu 24 ca Thiếu máu não LVO cấp (ADS1299 500Hz)"
-                className="bg-white"
-              />
-            </div>
-
-            <div className="sm:col-span-2 space-y-1">
-              <label htmlFor="db-pub-cat" className="font-bold text-slate-700 block">
-                Nhóm Chuyên khoa *
-              </label>
-              <select
-                id="db-pub-cat"
-                value={clinicalCategory}
-                onChange={(e) => setClinicalCategory(e.target.value as ClinicalCategory)}
-                className="h-9.5 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-3 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="databank-publish-modal-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowPublishForm(false);
+          }}
+        >
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-slate-300 bg-white shadow-xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-3.5">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="size-4 text-teal-700 shrink-0" aria-hidden />
+                <h3 id="databank-publish-modal-title" className="text-sm font-bold text-slate-900">
+                  Đóng góp bộ dữ liệu EEG mới
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPublishForm(false)}
+                aria-label="Đóng hộp thoại đóng góp dữ liệu"
+                className="rounded-md p-1 text-slate-500 hover:bg-slate-200/70 hover:text-slate-900"
               >
-                {CLINICAL_CATEGORY_ORDER.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {CLINICAL_CATEGORY_META[cat].label}
-                  </option>
-                ))}
-              </select>
+                <X className="size-4" aria-hidden />
+              </button>
             </div>
 
-            <div className="sm:col-span-3 space-y-1">
-              <label htmlFor="db-pub-summary" className="font-bold text-slate-700 block">
-                Tóm tắt Lâm sàng & Quy mô mẫu *
-              </label>
-              <Textarea
-                id="db-pub-summary"
-                rows={3}
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-                placeholder="Mô tả tiêu chuẩn chọn mẫu, quy trình khử định danh PHI, đối chứng lâm sàng..."
-                className="bg-white"
-              />
-            </div>
+            <form onSubmit={handlePublishSubmit} className="p-5 grid gap-3 sm:grid-cols-6 text-xs">
+              <div className="sm:col-span-4 space-y-1">
+                <label htmlFor="db-pub-title" className="font-bold text-slate-700 block">
+                  Tiêu đề Bộ dữ liệu *
+                </label>
+                <Input
+                  id="db-pub-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="VD: 24 ca Thiếu máu não LVO (ADS1299 500Hz)"
+                  className="bg-white"
+                />
+              </div>
 
-            <div className="sm:col-span-3 space-y-1">
-              <label htmlFor="db-pub-method" className="font-bold text-slate-700 block">
-                Phương pháp Thu nhận & Tiền xử lý DSP *
-              </label>
-              <Textarea
-                id="db-pub-method"
-                rows={3}
-                value={methodologyNote}
-                onChange={(e) => setMethodologyNote(e.target.value)}
-                placeholder="Bandpass 0.5-45 Hz, Notch 50 Hz, chuẩn hóa Global Average Reference..."
-                className="bg-white"
-              />
-            </div>
-
-            <div className="sm:col-span-2 space-y-1">
-              <label htmlFor="db-pub-channels" className="font-bold text-slate-700 block">
-                Cấu hình Đạo trình
-              </label>
-              <Input
-                id="db-pub-channels"
-                value={channelsSpec}
-                onChange={(e) => setChannelsSpec(e.target.value)}
-                className="bg-white"
-              />
-            </div>
-
-            <div className="sm:col-span-1 space-y-1">
-              <label htmlFor="db-pub-samples" className="font-bold text-slate-700 block">
-                Số mẫu
-              </label>
-              <Input
-                id="db-pub-samples"
-                type="number"
-                min={1}
-                value={sampleCount}
-                onChange={(e) => setSampleCount(e.target.value)}
-                className="bg-white font-mono"
-              />
-            </div>
-
-            <div className="sm:col-span-1 space-y-1">
-              <label htmlFor="db-pub-hz" className="font-bold text-slate-700 block">
-                Tần số (Hz)
-              </label>
-              <Input
-                id="db-pub-hz"
-                type="number"
-                min={100}
-                value={samplingRateHz}
-                onChange={(e) => setSamplingRateHz(e.target.value)}
-                className="bg-white font-mono"
-              />
-            </div>
-
-            <div className="sm:col-span-2 space-y-1">
-              <label htmlFor="db-pub-price" className="font-bold text-slate-700 block">
-                Phí mở khóa (Credit · 0 = Miễn phí)
-              </label>
-              <Input
-                id="db-pub-price"
-                type="number"
-                min={0}
-                value={priceCredits}
-                onChange={(e) => setPriceCredits(e.target.value)}
-                className="bg-white font-mono"
-              />
-            </div>
-
-            {/* Preview metrics row */}
-            <div className="sm:col-span-1 space-y-1">
-              <label htmlFor="db-pub-dar" className="font-bold text-slate-700 block">
-                Mean DAR
-              </label>
-              <Input
-                id="db-pub-dar"
-                type="number"
-                step="0.01"
-                value={meanDar}
-                onChange={(e) => setMeanDar(e.target.value)}
-                className="bg-white font-mono"
-              />
-            </div>
-
-            <div className="sm:col-span-1 space-y-1">
-              <label htmlFor="db-pub-bsi" className="font-bold text-slate-700 block">
-                Mean BSI
-              </label>
-              <Input
-                id="db-pub-bsi"
-                type="number"
-                step="0.001"
-                value={meanBsi}
-                onChange={(e) => setMeanBsi(e.target.value)}
-                className="bg-white font-mono"
-              />
-            </div>
-
-            <div className="sm:col-span-1 space-y-1">
-              <label htmlFor="db-pub-tar" className="font-bold text-slate-700 block">
-                Mean TAR
-              </label>
-              <Input
-                id="db-pub-tar"
-                type="number"
-                step="0.01"
-                value={meanTar}
-                onChange={(e) => setMeanTar(e.target.value)}
-                className="bg-white font-mono"
-              />
-            </div>
-
-            <div className="sm:col-span-1 space-y-1">
-              <label htmlFor="db-pub-wpli" className="font-bold text-slate-700 block">
-                Mean wPLI
-              </label>
-              <Input
-                id="db-pub-wpli"
-                type="number"
-                step="0.01"
-                value={meanWpli}
-                onChange={(e) => setMeanWpli(e.target.value)}
-                className="bg-white font-mono"
-              />
-            </div>
-
-            <div className="sm:col-span-2 space-y-1">
-              <label htmlFor="db-pub-band" className="font-bold text-slate-700 block">
-                Dải tần Ưu thế
-              </label>
-              <Input
-                id="db-pub-band"
-                value={dominantBand}
-                onChange={(e) => setDominantBand(e.target.value)}
-                className="bg-white"
-              />
-            </div>
-
-            {myDatasetsQuery.data?.datasets && myDatasetsQuery.data.datasets.length > 0 && (
-              <div className="sm:col-span-6 space-y-1">
-                <label htmlFor="db-pub-dataset" className="font-bold text-slate-700 block">
-                  Liên kết Bản ghi EEG Cá nhân (tùy chọn)
+              <div className="sm:col-span-2 space-y-1">
+                <label htmlFor="db-pub-cat" className="font-bold text-slate-700 block">
+                  Nhóm Chuyên khoa *
                 </label>
                 <select
-                  id="db-pub-dataset"
-                  value={datasetId}
-                  onChange={(e) => setDatasetId(e.target.value)}
+                  id="db-pub-cat"
+                  value={clinicalCategory}
+                  onChange={(e) => setClinicalCategory(e.target.value as ClinicalCategory)}
                   className="h-9.5 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900"
                 >
-                  <option value="">-- Không liên kết bản ghi cụ thể --</option>
-                  {myDatasetsQuery.data.datasets.map((ds) => (
-                    <option key={ds.id} value={ds.id}>
-                      {ds.patientCode} · {ds.title}
+                  {CLINICAL_CATEGORY_ORDER.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {CLINICAL_CATEGORY_META[cat].label}
                     </option>
                   ))}
                 </select>
               </div>
-            )}
 
-            <div className="sm:col-span-6 space-y-1">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <label htmlFor="db-pub-csv" className="font-bold text-slate-700">
-                  Nội dung CSV Đã Khử Định Danh *
+              <div className="sm:col-span-3 space-y-1">
+                <label htmlFor="db-pub-summary" className="font-bold text-slate-700 block">
+                  Tóm tắt Lâm sàng *
                 </label>
-                <label
-                  htmlFor="db-pub-csv-file"
-                  className="cursor-pointer inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100"
-                >
-                  <FileSpreadsheet className="size-3.5" aria-hidden />
-                  <span>Nạp từ tệp .CSV</span>
-                  <input
-                    id="db-pub-csv-file"
-                    type="file"
-                    accept=".csv,.txt"
-                    className="sr-only"
-                    onChange={handleCsvFileUpload}
-                  />
-                </label>
+                <Textarea
+                  id="db-pub-summary"
+                  rows={2}
+                  value={summary}
+                  onChange={(e) => setSummary(e.target.value)}
+                  placeholder="Tiêu chuẩn chọn mẫu, đã ẩn danh cá nhân..."
+                  className="bg-white"
+                />
               </div>
-              <Textarea
-                id="db-pub-csv"
-                rows={4}
-                value={payloadCsv}
-                onChange={(e) => setPayloadCsv(e.target.value)}
-                className="bg-white font-mono text-xs"
-              />
-            </div>
 
-            <div className="sm:col-span-6 flex justify-end gap-2 pt-1">
-              <Button type="button" size="sm" variant="outline" onClick={() => setShowPublishForm(false)}>
-                Hủy
-              </Button>
-              <Button type="submit" size="sm" loading={createMutation.isPending}>
-                Đăng dữ liệu
-              </Button>
-            </div>
-          </form>
-        </Card>
+              <div className="sm:col-span-3 space-y-1">
+                <label htmlFor="db-pub-method" className="font-bold text-slate-700 block">
+                  Phương pháp xử lý tín hiệu *
+                </label>
+                <Textarea
+                  id="db-pub-method"
+                  rows={2}
+                  value={methodologyNote}
+                  onChange={(e) => setMethodologyNote(e.target.value)}
+                  placeholder="Bandpass 0.5-45 Hz, Notch 50 Hz..."
+                  className="bg-white"
+                />
+              </div>
+
+              <div className="sm:col-span-2 space-y-1">
+                <label htmlFor="db-pub-channels" className="font-bold text-slate-700 block">
+                  Cấu hình Đạo trình
+                </label>
+                <Input
+                  id="db-pub-channels"
+                  value={channelsSpec}
+                  onChange={(e) => setChannelsSpec(e.target.value)}
+                  className="bg-white"
+                />
+              </div>
+
+              <div className="sm:col-span-1 space-y-1">
+                <label htmlFor="db-pub-samples" className="font-bold text-slate-700 block">
+                  Số mẫu
+                </label>
+                <Input
+                  id="db-pub-samples"
+                  type="number"
+                  min={1}
+                  value={sampleCount}
+                  onChange={(e) => setSampleCount(e.target.value)}
+                  className="bg-white font-mono"
+                />
+              </div>
+
+              <div className="sm:col-span-1 space-y-1">
+                <label htmlFor="db-pub-hz" className="font-bold text-slate-700 block">
+                  Tần số (Hz)
+                </label>
+                <Input
+                  id="db-pub-hz"
+                  type="number"
+                  min={100}
+                  value={samplingRateHz}
+                  onChange={(e) => setSamplingRateHz(e.target.value)}
+                  className="bg-white font-mono"
+                />
+              </div>
+
+              <div className="sm:col-span-2 space-y-1">
+                <label htmlFor="db-pub-price" className="font-bold text-slate-700 block">
+                  Phí mở khóa (Credit · 0 = Free)
+                </label>
+                <Input
+                  id="db-pub-price"
+                  type="number"
+                  min={0}
+                  value={priceCredits}
+                  onChange={(e) => setPriceCredits(e.target.value)}
+                  className="bg-white font-mono"
+                />
+              </div>
+
+              {/* Preview metrics row */}
+              <div className="sm:col-span-1 space-y-1">
+                <label htmlFor="db-pub-dar" className="font-bold text-slate-700 block">
+                  Mean DAR
+                </label>
+                <Input
+                  id="db-pub-dar"
+                  type="number"
+                  step="0.01"
+                  value={meanDar}
+                  onChange={(e) => setMeanDar(e.target.value)}
+                  className="bg-white font-mono"
+                />
+              </div>
+
+              <div className="sm:col-span-1 space-y-1">
+                <label htmlFor="db-pub-bsi" className="font-bold text-slate-700 block">
+                  Mean BSI
+                </label>
+                <Input
+                  id="db-pub-bsi"
+                  type="number"
+                  step="0.001"
+                  value={meanBsi}
+                  onChange={(e) => setMeanBsi(e.target.value)}
+                  className="bg-white font-mono"
+                />
+              </div>
+
+              <div className="sm:col-span-1 space-y-1">
+                <label htmlFor="db-pub-tar" className="font-bold text-slate-700 block">
+                  Mean TAR
+                </label>
+                <Input
+                  id="db-pub-tar"
+                  type="number"
+                  step="0.01"
+                  value={meanTar}
+                  onChange={(e) => setMeanTar(e.target.value)}
+                  className="bg-white font-mono"
+                />
+              </div>
+
+              <div className="sm:col-span-1 space-y-1">
+                <label htmlFor="db-pub-wpli" className="font-bold text-slate-700 block">
+                  Mean wPLI
+                </label>
+                <Input
+                  id="db-pub-wpli"
+                  type="number"
+                  step="0.01"
+                  value={meanWpli}
+                  onChange={(e) => setMeanWpli(e.target.value)}
+                  className="bg-white font-mono"
+                />
+              </div>
+
+              <div className="sm:col-span-2 space-y-1">
+                <label htmlFor="db-pub-band" className="font-bold text-slate-700 block">
+                  Dải tần Ưu thế
+                </label>
+                <Input
+                  id="db-pub-band"
+                  value={dominantBand}
+                  onChange={(e) => setDominantBand(e.target.value)}
+                  className="bg-white"
+                />
+              </div>
+
+              {myDatasetsQuery.data?.datasets && myDatasetsQuery.data.datasets.length > 0 && (
+                <div className="sm:col-span-6 space-y-1">
+                  <label htmlFor="db-pub-dataset" className="font-bold text-slate-700 block">
+                    Liên kết Bản ghi EEG Cá nhân (tùy chọn)
+                  </label>
+                  <select
+                    id="db-pub-dataset"
+                    value={datasetId}
+                    onChange={(e) => setDatasetId(e.target.value)}
+                    className="h-9.5 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900"
+                  >
+                    <option value="">-- Không liên kết --</option>
+                    {myDatasetsQuery.data.datasets.map((ds) => (
+                      <option key={ds.id} value={ds.id}>
+                        {ds.patientCode} · {ds.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="sm:col-span-6 space-y-1">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label htmlFor="db-pub-csv" className="font-bold text-slate-700">
+                    Nội dung CSV (Đã ẩn danh cá nhân) *
+                  </label>
+                  <label
+                    htmlFor="db-pub-csv-file"
+                    className="cursor-pointer inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    <FileSpreadsheet className="size-3.5" aria-hidden />
+                    <span>Nạp tệp .CSV</span>
+                    <input
+                      id="db-pub-csv-file"
+                      type="file"
+                      accept=".csv,.txt"
+                      className="sr-only"
+                      onChange={handleCsvFileUpload}
+                    />
+                  </label>
+                </div>
+                <Textarea
+                  id="db-pub-csv"
+                  rows={4}
+                  value={payloadCsv}
+                  onChange={(e) => setPayloadCsv(e.target.value)}
+                  className="bg-white font-mono text-xs"
+                />
+              </div>
+
+              <div className="sm:col-span-6 flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <Button type="button" size="sm" variant="outline" onClick={() => setShowPublishForm(false)}>
+                  Hủy
+                </Button>
+                <Button type="submit" size="sm" loading={createMutation.isPending}>
+                  Đăng dữ liệu
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* Listings Grid */}
@@ -635,7 +656,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
                         'Miễn phí mở'
                       ) : unlocked ? (
                         <>
-                          <Unlock className="size-3" aria-hidden /> Đã mở khóa ({item.priceCredits} TC)
+                          <Unlock className="size-3" aria-hidden /> Đã mở khóa ({item.priceCredits} Credit)
                         </>
                       ) : (
                         <>
@@ -666,7 +687,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
                   {/* Summary & Methodology */}
                   <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">{item.summary}</p>
                   <div className="rounded-md bg-slate-50 border border-slate-200/80 px-3 py-2 text-[11px] text-slate-600 line-clamp-2">
-                    <strong className="text-slate-800">DSP: </strong>
+                    <strong className="text-slate-800">Xử lý tín hiệu: </strong>
                     {item.methodologyNote}
                   </div>
 
@@ -721,8 +742,8 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
                   ) : isConfirming ? (
                     <div className="rounded-md border border-amber-300 bg-amber-50 p-3 space-y-2 text-xs">
                       <p className="font-semibold text-amber-950">
-                        Mở khóa với <span className="font-mono font-bold">{item.priceCredits} TC</span>? (Số dư:{' '}
-                        <span className="font-mono font-bold">{wallet?.balance ?? 0}</span> TC)
+                        Mở khóa với <span className="font-mono font-bold">{item.priceCredits} Credit</span>? (Số dư:{' '}
+                        <span className="font-mono font-bold">{wallet?.balance ?? 0}</span> Credit)
                       </p>
                       <div className="flex flex-wrap items-center justify-end gap-2">
                         <Button
@@ -767,7 +788,7 @@ export function DataBankMarketplacePanel({ isProfessional = false }: DataBankMar
                         onClick={() => setConfirmPurchaseId(item.id)}
                         icon={<Unlock className="size-3.5" aria-hidden />}
                       >
-                        Mở khóa ({item.priceCredits} TC)
+                        Mở khóa ({item.priceCredits} Credit)
                       </Button>
                     </div>
                   )}

@@ -333,7 +333,7 @@ export function EmbeddedQrCode({
                 onClick={() => simulateMutation.mutate()}
                 icon={<Zap className="size-3.5" aria-hidden />}
               >
-                Xác nhận thanh toán thử (Sandbox)
+                Xác nhận nạp thử nghiệm
               </Button>
             )}
           </div>

@@ -17,7 +17,7 @@ import { DataBankMarketplacePanel } from '../features/eeg/DataBankMarketplacePan
 import { HardwareDevicePanel } from '../features/eeg/HardwareDevicePanel';
 import { NeuralDatabasePanel } from '../features/eeg/NeuralDatabasePanel';
 import { QeegStudioPanel } from '../features/eeg/QeegStudioPanel';
-import { triggerCsvDownload } from '../features/eeg/eegLabels';
+import { formatEegAccessAction, triggerCsvDownload } from '../features/eeg/eegLabels';
 
 type HubTab = 'qeeg' | 'personal' | 'device' | 'databank' | 'neural-db';
 
@@ -32,11 +32,10 @@ const FALLBACK_RECORDINGS: EegDatasetRecord[] = [
     duration: '18 phút 42 giây',
     samplingRate: '250 Hz',
     channelsCount: 8,
-    montage: 'Hệ thống quốc tế 10-20 (C3, C4, Cz, Fz, Pz, F3, F4, Oz)',
-    filter: 'Dải thông 0.5 - 70 Hz · Bộ lọc khuyết 50 Hz Notch',
+    montage: '10-20 (F3, F4, C3, C4, Cz, Fz, Pz, Oz)',
+    filter: '0.5 - 70 Hz · Notch 50 Hz',
     status: 'ANALYZED',
-    clinicalNote:
-      'Giảm đồng bộ (ERD) rõ tại C3 trong dải Mu (8–12 Hz) và Beta (18–24 Hz) khi tưởng tượng nắm tay phải.',
+    clinicalNote: 'ERD rõ tại C3 (Mu 8–12 Hz, Beta 18–24 Hz) khi nắm tay phải.',
     consentedProfessionals: [
       {
         userId: 'seed-dr-minh',
@@ -85,11 +84,10 @@ const FALLBACK_RECORDINGS: EegDatasetRecord[] = [
     duration: '45 phút',
     samplingRate: '500 Hz',
     channelsCount: 16,
-    montage: 'Hệ thống quốc tế 10-20 chuẩn lưỡng cực',
+    montage: '10-20 lưỡng cực',
     filter: '0.1 - 100 Hz · Notch 50 Hz',
     status: 'REVIEW_PENDING',
-    clinicalNote:
-      'Rải rác phức hợp nhọn - sóng chậm vùng thái dương trái trong pha ngủ sâu N3.',
+    clinicalNote: 'Nhọn - sóng chậm vùng thái dương trái trong pha ngủ sâu N3.',
     consentedProfessionals: [
       {
         userId: 'seed-dr-minh',
@@ -943,7 +941,9 @@ export function EEGHubPage() {
                         className="rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] px-2.5 py-1.5 text-[11px] space-y-0.5"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono font-semibold text-[#141413]">{entry.action}</span>
+                          <span className="font-semibold text-[#141413]">
+                            {formatEegAccessAction(entry.action)}
+                          </span>
                           <span className="font-mono text-[10px] text-[#6E6D68] tabular-nums">
                             {new Date(entry.timestamp).toLocaleString('vi-VN')}
                           </span>

@@ -402,7 +402,7 @@ export function ConsultationsPage() {
 
   const workstationHref = `/clinical-workstation?mode=${isProfessional ? 'professional' : 'general'}`;
   const isQueueView = activeScope === 'queue' && canAccessProfessionalMode;
-  const showLeftColumn = isQueueView || (activeScope !== 'queue' && showForm);
+  const showLeftColumn = activeScope !== 'queue' && showForm;
 
   return (
     <div className={cn('mx-auto space-y-5', isProfessional ? 'max-w-7xl' : 'max-w-6xl')}>
@@ -464,31 +464,6 @@ export function ConsultationsPage() {
 
       {feedbackError && <Alert tone="error">{feedbackError}</Alert>}
       {feedbackSuccess && <Alert tone="success">{feedbackSuccess}</Alert>}
-
-      {/* Understated Inline Ask-Doctor Prompt */}
-      {!showForm && !isQueueView && (
-        <div className="rounded-xl border border-[#DCE6DF] bg-white px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <Avatar
-              name={user?.displayName || user?.username || 'Bạn'}
-              src={user?.avatarUrl}
-              size="sm"
-            />
-            <span className="text-sm text-[#6E6D68] truncate">
-              Đặt câu hỏi hoặc gửi bản ghi sóng não cho bác sĩ...
-            </span>
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="primary"
-            onClick={() => setShowForm(true)}
-            className="shrink-0"
-          >
-            Đặt câu hỏi
-          </Button>
-        </div>
-      )}
 
       {/* Scope Underline Tabs + Filters */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 border-b border-[#DCE6DF]">
@@ -574,50 +549,35 @@ export function ConsultationsPage() {
         </div>
       </div>
 
+      {/* Concise 1-line clinical triage safety alert for Queue tab */}
+      {isQueueView && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50/70 px-3.5 py-2 text-xs text-red-900">
+          <div className="flex items-center gap-2 font-semibold">
+            <ShieldCheck className="size-4 text-red-700 shrink-0" aria-hidden />
+            <span>BSI ≥ 0.22 / DAR ≥ 3.2 → Gọi 115 / CT khẩn</span>
+          </div>
+          <div className="flex items-center gap-3 text-[11px] font-semibold">
+            <a
+              href="/clinical-workstation?mode=professional"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[#15803D] hover:underline"
+            >
+              <Activity className="size-3.5" aria-hidden />
+              <span>Trạm qEEG</span>
+            </a>
+            <Link to="/rewards" className="text-[#575652] hover:text-[#141413]">
+              Ví Credit
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Main Two-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Ask Question Form (when toggled) OR Clinical Triage Guide (queue) */}
+        {/* Left Column: Ask Question Form (when toggled) */}
         {showLeftColumn && (
           <div className="lg:col-span-5 space-y-4">
-          {activeScope === 'queue' && canAccessProfessionalMode ? (
-            <Card className="p-5 border-[#DCE6DF] space-y-3">
-              <h2 className="text-sm font-semibold text-[#141413] flex items-center gap-2 border-b border-[#DCE6DF] pb-2.5">
-                <ShieldCheck className="size-4 text-[#16A34A]" aria-hidden />
-                <span>Quy trình đọc ca</span>
-              </h2>
-
-              <ul className="space-y-2 text-xs text-[#575652]">
-                <li className="rounded-lg bg-[#F5FAF7] border border-[#DCE6DF] px-3 py-2">
-                  <strong className="text-[#141413]">1. Kiểm tra khẩn:</strong> Gọi 115 nếu BSI ≥ 0.22 hoặc DAR ≥ 3.2.
-                </li>
-                <li className="rounded-lg bg-[#F5FAF7] border border-[#DCE6DF] px-3 py-2">
-                  <strong className="text-[#141413]">2. Nhận ca:</strong> Khóa ca và kiểm tra trên Trạm qEEG.
-                </li>
-                <li className="rounded-lg bg-[#F5FAF7] border border-[#DCE6DF] px-3 py-2">
-                  <strong className="text-[#141413]">3. Phản hồi:</strong> Ghi nhận xét sóng não, hướng dẫn và hẹn tái khám.
-                </li>
-              </ul>
-
-              <div className="pt-2 border-t border-[#DCE6DF] flex flex-wrap gap-2">
-                <a
-                  href="/clinical-workstation?mode=professional"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#16A34A] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#15803D] transition-colors"
-                >
-                  <Activity className="size-3.5" aria-hidden />
-                  <span>Mở Trạm qEEG</span>
-                </a>
-                <Link
-                  to="/rewards"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCE6DF] bg-white px-3 py-1.5 text-xs font-medium text-[#262624] hover:bg-[#F5FAF7]"
-                >
-                  <Coins className="size-3.5 text-[#16A34A]" aria-hidden />
-                  <span>Ví Credit</span>
-                </Link>
-              </div>
-            </Card>
-          ) : (
             <Card className="p-5 border-[#DCE6DF] space-y-4">
               <div className="border-b border-[#DCE6DF] pb-2.5">
                 <h2 className="text-sm sm:text-base font-semibold text-[#141413] flex items-center gap-2">
@@ -656,7 +616,7 @@ export function ConsultationsPage() {
                   >
                     {CLINICAL_CATEGORY_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
-                        {isProfessional ? opt.label : opt.shortLabel}
+                        {opt.shortLabel}
                       </option>
                     ))}
                   </select>
@@ -693,8 +653,11 @@ export function ConsultationsPage() {
                           <option value="">-- Không đính kèm --</option>
                           {samples.map((s) => (
                             <option key={s.id} value={s.id}>
-                              {s.subjectCode} · {CATEGORY_MAP[s.clinicalCategory]?.shortLabel} (DAR{' '}
-                              {s.dar.toFixed(2)}, BSI {s.bsi.toFixed(2)}, TAR {s.tar.toFixed(2)})
+                              {s.subjectCode} · {CATEGORY_MAP[s.clinicalCategory]?.shortLabel ?? s.clinicalCategory} (
+                              {isProfessional
+                                ? `DAR ${s.dar.toFixed(2)}, BSI ${s.bsi.toFixed(2)}, TAR ${s.tar.toFixed(2)}`
+                                : `Sóng chậm ${s.dar.toFixed(2)}, Cân bằng 2 bên ${s.bsi.toFixed(2)}, Mệt mỏi ${s.tar.toFixed(2)}`}
+                              )
                             </option>
                           ))}
                         </select>
@@ -710,11 +673,11 @@ export function ConsultationsPage() {
                               </span>
                             )}
                           </div>
-                          <div className="grid grid-cols-4 gap-2 text-[#575652] pt-1">
-                            <span>DAR: {selectedSample.dar.toFixed(2)}</span>
-                            <span>BSI: {selectedSample.bsi.toFixed(2)}</span>
-                            <span>TAR: {selectedSample.tar.toFixed(2)}</span>
-                            <span>wPLI: {selectedSample.wpli.toFixed(2)}</span>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[#575652] pt-1">
+                            <span>{isProfessional ? 'DAR' : 'Sóng chậm'}: {selectedSample.dar.toFixed(2)}</span>
+                            <span>{isProfessional ? 'BSI' : 'Cân bằng 2 bên'}: {selectedSample.bsi.toFixed(2)}</span>
+                            <span>{isProfessional ? 'TAR' : 'Mệt mỏi'}: {selectedSample.tar.toFixed(2)}</span>
+                            <span>{isProfessional ? 'wPLI' : 'Liên kết vùng não'}: {selectedSample.wpli.toFixed(2)}</span>
                           </div>
                         </div>
                       )}
@@ -822,7 +785,6 @@ export function ConsultationsPage() {
                 </Link>
               </div>
             </Card>
-          )}
           </div>
         )}
 
@@ -840,14 +802,7 @@ export function ConsultationsPage() {
                 description={
                   isQueueView
                     ? 'Các ca mới sẽ hiển thị tại đây.'
-                    : 'Đặt câu hỏi để bác sĩ xem và tư vấn.'
-                }
-                action={
-                  !isQueueView && !showForm ? (
-                    <Button size="sm" onClick={() => setShowForm(true)}>
-                      Đặt câu hỏi
-                    </Button>
-                  ) : null
+                    : 'Nhấn "Đặt câu hỏi" ở trên để gửi tới bác sĩ.'
                 }
               />
             </Card>
@@ -939,7 +894,7 @@ export function ConsultationsPage() {
                     >
                       <PhoneCall className="size-3.5 text-red-600 shrink-0" aria-hidden />
                       <span>
-                        Dấu hiệu cần khám khẩn: Nếu có yếu tay chân hoặc nói khó, vui lòng gọi 115 ngay
+                        Cảnh báo khẩn: Yếu tay chân / nói khó → Gọi 115 ngay
                       </span>
                     </div>
                   )}
@@ -961,7 +916,9 @@ export function ConsultationsPage() {
                       <>
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs font-mono tabular-nums">
                           <div className="rounded-lg bg-white border border-[#DCE6DF] px-2.5 py-1.5">
-                            <span className="block text-[10px] text-[#6E6D68] font-sans">DAR (δ/α)</span>
+                            <span className="block text-[10px] text-[#6E6D68] font-sans">
+                              {isProfessional ? 'DAR (δ/α)' : 'Sóng chậm'}
+                            </span>
                             <span
                               className={cn(
                                 'font-semibold',
@@ -972,7 +929,9 @@ export function ConsultationsPage() {
                             </span>
                           </div>
                           <div className="rounded-lg bg-white border border-[#DCE6DF] px-2.5 py-1.5">
-                            <span className="block text-[10px] text-[#6E6D68] font-sans">BSI (L/R)</span>
+                            <span className="block text-[10px] text-[#6E6D68] font-sans">
+                              {isProfessional ? 'BSI (L/R)' : 'Cân bằng 2 bên'}
+                            </span>
                             <span
                               className={cn(
                                 'font-semibold',
@@ -983,13 +942,17 @@ export function ConsultationsPage() {
                             </span>
                           </div>
                           <div className="rounded-lg bg-white border border-[#DCE6DF] px-2.5 py-1.5">
-                            <span className="block text-[10px] text-[#6E6D68] font-sans">TAR (θ/α)</span>
+                            <span className="block text-[10px] text-[#6E6D68] font-sans">
+                              {isProfessional ? 'TAR (θ/α)' : 'Mệt mỏi'}
+                            </span>
                             <span className="font-semibold text-[#141413]">
                               {sample.tar.toFixed(2)}
                             </span>
                           </div>
                           <div className="rounded-lg bg-white border border-[#DCE6DF] px-2.5 py-1.5">
-                            <span className="block text-[10px] text-[#6E6D68] font-sans">wPLI</span>
+                            <span className="block text-[10px] text-[#6E6D68] font-sans">
+                              {isProfessional ? 'wPLI' : 'Liên kết vùng não'}
+                            </span>
                             <span className="font-semibold text-[#141413]">
                               {sample.wpli.toFixed(2)}
                             </span>
@@ -1087,10 +1050,7 @@ export function ConsultationsPage() {
                   )}
 
                   {canClaim && (
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                      <span className="text-xs text-[#6E6D68]">
-                        Ca này đang mở trong hàng đợi đọc sóng não từ xa.
-                      </span>
+                    <div className="flex justify-end pt-1">
                       <Button
                         type="button"
                         size="sm"
@@ -1246,7 +1206,7 @@ export function ConsultationsPage() {
                             <div className="space-y-2.5 text-xs sm:text-sm text-[#262624] leading-relaxed">
                               <div>
                                 <p className="text-[11px] font-semibold uppercase tracking-wider text-[#141413]">
-                                  Phân tích Sóng não &amp; Biến thiên Chỉ số
+                                  Phân tích sóng não
                                 </p>
                                 <p className="mt-0.5 whitespace-pre-line">
                                   {reply.waveAnalysisText}
@@ -1254,7 +1214,7 @@ export function ConsultationsPage() {
                               </div>
                               <div>
                                 <p className="text-[11px] font-semibold uppercase tracking-wider text-[#6E6D68]">
-                                  Hướng dẫn Lâm sàng &amp; Điều chỉnh Sinh hoạt
+                                  Hướng dẫn sinh hoạt
                                 </p>
                                 <p className="mt-0.5 whitespace-pre-line">
                                   {reply.clinicalGuidanceText}

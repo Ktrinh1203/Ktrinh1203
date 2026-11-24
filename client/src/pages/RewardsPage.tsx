@@ -12,13 +12,12 @@ import {
   Copy,
   Gift,
   GraduationCap,
+  History,
   Landmark,
   Lock,
   PlusCircle,
   QrCode,
   Send,
-  ShieldAlert,
-  ShieldCheck,
   Ticket,
   Users,
 } from 'lucide-react';
@@ -33,7 +32,6 @@ import type {
   RewardCatalogItem,
   RewardCategory,
   TopupPackageItem,
-  WalletIntegrityStatus,
 } from '../api/types';
 import { Button, Card, EmptyState, Input, Spinner, Textarea } from '../components/ui';
 import { useAuth } from '../features/auth/AuthContext';
@@ -56,6 +54,14 @@ const FALLBACK_PACKAGES: TopupPackageItem[] = [
   { id: 'pkg_200k', label: '200.000đ', amountVnd: 200_000, credits: 220, bonusCredits: 20 },
   { id: 'pkg_500k', label: '500.000đ', amountVnd: 500_000, credits: 575, bonusCredits: 75 },
 ];
+
+const BUCKET_LABELS: Record<string, string> = {
+  PURCHASED: 'Nạp',
+  EARNED: 'Thưởng',
+  PROMO: 'Ưu đãi',
+  LOCKED: 'Tạm giữ',
+  MIXED: 'Kết hợp',
+};
 
 const TRANSACTION_TYPE_LABELS: Record<CreditTransactionType, { label: string; className: string }> = {
   TOPUP_VND: { label: 'Nạp VietQR', className: 'bg-[#ECFDF3] text-[#15803D] border-[#BBF7D0]' },
@@ -121,6 +127,47 @@ function resolveTab(raw: string | null): WalletTab {
   return 'topup';
 }
 
+function formatTxDescription(description: string, type?: string): string {
+  const raw = (description || '').trim();
+  if (!raw) {
+    if (type === 'RESEARCH_CONTRIBUTION' || type === 'CONTRIBUTION_REWARD') {
+      return 'Đóng góp nghiên cứu';
+    }
+    if (type === 'HEALTHCARE_EDUCATION') return 'Giáo dục sức khỏe';
+    if (type === 'EXPERT_QA') return 'Giải đáp chuyên môn';
+    if (type === 'RESEARCH_DISCUSSION') return 'Thảo luận nghiên cứu';
+    if (type === 'EDUCATIONAL_RESOURCE') return 'Tài liệu giáo dục';
+    if (type === 'STARTER_GRANT') return 'Quà khởi đầu';
+    if (type === 'P2P_TRANSFER_OUT' || type === 'P2P_TRANSFER_IN') return 'Chuyển Credit';
+    if (type === 'TOPUP_VIETQR' || type === 'TOPUP_VND') return 'Nạp VietQR';
+    if (type === 'CONSULTATION_BOUNTY' || type === 'CONSULTATION_EARNING') {
+      return 'Thù lao hỏi bác sĩ';
+    }
+    if (type === 'DATA_ACCESS' || type === 'DATABANK_PURCHASE') return 'Mở dữ liệu';
+    if (type === 'EEG_CONTRIBUTION' || type === 'DATABANK_ROYALTY') {
+      return 'Đóng góp dữ liệu EEG';
+    }
+    return 'Giao dịch Credit';
+  }
+  return raw
+    .replace(/\s*\(sandbox\)/gi, ' (thử nghiệm)')
+    .replace(/\bsandbox\b/gi, 'thử nghiệm')
+    .replace(/\bP2P\b/g, 'Chuyển Credit')
+    .replace(/\bRESEARCH_CONTRIBUTION\b/g, 'Đóng góp nghiên cứu')
+    .replace(/\bHEALTHCARE_EDUCATION\b/g, 'Giáo dục sức khỏe')
+    .replace(/\bEXPERT_QA\b/g, 'Giải đáp chuyên môn')
+    .replace(/\bRESEARCH_DISCUSSION\b/g, 'Thảo luận nghiên cứu')
+    .replace(/\bEDUCATIONAL_RESOURCE\b/g, 'Tài liệu giáo dục')
+    .replace(/\bSTARTER_GRANT\b/g, 'Quà khởi đầu')
+    .replace(/\bTOPUP_VIETQR\b/g, 'Nạp VietQR')
+    .replace(/\bCONSULTATION_BOUNTY\b/g, 'Thù lao hỏi bác sĩ')
+    .replace(/\bDATA_ACCESS\b/g, 'Mở dữ liệu')
+    .replace(/\bEEG_CONTRIBUTION\b/g, 'Đóng góp dữ liệu EEG')
+    .replace(/\s*#[0-9a-f]{6,}\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 function makeIdempotencyKey() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -138,7 +185,6 @@ export function RewardsPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [integrityResult, setIntegrityResult] = useState<WalletIntegrityStatus | null>(null);
 
   // Top-up state
   const [selectedOrderCode, setSelectedOrderCode] = useState<string | null>(null);
@@ -254,15 +300,6 @@ export function RewardsPage() {
   ]);
 
   // Mutations
-  const verifyIntegrityMutation = useMutation({
-    mutationFn: () => rewardsApi.verifyIntegrity(),
-    onSuccess: (res) => {
-      setError(null);
-      setIntegrityResult(res);
-    },
-    onError: (err) => setError(errorMessage(err)),
-  });
-
   const createOrderMutation = useMutation({
     mutationFn: (body: { packageId?: string; amountVnd?: number }) =>
       paymentsApi.createTopupOrder(body),
@@ -458,20 +495,9 @@ export function RewardsPage() {
               Ví Credit & Thanh toán
             </h1>
             <p className="text-xs text-[#6B7280] mt-0.5">
-              Nạp VietQR tức thì · Chuyển P2P · Sổ cái chuỗi băm bất biến
+              Nạp · Chuyển Credit · Lịch sử
             </p>
           </div>
-
-          <Button
-            type="button"
-            size="xs"
-            variant="secondary"
-            loading={verifyIntegrityMutation.isPending}
-            onClick={() => verifyIntegrityMutation.mutate()}
-            icon={<ShieldCheck className="size-3.5" aria-hidden />}
-          >
-            Kiểm tra chuỗi băm HMAC
-          </Button>
         </div>
 
         <div className="flex flex-wrap items-end justify-between gap-4 border-t border-[#DCE6DF] pt-4 tabular-nums">
@@ -502,40 +528,6 @@ export function RewardsPage() {
             )}
           </div>
         </div>
-
-        {integrityResult && (
-          <div
-            className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs ${
-              integrityResult.valid && integrityResult.balanceMatchesLedger
-                ? 'border-[#86EFAC] bg-[#ECFDF3] text-[#15803D]'
-                : 'border-red-200 bg-red-50 text-red-700'
-            }`}
-          >
-            <div className="flex items-center gap-2 font-semibold">
-              {integrityResult.valid && integrityResult.balanceMatchesLedger ? (
-                <>
-                  <ShieldCheck className="size-4 text-[#16A34A] shrink-0" aria-hidden />
-                  <span>
-                    Sổ cái toàn vẹn · {integrityResult.checkedCount} giao dịch hợp lệ
-                  </span>
-                </>
-              ) : (
-                <>
-                  <ShieldAlert className="size-4 text-red-600 shrink-0" aria-hidden />
-                  <span>
-                    Phát hiện sai lệch sổ cái
-                    {integrityResult.tamperedTxId ? ` (${integrityResult.tamperedTxId.slice(0, 8)})` : ''}
-                  </span>
-                </>
-              )}
-            </div>
-            {integrityResult.headHash && (
-              <span className="font-mono text-[11px] rounded bg-white/80 border border-[#BBF7D0] px-2 py-0.5 text-[#14532D]">
-                #{integrityResult.headHash.slice(0, 8)}
-              </span>
-            )}
-          </div>
-        )}
       </Card>
 
       {error && (
@@ -571,7 +563,7 @@ export function RewardsPage() {
             { key: 'topup', label: 'Nạp Credit', icon: PlusCircle },
             { key: 'transfer', label: 'Nhận & Chuyển', icon: ArrowLeftRight },
             { key: 'catalog', label: 'Đổi ưu đãi', icon: Gift },
-            { key: 'ledger', label: 'Sổ cái bảo mật', icon: ShieldCheck },
+            { key: 'ledger', label: 'Lịch sử giao dịch', icon: History },
           ] as const
         ).map(({ key, label, icon: Icon }) => (
           <button
@@ -1137,14 +1129,12 @@ export function RewardsPage() {
                     key={item.id}
                     className="p-5 flex flex-col justify-between space-y-4 hover:border-[#86EFAC] transition-colors"
                   >
-                    <div className="space-y-2.5">
+                    <div className="space-y-2">
                       <div className="flex items-start justify-between gap-2">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-medium border border-[#DCE6DF] ${catConfig?.colorClass}`}
-                        >
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#15803D]">
                           <IconComponent className="size-3.5" aria-hidden /> {catConfig?.label}
                         </span>
-                        <span className="font-bold text-xs text-[#15803D] bg-[#EFF6F1] border border-[#DCE6DF] px-2.5 py-0.5 rounded-full tabular-nums shrink-0">
+                        <span className="font-bold text-xs text-[#15803D] tabular-nums shrink-0">
                           {item.creditCost} Credit
                         </span>
                       </div>
@@ -1167,11 +1157,11 @@ export function RewardsPage() {
                       </span>
 
                       {isLockedMonetary ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B7280] bg-[#F5FAF7] border border-[#DCE6DF] px-2.5 py-1 rounded-lg">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B7280]">
                           <Lock className="size-3" aria-hidden /> Dùng mục Rút tiền
                         </span>
                       ) : isOutOfStock ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200">
+                        <span className="text-[11px] font-semibold text-red-700">
                           Hết suất
                         </span>
                       ) : (
@@ -1290,27 +1280,19 @@ export function RewardsPage() {
         </div>
       )}
 
-      {/* TAB 4: Sổ cái bảo mật */}
+      {/* TAB 4: Lịch sử giao dịch */}
       {activeTab === 'ledger' && (
         <Card className="overflow-hidden">
           <div className="p-4 border-b border-[#DCE6DF] bg-[#F5FAF7] flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="font-bold text-xs sm:text-sm text-[#111827]">
-                Sổ cái chuỗi băm HMAC-SHA256
+                Lịch sử giao dịch
               </h2>
-              <p className="text-[11px] text-[#6B7280]">
-                Mọi biến động Credit được khóa dòng giao dịch và liên kết mã băm bất biến
-              </p>
             </div>
-            {wallet?.headHash && (
-              <span className="font-mono text-[11px] rounded-md border border-[#BBF7D0] bg-[#ECFDF3] px-2.5 py-1 font-semibold text-[#15803D]">
-                Head #{wallet.headHash.slice(0, 8)}
-              </span>
-            )}
           </div>
 
           {loadingWallet ? (
-            <Spinner label="Đang tải sổ cái..." />
+            <Spinner label="Đang tải lịch sử giao dịch..." />
           ) : transactions.length === 0 ? (
             <div className="p-8 text-center text-xs text-[#6B7280]">Chưa có giao dịch nào.</div>
           ) : (
@@ -1322,7 +1304,6 @@ export function RewardsPage() {
                     <th className="py-2.5 px-4 font-semibold">Nội dung</th>
                     <th className="py-2.5 px-4 font-semibold text-right">Biến động</th>
                     <th className="py-2.5 px-4 font-semibold text-right">Số dư sau</th>
-                    <th className="py-2.5 px-4 font-semibold text-right">Mã băm</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#DCE6DF]">
@@ -1332,7 +1313,7 @@ export function RewardsPage() {
                       label: tx.type,
                       className: 'bg-[#F5FAF7] text-[#262624] border-[#DCE6DF]',
                     };
-                    const shortHash = tx.txHash ? `#${tx.txHash.slice(0, 8)}` : '—';
+                    const bucketLabel = tx.bucket ? (BUCKET_LABELS[tx.bucket] ?? null) : null;
 
                     return (
                       <tr key={tx.id} className="hover:bg-[#F5FAF7]/60">
@@ -1347,15 +1328,15 @@ export function RewardsPage() {
                           </span>
                         </td>
                         <td className="py-2.5 px-4 text-[#111827] font-medium">
-                          {tx.description}
+                          {formatTxDescription(tx.description, tx.type)}
                         </td>
                         <td className="py-2.5 px-4 text-right whitespace-nowrap font-mono font-bold">
                           <span className={isPositive ? 'text-[#16A34A]' : 'text-red-600'}>
                             {isPositive ? `+${tx.amount}` : tx.amount} Credit
                           </span>
-                          {tx.bucket && (
+                          {bucketLabel && (
                             <span className="block text-[10px] font-sans font-normal text-[#6B7280]">
-                              {tx.bucket}
+                              {bucketLabel}
                             </span>
                           )}
                         </td>
@@ -1363,20 +1344,6 @@ export function RewardsPage() {
                           {tx.balanceAfter !== undefined && tx.balanceAfter !== null
                             ? `${tx.balanceAfter} Credit`
                             : '—'}
-                        </td>
-                        <td className="py-2.5 px-4 text-right whitespace-nowrap">
-                          {tx.txHash ? (
-                            <button
-                              type="button"
-                              title={`HMAC-SHA256: ${tx.txHash}`}
-                              onClick={() => copyText(`hash-${tx.id}`, tx.txHash!)}
-                              className="inline-flex items-center gap-1 rounded border border-[#DCE6DF] bg-[#F5FAF7] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#15803D] hover:bg-[#ECFDF3]"
-                            >
-                              {copiedToken === `hash-${tx.id}` ? 'Đã chép' : shortHash}
-                            </button>
-                          ) : (
-                            <span className="font-mono text-[11px] text-[#6B7280]">—</span>
-                          )}
                         </td>
                       </tr>
                     );

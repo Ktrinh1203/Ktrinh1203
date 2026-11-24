@@ -209,6 +209,18 @@ export const CHANNEL_ANATOMY_MAP: Record<string, string> = {
   O2: 'Chẩm phải',
 };
 
+export const EEG_ACCESS_ACTION_LABELS: Record<string, string> = {
+  DATASET_REGISTERED: 'Đã tạo bản ghi',
+  CONSENT_GRANTED: 'Đã cấp quyền xem',
+  CONSENT_REVOKED: 'Đã thu hồi quyền',
+  DATASET_ACCESSED: 'Đã xem',
+  DATASET_VIEWED: 'Đã xem',
+};
+
+export function formatEegAccessAction(action: string): string {
+  return EEG_ACCESS_ACTION_LABELS[action] ?? action;
+}
+
 export function triggerCsvDownload(filename: string, csvContent: string) {
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

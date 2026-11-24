@@ -71,6 +71,7 @@ export function ContributionsPage() {
   const [summary, setSummary] = useState('');
   const [resubmitId, setResubmitId] = useState<string | null>(null);
   const [resubmitSummary, setResubmitSummary] = useState('');
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -157,20 +158,10 @@ export function ContributionsPage() {
     <div className="mx-auto max-w-4xl space-y-6">
       {/* Header Banner - Research Hub */}
       <section className="rounded-lg border border-slate-300 bg-white shadow-2xs overflow-hidden">
-        <div className="bg-[#162B47] p-6 sm:p-7 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="max-w-2xl space-y-2">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-                Trung tâm Nghiên cứu Khoa học & Đóng góp Chuyên môn
-              </h1>
-              <span className="inline-flex items-center gap-1.5 rounded bg-[#2C6865] px-2.5 py-0.5 text-[11px] font-bold text-teal-50 border border-teal-400/30">
-                <Award className="size-3 text-amber-300" /> Hội đồng Bình duyệt Đồng cấp CME
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
-              Không gian công bố báo cáo tiền lâm sàng, thử nghiệm mô hình BCI, giải thích ca bệnh chuyên sâu và phản biện đồng cấp (Peer Review) nhận credit khen thưởng Honoraria & CME.
-            </p>
-          </div>
+        <div className="bg-[#162B47] px-6 py-5 text-white">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+            Trung tâm Nghiên cứu Khoa học & Đóng góp Chuyên môn
+          </h1>
         </div>
         <TelemetryStrip
           items={[
@@ -299,17 +290,18 @@ export function ContributionsPage() {
               const statusMeta = CONTRIBUTION_STATUS_META[contrib.status];
               const categoryMeta = CONTRIBUTION_CATEGORY_LABELS[contrib.category];
               const latestReview = contrib.reviews[0] ?? null;
+              const isExpanded = Boolean(expandedIds[contrib.id]);
 
               return (
-                <Card key={contrib.id} className="p-5 space-y-4 border-slate-200 shadow-2xs">
+                <Card key={contrib.id} className="p-4 sm:p-5 space-y-3 border-slate-200 shadow-2xs">
                   {/* Top Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-xs px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
                         {categoryMeta?.label ?? contrib.category}
                       </span>
                       <span className="text-[11px] text-slate-400">
-                        Nộp: {new Date(contrib.createdAt).toLocaleDateString('vi-VN')}
+                        {new Date(contrib.createdAt).toLocaleDateString('vi-VN')}
                       </span>
                     </div>
 
@@ -327,62 +319,77 @@ export function ContributionsPage() {
                     </div>
                   </div>
 
-                  {/* Post Content Snippet */}
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 text-xs space-y-1.5">
-                    <span className="font-bold text-slate-400 uppercase tracking-wider block text-[10px]">
-                      Bài viết gốc trên NeuroLink:
-                    </span>
-                    <p className="text-slate-800 line-clamp-2 italic">"{contrib.post.content}"</p>
-                  </div>
+                  {/* Summary */}
+                  <p className={`text-xs sm:text-sm text-slate-800 leading-relaxed ${!isExpanded ? 'line-clamp-2' : ''}`}>
+                    {contrib.summary}
+                  </p>
 
-                  {/* Summary of Contribution */}
-                  <div>
-                    <span className="text-xs font-bold text-slate-500 block mb-1">
-                      Giá trị đóng góp tác giả khai báo:
-                    </span>
-                    <p className="text-xs text-slate-800 leading-relaxed">{contrib.summary}</p>
-                  </div>
-
-                  {/* Latest Review Feedback & 5 Criteria Scores */}
-                  {latestReview && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/90 p-3.5 text-xs space-y-2.5">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-bold text-slate-700 flex items-center gap-1">
-                          <CheckCircle2 className="size-3.5 text-brand-600" /> Kết quả đánh giá từ Hội đồng Thẩm định:
-                        </span>
-                        <span className="font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
-                          Điểm tổng hợp: {latestReview.scoreOverall}/5.0
+                  {/* Concise 1-line score chip + expand toggle */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    {latestReview ? (
+                      <div className="inline-flex flex-wrap items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] text-slate-700 tabular-nums">
+                        <CheckCircle2 className="size-3.5 text-brand-600 shrink-0" />
+                        <strong className="text-slate-900">{latestReview.scoreOverall}/5.0</strong>
+                        <span className="text-slate-400">·</span>
+                        <span>
+                          CX {latestReview.scoreAccuracy} · PH {latestReview.scoreRelevance} · HI {latestReview.scoreUsefulness} · NB {latestReview.scoreOriginality} · TĐ {latestReview.scoreImpact}
                         </span>
                       </div>
+                    ) : (
+                      <span className="text-[11px] text-slate-400 italic truncate max-w-md">
+                        "{contrib.post.content}"
+                      </span>
+                    )}
 
-                      {/* 5 Criteria Grid */}
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-[11px] text-center font-medium">
-                        <div className="bg-white p-1.5 rounded border border-slate-200">
-                          <div className="text-slate-400">Độ chính xác</div>
-                          <div className="font-bold text-slate-800">{latestReview.scoreAccuracy}/5</div>
-                        </div>
-                        <div className="bg-white p-1.5 rounded border border-slate-200">
-                          <div className="text-slate-400">Độ phù hợp</div>
-                          <div className="font-bold text-slate-800">{latestReview.scoreRelevance}/5</div>
-                        </div>
-                        <div className="bg-white p-1.5 rounded border border-slate-200">
-                          <div className="text-slate-400">Tính hữu ích</div>
-                          <div className="font-bold text-slate-800">{latestReview.scoreUsefulness}/5</div>
-                        </div>
-                        <div className="bg-white p-1.5 rounded border border-slate-200">
-                          <div className="text-slate-400">Tính nguyên bản</div>
-                          <div className="font-bold text-slate-800">{latestReview.scoreOriginality}/5</div>
-                        </div>
-                        <div className="bg-white p-1.5 rounded border border-slate-200">
-                          <div className="text-slate-400">Tác động</div>
-                          <div className="font-bold text-slate-800">{latestReview.scoreImpact}/5</div>
-                        </div>
-                      </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedIds((prev) => ({ ...prev, [contrib.id]: !isExpanded }))
+                      }
+                      className="text-xs font-semibold text-brand-700 hover:underline shrink-0"
+                    >
+                      {isExpanded ? 'Thu gọn ▴' : 'Chi tiết ▾'}
+                    </button>
+                  </div>
 
-                      {latestReview.feedback && (
-                        <p className="text-slate-700 bg-white p-2.5 rounded border border-slate-200">
-                          <strong>Nhận xét:</strong> {latestReview.feedback}
-                        </p>
+                  {/* Expanded details: Original post + 5 Criteria Grid + Feedback */}
+                  {isExpanded && (
+                    <div className="space-y-3 pt-2 border-t border-slate-100 text-xs">
+                      <p className="rounded-lg bg-slate-50 border border-slate-200/80 p-2.5 text-slate-700 italic">
+                        "{contrib.post.content}"
+                      </p>
+
+                      {latestReview && (
+                        <div className="rounded-xl border border-slate-200 bg-slate-50/90 p-3 space-y-2.5">
+                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-[11px] text-center font-medium">
+                            <div className="bg-white p-1.5 rounded border border-slate-200">
+                              <div className="text-slate-400">Độ chính xác</div>
+                              <div className="font-bold text-slate-800">{latestReview.scoreAccuracy}/5</div>
+                            </div>
+                            <div className="bg-white p-1.5 rounded border border-slate-200">
+                              <div className="text-slate-400">Độ phù hợp</div>
+                              <div className="font-bold text-slate-800">{latestReview.scoreRelevance}/5</div>
+                            </div>
+                            <div className="bg-white p-1.5 rounded border border-slate-200">
+                              <div className="text-slate-400">Tính hữu ích</div>
+                              <div className="font-bold text-slate-800">{latestReview.scoreUsefulness}/5</div>
+                            </div>
+                            <div className="bg-white p-1.5 rounded border border-slate-200">
+                              <div className="text-slate-400">Tính nguyên bản</div>
+                              <div className="font-bold text-slate-800">{latestReview.scoreOriginality}/5</div>
+                            </div>
+                            <div className="bg-white p-1.5 rounded border border-slate-200">
+                              <div className="text-slate-400">Tác động</div>
+                              <div className="font-bold text-slate-800">{latestReview.scoreImpact}/5</div>
+                            </div>
+                          </div>
+
+                          {latestReview.feedback && (
+                            <p className="text-slate-700 bg-white p-2.5 rounded border border-slate-200">
+                              <strong>Nhận xét:</strong> {latestReview.feedback}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
@@ -503,7 +510,12 @@ export function ContributionsPage() {
                           <span>{new Date(p.createdAt).toLocaleDateString('vi-VN')}</span>
                           {isDisabled && (
                             <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                              Đã nộp ({p.activeContribution?.status})
+                              Đã nộp (
+                              {p.activeContribution?.status
+                                ? (CONTRIBUTION_STATUS_META[p.activeContribution.status]?.label ??
+                                  p.activeContribution.status)
+                                : 'Đang xử lý'}
+                              )
                             </span>
                           )}
                         </div>
@@ -527,7 +539,7 @@ export function ContributionsPage() {
                     >
                       {Object.entries(CONTRIBUTION_CATEGORY_LABELS).map(([catKey, catVal]) => (
                         <option key={catKey} value={catKey}>
-                          {catVal.label} — {catVal.desc}
+                          {catVal.label}
                         </option>
                       ))}
                     </select>
@@ -596,7 +608,7 @@ export function ContributionsPage() {
                     title: c.summary,
                     authors: `${c.user.displayName} (@${c.user.username})`,
                     field: CONTRIBUTION_CATEGORY_LABELS[c.category]?.label || c.category,
-                    metric: `${c.status} · +${c.awardCredits || 30} CME`,
+                    metric: `${CONTRIBUTION_STATUS_META[c.status]?.label ?? c.status} · +${c.awardCredits || 30} CME`,
                   })),
                   {
                     code: 'PUB-2026-01',

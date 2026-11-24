@@ -216,13 +216,13 @@ export function CommunitiesPage() {
             />
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-1.5 px-1.5 -mx-1.5 text-xs">
             {filterTabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveFilter(tab.id)}
-                className={`px-3 py-1.5 rounded-full font-semibold transition-colors shrink-0 border ${
+                className={`px-3 py-1.5 rounded-full font-semibold transition-[background-color,color,border-color,transform] duration-150 ease-out active:scale-[0.97] shrink-0 border ${
                   activeFilter === tab.id
                     ? 'bg-[#16A34A] text-white border-[#16A34A]'
                     : 'bg-white text-[#6E6D68] border-[#DCE6DF] hover:bg-[#EFF6F1] hover:text-[#15803D]'
@@ -243,7 +243,7 @@ export function CommunitiesPage() {
           <EmptyState
             icon={<Users className="size-7 text-[#16A34A]" />}
             title="Không tìm thấy cộng đồng phù hợp"
-            description="Thử tìm với từ khóa khác hoặc đổi bộ lọc."
+            description="Thử từ khóa hoặc bộ lọc khác."
           />
         </Card>
       ) : (

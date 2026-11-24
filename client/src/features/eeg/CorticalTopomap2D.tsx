@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Compass } from 'lucide-react';
 import type { QeegTopomapNode } from '../../api/types';
 import { cn } from '../../components/ui';
@@ -14,6 +14,243 @@ export interface CorticalTopomap2DProps {
 
 const LEFT_CHANNELS = new Set(['FP1', 'F7', 'F3', 'T3', 'C3', 'T5', 'P3', 'O1']);
 const RIGHT_CHANNELS = new Set(['FP2', 'F8', 'F4', 'T4', 'C4', 'T6', 'P4', 'O2']);
+
+interface NormalizedTopomapNode extends QeegTopomapNode {
+  sx: number;
+  sy: number;
+  nx: number;
+  ny: number;
+  intensity: number;
+}
+
+const ScalpAnatomyLayer = memo(function ScalpAnatomyLayer({
+  size,
+  cx,
+  cy,
+  headRadius,
+  isProfessional,
+}: {
+  size: number;
+  cx: number;
+  cy: number;
+  headRadius: number;
+  isProfessional: boolean;
+}) {
+  return (
+    <g>
+      {/* Anatomical Nose (Nasion) */}
+      <path
+        d={`M ${cx - 12} ${cy - headRadius + 2} L ${cx} ${cy - headRadius - 14} L ${cx + 12} ${cy - headRadius + 2} Z`}
+        fill="#f8fafc"
+        stroke="#1e293b"
+        strokeWidth={1.6}
+        strokeLinejoin="round"
+      />
+      <text
+        x={cx}
+        y={14}
+        textAnchor="middle"
+        fill="#475569"
+        fontSize={9}
+        fontWeight={700}
+        fontFamily="Plus Jakarta Sans, sans-serif"
+      >
+        {isProfessional ? 'TRƯỚC (NASION)' : 'PHÍA TRƯỚC'}
+      </text>
+
+      {/* Left & Right Ears */}
+      <path
+        d={`M ${cx - headRadius + 1} ${cy - 16} C ${cx - headRadius - 12} ${cy - 14}, ${cx - headRadius - 12} ${cy + 14}, ${cx - headRadius + 1} ${cy + 16}`}
+        fill="#f8fafc"
+        stroke="#1e293b"
+        strokeWidth={1.5}
+      />
+      <path
+        d={`M ${cx + headRadius - 1} ${cy - 16} C ${cx + headRadius + 12} ${cy - 14}, ${cx + headRadius + 12} ${cy + 14}, ${cx + headRadius - 1} ${cy + 16}`}
+        fill="#f8fafc"
+        stroke="#1e293b"
+        strokeWidth={1.5}
+      />
+
+      {/* Anatomical Left / Right Orientation Markers */}
+      <text
+        x={11}
+        y={cy + 4}
+        textAnchor="middle"
+        fill="#0f172a"
+        fontSize={10}
+        fontWeight={800}
+        fontFamily="JetBrains Mono, monospace"
+      >
+        L
+      </text>
+      <text
+        x={size - 11}
+        y={cy + 4}
+        textAnchor="middle"
+        fill="#0f172a"
+        fontSize={10}
+        fontWeight={800}
+        fontFamily="JetBrains Mono, monospace"
+      >
+        R
+      </text>
+
+      {/* Scalp Outer Contour */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={headRadius}
+        fill="none"
+        stroke="#1e293b"
+        strokeWidth={1.8}
+      />
+
+      {/* Sagittal & Coronal Crosshairs */}
+      <line
+        x1={cx}
+        y1={cy - headRadius}
+        x2={cx}
+        y2={cy + headRadius}
+        stroke="rgba(15, 23, 42, 0.22)"
+        strokeDasharray="3 3"
+        strokeWidth={1}
+      />
+      <line
+        x1={cx - headRadius}
+        y1={cy}
+        x2={cx + headRadius}
+        y2={cy}
+        stroke="rgba(15, 23, 42, 0.22)"
+        strokeDasharray="3 3"
+        strokeWidth={1}
+      />
+    </g>
+  );
+});
+
+const ElectrodeMarker = memo(function ElectrodeMarker({
+  name,
+  sx,
+  sy,
+  isPhysical,
+  isSelected,
+  onSelect,
+}: {
+  name: string;
+  sx: number;
+  sy: number;
+  isPhysical: boolean;
+  isSelected: boolean;
+  onSelect: (name: string) => void;
+}) {
+  return (
+    <g
+      className="cursor-pointer"
+      onClick={() => onSelect(name)}
+      onMouseEnter={() => onSelect(name)}
+    >
+      <circle
+        cx={sx}
+        cy={sy}
+        r={isSelected ? 10.5 : isPhysical ? 8.5 : 7}
+        fill={
+          isSelected
+            ? '#0f172a'
+            : isPhysical
+              ? 'rgba(255, 255, 255, 0.96)'
+              : 'rgba(248, 250, 252, 0.85)'
+        }
+        stroke={isPhysical ? '#0f172a' : '#475569'}
+        strokeWidth={isPhysical ? 1.8 : 1.1}
+        strokeDasharray={isPhysical ? undefined : '2 1.5'}
+      />
+      <text
+        x={sx}
+        y={sy + 2.8}
+        textAnchor="middle"
+        fill={isSelected ? '#ffffff' : '#0f172a'}
+        fontSize={isPhysical ? 7.5 : 6.6}
+        fontWeight={isPhysical ? 800 : 600}
+        fontFamily="JetBrains Mono, monospace"
+      >
+        {name}
+      </text>
+    </g>
+  );
+});
+
+const TopomapLegendFooter = memo(function TopomapLegendFooter({
+  meanBsi,
+  leftAvgDar,
+  rightAvgDar,
+  dominantSide,
+  metricMode,
+  isProfessional,
+}: {
+  meanBsi: number;
+  leftAvgDar: number;
+  rightAvgDar: number;
+  dominantSide: string;
+  metricMode: 'delta' | 'dar';
+  isProfessional: boolean;
+}) {
+  return (
+    <>
+      {/* Inline Hemispheric Asymmetry (BSI L/R) */}
+      <div className="rounded-md border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+        <span
+          className={cn(
+            'font-bold',
+            meanBsi > 0.15 ? 'text-rose-700' : 'text-emerald-700',
+          )}
+        >
+          {dominantSide}
+        </span>
+        <span className="font-mono tabular-nums text-[10.5px] text-slate-700">
+          {isProfessional ? 'BSI L:' : 'Trái:'}{' '}
+          <strong className="text-slate-900">{leftAvgDar.toFixed(2)}</strong> ·{' '}
+          {isProfessional ? 'R:' : 'Phải:'}{' '}
+          <strong className="text-slate-900">{rightAvgDar.toFixed(2)}</strong>
+        </span>
+      </div>
+
+      {/* Compact Clinical Color & Channel Legend */}
+      <div className="space-y-1 pt-1 border-t border-slate-100 text-[10px] text-slate-500">
+        <div
+          className="h-2 w-full rounded-full border border-slate-200"
+          style={{
+            background:
+              'linear-gradient(to right, #0284c7 0%, #14b8a6 35%, #f59e0b 65%, #dc2626 100%)',
+          }}
+        />
+        {isProfessional ? (
+          <div className="flex justify-between font-mono tabular-nums">
+            <span>{metricMode === 'dar' ? '0.6 Bình thường' : '8% Bình thường'}</span>
+            <span>{metricMode === 'dar' ? '3.5' : '42%'}</span>
+            <span>{metricMode === 'dar' ? '7.0+ DAR' : '78%+ Delta'}</span>
+          </div>
+        ) : (
+          <div className="flex justify-between font-medium">
+            <span>Bình thường</span>
+            <span>Trung bình</span>
+            <span>Sóng chậm cao</span>
+          </div>
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[10px]">
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-block size-2 rounded-full border-2 border-slate-900 bg-white" />
+            {isProfessional ? 'Vật lý (F3/F4/C3/C4/O1/O2)' : '6 điểm đo chính'}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-block size-2 rounded-full border border-dashed border-slate-500 bg-slate-100" />
+            {isProfessional ? '13 kênh nội suy' : '13 vùng nội suy'}
+          </span>
+        </div>
+      </div>
+    </>
+  );
+});
 
 /** Maps normalized intensity [0, 1] to clinical RGB (Sky -> Teal -> Amber -> Crimson). */
 function intensityToRgb(t: number): [number, number, number] {
@@ -68,7 +305,7 @@ export function CorticalTopomap2D({
     return maxAbs > 1.05 ? 1 / maxAbs : 1;
   }, [nodes]);
 
-  const normalizedNodes = useMemo(
+  const normalizedNodes: NormalizedTopomapNode[] = useMemo(
     () =>
       nodes.map((node) => {
         const nx = node.x * coordScale;
@@ -91,6 +328,10 @@ export function CorticalTopomap2D({
     [nodes, coordScale, metricMode],
   );
 
+  const handleSelectNode = useCallback((name: string) => {
+    setSelectedNodeName(name);
+  }, []);
+
   // Hemispheric asymmetry comparison
   const lateralization = useMemo(() => {
     const leftNodes = nodes.filter((n) => LEFT_CHANNELS.has(n.name.toUpperCase()));
@@ -104,16 +345,20 @@ export function CorticalTopomap2D({
         ? rightNodes.reduce((acc, n) => acc + n.dar, 0) / rightNodes.length
         : meanDar;
 
-    let dominantSide = 'Cân bằng hai bán cầu';
+    let dominantSide = isProfessional ? 'Cân bằng hai bán cầu' : 'Cân bằng 2 bên';
     if (meanBsi > 0.15) {
       dominantSide =
         leftAvgDar > rightAvgDar
-          ? 'Chậm khu trú bán cầu Trái (Left)'
-          : 'Chậm khu trú bán cầu Phải (Right)';
+          ? isProfessional
+            ? 'Chậm khu trú bán cầu Trái (Left)'
+            : 'Nghiêng chậm bên Trái'
+          : isProfessional
+            ? 'Chậm khu trú bán cầu Phải (Right)'
+            : 'Nghiêng chậm bên Phải';
     }
 
     return { leftAvgDar, rightAvgDar, dominantSide };
-  }, [nodes, meanBsi, meanDar]);
+  }, [nodes, meanBsi, meanDar, isProfessional]);
 
   const activeNode = useMemo(() => {
     if (normalizedNodes.length === 0) return null;
@@ -173,27 +418,31 @@ export function CorticalTopomap2D({
   const statusPill = useMemo(() => {
     if (trafficLight === 'purple') {
       return {
-        label: 'Ổ nghi xuất huyết (Lockout tPA)',
+        label: isProfessional ? 'Ổ nghi xuất huyết (Lockout tPA)' : 'Cảnh báo xuất huyết',
         cls: 'bg-red-900 text-white border-red-950',
       };
     }
     if (trafficLight === 'red') {
       return {
-        label: 'Chậm khu trú thiếu máu (Bất đối xứng)',
+        label: isProfessional
+          ? 'Chậm khu trú thiếu máu (Bất đối xứng)'
+          : 'Sóng chậm khu trú (Lệch 2 bên)',
         cls: 'bg-rose-50 text-rose-800 border-rose-200',
       };
     }
     if (trafficLight === 'yellow') {
       return {
-        label: 'Sóng chậm lan tỏa đối xứng',
+        label: isProfessional
+          ? 'Sóng chậm lan tỏa đối xứng'
+          : 'Sóng chậm nhẹ (Hai bên cân đối)',
         cls: 'bg-amber-50 text-amber-800 border-amber-200',
       };
     }
     return {
-      label: 'Phân bố sinh lý bình thường',
+      label: isProfessional ? 'Phân bố sinh lý bình thường' : 'Hoạt động bình thường',
       cls: 'bg-emerald-50 text-emerald-800 border-emerald-200',
     };
-  }, [trafficLight]);
+  }, [trafficLight, isProfessional]);
 
   return (
     <div
@@ -210,7 +459,7 @@ export function CorticalTopomap2D({
             aria-hidden
           />
           <h3 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-            Bản đồ Vỏ não 2D (19 Kênh)
+            {isProfessional ? 'Bản đồ Vỏ não 2D (19 Kênh)' : 'Bản đồ Hoạt động Não 2D'}
           </h3>
         </div>
 
@@ -232,7 +481,7 @@ export function CorticalTopomap2D({
                 : 'text-slate-600 hover:bg-slate-100',
             )}
           >
-            Delta (%)
+            {isProfessional ? 'Delta (%)' : 'Sóng chậm'}
           </button>
           <button
             type="button"
@@ -247,7 +496,7 @@ export function CorticalTopomap2D({
                 : 'text-slate-600 hover:bg-slate-100',
             )}
           >
-            DAR
+            {isProfessional ? 'DAR' : 'Mức chậm'}
           </button>
         </div>
       </div>
@@ -264,7 +513,9 @@ export function CorticalTopomap2D({
             {statusPill.label}
           </span>
           <span className="text-[11px] font-mono tabular-nums font-bold text-slate-700">
-            BSI: {meanBsi.toFixed(3)} · DAR: {meanDar.toFixed(2)}
+            {isProfessional
+              ? `BSI: ${meanBsi.toFixed(3)} · DAR: ${meanDar.toFixed(2)}`
+              : `Lệch: ${meanBsi.toFixed(3)} · Chậm: ${meanDar.toFixed(2)}`}
           </span>
         </div>
 
@@ -284,202 +535,55 @@ export function CorticalTopomap2D({
             role="img"
             aria-label="Bản đồ điện thế vỏ não 2D gồm 19 điện cực từ FP1 đến O2"
           >
-            {/* Anatomical Nose (Nasion) */}
-            <path
-              d={`M ${cx - 12} ${cy - headRadius + 2} L ${cx} ${cy - headRadius - 14} L ${cx + 12} ${cy - headRadius + 2} Z`}
-              fill="#f8fafc"
-              stroke="#1e293b"
-              strokeWidth={1.6}
-              strokeLinejoin="round"
-            />
-            <text
-              x={cx}
-              y={14}
-              textAnchor="middle"
-              fill="#475569"
-              fontSize={9}
-              fontWeight={700}
-              fontFamily="Plus Jakarta Sans, sans-serif"
-            >
-              TRƯỚC (NASION)
-            </text>
-
-            {/* Left & Right Ears */}
-            <path
-              d={`M ${cx - headRadius + 1} ${cy - 16} C ${cx - headRadius - 12} ${cy - 14}, ${cx - headRadius - 12} ${cy + 14}, ${cx - headRadius + 1} ${cy + 16}`}
-              fill="#f8fafc"
-              stroke="#1e293b"
-              strokeWidth={1.5}
-            />
-            <path
-              d={`M ${cx + headRadius - 1} ${cy - 16} C ${cx + headRadius + 12} ${cy - 14}, ${cx + headRadius + 12} ${cy + 14}, ${cx + headRadius - 1} ${cy + 16}`}
-              fill="#f8fafc"
-              stroke="#1e293b"
-              strokeWidth={1.5}
-            />
-
-            {/* Anatomical Left / Right Orientation Markers */}
-            <text
-              x={11}
-              y={cy + 4}
-              textAnchor="middle"
-              fill="#0f172a"
-              fontSize={10}
-              fontWeight={800}
-              fontFamily="JetBrains Mono, monospace"
-            >
-              L
-            </text>
-            <text
-              x={size - 11}
-              y={cy + 4}
-              textAnchor="middle"
-              fill="#0f172a"
-              fontSize={10}
-              fontWeight={800}
-              fontFamily="JetBrains Mono, monospace"
-            >
-              R
-            </text>
-
-            {/* Scalp Outer Contour */}
-            <circle
+            <ScalpAnatomyLayer
+              size={size}
               cx={cx}
               cy={cy}
-              r={headRadius}
-              fill="none"
-              stroke="#1e293b"
-              strokeWidth={1.8}
-            />
-
-            {/* Sagittal & Coronal Crosshairs */}
-            <line
-              x1={cx}
-              y1={cy - headRadius}
-              x2={cx}
-              y2={cy + headRadius}
-              stroke="rgba(15, 23, 42, 0.22)"
-              strokeDasharray="3 3"
-              strokeWidth={1}
-            />
-            <line
-              x1={cx - headRadius}
-              y1={cy}
-              x2={cx + headRadius}
-              y2={cy}
-              stroke="rgba(15, 23, 42, 0.22)"
-              strokeDasharray="3 3"
-              strokeWidth={1}
+              headRadius={headRadius}
+              isProfessional={isProfessional}
             />
 
             {/* 19 Electrodes FP1..O2 */}
-            {normalizedNodes.map((node) => {
-              const isSelected = activeNode?.name === node.name;
-              return (
-                <g
-                  key={node.name}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedNodeName(node.name)}
-                  onMouseEnter={() => setSelectedNodeName(node.name)}
-                >
-                  <circle
-                    cx={node.sx}
-                    cy={node.sy}
-                    r={isSelected ? 10.5 : node.isPhysical ? 8.5 : 7}
-                    fill={
-                      isSelected
-                        ? '#0f172a'
-                        : node.isPhysical
-                          ? 'rgba(255, 255, 255, 0.96)'
-                          : 'rgba(248, 250, 252, 0.85)'
-                    }
-                    stroke={node.isPhysical ? '#0f172a' : '#475569'}
-                    strokeWidth={node.isPhysical ? 1.8 : 1.1}
-                    strokeDasharray={node.isPhysical ? undefined : '2 1.5'}
-                  />
-                  <text
-                    x={node.sx}
-                    y={node.sy + 2.8}
-                    textAnchor="middle"
-                    fill={isSelected ? '#ffffff' : '#0f172a'}
-                    fontSize={node.isPhysical ? 7.5 : 6.6}
-                    fontWeight={node.isPhysical ? 800 : 600}
-                    fontFamily="JetBrains Mono, monospace"
-                  >
-                    {node.name}
-                  </text>
-                </g>
-              );
-            })}
+            {normalizedNodes.map((node) => (
+              <ElectrodeMarker
+                key={node.name}
+                name={node.name}
+                sx={node.sx}
+                sy={node.sy}
+                isPhysical={node.isPhysical}
+                isSelected={activeNode?.name === node.name}
+                onSelect={handleSelectNode}
+              />
+            ))}
           </svg>
         </div>
 
         {/* Selected Electrode Inspection Pill */}
         {activeNode && (
-          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+          <div className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
             <div className="font-semibold text-slate-800">
               <span className="font-mono font-bold text-[#1E3A5F]">{activeNode.name}</span>{' '}
               <span className="text-slate-500">
                 ({CHANNEL_ANATOMY_MAP[activeNode.name.toUpperCase()] ?? 'Vỏ não'} ·{' '}
-                {activeNode.isPhysical ? 'Kênh vật lý ADS1299' : 'Kênh nội suy Spline'})
+                {activeNode.isPhysical ? (isProfessional ? 'Vật lý' : 'Đo trực tiếp') : 'Nội suy'})
               </span>
             </div>
             <div className="font-mono tabular-nums font-bold text-slate-900">
-              Delta: {(activeNode.value * 100).toFixed(1)}% · DAR: {activeNode.dar.toFixed(2)}
+              {isProfessional
+                ? `Delta: ${(activeNode.value * 100).toFixed(1)}% · DAR: ${activeNode.dar.toFixed(2)}`
+                : `Sóng chậm: ${(activeNode.value * 100).toFixed(1)}% · Mức chậm: ${activeNode.dar.toFixed(2)}`}
             </div>
           </div>
         )}
 
-        {/* Hemispheric Asymmetry (BSI) Lateralization Bar */}
-        <div className="rounded-md border border-slate-200 bg-slate-50/70 p-2.5 space-y-1.5 text-[11px]">
-          <div className="flex items-center justify-between font-semibold">
-            <span className="text-slate-700">Đối xứng Bán cầu (BSI):</span>
-            <span
-              className={cn(
-                'font-bold',
-                meanBsi > 0.15 ? 'text-rose-700' : 'text-emerald-700',
-              )}
-            >
-              {lateralization.dominantSide}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 font-mono tabular-nums text-[10.5px]">
-            <div className="rounded bg-white border border-slate-200 px-2 py-1 flex justify-between">
-              <span className="text-slate-500">DAR Trái (L):</span>
-              <strong className="text-slate-900">{lateralization.leftAvgDar.toFixed(2)}</strong>
-            </div>
-            <div className="rounded bg-white border border-slate-200 px-2 py-1 flex justify-between">
-              <span className="text-slate-500">DAR Phải (R):</span>
-              <strong className="text-slate-900">{lateralization.rightAvgDar.toFixed(2)}</strong>
-            </div>
-          </div>
-        </div>
-
-        {/* Clinical Color Legend */}
-        <div className="space-y-1.5 pt-1 border-t border-slate-100 text-[10.5px] text-slate-600">
-          <div
-            className="h-2.5 w-full rounded-full border border-slate-200"
-            style={{
-              background:
-                'linear-gradient(to right, #0284c7 0%, #14b8a6 35%, #f59e0b 65%, #dc2626 100%)',
-            }}
-          />
-          <div className="flex justify-between font-mono tabular-nums text-[10px] text-slate-500">
-            <span>{metricMode === 'dar' ? 'DAR 0.6 (Bình thường)' : 'Delta 8% (Bình thường)'}</span>
-            <span>{metricMode === 'dar' ? '3.5 (Chậm nhẹ)' : '42% (Chậm vừa)'}</span>
-            <span>{metricMode === 'dar' ? '7.0+ (Khu trú)' : '78%+ (Khu trú)'}</span>
-          </div>
-          <div className="flex items-center justify-between gap-2 pt-1 text-[10.5px] text-slate-500">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="inline-block size-2.5 rounded-full border-2 border-slate-900 bg-white" />
-              Đạo trình vật lý (F3, F4, C3, C4, O1, O2)
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="inline-block size-2.5 rounded-full border border-dashed border-slate-500 bg-slate-100" />
-              13 kênh tái tạo
-            </span>
-          </div>
-        </div>
+        <TopomapLegendFooter
+          meanBsi={meanBsi}
+          leftAvgDar={lateralization.leftAvgDar}
+          rightAvgDar={lateralization.rightAvgDar}
+          dominantSide={lateralization.dominantSide}
+          metricMode={metricMode}
+          isProfessional={isProfessional}
+        />
       </div>
     </div>
   );

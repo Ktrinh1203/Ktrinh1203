@@ -127,7 +127,7 @@ export function MessagesPage() {
                     type="button"
                     onClick={() => setSearchParams({ conv: c.id })}
                     className={`w-full text-left p-3.5 flex items-start gap-3 transition-colors ${
-                      isActive ? 'bg-[#ECFDF3] ring-1 ring-[#BBF7D0]' : 'hover:bg-[#F5FAF7]'
+                      isActive ? 'bg-[#ECFDF3] ring-1 ring-inset ring-[#BBF7D0]' : 'hover:bg-[#F5FAF7]'
                     }`}
                   >
                     <div className="relative shrink-0">

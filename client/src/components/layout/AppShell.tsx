@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -41,6 +41,35 @@ export interface NavItem {
   badge?: number;
 }
 
+const ROUTE_PRELOADERS: Record<string, () => Promise<unknown>> = {
+  '/feed': () => import('../../pages/FeedPage'),
+  '/eeg-hub': () => import('../../pages/EEGHubPage'),
+  '/consultations': () => import('../../pages/ConsultationsPage'),
+  '/my-health': () => import('../../pages/MyHealthPage'),
+  '/communities': () => import('../../pages/CommunitiesPage'),
+  '/dashboard': () => import('../../pages/ProfessionalDashboardPage'),
+  '/contributions': () => import('../../pages/ContributionsPage'),
+  '/messages': () => import('../../pages/MessagesPage'),
+  '/rewards': () => import('../../pages/RewardsPage'),
+};
+
+function preloadRoute(to: string) {
+  const path = to.split('?')[0];
+  void ROUTE_PRELOADERS[path]?.();
+}
+
+function OutletFallback() {
+  return (
+    <div
+      role="status"
+      aria-label="Đang tải nội dung"
+      className="flex min-h-[240px] items-center justify-center rounded-xl border border-[#DCE6DF] bg-white"
+    >
+      <span className="size-5 animate-spin rounded-full border-2 border-[#DCE6DF] border-t-[#16A34A]" />
+    </div>
+  );
+}
+
 export function Logo({
   className,
   inverted = false,
@@ -53,19 +82,19 @@ export function Logo({
   return (
     <Link
       to={isProfessional ? '/dashboard' : '/feed'}
-      className={cn('group inline-flex items-center gap-2 sm:gap-2.5 select-none', className)}
+      className={cn('group inline-flex items-center gap-1.5 sm:gap-2.5 select-none min-w-0', className)}
     >
       <img
         src="/logo.svg"
         alt="NeuroLink Logo"
         width={34}
         height={34}
-        className="size-7.5 sm:size-8.5 shrink-0"
+        className="size-7 sm:size-8.5 shrink-0"
       />
-      <div className="flex flex-col items-start">
+      <div className="flex flex-col items-start min-w-0">
         <span
           className={cn(
-            'text-[19px] sm:text-[21px] leading-none font-extrabold tracking-[-0.04em]',
+            'text-[17px] sm:text-[21px] leading-none font-extrabold tracking-[-0.04em]',
             inverted ? 'text-white' : 'text-[#111827]',
           )}
         >
@@ -76,7 +105,7 @@ export function Logo({
           fill="none"
           aria-hidden="true"
           className={cn(
-            'w-[76px] sm:w-[88px] h-[10px] -mt-0.5 overflow-visible',
+            'w-[68px] sm:w-[88px] h-[9px] sm:h-[10px] -mt-0.5 overflow-visible',
             inverted ? 'text-emerald-300' : 'text-[#16A34A]',
           )}
           stroke="currentColor"
@@ -155,7 +184,7 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex items-center gap-2 rounded-lg px-1.5 py-1 transition-colors focus-visible:outline-none select-none shrink-0',
+          'flex items-center gap-2 rounded-lg px-1 sm:px-1.5 py-1 transition-colors focus-visible:outline-none select-none shrink-0',
           inverted
             ? 'text-white hover:bg-white/10'
             : 'text-[#111827] hover:bg-[#F5FAF7]',
@@ -318,14 +347,14 @@ function AppShellContent() {
     queryKey: ['notifications'],
     queryFn: () => notificationsApi.getAll(1),
     enabled: Boolean(user),
-    refetchInterval: 15000,
+    staleTime: 60_000,
   });
 
   const { data: convData } = useQuery({
     queryKey: ['conversations'],
     queryFn: () => messagesApi.getConversations(),
     enabled: Boolean(user),
-    refetchInterval: 15000,
+    staleTime: 60_000,
   });
 
   const walletBalance = walletData?.wallet?.balance ?? 0;
@@ -378,8 +407,8 @@ function AppShellContent() {
       ];
 
   const iconBtnClass = isProfessional
-    ? 'relative flex size-7.5 sm:size-8.5 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-colors'
-    : 'relative flex size-7.5 sm:size-8.5 items-center justify-center rounded-lg text-[#4B5563] hover:bg-[#ECFDF3] hover:text-[#15803D] transition-colors';
+    ? 'relative flex size-7.5 sm:size-8.5 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-[background-color,color,transform] duration-150 ease-out active:scale-95'
+    : 'relative flex size-7.5 sm:size-8.5 items-center justify-center rounded-lg text-[#4B5563] hover:bg-[#ECFDF3] hover:text-[#15803D] transition-[background-color,color,transform] duration-150 ease-out active:scale-95';
 
   return (
     <div
@@ -395,8 +424,8 @@ function AppShellContent() {
             : 'bg-white/95 backdrop-blur-md border-b border-[#DCE6DF]',
         )}
       >
-        <div className="mx-auto flex h-14 max-w-[1220px] items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6">
-          <div className="flex items-center gap-3 shrink-0">
+        <div className="mx-auto flex h-14 max-w-[1220px] items-center justify-between gap-1.5 sm:gap-4 px-2.5 sm:px-6">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
             <Logo inverted={isProfessional} isProfessional={isProfessional} />
           </div>
 
@@ -432,14 +461,17 @@ function AppShellContent() {
                 aria-label="Ví Credit"
                 title="Ví Credit & Thanh toán"
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-full border px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-semibold tabular-nums transition-colors shrink-0',
+                  'inline-flex items-center gap-1 rounded-full border px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-semibold tabular-nums transition-colors shrink-0 whitespace-nowrap',
                   isProfessional
                     ? 'border-white/20 bg-white/10 text-white hover:bg-white/20'
                     : 'border-[#BBF7D0] bg-[#ECFDF3] text-[#15803D] hover:bg-[#DCFCE7]',
                 )}
               >
                 <Coins className="size-3.5 shrink-0" aria-hidden />
-                <span>{walletBalance.toLocaleString('vi-VN')} Credit</span>
+                <span>
+                  {walletBalance.toLocaleString('vi-VN')}
+                  <span className="hidden sm:inline"> Credit</span>
+                </span>
               </Link>
             )}
 
@@ -450,8 +482,8 @@ function AppShellContent() {
             <button type="button" onClick={togglePopup} aria-label="Tin nhắn" className={iconBtnClass}>
               <MessageCircle className="size-4 sm:size-4.5" aria-hidden />
               {Boolean(unreadConvs && unreadConvs > 0) && (
-                <span className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-[#B91C1C] text-[10px] font-semibold text-white">
-                  {unreadConvs}
+                <span className="absolute top-0.5 right-0.5 flex min-w-4 h-4 px-0.5 items-center justify-center rounded-full bg-[#B91C1C] text-[10px] font-semibold text-white leading-none">
+                  {unreadConvs > 9 ? '9+' : unreadConvs}
                 </span>
               )}
             </button>
@@ -459,8 +491,8 @@ function AppShellContent() {
             <Link to="/notifications" aria-label="Thông báo" className={iconBtnClass}>
               <Bell className="size-4 sm:size-4.5" aria-hidden />
               {Boolean(unreadNotifs && unreadNotifs > 0) && (
-                <span className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-[#B91C1C] text-[10px] font-semibold text-white">
-                  {unreadNotifs}
+                <span className="absolute top-0.5 right-0.5 flex min-w-4 h-4 px-0.5 items-center justify-center rounded-full bg-[#B91C1C] text-[10px] font-semibold text-white leading-none">
+                  {unreadNotifs > 9 ? '9+' : unreadNotifs}
                 </span>
               )}
             </Link>
@@ -523,8 +555,10 @@ function AppShellContent() {
                   key={to}
                   type="button"
                   onClick={openInbox}
+                  onMouseEnter={() => preloadRoute(to)}
+                  onFocus={() => preloadRoute(to)}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-[14px] transition-colors',
+                    'flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-[14px] transition-[background-color,color,transform] duration-150 ease-out hover:translate-x-0.5 active:scale-[0.98]',
                     isOpen
                       ? 'font-semibold text-[#15803D] bg-[#ECFDF3]'
                       : 'font-normal text-[#4B5563] hover:text-[#111827] hover:bg-[#EAF4EE]',
@@ -545,9 +579,11 @@ function AppShellContent() {
                 <NavLink
                   key={to}
                   to={to}
+                  onMouseEnter={() => preloadRoute(to)}
+                  onFocus={() => preloadRoute(to)}
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center gap-3 rounded-lg px-2.5 py-2 text-[14px] transition-colors',
+                      'flex items-center gap-3 rounded-lg px-2.5 py-2 text-[14px] transition-[background-color,color,transform] duration-150 ease-out hover:translate-x-0.5 active:scale-[0.98]',
                       isActive
                         ? 'font-semibold text-[#15803D] bg-[#ECFDF3]'
                         : 'font-normal text-[#4B5563] hover:text-[#111827] hover:bg-[#EAF4EE]',
@@ -576,14 +612,6 @@ function AppShellContent() {
             )}
           </nav>
 
-          <Link
-            to={isProfessional ? '/consultations?tab=queue' : '/eeg-hub'}
-            className="mt-3 flex items-center justify-center gap-1.5 rounded-lg bg-[#16A34A] px-3 py-2 text-xs font-semibold text-white hover:bg-[#15803D] transition-colors"
-          >
-            <Activity className="size-3.5 shrink-0" aria-hidden />
-            <span>{isProfessional ? 'Ca chờ đọc' : 'Đo sóng não'}</span>
-          </Link>
-
           {user && (
             <Link
               to={`/u/${user.username}`}
@@ -601,11 +629,11 @@ function AppShellContent() {
         {/* Main Content Area */}
         <main className="min-w-0 flex-1 space-y-4">
           {!canAccessProfessionalMode && verificationStatus === 'PENDING' && enableVerificationCenter && (
-            <div className="rounded-xl border border-[#E6E4DF] bg-white px-4 py-3 text-xs text-[#262624] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-start sm:items-center gap-2">
-                <Clock className="size-4 text-[#6E6D68] shrink-0 mt-0.5 sm:mt-0" aria-hidden />
-                <p>
-                  Hồ sơ <strong>{pendingProfile?.title || ACCOUNT_ROLE_LABELS[accountRole]}</strong> đang chờ phê duyệt. Chế độ Chuyên gia sẽ mở sau khi xác minh hoàn tất.
+            <div className="rounded-xl border border-[#E6E4DF] bg-white px-4 py-2.5 text-xs text-[#262624] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Clock className="size-4 text-[#6E6D68] shrink-0" aria-hidden />
+                <p className="truncate">
+                  Hồ sơ <strong>{pendingProfile?.title || ACCOUNT_ROLE_LABELS[accountRole]}</strong> đang chờ phê duyệt.
                 </p>
               </div>
               <Link
@@ -618,10 +646,10 @@ function AppShellContent() {
           )}
 
           {!canAccessProfessionalMode && verificationStatus === 'REJECTED' && enableResubmission && (
-            <div className="rounded-xl border border-[#E6E4DF] bg-white px-4 py-3 text-xs text-[#262624] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-start sm:items-center gap-2">
-                <AlertCircle className="size-4 text-[#B91C1C] shrink-0 mt-0.5 sm:mt-0" aria-hidden />
-                <p>
+            <div className="rounded-xl border border-[#E6E4DF] bg-white px-4 py-2.5 text-xs text-[#262624] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <AlertCircle className="size-4 text-[#B91C1C] shrink-0" aria-hidden />
+                <p className="truncate">
                   Hồ sơ <strong>{rejectedProfile?.title || ACCOUNT_ROLE_LABELS[accountRole]}</strong> cần nộp lại
                   {rejectedProfile?.verificationNote ? `: "${rejectedProfile.verificationNote}"` : '.'}
                 </p>
@@ -635,7 +663,9 @@ function AppShellContent() {
             </div>
           )}
 
-          <Outlet />
+          <Suspense fallback={<OutletFallback />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
 
@@ -648,9 +678,11 @@ function AppShellContent() {
           <NavLink
             key={to}
             to={to}
+            onMouseEnter={() => preloadRoute(to)}
+            onFocus={() => preloadRoute(to)}
             className={({ isActive }) =>
               cn(
-                'relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] transition-colors',
+                'relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] transition-[color,transform] duration-150 ease-out active:scale-95',
                 isActive ? 'text-[#16A34A] font-semibold' : 'text-[#6B7280] font-normal hover:text-[#111827]',
               )
             }

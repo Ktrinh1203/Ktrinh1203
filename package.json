@@ -5,19 +5,24 @@
   "description": "PBL4_Web - Healthcare & Neuroscience social networking platform",
   "workspaces": [
     "server",
-    "client"
+    "client",
+    "mobile"
   ],
   "scripts": {
     "dev": "concurrently -n \"db,api,ui\" -c \"blue,green,magenta\" \"npm run db:start\" \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:all": "concurrently -n \"db,api,web,mobile\" -c \"blue,green,magenta,cyan\" \"npm run db:start\" \"npm run dev:server\" \"npm run dev:client\" \"npm run dev:mobile\"",
     "db:start": "npm run db:start -w server",
     "db:seed": "npm run db:seed -w server",
     "dev:server": "npm run dev -w server",
     "dev:client": "npm run dev -w client",
+    "dev:mobile": "npm run dev -w mobile",
     "build": "npm run build -w server && npm run build -w client",
+    "build:mobile": "npm run build -w mobile",
     "test": "npm run test -w server",
     "test:hardware": "pytest hardware/tests -v",
     "hw:diagnostics": "python hardware/src/hw_test_runner.py",
-    "typecheck": "npm run typecheck -w server && npm run typecheck -w client"
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w client",
+    "typecheck:mobile": "npm run typecheck -w mobile"
   },
   "allowScripts": {
     "prisma@6.19.3": true,

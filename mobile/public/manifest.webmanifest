@@ -1,0 +1,21 @@
+{
+  "name": "NeuroLink Mobile",
+  "short_name": "NeuroLink",
+  "description": "Phiên bản di động tối giản của NeuroLink — Sức khỏe não bộ, qEEG & Chuyên gia Thần kinh",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5FAF7",
+  "theme_color": "#16A34A",
+  "icons": [
+    {
+      "src": "/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
