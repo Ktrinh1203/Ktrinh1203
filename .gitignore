@@ -45,3 +45,12 @@ node_red/node_modules/
 tools/
 *.zip
 !hardware/**/*.zip
+
+# Local third-party Arduino libraries & Android Gradle build outputs
+hardware/libraries/
+mobile/android/local.properties
+mobile/android/.gradle/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/capacitor-cordova-android-plugins/build/
+mobile/android/app/src/main/assets/public/

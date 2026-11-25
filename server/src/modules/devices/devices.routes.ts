@@ -2,6 +2,7 @@ import { Router, type Request } from 'express';
 import { z } from 'zod';
 import { getAuth, requireAuth } from '../../middleware/auth.js';
 import {
+  bleSyncSchema,
   captureSessionSchema,
   createDeviceSchema,
   deviceCommandSchema,
@@ -189,4 +190,17 @@ devicesRouter.post('/:id/sessions/capture', async (req, res) => {
     input,
   );
   res.status(201).json(result);
+});
+
+devicesRouter.post('/:id/ble-sync', async (req, res) => {
+  const auth = getAuth(req);
+  const deviceId = uuidParamSchema.parse(req.params.id);
+  const input = bleSyncSchema.parse(req.body ?? {});
+  const result = await devicesService.syncBleFieldBatch(
+    auth.userId,
+    auth.role,
+    deviceId,
+    input,
+  );
+  res.json(result);
 });

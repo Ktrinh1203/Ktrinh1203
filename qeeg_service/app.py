@@ -1092,7 +1092,14 @@ def _run_analysis_pipeline(
     t_start = time.perf_counter()
 
     filtered_6ch = dsp_filter_signal(raw_6ch, sfreq=sfreq, notch_50hz=notch_50hz)
-    metrics = _compute_6ch_and_80_features(raw_6ch, filtered_6ch, sfreq=sfreq, notch_50hz=notch_50hz)
+    trim_n = int(0.5 * sfreq)
+    if raw_6ch.shape[0] >= int(3.0 * sfreq) and (raw_6ch.shape[0] - 2 * trim_n) >= max(32, int(sfreq)):
+        feat_raw_6ch = raw_6ch[trim_n:-trim_n, :]
+        feat_filtered_6ch = filtered_6ch[trim_n:-trim_n, :]
+    else:
+        feat_raw_6ch = raw_6ch
+        feat_filtered_6ch = filtered_6ch
+    metrics = _compute_6ch_and_80_features(feat_raw_6ch, feat_filtered_6ch, sfreq=sfreq, notch_50hz=notch_50hz)
     triage = _classify_clinical_triage(
         case_id=case_id,
         clinical_category=clinical_category,

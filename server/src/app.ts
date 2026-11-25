@@ -66,7 +66,7 @@ export function createApp() {
     });
   }
 
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }));
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(
     cors({
       origin: (origin, callback) => {

@@ -21,7 +21,9 @@ import type { EegDatasetRecord, QeegAnalysisResult } from '../api/types';
 import { useMode } from '../context/ModeContext';
 import { CompactTopomap } from '../components/CompactTopomap';
 import { CompactWaveform } from '../components/CompactWaveform';
+import { BleFieldSyncCard } from '../components/BleFieldSyncCard';
 import { BottomSheet, EmptyView, PillTabs, Spinner, cn } from '../components/ui';
+import { useBleFieldSync } from '../hooks/useBleFieldSync';
 
 type EegSubTab = 'analyze' | 'device' | 'saved';
 
@@ -73,7 +75,7 @@ function trafficMeta(light: QeegAnalysisResult['trafficLight'], isPro: boolean) 
 function buildDatasetPreview(rec: EegDatasetRecord) {
   const n = 200;
   const time = Array.from({ length: n }, (_, i) => Number(((i / (n - 1)) * 4).toFixed(3)));
-  const channels = ['F3', 'F4', 'C3', 'C4', 'O1', 'O2'];
+  const channels = ['F3', 'F4', 'C3', 'C4', 'O1', 'O2', 'T3', 'T4'];
   const slow = rec.status === 'REVIEW_PENDING' || /giấc ngủ|động kinh/i.test(rec.title);
   const filtered: Record<string, number[]> = {};
   channels.forEach((ch, ci) => {
@@ -94,7 +96,7 @@ function buildDeviceWaveform(
   sampleRateSps: number,
   pulse: number,
 ) {
-  const channels = ['F3', 'F4', 'C3', 'C4', 'O1', 'O2'];
+  const channels = ['F3', 'F4', 'C3', 'C4', 'O1', 'O2', 'T3', 'T4'];
   if (bufferedSamples && bufferedSamples.length >= 20) {
     const slice = bufferedSamples.slice(-250);
     const rate = sampleRateSps || 500;
@@ -325,6 +327,18 @@ export function EegPage() {
   const alerts = (devicesQuery.data?.alerts ?? []).filter((a) => !a.acknowledged);
   const primaryDevice = devices.find((d) => d.id === selectedDeviceId) ?? devices[0];
 
+  const bleSync = useBleFieldSync({
+    deviceId: primaryDevice?.id,
+    deviceCode: primaryDevice?.deviceCode,
+    montage: primaryDevice?.montage ?? 'neurolink6',
+    onSynced: () => {
+      void queryClient.invalidateQueries({ queryKey: ['devices'] });
+      if (primaryDevice?.id) {
+        void queryClient.invalidateQueries({ queryKey: ['device-telemetry', primaryDevice.id] });
+      }
+    },
+  });
+
   const telemetryQuery = useQuery({
     queryKey: ['device-telemetry', primaryDevice?.id],
     queryFn: () => devicesApi.getTelemetry(primaryDevice!.id),
@@ -335,11 +349,21 @@ export function EegPage() {
   const deviceWaveform = useMemo(
     () =>
       buildDeviceWaveform(
-        telemetryQuery.data?.bufferedSamples,
-        primaryDevice?.sampleRateSps ?? 500,
+        bleSync.bleLiveSamples.length >= 20
+          ? bleSync.bleLiveSamples
+          : telemetryQuery.data?.bufferedSamples,
+        bleSync.bleLiveSamples.length >= 20
+          ? bleSync.bleTelemetry?.rateSps ?? 250
+          : primaryDevice?.sampleRateSps ?? 500,
         deviceWavePulse,
       ),
-    [telemetryQuery.data?.bufferedSamples, primaryDevice?.sampleRateSps, deviceWavePulse],
+    [
+      bleSync.bleLiveSamples,
+      bleSync.bleTelemetry?.rateSps,
+      telemetryQuery.data?.bufferedSamples,
+      primaryDevice?.sampleRateSps,
+      deviceWavePulse,
+    ],
   );
 
   useEffect(() => {
@@ -759,21 +783,23 @@ export function EegPage() {
                 </div>
               </div>
 
-              {(deviceWaveVisible || demoStreaming) && (
+              {(deviceWaveVisible || demoStreaming || bleSync.bleLiveSamples.length >= 20) && (
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between px-1 text-xs">
                     <span className="inline-flex items-center gap-1.5 font-semibold text-[#111827]">
                       <span
                         className={cn(
                           'size-2 rounded-full bg-[#16A34A]',
-                          demoStreaming && 'animate-pulse',
+                          (demoStreaming || bleSync.bleStatus === 'connected') && 'animate-pulse',
                         )}
                         aria-hidden
                       />
                       <span>{isProfessional ? 'Tín hiệu điện não trực tiếp' : 'Sóng não trực tiếp · 6 kênh'}</span>
                     </span>
                     <span className="font-mono text-[11px] text-[#5B6860] tabular-nums">
-                      {primaryDevice.sampleRateSps} Hz
+                      {bleSync.bleLiveSamples.length >= 20
+                        ? `${bleSync.bleTelemetry?.rateSps ?? 250} Hz · BLE`
+                        : `${primaryDevice.sampleRateSps} Hz`}
                     </span>
                   </div>
                   <CompactWaveform
@@ -783,6 +809,26 @@ export function EegPage() {
                   />
                 </div>
               )}
+
+              <BleFieldSyncCard
+                webBluetoothAvailable={bleSync.webBluetoothAvailable}
+                bleStatus={bleSync.bleStatus}
+                bleDeviceName={bleSync.bleDeviceName}
+                bleTelemetry={bleSync.bleTelemetry}
+                bleStreamMode={bleSync.bleStreamMode}
+                onChangeBleStreamMode={(m) => void bleSync.changeBleStreamMode(m)}
+                pendingBatches={bleSync.pendingBatches}
+                wifiOnly={bleSync.wifiOnly}
+                onToggleWifiOnly={bleSync.setWifiOnly}
+                networkStatus={bleSync.networkStatus}
+                syncing={bleSync.syncing}
+                lastSyncAt={bleSync.lastSyncAt}
+                statusMessage={bleSync.statusMessage}
+                onConnectBle={() => void bleSync.connectRealBle()}
+                onDisconnectBle={bleSync.disconnectBle}
+                onSimulateBle={(sc) => void bleSync.simulateOutdoorBleCapture(sc)}
+                onForceSync={() => void bleSync.forceSyncNow()}
+              />
 
               {/* Active Alerts */}
               {alerts.length > 0 && (

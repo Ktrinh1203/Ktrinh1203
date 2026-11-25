@@ -108,13 +108,32 @@ public:
   }
 
   const char *currentPresetName() const { return PRESETS[preset_idx_].name; }
+  bool isSleeping() const { return sleeping_; }
+
+  void setSleep(bool sleep) {
+    if (sleep == sleeping_ || !vspi_) return;
+    if (sleep) {
+      // ST7735S là LCD Normally-White và chân LED nền nối thẳng 3.3V:
+      // DISPOFF/SLPIN sẽ làm tinh thể lỏng trong suốt (trắng bóc). Đẩy khung đen 0x0000
+      // rồi khóa render 0 FPS giúp màn đen kín che ánh sáng nền và dừng bus VSPI.
+      canvas_.fillScreen(0x0000);
+      flush();
+      sleeping_ = true;
+    } else {
+      sleeping_ = false;
+    }
+  }
 
   void flush() {
-    if (!vspi_ || !lockBus()) return;
+    if (sleeping_ || !vspi_ || !lockBus()) return;
     digitalWrite(PIN_SD_CS, HIGH);
 
     const PanelPreset &p = PRESETS[preset_idx_];
     const uint16_t *fb = canvas_.getBuffer();
+    if (!fb) {
+      unlockBus();
+      return;
+    }
 
     vspi_->beginTransaction(SPISettings(20000000, MSBFIRST, SPI_MODE0));
     digitalWrite(PIN_TFT_CS, LOW);
@@ -154,6 +173,7 @@ private:
   GFXcanvas16 canvas_;
   uint8_t preset_idx_ = 0;
   bool initialized_ = false;
+  bool sleeping_ = false;
 
   bool lockBus() {
     if (mutex_ == nullptr) return true;

@@ -9,6 +9,7 @@
 #include "power_monitor.h"
 #include "tinyml_stroke_edge.h"
 #include "wifi_ws_link.h"
+#include "ble_gatt_link.h"
 
 // ============================================================================
 // Production Firmware v3: 8-Ch Portable EEG/EMG Holter, Edge AI & NeuroLink Bridge
@@ -58,8 +59,9 @@ static PcBridge g_bridge;
 static PowerMonitor g_power;
 static TinyMlStrokeEdge g_edgeAi;
 static WifiWsLink g_wifi;
+static BleGattLink g_ble;
 static Preferences g_prefs;
-static SampleRingBuffer<256> g_ring;
+static SampleRingBuffer<128> g_ring;
 
 static TaskHandle_t g_adsTaskHandle = nullptr;
 static volatile bool g_pauseStream = true;
@@ -96,9 +98,9 @@ static uint8_t g_scaleIdx = 0;
 static constexpr float SCALE_VALUES[5] = {0.0f, 50.0f, 200.0f, 500.0f, 2500.0f};
 static constexpr const char *SCALE_NAMES[5] = {"AUTO", "50uV", "200u", "500u", "2.5m"};
 
-// 6 Trang HMI: 0=CH1-4, 1=CH5-8, 2=8-CH Bars, 3=Lead-Off, 4=Config Menu, 5=P6: AI TRIAGE
-static constexpr uint8_t NUM_UI_PAGES = 6;
-static constexpr uint8_t NUM_MENU_ITEMS = 7; // 0:Mode, 1:Rate, 2:Gain, 3:BIAS, 4:Scale, 5:SD, 6:WiFi
+// 3 Trang HMI tối giản: 0=Home Status, 1=Sóng F3-C4 (CH1-4), 2=Sóng O1-T4 (CH5-8)
+static constexpr uint8_t NUM_UI_PAGES = 3;
+static constexpr uint8_t NUM_MENU_ITEMS = 7;
 static uint8_t g_uiPage = 0;
 static bool g_menuEditMode = false;
 static uint8_t g_menuCursor = 0;
@@ -109,11 +111,36 @@ static float g_drdyBootHz = 0.0f;
 static float g_lastStreamSps = 0.0f;
 static uint32_t g_fpsDisplay = 0;
 
+static constexpr uint32_t IDLE_SLEEP_TIMEOUT_MS = 20000;
+static uint32_t g_lastActivityMs = 0;
+static bool g_lowPowerMode = false;
+
 static void showToast(const char *msg, uint16_t color, uint32_t durationMs = 1300) {
   strncpy(g_toastText, msg, sizeof(g_toastText) - 1);
   g_toastText[sizeof(g_toastText) - 1] = '\0';
   g_toastColor = color;
   g_toastUntilMs = millis() + durationMs;
+}
+
+static void enterLowPowerMode() {
+  if (g_lowPowerMode) return;
+  g_lowPowerMode = true;
+  g_tft.setSleep(true);
+  if (!g_wifi.isStreaming() && !g_bridge.isBinaryStreaming()) {
+    setCpuFrequencyMhz(80);
+    Serial.println("[PWR] Low-power idle ON (CPU=80MHz, TFT=SLEEP, BLE=AUTO)");
+  }
+}
+
+static void wakeFromLowPower(const char *reason) {
+  g_lastActivityMs = millis();
+  if (!g_lowPowerMode) return;
+  setCpuFrequencyMhz(240);
+  g_lowPowerMode = false;
+  g_tft.setSleep(false);
+  if (!g_bridge.isBinaryStreaming()) {
+    Serial.printf("[PWR] Wake (%s) -> CPU=240MHz, TFT=ON\n", reason ? reason : "EVENT");
+  }
 }
 
 static void resetScopeBuffers() {
@@ -242,6 +269,8 @@ static void resumeAdsTask() {
 }
 
 static void applyRuntimeSettings(const AdsSettings &nextSettings) {
+  AdsSettings enforced = nextSettings;
+  enforced.inputMode = ADS_IN_EEG_SRB1; // Chỉ dùng chế độ sóng EEG thật (bỏ TEST & EMG)
   bool wasRecording = g_sd.isRecording();
   if (wasRecording) {
     g_sd.stopRecording();
@@ -249,7 +278,7 @@ static void applyRuntimeSettings(const AdsSettings &nextSettings) {
   pauseAdsTask();
   g_ads.stopContinuous();
   delay(5);
-  bool ok = g_ads.applySettings(nextSettings, false);
+  bool ok = g_ads.applySettings(enforced, false);
   g_adsOk = g_ads.isIdOk() && ok;
   resetScopeBuffers();
   g_edgeAi.reset(g_ads.sampleRate());
@@ -257,7 +286,7 @@ static void applyRuntimeSettings(const AdsSettings &nextSettings) {
 
   if (!g_bridge.isBinaryStreaming()) {
     Serial.printf("[CFG] mode=%s rate=%u pga=%u bias=%d loff=%d mask=0x%02X ok=%d\n",
-                  Ads1299Driver::inputModeShortName(nextSettings.inputMode),
+                  Ads1299Driver::inputModeShortName(enforced.inputMode),
                   g_ads.sampleRate(),
                   g_ads.gain(),
                   nextSettings.biasAllCh ? 1 : 0,
@@ -338,7 +367,7 @@ static bool loadUserPrefs(AdsSettings &out) {
   }
   out.rateIdx = g_prefs.getUChar("rate", 1);
   out.pgaIdx = g_prefs.getUChar("pga", 5);
-  out.inputMode = static_cast<AdsInputMode>(g_prefs.getUChar("mode", 2) % 4);
+  out.inputMode = ADS_IN_EEG_SRB1;
   out.biasAllCh = g_prefs.getBool("bias", true);
   out.loffEnable = g_prefs.getBool("loff", false);
   out.chEnableMask = g_prefs.getUChar("mask", 0xFF);
@@ -446,7 +475,7 @@ static void runFullDiagnostics() {
   AdsSettings liveDef{};
   liveDef.rateIdx = 1;                  // 500 SPS
   liveDef.pgaIdx = 5;                   // Gain 12
-  liveDef.inputMode = ADS_IN_TEST_SIGNAL;
+  liveDef.inputMode = ADS_IN_EEG_SRB1;  // Luôn đo EEG thật mặc định
   liveDef.biasAllCh = true;
   liveDef.loffEnable = false;
   liveDef.chEnableMask = 0xFF;
@@ -530,12 +559,14 @@ static void printPowerJson() {
 }
 
 static void sendWifiHeartbeat() {
-  if (!g_wifi.isStreaming()) return;
+  bool wifiOn = g_wifi.isStreaming();
+  bool bleOn = g_ble.isConnected();
+  if (!wifiOn && !bleOn) return;
   const PowerStatus &pwr = g_power.status();
   const EdgeAiReport &ai = g_edgeAi.report();
-  char buf[384];
+  char buf[448];
   snprintf(buf, sizeof(buf),
-           "{\"type\":\"telemetry\",\"fw\":\"V3.0.0\",\"mode\":\"%s\",\"rate_sps\":%u,\"pga\":%u,\"sps\":%.1f,\"sd_rec\":%s,\"markers\":%lu,\"usb_only\":%s,\"vbat_mv\":%u,\"bat_pct\":%u,\"loff_p\":%lu,\"ai_state\":\"%s\",\"ai_rf_prob\":%.4f,\"ai_lr_prob\":%.4f,\"ai_bsi\":%.4f,\"ai_dar\":%.2f,\"ai_usable_ch\":%u}",
+           "{\"type\":\"telemetry\",\"fw\":\"V3.0.0\",\"mode\":\"%s\",\"rate_sps\":%u,\"pga\":%u,\"sps\":%.1f,\"sd_rec\":%s,\"markers\":%lu,\"usb_only\":%s,\"vbat_mv\":%u,\"bat_pct\":%u,\"loff_p\":%lu,\"ai_state\":\"%s\",\"ai_rf_prob\":%.4f,\"ai_lr_prob\":%.4f,\"ai_bsi\":%.4f,\"ai_dar\":%.2f,\"ai_usable_ch\":%u,\"ble_mode\":\"%s\",\"ble_burst\":%s,\"low_power\":%s}",
            Ads1299Driver::inputModeShortName(g_ads.mode()),
            g_ads.sampleRate(),
            g_ads.gain(),
@@ -551,8 +582,12 @@ static void sendWifiHeartbeat() {
            ai.lr_prob,
            ai.bsi_dar,
            ai.mean_dar,
-           ai.usable_ch);
-  g_wifi.sendJsonTelemetry(buf);
+           ai.usable_ch,
+           g_ble.streamModeName(),
+           g_ble.isBurstActive() ? "true" : "false",
+           g_lowPowerMode ? "true" : "false");
+  if (wifiOn) g_wifi.sendJsonTelemetry(buf);
+  if (bleOn) g_ble.sendJsonTelemetry(buf);
 }
 
 // Task Core 1: Thu mẫu ADS1299 thời gian thực qua DRDY -> g_ring
@@ -611,38 +646,15 @@ static void handleMenuNavigation(int btnIdx) {
 }
 
 static void handleNormalAction(int btnIdx) {
-  if (btnIdx == 0) { // UP -> lùi trang
+  if (btnIdx == 0 || btnIdx == 2) { // UP / LET -> lùi trang
     g_uiPage = (g_uiPage + NUM_UI_PAGES - 1) % NUM_UI_PAGES;
-  } else if (btnIdx == 1) { // DWN -> tiến trang
+  } else if (btnIdx == 1 || btnIdx == 3) { // DWN / RHT -> tiến trang
     g_uiPage = (g_uiPage + 1) % NUM_UI_PAGES;
-  } else if (btnIdx == 2 || btnIdx == 3) { // LET / RHT
-    int delta = (btnIdx == 3) ? 1 : -1;
-    if (g_uiPage <= 2) {
-      g_scaleIdx = static_cast<uint8_t>((static_cast<int>(g_scaleIdx) + delta + 5) % 5);
-    } else if (g_uiPage == 3) {
-      AdsSettings next = g_ads.settings();
-      next.loffEnable = !next.loffEnable;
-      applyRuntimeSettings(next);
-    } else if (g_uiPage == 4) {
-      g_menuEditMode = true;
-      handleMenuNavigation(btnIdx);
-    } else if (g_uiPage == 5) {
-      toggleWifiLink();
-    }
-  } else if (btnIdx == 4) { // OK (MID) short press
-    if (g_uiPage <= 2) {
-      AdsSettings next = g_ads.settings();
-      next.inputMode = static_cast<AdsInputMode>((static_cast<int>(next.inputMode) + 1) % 4);
-      applyRuntimeSettings(next);
-    } else if (g_uiPage == 3) {
-      AdsSettings next = g_ads.settings();
-      next.loffEnable = !next.loffEnable;
-      applyRuntimeSettings(next);
-    } else if (g_uiPage == 4) {
-      g_menuEditMode = !g_menuEditMode;
-    } else if (g_uiPage == 5) {
-      saveUserPrefs();
-    }
+  } else if (btnIdx == 4) { // OK (MID) short press -> đổi BLE AUTO <-> REALTIME
+    const bool nextRt = (g_ble.streamMode() == BLE_MODE_AUTO);
+    g_ble.setStreamMode(nextRt ? BLE_MODE_REALTIME : BLE_MODE_AUTO);
+    sendWifiHeartbeat();
+    showToast(nextRt ? "BLE: LIVE" : "BLE: AUTO", nextRt ? 0x07FF : 0x07E0, 1400);
   }
 }
 
@@ -662,6 +674,12 @@ static void pollButtons() {
         g_buttons[i].pressStartMs = now;
         g_buttons[i].longFired = false;
 
+        if (g_lowPowerMode) {
+          wakeFromLowPower(g_buttons[i].shortName);
+          continue;
+        }
+        g_lastActivityMs = now;
+
         if (!g_bridge.isBinaryStreaming()) {
           Serial.printf("[BTN_EVENT] %s PRESSED count=%lu\n",
                         g_buttons[i].fullName,
@@ -670,21 +688,13 @@ static void pollButtons() {
 
         if (i == 5) { // SET -> bắn Event Marker tức thì
           triggerEventMarker();
-        } else if (i != 4) { // UP/DWN/LET/RHT phản hồi ngay khi bấm xuống
-          if (g_uiPage == 4 && g_menuEditMode) {
-            handleMenuNavigation(i);
-          } else {
-            handleNormalAction(i);
-          }
+        } else if (i != 4) { // UP/DWN/LET/RHT đổi trang
+          handleNormalAction(i);
         }
       } else {
-        // Khi nhả phím MID (index 4) trước 800ms -> xử lý short press
+        // Khi nhả phím MID (index 4) trước 800ms -> đổi chế độ BLE AUTO/LIVE
         if (i == 4 && !g_buttons[i].longFired) {
-          if (g_uiPage == 4 && g_menuEditMode) {
-            g_menuEditMode = false;
-          } else {
-            handleNormalAction(4);
-          }
+          handleNormalAction(4);
         }
       }
     }
@@ -907,83 +917,136 @@ static void renderConfigMenuPage(GFXcanvas16 &c) {
   }
 }
 
+static void renderMinimalHomePage(GFXcanvas16 &c) {
+  const EdgeAiReport &ai = g_edgeAi.report();
+  uint16_t statusCol = 0x07E0;
+  const char *bigLabel = "OK";
+
+  if (ai.state == AI_STROKE_ALERT) {
+    statusCol = ((millis() / 300) % 2) ? 0xF800 : 0xFFE0;
+    bigLabel = "ALERT!";
+  } else if (ai.state == AI_BORDERLINE || ai.state == AI_SQI_ABSTAIN) {
+    statusCol = 0xFD20;
+    bigLabel = "CHECK";
+  } else if (ai.state == AI_WARMING_UP) {
+    statusCol = 0x07FF;
+    bigLabel = "WAIT";
+  }
+
+  c.fillRoundRect(8, 22, 112, 34, 5, 0x0841);
+  c.drawRoundRect(8, 22, 112, 34, 5, statusCol);
+  c.setTextColor(statusCol);
+  c.setTextSize(2);
+  const int16_t textX = (strcmp(bigLabel, "ALERT!") == 0) ? 28 :
+                        (strcmp(bigLabel, "CHECK") == 0)  ? 34 :
+                        (strcmp(bigLabel, "WAIT") == 0)   ? 40 : 52;
+  c.setCursor(textX, 32);
+  c.print(bigLabel);
+  c.setTextSize(1);
+
+  const bool bleConn = g_ble.isConnected();
+  const char *bleModeStr = (g_ble.streamMode() == BLE_MODE_REALTIME) ? "LIVE" : "AUTO";
+  c.setTextColor(bleConn ? 0x07E0 : 0x07FF);
+  c.setCursor(10, 64);
+  c.printf("BLE: %s %s", bleConn ? "CONN" : "WAIT", bleModeStr);
+
+  const bool eegReady = g_adsOk && ai.usable_ch >= 4;
+  c.setTextColor(eegReady ? 0xFFFF : 0xFD20);
+  c.setCursor(10, 78);
+  if (g_adsOk) {
+    c.printf("EEG: %u/8 %s", ai.usable_ch, eegReady ? "OK" : "CHECK");
+  } else {
+    c.print("EEG: CHECK");
+  }
+
+  const char *sdStr = g_sd.isRecording() ? "REC" : (g_sd.isMounted() ? "READY" : "NONE");
+  c.setTextColor(g_sd.isRecording() ? 0xF800 : 0xAD55);
+  c.setCursor(10, 92);
+  c.printf("SD : %s", sdStr);
+}
+
+static void renderMinimalWaveGroup(GFXcanvas16 &c, int baseCh) {
+  static const char *CH_NAMES[8] = {"F3", "F4", "C3", "C4", "O1", "O2", "T3", "T4"};
+  static const uint16_t COLS[4] = {0x07FF, 0x07E0, 0xFFE0, 0xF81F};
+
+  float maxPp = 20.0f;
+  for (int lane = 0; lane < 4; ++lane) {
+    const float pp = g_livePp[baseCh + lane];
+    if (pp > maxPp) maxPp = pp;
+  }
+  float scale = maxPp * 0.65f;
+  if (scale < 25.0f) scale = 25.0f;
+
+  for (int lane = 0; lane < 4; ++lane) {
+    const int ch = baseCh + lane;
+    const int yTop = 18 + lane * 23;
+    const int yMid = yTop + 11;
+    c.drawFastHLine(20, yMid, 104, 0x18E3);
+
+    c.setTextColor(g_chRail[ch] ? 0xF800 : COLS[lane]);
+    c.setCursor(4, yTop + 7);
+    c.print(CH_NAMES[ch]);
+
+    int prevY = yMid;
+    for (int x = 0; x < 104; ++x) {
+      int idx = (g_scopeHead + SCOPE_W - 104 + x) % SCOPE_W;
+      float norm = g_scopeHist[ch][idx] / scale;
+      if (norm > 1.0f) norm = 1.0f;
+      if (norm < -1.0f) norm = -1.0f;
+      int py = yMid - static_cast<int>(norm * 9.5f);
+      if (x > 0) {
+        c.drawLine(20 + x - 1, prevY, 20 + x, py, g_chRail[ch] ? 0xF800 : COLS[lane]);
+      }
+      prevY = py;
+    }
+  }
+}
+
 static void renderScreen() {
   GFXcanvas16 &c = g_tft.canvas();
   c.fillScreen(0x0000);
-  c.drawRect(0, 0, 128, 128, g_menuEditMode ? 0xFD20 : 0x2945);
+  c.drawRect(0, 0, 128, 128, 0x1B46);
 
-  // Header bar (y=1..15)
-  c.fillRect(1, 1, 126, 14, 0x10A2);
+  // Header tối giản: NEUROLINK + Pin %
+  c.fillRect(1, 1, 126, 15, 0x0943);
   c.setTextSize(1);
-  c.setCursor(3, 4);
-  uint16_t modeCol = (g_ads.mode() == ADS_IN_TEST_SIGNAL) ? 0x07FF :
-                     (g_ads.mode() == ADS_IN_SHORT_NOISE) ? 0xFD20 : 0x07E0;
-  c.setTextColor(modeCol);
-  c.print(Ads1299Driver::inputModeShortName(g_ads.mode()));
+  c.setTextColor(0x07E0);
+  c.setCursor(5, 5);
+  c.print("NEUROLINK");
 
-  c.setCursor(30, 4);
-  c.setTextColor(g_adsOk ? 0xFFFF : 0xF800);
-  c.printf("%u", g_ads.sampleRate());
-
-  c.setCursor(58, 4);
-  c.setTextColor(0xFFE0);
-  c.printf("x%u", g_ads.gain());
-
-  // Chỉ báo trạng thái SD Recording / WiFi WS / PC stream / Trang
-  c.setCursor(82, 4);
-  if (g_sd.isRecording()) {
-    c.setTextColor((millis() / 400) % 2 ? 0xF800 : 0xFFE0);
-    c.print("REC");
-  } else if (g_wifi.isStreaming()) {
-    c.setTextColor(0x07FF);
-    c.print("WS ");
-  } else if (g_bridge.isBinaryStreaming()) {
-    c.setTextColor(0x07E0);
-    c.print("PC ");
+  const PowerStatus &pwr = g_power.status();
+  c.setTextColor(pwr.low_bat ? 0xF800 : 0xFFFF);
+  if (pwr.usb_only) {
+    c.setCursor(102, 5);
+    c.print("USB");
   } else {
-    c.setTextColor(0xAD55);
-    c.printf("P%u", g_uiPage + 1);
+    c.setCursor(96, 5);
+    c.printf("%3u%%", pwr.bat_pct);
   }
 
-  // 3 chấm màu RGB test panel góc phải trên
-  c.fillRect(108, 4, 5, 6, 0xF800);
-  c.fillRect(114, 4, 5, 6, 0x07E0);
-  c.fillRect(120, 4, 5, 6, 0x001F);
-
-  if (g_uiPage == 0) renderWavePage(c, 0);
-  else if (g_uiPage == 1) renderWavePage(c, 4);
-  else if (g_uiPage == 2) renderBarsPage(c);
-  else if (g_uiPage == 3) renderLeadOffPage(c);
-  else if (g_uiPage == 4) renderConfigMenuPage(c);
-  else renderEdgeAiHealthPage(c);
+  if (g_uiPage == 0) renderMinimalHomePage(c);
+  else if (g_uiPage == 1) renderMinimalWaveGroup(c, 0);
+  else renderMinimalWaveGroup(c, 4);
 
   // Popup thông báo nhanh hoặc Marker
   if (millis() < g_toastUntilMs) {
     c.fillRect(14, 50, 100, 18, 0x0000);
     c.drawRect(14, 50, 100, 18, g_toastColor);
     c.setTextColor(g_toastColor);
-    c.setCursor(20, 55);
+    c.setCursor(24, 55);
     c.print(g_toastText);
   } else if (millis() < g_markerPopupUntilMs) {
-    c.fillRect(36, 17, 56, 11, 0xFFE0);
+    c.fillRect(36, 18, 56, 11, 0xFFE0);
     c.setTextColor(0x0000);
-    c.setCursor(39, 19);
+    c.setCursor(39, 20);
     c.printf("MKR #%lu", (unsigned long)g_markerCount);
   }
 
-  // Thanh trạng thái 6 nút bấm ở đáy (y=112..126)
-  c.drawFastHLine(1, 111, 126, 0x3186);
-  for (int i = 0; i < 6; ++i) {
-    int bx = 3 + i * 20;
-    bool pressed = g_buttons[i].currentPressed;
-    bool stuck = !g_buttons[i].idleHigh;
-    uint16_t bg = pressed ? 0x07E0 : (stuck ? 0xF800 : 0x18E3);
-    uint16_t fg = pressed ? 0x0000 : 0xFFFF;
-    c.fillRoundRect(bx, 113, 18, 13, 2, bg);
-    c.setTextColor(fg);
-    c.setCursor(bx + 3, 116);
-    c.print(g_buttons[i].shortName);
-  }
+  // Thanh gợi ý nút tối giản ở đáy
+  c.drawFastHLine(1, 111, 126, 0x18E3);
+  c.setTextColor(0x7BEF);
+  c.setCursor(6, 116);
+  c.print("OK:Mode   < >:Page");
 
   g_tft.flush();
 }
@@ -1126,6 +1189,46 @@ static void onBridgeExtendedCmd(const String &cmd) {
                     g_wifi.port(),
                     g_wifi.path().c_str());
     }
+  } else if (cmd == "BLE_ON") {
+    g_ble.setEnabled(true);
+    if (!g_bridge.isBinaryStreaming()) {
+      Serial.printf("{\"ble\":1,\"state\":\"%s\"}\n", g_ble.stateName());
+    }
+  } else if (cmd == "BLE_OFF") {
+    g_ble.setEnabled(false);
+    if (!g_bridge.isBinaryStreaming()) Serial.println("{\"ble\":0,\"state\":\"OFF\"}");
+  } else if (cmd == "BLE_STATUS") {
+    if (!g_bridge.isBinaryStreaming()) {
+      Serial.printf("{\"ble\":1,\"enabled\":%s,\"connected\":%s,\"state\":\"%s\",\"mode\":\"%s\",\"burst\":%s}\n",
+                    g_ble.isEnabled() ? "true" : "false",
+                    g_ble.isConnected() ? "true" : "false",
+                    g_ble.stateName(),
+                    g_ble.streamModeName(),
+                    g_ble.isBurstActive() ? "true" : "false");
+    }
+  } else if (cmd == "BLE_MODE_AUTO") {
+    g_ble.setStreamMode(BLE_MODE_AUTO);
+    sendWifiHeartbeat();
+  } else if (cmd == "BLE_MODE_REALTIME") {
+    wakeFromLowPower("BLE_CMD");
+    g_ble.setStreamMode(BLE_MODE_REALTIME);
+    sendWifiHeartbeat();
+  } else if (cmd == "BLE_BURST") {
+    wakeFromLowPower("BLE_CMD");
+    g_ble.triggerAlertBurst(7000);
+    sendWifiHeartbeat();
+  } else if (cmd == "POWER_SLEEP") {
+    enterLowPowerMode();
+  } else if (cmd == "POWER_WAKE") {
+    wakeFromLowPower("CMD");
+  } else if (cmd == "POWER_STATUS") {
+    if (!g_bridge.isBinaryStreaming()) {
+      Serial.printf("{\"pwr\":1,\"low_power\":%s,\"cpu_mhz\":%u,\"tft_sleep\":%s,\"ble_mode\":\"%s\"}\n",
+                    g_lowPowerMode ? "true" : "false",
+                    static_cast<unsigned>(getCpuFrequencyMhz()),
+                    g_tft.isSleeping() ? "true" : "false",
+                    g_ble.streamModeName());
+    }
   }
 }
 
@@ -1145,9 +1248,6 @@ void setup() {
     pinMode(g_buttons[i].pin, g_buttons[i].useInternalPullup ? INPUT_PULLUP : INPUT);
   }
 
-  g_power.begin();
-  g_wifi.begin(onWifiRemoteCommand);
-
   g_vspiMutex = xSemaphoreCreateMutex();
   g_vspi.begin(PIN_VSPI_SCK, PIN_VSPI_MISO, PIN_VSPI_MOSI, -1);
 
@@ -1156,6 +1256,10 @@ void setup() {
 
   g_sd.init(g_vspi, g_vspiMutex);
   g_sd.mount(); // Thử mount 1 lần; không có thẻ vẫn tiếp tục an toàn
+
+  g_power.begin();
+  g_wifi.begin(onWifiRemoteCommand);
+  g_ble.begin(onWifiRemoteCommand, true);
 
   PcBridge::Callbacks cb{};
   cb.onRunPost = runFullDiagnostics;
@@ -1178,6 +1282,7 @@ void setup() {
       1);
 
   runFullDiagnostics();
+  g_lastActivityMs = millis();
 }
 
 void loop() {
@@ -1192,6 +1297,7 @@ void loop() {
   pollButtons();
   g_power.poll();
   g_wifi.poll();
+  g_ble.poll();
 
   // Bảo vệ chống sụt áp pin (< 3.42V): tự động flush & đóng file MicroSD trước khi sập nguồn
   if (g_power.status().crit_bat && g_sd.isRecording()) {
@@ -1214,6 +1320,7 @@ void loop() {
     g_latestStatus24 = s.status24;
     g_bridge.pushSampleToStream(s);
     g_wifi.pushSample(s, curRate);
+    g_ble.pushSample(s, curRate);
     g_sd.pushSample(s);
     g_edgeAi.pushSample(s, g_ads.mode(), loffOn);
 
@@ -1253,10 +1360,30 @@ void loop() {
     }
   }
 
-  g_edgeAi.pollEvaluate();
+  if (g_edgeAi.pollEvaluate()) {
+    const EdgeAiReport &ai = g_edgeAi.report();
+    if (ai.state == AI_STROKE_ALERT || ai.state == AI_BORDERLINE) {
+      wakeFromLowPower("EEG_ANOMALY");
+      g_uiPage = 0;
+      showToast("EEG ANOMALY!", 0xF800, 2500);
+      if (g_ble.isConnected()) {
+        g_ble.triggerAlertBurst(7000);
+        sendWifiHeartbeat();
+      }
+    }
+  }
   g_sd.periodicFlush();
 
   uint32_t now = millis();
+
+  if (!g_lowPowerMode && !g_wifi.isStreaming() && !g_bridge.isBinaryStreaming() &&
+      g_ble.streamMode() == BLE_MODE_AUTO && !g_ble.isBurstActive() &&
+      (now - g_lastActivityMs >= IDLE_SLEEP_TIMEOUT_MS)) {
+    const EdgeAiReport &ai = g_edgeAi.report();
+    if (ai.state != AI_STROKE_ALERT && ai.state != AI_BORDERLINE) {
+      enterLowPowerMode();
+    }
+  }
 
   // Watchdog phần cứng ADS1299: tự phục hồi nếu mất xung DRDY > 1600 ms hoặc cắm nóng lại module
   if (!g_pauseStream) {
@@ -1282,7 +1409,8 @@ void loop() {
     }
   }
 
-  if (now - lastWsBeatMs >= 2000) {
+  const uint32_t beatInterval = g_wifi.isStreaming() ? 2000UL : g_ble.recommendedHeartbeatMs();
+  if (now - lastWsBeatMs >= beatInterval) {
     lastWsBeatMs = now;
     sendWifiHeartbeat();
   }
@@ -1294,7 +1422,7 @@ void loop() {
     lastSpsMs = now;
   }
 
-  if (now - lastRenderMs >= 50) { // ~20 FPS
+  if (!g_lowPowerMode && now - lastRenderMs >= 50) { // ~20 FPS
     lastRenderMs = now;
     renderScreen();
     frameCounter++;
@@ -1306,5 +1434,5 @@ void loop() {
     lastFpsMs = now;
   }
 
-  delay(1);
+  delay(g_lowPowerMode ? 10 : 1);
 }

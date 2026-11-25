@@ -5,8 +5,41 @@
  * - Normalizes errors into ApiError { status, code, message, details }.
  */
 
+import { Capacitor } from '@capacitor/core';
+
 export interface ApiErrorBody {
   error: { code: string; message: string; details?: { path: string; message: string }[] };
+}
+
+const SERVER_URL_STORAGE_KEY = 'neurolink_server_url_v1';
+export const DEFAULT_NATIVE_SERVER_URL = 'http://10.103.58.88:4000';
+
+export function isNativeMobileApp(): boolean {
+  try {
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
+}
+
+export function getServerBaseUrl(): string {
+  if (typeof localStorage !== 'undefined') {
+    const saved = localStorage.getItem(SERVER_URL_STORAGE_KEY)?.trim().replace(/\/+$/, '');
+    if (saved) return saved;
+  }
+  return isNativeMobileApp() ? DEFAULT_NATIVE_SERVER_URL : '';
+}
+
+export function setServerBaseUrl(url: string): string {
+  const cleaned = url.trim().replace(/\/+$/, '');
+  if (typeof localStorage !== 'undefined') {
+    if (cleaned) {
+      localStorage.setItem(SERVER_URL_STORAGE_KEY, cleaned);
+    } else {
+      localStorage.removeItem(SERVER_URL_STORAGE_KEY);
+    }
+  }
+  return getServerBaseUrl();
 }
 
 export class ApiError extends Error {
@@ -36,13 +69,15 @@ interface RequestOptions {
 }
 
 function buildUrl(path: string, query?: RequestOptions['query']) {
-  const url = new URL(`/api${path}`, window.location.origin);
+  const base = getServerBaseUrl();
+  const origin = base || window.location.origin;
+  const url = new URL(`/api${path}`, origin);
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value));
     }
   }
-  return url.pathname + url.search;
+  return base ? `${url.origin}${url.pathname}${url.search}` : `${url.pathname}${url.search}`;
 }
 
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -58,6 +93,12 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   }
   if (method !== 'GET' && csrfToken) headers['X-CSRF-Token'] = csrfToken;
 
+  const timeoutMs = path === '/auth/me' ? 4000 : 15000;
+  const controller = new AbortController();
+  const onExternalAbort = () => controller.abort();
+  options.signal?.addEventListener('abort', onExternalAbort, { once: true });
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
   let res: Response;
   try {
     res = await fetch(buildUrl(path, options.query), {
@@ -65,11 +106,17 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
       headers,
       body,
       credentials: 'include',
-      signal: options.signal,
+      signal: controller.signal,
     });
   } catch (err) {
-    if ((err as Error).name === 'AbortError') throw err;
+    if (options.signal?.aborted) throw err;
+    if ((err as Error).name === 'AbortError') {
+      throw new ApiError(0, 'NETWORK_TIMEOUT', 'Hết thời gian kết nối máy chủ. Kiểm tra lại IP Server hoặc Wi-Fi.');
+    }
     throw new ApiError(0, 'NETWORK_ERROR', 'Không thể kết nối tới máy chủ. Vui lòng thử lại.');
+  } finally {
+    clearTimeout(timer);
+    options.signal?.removeEventListener('abort', onExternalAbort);
   }
 
   if (res.status === 204) return undefined as T;

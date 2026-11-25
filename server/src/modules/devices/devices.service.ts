@@ -22,6 +22,7 @@ import {
   sendCommandToWsDevice,
 } from './hardware.ws.js';
 import type {
+  BleSyncInput,
   CaptureSessionInput,
   CreateDeviceInput,
   IngestAlertInput,
@@ -1119,4 +1120,63 @@ export async function captureRecordingSession(
   });
 
   return { session };
+}
+
+export async function syncBleFieldBatch(
+  userId: string,
+  role: Role,
+  deviceId: string,
+  input: BleSyncInput,
+): Promise<{
+  ok: boolean;
+  deviceId: string;
+  deviceCode: string;
+  samplesSynced: number;
+  telemetrySynced: boolean;
+  session: DeviceRecordingSession | null;
+}> {
+  const device = await assertDeviceOwnership(userId, role, deviceId);
+  let telemetrySynced = false;
+  let samplesSynced = 0;
+  let session: DeviceRecordingSession | null = null;
+
+  if (input.telemetry && Object.keys(input.telemetry).length > 0) {
+    await ingestTelemetry({
+      authenticatedDevice: device,
+      telemetry: input.telemetry,
+      source: 'MOBILE_BLE_SYNC',
+    });
+    telemetrySynced = true;
+  }
+
+  if (input.samples && input.samples.length > 0) {
+    const res = await ingestSamples({
+      authenticatedDevice: device,
+      montage: input.montage ?? device.montage,
+      sampleRateSps: input.sampleRateSps ?? device.sampleRateSps,
+      samples: input.samples,
+      source: 'MOBILE_BLE_SYNC',
+      forceEmit: true,
+    });
+    samplesSynced = res.samplesIngested;
+
+    if (input.captureSession && samplesSynced >= 16) {
+      const captured = await captureRecordingSession(userId, role, deviceId, {
+        title: input.sessionTitle ?? `BLE Ngoại tuyến · ${device.deviceCode}`,
+        montage: input.montage ?? device.montage,
+        sampleRateSps: input.sampleRateSps ?? device.sampleRateSps,
+        samples: input.samples,
+      });
+      session = captured.session;
+    }
+  }
+
+  return {
+    ok: true,
+    deviceId: device.id,
+    deviceCode: device.deviceCode,
+    samplesSynced,
+    telemetrySynced,
+    session,
+  };
 }

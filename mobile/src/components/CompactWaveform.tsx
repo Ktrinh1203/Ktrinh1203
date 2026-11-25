@@ -26,7 +26,7 @@ export function CompactWaveform({ waveforms, dark = false, plainLanguage = false
   const svgRef = useRef<SVGSVGElement | null>(null);
   const draggingRef = useRef(false);
 
-  const channels = (waveforms.channels.length > 0 ? waveforms.channels : ['F3', 'F4', 'C3', 'C4', 'O1', 'O2']).slice(0, 6);
+  const channels = (waveforms.channels.length > 0 ? waveforms.channels : ['F3', 'F4', 'C3', 'C4', 'O1', 'O2', 'T3', 'T4']).slice(0, 8);
   const times = waveforms.time;
   const nTotal = times.length;
   const activeMap = mode === 'raw' && hasRaw ? waveforms.raw! : waveforms.filtered;
@@ -186,7 +186,7 @@ export function CompactWaveform({ waveforms, dark = false, plainLanguage = false
           draggingRef.current = false;
         }}
         role="img"
-        aria-label={plainLanguage ? 'Biểu đồ sóng não 6 kênh' : 'Biểu đồ sóng não 6 đạo trình'}
+        aria-label={plainLanguage ? `Biểu đồ sóng não ${channels.length} kênh` : `Biểu đồ sóng não ${channels.length} đạo trình`}
       >
         {/* Subtle vertical time grid */}
         {[0.25, 0.5, 0.75].map((f) => (

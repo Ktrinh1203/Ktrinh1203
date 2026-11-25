@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { Eye, EyeOff, Lock, Mail, Sparkles, User } from 'lucide-react';
-import { errorMessage } from '../api/client';
+import { Eye, EyeOff, Lock, Mail, Server, Sparkles, User } from 'lucide-react';
+import { errorMessage, getServerBaseUrl, isNativeMobileApp, setServerBaseUrl } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { NeuralMeshCanvas } from '../components/NeuralMeshCanvas';
 import { NeuroLinkLogo, cn } from '../components/ui';
@@ -28,6 +28,8 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [showQuick, setShowQuick] = useState(false);
+  const [showServerCfg, setShowServerCfg] = useState(() => isNativeMobileApp());
+  const [serverUrl, setServerUrl] = useState(() => getServerBaseUrl());
 
   const destinationAfterAuth = (fallback: string) =>
     rawFrom && rawFrom !== '/login' && rawFrom !== '/' ? rawFrom : fallback;
@@ -39,6 +41,9 @@ export function LoginPage() {
     }
     setBusy(true);
     setErr(null);
+    if (isNativeMobileApp() || serverUrl.trim()) {
+      setServerBaseUrl(serverUrl);
+    }
     try {
       await login(idVal.trim(), pwVal);
       navigate(destinationAfterAuth('/'), { replace: true });
@@ -76,6 +81,9 @@ export function LoginPage() {
     }
     setBusy(true);
     setErr(null);
+    if (isNativeMobileApp() || serverUrl.trim()) {
+      setServerBaseUrl(serverUrl);
+    }
     try {
       await register({
         displayName: cleanName,
@@ -245,16 +253,44 @@ export function LoginPage() {
           </div>
         </div>
 
-        {/* Bottom Unobtrusive Quick Demo Access */}
-        <div className="relative z-10 flex flex-col items-center gap-2.5 pb-2">
-          <button
-            type="button"
-            onClick={() => setShowQuick((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-[#5B6860] hover:text-[#15803D] transition-colors cursor-pointer"
-          >
-            <Sparkles className="size-3.5 text-[#16A34A]" aria-hidden />
-            <span>{showQuick ? 'Ẩn tài khoản mẫu' : 'Vào nhanh tài khoản mẫu'}</span>
-          </button>
+        {/* Bottom Unobtrusive Quick Demo Access & Server Config */}
+        <div className="relative z-10 flex flex-col items-center gap-2 pb-2">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowQuick((v) => !v)}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-[#5B6860] hover:text-[#15803D] transition-colors cursor-pointer"
+            >
+              <Sparkles className="size-3.5 text-[#16A34A]" aria-hidden />
+              <span>{showQuick ? 'Ẩn tài khoản mẫu' : 'Vào nhanh tài khoản mẫu'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowServerCfg((v) => !v)}
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-[#5B6860] hover:text-[#15803D] transition-colors cursor-pointer"
+            >
+              <Server className="size-3.5 text-[#16A34A]" aria-hidden />
+              <span>Server</span>
+            </button>
+          </div>
+
+          {showServerCfg && (
+            <div className="w-full max-w-[340px] rounded-2xl border border-[#DCE6DF] bg-white/95 p-2.5">
+              <label className="block text-[10px] font-semibold text-[#5B6860] mb-1">
+                Địa chỉ Backend Server (LAN Wi-Fi hoặc Cloud)
+              </label>
+              <input
+                type="url"
+                value={serverUrl}
+                onChange={(e) => {
+                  setServerUrl(e.target.value);
+                  setServerBaseUrl(e.target.value);
+                }}
+                placeholder="http://192.168.1.3:4000"
+                className="w-full h-9 rounded-xl border border-[#DCE6DF] bg-[#F5FAF7] px-2.5 text-xs text-[#111827] outline-none focus:border-[#16A34A]"
+              />
+            </div>
+          )}
 
           {showQuick && (
             <div className="flex flex-wrap justify-center gap-1.5 animate-fade-in">

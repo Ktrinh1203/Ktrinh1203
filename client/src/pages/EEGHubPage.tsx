@@ -167,13 +167,31 @@ const EEG_CHANNELS = [
     impedance: '3.6 kΩ',
     clinicalStatus: 'Nhịp Alpha sinh lý',
   },
+  {
+    name: 'T3',
+    region: 'Thái dương trái',
+    freq: '9.6 Hz (Alpha/Theta)',
+    peakUv: '31.4 µV',
+    erdPercent: '-6.2% (ERD)',
+    impedance: '4.1 kΩ',
+    clinicalStatus: 'Nền ổn định',
+  },
+  {
+    name: 'T4',
+    region: 'Thái dương phải',
+    freq: '9.7 Hz (Alpha/Theta)',
+    peakUv: '32.0 µV',
+    erdPercent: '-5.8% (ERD)',
+    impedance: '4.0 kΩ',
+    clinicalStatus: 'Nền ổn định',
+  },
 ];
 
-/** Builds deterministic 6-channel multi-lead preview waveforms for a personal EEG record. */
+/** Builds deterministic 8-channel multi-lead preview waveforms for a personal EEG record. */
 function buildPreviewWaveformForDataset(rec: EegDatasetRecord) {
   const nPts = 300; // 5 seconds at 60 Hz display
   const time = Array.from({ length: nPts }, (_, i) => Number(((i / (nPts - 1)) * 5).toFixed(3)));
-  const channels = ['F3', 'F4', 'C3', 'C4', 'O1', 'O2'];
+  const channels = ['F3', 'F4', 'C3', 'C4', 'O1', 'O2', 'T3', 'T4'];
   const isSleepOrPending = rec.status === 'REVIEW_PENDING' || /giấc ngủ|động kinh/i.test(rec.title);
   const seedShift = rec.id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) % 7;
 
@@ -779,7 +797,7 @@ export function EEGHubPage() {
               {isProfessional && (
                 <details className="rounded-xl border border-[#DCE6DF] bg-white">
                   <summary className="cursor-pointer px-4 py-2.5 text-xs font-semibold text-[#141413]">
-                    Thông số 6 đạo trình ▾
+                    Thông số 8 đạo trình ▾
                   </summary>
                   <div
                     tabIndex={0}

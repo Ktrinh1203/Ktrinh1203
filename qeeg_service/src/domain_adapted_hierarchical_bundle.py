@@ -282,9 +282,40 @@ class DomainAdaptedHierarchicalBundle:
         """
         t_start = time.perf_counter()
 
-        # Step 1: Quality Check & Active Channel Detection
-        stds = np.std(raw_eeg_matrix, axis=0)
-        ptps = np.ptp(raw_eeg_matrix, axis=0)
+        def _safe_filtfilt(b: np.ndarray, a: np.ndarray, x: np.ndarray) -> np.ndarray:
+            n_samples = x.shape[0]
+            if n_samples <= 4:
+                return x.copy()
+            padlen = min(3 * max(len(a), len(b)), n_samples - 1)
+            return signal.filtfilt(b, a, x, axis=0, padlen=padlen)
+
+        # Step 1: DC offset removal + DSP Filter Pipeline (0.5 - 70 Hz + 50 Hz Notch)
+        # Apply filtering BEFORE active-channel detection and CAR so DC drift or 50 Hz mains
+        # on a detached lead cannot pollute good channels or inflate peak-to-peak checks.
+        centered = np.asarray(raw_eeg_matrix, dtype=np.float64)
+        centered = centered - np.mean(centered, axis=0, keepdims=True)
+        nyq = max(sfreq / 2.0, 1.0)
+
+        if nyq > 1.0:
+            hp_b, hp_a = signal.butter(2, min(0.5 / nyq, 0.2), btype="highpass")
+            filtered_all = _safe_filtfilt(hp_b, hp_a, centered)
+        else:
+            filtered_all = centered.copy()
+
+        # Skip aggressive IIR lowpass here: LP attenuates d2 variance and shifts Hjorth complexity/mobility
+        # outside the trained distribution, whereas 0.5 Hz HP + 50 Hz Notch + CAR preserves Control_Mimic.
+        if sfreq > 105.0:
+            notch_b, notch_a = signal.iirnotch(50.0, 30.0, fs=sfreq)
+            filtered_all = _safe_filtfilt(notch_b, notch_a, filtered_all)
+
+        # Reject zero-phase edge settling transients on windows >= 3s
+        trim_n = int(0.5 * sfreq)
+        if len(filtered_all) >= int(3.0 * sfreq) and (len(filtered_all) - 2 * trim_n) >= max(32, int(sfreq)):
+            filtered_all = filtered_all[trim_n:-trim_n, :]
+
+        # Step 2: Quality Check & Active Channel Detection on clean filtered traces
+        stds = np.std(filtered_all, axis=0)
+        ptps = np.ptp(filtered_all, axis=0)
         active_indices = [i for i in range(len(channel_names)) if stds[i] >= 1.0 and ptps[i] >= 10.0]
 
         if len(active_indices) < 2:
@@ -294,19 +325,10 @@ class DomainAdaptedHierarchicalBundle:
                 "error": "Electrodes detached or disconnected (<2 active channels).",
             }
 
-        active_data = raw_eeg_matrix[:, active_indices]
+        filtered = filtered_all[:, active_indices].copy()
         active_names = [channel_names[i] for i in active_indices]
 
-        # Step 2: DSP Filter Pipeline (0.5 - 45 Hz + 50 Hz Notch)
-        hp_b, hp_a = signal.butter(2, 0.5 / (sfreq / 2.0), btype="highpass")
-        notch_b, notch_a = signal.iirnotch(50.0, 30.0, fs=sfreq)
-        lp_b, lp_a = signal.butter(4, 45.0 / (sfreq / 2.0), btype="lowpass")
-
-        filtered = signal.filtfilt(hp_b, hp_a, active_data, axis=0)
-        filtered = signal.filtfilt(notch_b, notch_a, filtered, axis=0)
-        filtered = signal.filtfilt(lp_b, lp_a, filtered, axis=0)
-
-        # Common Average Reference (CAR)
+        # Common Average Reference (CAR) across verified active channels only
         filtered -= np.mean(filtered, axis=1, keepdims=True)
 
         # Step 3: Dimension Synchronization to 19 Channels via Spherical Splines

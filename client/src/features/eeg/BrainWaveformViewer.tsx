@@ -22,7 +22,7 @@ export function BrainWaveformViewer({
   waveforms,
   samplingRateHz = 500,
   isProfessional = false,
-  title = 'Biểu đồ Điện não Đa kênh (6 Đạo trình 10-20)',
+  title = 'Biểu đồ Điện não Đa kênh (8 Đạo trình 10-20)',
   subtitle,
 }: BrainWaveformViewerProps) {
   const hasRaw = Boolean(waveforms.raw && Object.keys(waveforms.raw).length > 0);
@@ -38,7 +38,7 @@ export function BrainWaveformViewer({
   const readoutTimeRef = useRef<HTMLSpanElement | null>(null);
   const readoutValRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
-  const channels = waveforms.channels.length > 0 ? waveforms.channels : ['F3', 'F4', 'C3', 'C4', 'O1', 'O2'];
+  const channels = waveforms.channels.length > 0 ? waveforms.channels : ['F3', 'F4', 'C3', 'C4', 'O1', 'O2', 'T3', 'T4'];
   const times = waveforms.time;
   const totalSamples = times.length;
   const durationSec = useMemo(() => {

@@ -689,6 +689,28 @@ export const devicesApi = {
       `/devices/${encodeURIComponent(id)}/sessions/capture`,
       { method: 'POST', body: body ?? {} },
     ),
+  bleSync: (
+    id: string,
+    body: {
+      montage?: string;
+      sampleRateSps?: number;
+      samples?: number[][];
+      telemetry?: Record<string, unknown>;
+      captureSession?: boolean;
+      sessionTitle?: string;
+    },
+  ) =>
+    api<{
+      ok: boolean;
+      deviceId: string;
+      deviceCode: string;
+      samplesSynced: number;
+      telemetrySynced: boolean;
+      session: import('./types').DeviceRecordingSessionItem | null;
+    }>(`/devices/${encodeURIComponent(id)}/ble-sync`, {
+      method: 'POST',
+      body,
+    }),
 };
 
 

@@ -130,11 +130,21 @@ export const ingestEpochSchema = z.object({
   qeegResult: z.record(z.string(), z.unknown()).optional(),
 });
 
+export const bleSyncSchema = z.object({
+  montage: z.string().trim().min(2).max(30).optional(),
+  sampleRateSps: z.coerce.number().int().min(50).max(4000).optional(),
+  samples: z.array(sampleRowSchema).max(15000).optional(),
+  telemetry: rawTelemetryFieldsSchema.optional(),
+  captureSession: z.boolean().optional(),
+  sessionTitle: z.string().trim().min(2).max(160).optional(),
+});
+
 export type CreateDeviceInput = z.infer<typeof createDeviceSchema>;
 export type UpdateDeviceInput = z.infer<typeof updateDeviceSchema>;
 export type DeviceCommandInput = z.infer<typeof deviceCommandSchema>;
 export type SimulateDeviceInput = z.infer<typeof simulateDeviceSchema>;
 export type CaptureSessionInput = z.infer<typeof captureSessionSchema>;
+export type BleSyncInput = z.infer<typeof bleSyncSchema>;
 export type IngestTelemetryInput = z.infer<typeof ingestTelemetrySchema>;
 export type IngestSamplesInput = z.infer<typeof ingestSamplesSchema>;
 export type IngestAlertInput = z.infer<typeof ingestAlertSchema>;

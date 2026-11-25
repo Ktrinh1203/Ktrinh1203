@@ -39,7 +39,7 @@ export interface HardwareDevicePanelProps {
   isProfessional?: boolean;
 }
 
-const CHANNEL_NAMES = ['F3', 'F4', 'C3', 'C4', 'O1', 'O2'] as const;
+const CHANNEL_NAMES = ['F3', 'F4', 'C3', 'C4', 'O1', 'O2', 'T3', 'T4'] as const;
 const CHANNEL_COUNT = CHANNEL_NAMES.length;
 const RING_CAPACITY = 1000; // 2s window at 500 Hz
 const TRACE_COLORS = [
@@ -49,6 +49,8 @@ const TRACE_COLORS = [
   '#10B981',
   '#16A34A',
   '#059669',
+  '#15803D',
+  '#10B981',
 ] as const;
 
 type ScopeScaleUv = 50 | 100 | 200;
@@ -254,7 +256,7 @@ function OscilloscopeCanvas({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const CANVAS_HEIGHT = isProfessional ? 360 : 328;
+    const CANVAS_HEIGHT = isProfessional ? 432 : 396;
 
     const drawFrame = () => {
       const width = Math.max(280, Math.floor(wrap.clientWidth));
