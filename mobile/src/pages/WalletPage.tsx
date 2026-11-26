@@ -152,8 +152,8 @@ function CompactQrSvg({ payload, label }: { payload: string; label: string }) {
 export function WalletPage() {
   const queryClient = useQueryClient();
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [draftPkg, setDraftPkg] = useState<TopupPackageItem | null>(null);
   const [sheetOrder, setSheetOrder] = useState<PaymentOrderItem | null>(null);
-  const [creatingPkgId, setCreatingPkgId] = useState<string | null>(null);
   const [qrImgErr, setQrImgErr] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [sheetErr, setSheetErr] = useState<string | null>(null);
@@ -209,17 +209,16 @@ export function WalletPage() {
 
   const createOrderMut = useMutation({
     mutationFn: (pkgId: string) => paymentsApi.createTopupOrder({ packageId: pkgId }),
-    onMutate: (pkgId) => {
-      setCreatingPkgId(pkgId);
+    onMutate: () => {
       setSheetErr(null);
     },
     onSuccess: (res) => {
+      setDraftPkg(null);
       setQrImgErr(false);
       setSheetOrder(res.order);
       void queryClient.invalidateQueries({ queryKey: ['payments', 'topup-orders'] });
     },
     onError: (e) => showToast('err', errorMessage(e)),
-    onSettled: () => setCreatingPkgId(null),
   });
 
   const simulateMut = useMutation({
@@ -334,14 +333,19 @@ export function WalletPage() {
 
         <div className="grid grid-cols-2 gap-2">
           {packages.map((pkg) => {
-            const busy = creatingPkgId === pkg.id && createOrderMut.isPending;
+            const isDraft = draftPkg?.id === pkg.id;
             return (
               <button
                 key={pkg.id}
                 type="button"
                 disabled={createOrderMut.isPending}
-                onClick={() => createOrderMut.mutate(pkg.id)}
-                className="flex flex-col items-start justify-between gap-1.5 rounded-2xl border border-[#DCE6DF] bg-white p-3.5 text-left hover:border-[#16A34A] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60"
+                onClick={() => setDraftPkg(pkg)}
+                className={cn(
+                  'flex flex-col items-start justify-between gap-1.5 rounded-2xl border p-3.5 text-left active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60',
+                  isDraft
+                    ? 'border-[#16A34A] bg-[#ECFDF3] ring-2 ring-[#16A34A]/20'
+                    : 'border-[#DCE6DF] bg-white hover:border-[#16A34A]',
+                )}
               >
                 <div className="flex w-full items-center justify-between gap-1">
                   <span className="font-mono text-sm font-bold text-[#111827] tabular-nums">
@@ -354,7 +358,6 @@ export function WalletPage() {
                   )}
                 </div>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#16A34A] tabular-nums">
-                  {busy && <Loader2 className="size-3 animate-spin" aria-hidden />}
                   <span>+{pkg.credits} Credit</span>
                 </span>
               </button>
@@ -428,6 +431,89 @@ export function WalletPage() {
           </div>
         )}
       </section>
+
+      {/* Step 2: Billing Confirmation Bottom Sheet (Before Creating Order) */}
+      <BottomSheet
+        open={Boolean(draftPkg)}
+        onClose={() => {
+          if (!createOrderMut.isPending) setDraftPkg(null);
+        }}
+        title="Xác nhận hóa đơn (Billing)"
+        headerRight={
+          <span className="rounded-full border border-[#BBF7D0] bg-[#ECFDF3] px-2.5 py-0.5 text-[11px] font-semibold text-[#15803D]">
+            Bước 2/3
+          </span>
+        }
+      >
+        {draftPkg && (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-[#DCE6DF] bg-[#F5FAF7] p-4 space-y-2.5 text-xs tabular-nums">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[#5B6860]">Gói nạp</span>
+                <span className="font-bold text-[#111827]">{draftPkg.label}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[#5B6860]">Số tiền thanh toán</span>
+                <span className="font-mono font-bold text-[#111827]">
+                  {draftPkg.amountVnd.toLocaleString('vi-VN')} ₫
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[#5B6860]">Credit cơ bản</span>
+                <span className="font-semibold text-[#111827]">
+                  +{(draftPkg.credits - draftPkg.bonusCredits).toLocaleString('vi-VN')} Credit
+                </span>
+              </div>
+              {draftPkg.bonusCredits > 0 && (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[#5B6860]">Thưởng thêm</span>
+                  <span className="font-semibold text-[#15803D]">
+                    +{draftPkg.bonusCredits.toLocaleString('vi-VN')} Credit
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[#5B6860]">Kênh thanh toán</span>
+                <span className="font-medium text-[#111827]">VietQR 24/7</span>
+              </div>
+              <div className="flex items-center justify-between gap-2 border-t border-[#DCE6DF] pt-2.5">
+                <span className="font-bold text-[#111827]">Tổng Credit nhận</span>
+                <span className="font-mono text-base font-bold text-[#16A34A]">
+                  +{draftPkg.credits.toLocaleString('vi-VN')} Credit
+                </span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-[#5B6860] text-center">
+              Đơn nạp chỉ được tạo sau khi bạn bấm xác nhận bên dưới.
+            </p>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                disabled={createOrderMut.isPending}
+                onClick={() => setDraftPkg(null)}
+                className="h-11 rounded-full border border-[#DCE6DF] bg-white text-xs font-semibold text-[#111827] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+              >
+                Chọn lại gói
+              </button>
+              <button
+                type="button"
+                disabled={createOrderMut.isPending}
+                onClick={() => createOrderMut.mutate(draftPkg.id)}
+                className="flex items-center justify-center gap-1.5 h-11 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-xs font-semibold text-white active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+              >
+                {createOrderMut.isPending ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : (
+                  <QrCode className="size-4" aria-hidden />
+                )}
+                <span>Xác nhận & lấy QR</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </BottomSheet>
 
       {/* Compact VietQR Bottom Sheet */}
       <BottomSheet

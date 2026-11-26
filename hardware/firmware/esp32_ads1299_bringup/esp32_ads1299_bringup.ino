@@ -564,9 +564,10 @@ static void sendWifiHeartbeat() {
   if (!wifiOn && !bleOn) return;
   const PowerStatus &pwr = g_power.status();
   const EdgeAiReport &ai = g_edgeAi.report();
-  char buf[448];
+  char buf[480];
   snprintf(buf, sizeof(buf),
-           "{\"type\":\"telemetry\",\"fw\":\"V3.0.0\",\"mode\":\"%s\",\"rate_sps\":%u,\"pga\":%u,\"sps\":%.1f,\"sd_rec\":%s,\"markers\":%lu,\"usb_only\":%s,\"vbat_mv\":%u,\"bat_pct\":%u,\"loff_p\":%lu,\"ai_state\":\"%s\",\"ai_rf_prob\":%.4f,\"ai_lr_prob\":%.4f,\"ai_bsi\":%.4f,\"ai_dar\":%.2f,\"ai_usable_ch\":%u,\"ble_mode\":\"%s\",\"ble_burst\":%s,\"low_power\":%s}",
+           "{\"type\":\"telemetry\",\"fw\":\"V3.0.0\",\"ble_id\":\"%s\",\"mode\":\"%s\",\"rate_sps\":%u,\"pga\":%u,\"sps\":%.1f,\"sd_rec\":%s,\"markers\":%lu,\"usb_only\":%s,\"vbat_mv\":%u,\"bat_pct\":%u,\"loff_p\":%lu,\"ai_state\":\"%s\",\"ai_rf_prob\":%.4f,\"ai_lr_prob\":%.4f,\"ai_bsi\":%.4f,\"ai_dar\":%.2f,\"ai_usable_ch\":%u,\"ble_mode\":\"%s\",\"ble_burst\":%s,\"low_power\":%s}",
+           g_ble.deviceId(),
            Ads1299Driver::inputModeShortName(g_ads.mode()),
            g_ads.sampleRate(),
            g_ads.gain(),
@@ -713,23 +714,17 @@ static void renderWavePage(GFXcanvas16 &c, int baseCh) {
   static const uint16_t CH_COLORS[4] = {0x07FF, 0x07E0, 0xFFE0, 0xF81F};
   float fixedScale = SCALE_VALUES[g_scaleIdx];
 
-  float autoScale = 50.0f;
-  if (fixedScale <= 0.1f) {
-    float maxPp = 20.0f;
-    for (int lane = 0; lane < 4; ++lane) {
-      if (g_livePp[baseCh + lane] > maxPp) maxPp = g_livePp[baseCh + lane];
-    }
-    autoScale = maxPp * 0.65f;
-    if (autoScale < 25.0f) autoScale = 25.0f;
-  } else {
-    autoScale = fixedScale;
-  }
-
   for (int lane = 0; lane < 4; ++lane) {
     int ch = baseCh + lane;
     int yTop = 18 + lane * 23;
     int yMid = yTop + 11;
     c.drawFastHLine(2, yMid, 124, 0x18E3);
+
+    float chScale = fixedScale;
+    if (fixedScale <= 0.1f) {
+      chScale = g_livePp[ch] * 0.65f;
+      if (chScale < 25.0f) chScale = 25.0f;
+    }
 
     c.setTextColor(g_chRail[ch] ? 0xF800 : CH_COLORS[lane]);
     c.setCursor(3, yTop + 1);
@@ -747,7 +742,7 @@ static void renderWavePage(GFXcanvas16 &c, int baseCh) {
     int prevY = yMid;
     for (int x = 0; x < SCOPE_W; ++x) {
       int idx = (g_scopeHead + x) % SCOPE_W;
-      float norm = g_scopeHist[ch][idx] / autoScale;
+      float norm = g_scopeHist[ch][idx] / chScale;
       if (norm > 1.0f) norm = 1.0f;
       if (norm < -1.0f) norm = -1.0f;
       int py = yMid - static_cast<int>(norm * 9.0f);
@@ -933,26 +928,30 @@ static void renderMinimalHomePage(GFXcanvas16 &c) {
     bigLabel = "WAIT";
   }
 
-  c.fillRoundRect(8, 22, 112, 34, 5, 0x0841);
-  c.drawRoundRect(8, 22, 112, 34, 5, statusCol);
+  c.fillRoundRect(8, 20, 112, 32, 5, 0x0841);
+  c.drawRoundRect(8, 20, 112, 32, 5, statusCol);
   c.setTextColor(statusCol);
   c.setTextSize(2);
   const int16_t textX = (strcmp(bigLabel, "ALERT!") == 0) ? 28 :
                         (strcmp(bigLabel, "CHECK") == 0)  ? 34 :
                         (strcmp(bigLabel, "WAIT") == 0)   ? 40 : 52;
-  c.setCursor(textX, 32);
+  c.setCursor(textX, 29);
   c.print(bigLabel);
   c.setTextSize(1);
+
+  c.setTextColor(0xFFE0);
+  c.setCursor(10, 57);
+  c.printf("ID : %s", g_ble.deviceId());
 
   const bool bleConn = g_ble.isConnected();
   const char *bleModeStr = (g_ble.streamMode() == BLE_MODE_REALTIME) ? "LIVE" : "AUTO";
   c.setTextColor(bleConn ? 0x07E0 : 0x07FF);
-  c.setCursor(10, 64);
+  c.setCursor(10, 70);
   c.printf("BLE: %s %s", bleConn ? "CONN" : "WAIT", bleModeStr);
 
   const bool eegReady = g_adsOk && ai.usable_ch >= 4;
   c.setTextColor(eegReady ? 0xFFFF : 0xFD20);
-  c.setCursor(10, 78);
+  c.setCursor(10, 83);
   if (g_adsOk) {
     c.printf("EEG: %u/8 %s", ai.usable_ch, eegReady ? "OK" : "CHECK");
   } else {
@@ -961,7 +960,7 @@ static void renderMinimalHomePage(GFXcanvas16 &c) {
 
   const char *sdStr = g_sd.isRecording() ? "REC" : (g_sd.isMounted() ? "READY" : "NONE");
   c.setTextColor(g_sd.isRecording() ? 0xF800 : 0xAD55);
-  c.setCursor(10, 92);
+  c.setCursor(10, 96);
   c.printf("SD : %s", sdStr);
 }
 
@@ -1199,7 +1198,8 @@ static void onBridgeExtendedCmd(const String &cmd) {
     if (!g_bridge.isBinaryStreaming()) Serial.println("{\"ble\":0,\"state\":\"OFF\"}");
   } else if (cmd == "BLE_STATUS") {
     if (!g_bridge.isBinaryStreaming()) {
-      Serial.printf("{\"ble\":1,\"enabled\":%s,\"connected\":%s,\"state\":\"%s\",\"mode\":\"%s\",\"burst\":%s}\n",
+      Serial.printf("{\"ble\":1,\"ble_id\":\"%s\",\"enabled\":%s,\"connected\":%s,\"state\":\"%s\",\"mode\":\"%s\",\"burst\":%s}\n",
+                    g_ble.deviceId(),
                     g_ble.isEnabled() ? "true" : "false",
                     g_ble.isConnected() ? "true" : "false",
                     g_ble.stateName(),

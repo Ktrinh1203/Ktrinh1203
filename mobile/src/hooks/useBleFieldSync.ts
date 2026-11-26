@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { devicesApi } from '../api/endpoints';
 import { errorMessage } from '../api/client';
 import {
+  autoConnectNeuroLinkBleById,
   connectNeuroLinkBle,
+  DEVICE_ID_SAVED_EVENT,
   generateBleFieldBurst,
+  getPairedDeviceId,
   isWebBluetoothSupported,
+  setPairedDeviceId,
   type BleConnectionHandle,
 } from '../lib/bleProtocol';
 import {
@@ -41,7 +46,9 @@ export function useBleFieldSync(params: {
   const { deviceId, deviceCode, montage, onSynced } = params;
 
   const [bleStatus, setBleStatus] = useState<BleLinkStatus>('idle');
+  const [pairedDeviceId, setPairedDeviceIdState] = useState<string>(() => getPairedDeviceId());
   const [bleDeviceName, setBleDeviceName] = useState<string | null>(null);
+  const autoConnectAttemptedRef = useRef<boolean>(false);
   const [bleLiveSamples, setBleLiveSamples] = useState<number[][]>([]);
   const [bleTelemetry, setBleTelemetry] = useState<BleTelemetrySnapshot | null>(null);
   const [pendingBatches, setPendingBatches] = useState<PendingBleBatch[]>([]);
@@ -173,63 +180,118 @@ export function useBleFieldSync(params: {
     [bleTelemetry?.rateSps, deviceCode, deviceId, flushQueue, montage, refreshQueue],
   );
 
-  const connectRealBle = useCallback(async () => {
-    if (!deviceId || !deviceCode) {
-      setStatusMessage('Chọn thiết bị đích trước khi ghép đôi BLE.');
+  const connectRealBle = useCallback(
+    async (overrideTargetId?: string) => {
+      if (!deviceId || !deviceCode) {
+        setStatusMessage('Chọn thiết bị đích trước khi ghép đôi BLE.');
+        return;
+      }
+      const targetId = (overrideTargetId ?? pairedDeviceId).trim().toUpperCase();
+      setBleStatus('connecting');
+      setStatusMessage(
+        targetId
+          ? `Đang bật Bluetooth & tự động liên kết ${targetId}...`
+          : 'Đang tìm thiết bị NeuroLink qua Bluetooth BLE...',
+      );
+
+      try {
+        const handlers = {
+          onSamples: (rows: number[][]) => {
+            setBleLiveSamples((prev) => [...prev, ...rows].slice(-250));
+            sampleAccRef.current.push(...rows);
+            if (sampleAccRef.current.length >= CHUNK_FLUSH_THRESHOLD) {
+              void commitAccumulatorToQueue(true);
+            }
+          },
+          onTelemetry: (tel: Record<string, unknown>) => {
+            latestTelRef.current = tel;
+            const aiState = typeof tel.ai_state === 'string' ? tel.ai_state : undefined;
+            const bleMode =
+              tel.ble_mode === 'REALTIME' || tel.ble_mode === 'AUTO' ? tel.ble_mode : undefined;
+            const bleBurst = typeof tel.ble_burst === 'boolean' ? tel.ble_burst : undefined;
+            setBleTelemetry({
+              batPct: typeof tel.bat_pct === 'number' ? tel.bat_pct : undefined,
+              vbatMv: typeof tel.vbat_mv === 'number' ? tel.vbat_mv : undefined,
+              aiState,
+              rateSps: typeof tel.rate_sps === 'number' ? tel.rate_sps : undefined,
+              bleMode,
+              bleBurst,
+            });
+            if (aiState === 'STROKE_ALERT' && navigator.onLine) {
+              void flushQueue(true);
+            }
+          },
+          onDisconnected: () => {
+            bleHandleRef.current = null;
+            setBleStatus('idle');
+            setStatusMessage('ESP32 BLE đã ngắt kết nối — lưu nốt gói đệm vào máy.');
+            void commitAccumulatorToQueue(true);
+          },
+        };
+
+        const handle =
+          targetId && Capacitor.isNativePlatform()
+            ? await autoConnectNeuroLinkBleById(targetId, handlers)
+            : await connectNeuroLinkBle(handlers);
+
+        bleHandleRef.current = handle;
+        setBleDeviceName(handle.deviceName);
+        setBleStatus('connected');
+        const initCmd = bleStreamMode === 'realtime' ? 'BLE_MODE_REALTIME' : 'BLE_MODE_AUTO';
+        await handle.sendCommand(initCmd).catch(() => undefined);
+        setStatusMessage(
+          bleStreamMode === 'realtime'
+            ? `Đã tự động liên kết ${handle.deviceName} · Realtime 250Hz.`
+            : `Đã tự động liên kết ${handle.deviceName} · Auto tiết kiệm pin.`,
+        );
+      } catch (err) {
+        setBleStatus('error');
+        setStatusMessage(errorMessage(err));
+      }
+    },
+    [bleStreamMode, commitAccumulatorToQueue, deviceCode, deviceId, flushQueue, pairedDeviceId],
+  );
+
+  const savePairedDeviceId = useCallback(
+    async (rawId: string) => {
+      const saved = setPairedDeviceId(rawId);
+      setPairedDeviceIdState(saved);
+      if (saved && Capacitor.isNativePlatform()) {
+        await connectRealBle(saved);
+      }
+    },
+    [connectRealBle],
+  );
+
+  // Sync pairedDeviceId if saved from first-launch onboarding modal
+  useEffect(() => {
+    const onSaved = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ deviceId?: string }>).detail;
+      const nextId = detail?.deviceId ?? getPairedDeviceId();
+      setPairedDeviceIdState(nextId);
+      if (nextId && Capacitor.isNativePlatform() && !bleHandleRef.current) {
+        void connectRealBle(nextId);
+      }
+    };
+    window.addEventListener(DEVICE_ID_SAVED_EVENT, onSaved);
+    return () => window.removeEventListener(DEVICE_ID_SAVED_EVENT, onSaved);
+  }, [connectRealBle]);
+
+  // Silent auto-connect once per app launch on native Android when Device ID is already saved
+  useEffect(() => {
+    if (
+      !Capacitor.isNativePlatform() ||
+      !pairedDeviceId ||
+      !deviceId ||
+      !deviceCode ||
+      bleHandleRef.current ||
+      autoConnectAttemptedRef.current
+    ) {
       return;
     }
-    setBleStatus('connecting');
-    setStatusMessage('Đang tìm thiết bị NeuroLink-Holter qua Bluetooth BLE...');
-
-    try {
-      const handle = await connectNeuroLinkBle({
-        onSamples: (rows) => {
-          setBleLiveSamples((prev) => [...prev, ...rows].slice(-250));
-          sampleAccRef.current.push(...rows);
-          if (sampleAccRef.current.length >= CHUNK_FLUSH_THRESHOLD) {
-            void commitAccumulatorToQueue(true);
-          }
-        },
-        onTelemetry: (tel) => {
-          latestTelRef.current = tel;
-          const aiState = typeof tel.ai_state === 'string' ? tel.ai_state : undefined;
-          const bleMode =
-            tel.ble_mode === 'REALTIME' || tel.ble_mode === 'AUTO' ? tel.ble_mode : undefined;
-          const bleBurst = typeof tel.ble_burst === 'boolean' ? tel.ble_burst : undefined;
-          setBleTelemetry({
-            batPct: typeof tel.bat_pct === 'number' ? tel.bat_pct : undefined,
-            vbatMv: typeof tel.vbat_mv === 'number' ? tel.vbat_mv : undefined,
-            aiState,
-            rateSps: typeof tel.rate_sps === 'number' ? tel.rate_sps : undefined,
-            bleMode,
-            bleBurst,
-          });
-          if (aiState === 'STROKE_ALERT' && navigator.onLine) {
-            void flushQueue(true);
-          }
-        },
-        onDisconnected: () => {
-          bleHandleRef.current = null;
-          setBleStatus('idle');
-          setStatusMessage('ESP32 BLE đã ngắt kết nối — lưu nốt gói đệm vào máy.');
-          void commitAccumulatorToQueue(true);
-        },
-      });
-      bleHandleRef.current = handle;
-      setBleDeviceName(handle.deviceName);
-      setBleStatus('connected');
-      const initCmd = bleStreamMode === 'realtime' ? 'BLE_MODE_REALTIME' : 'BLE_MODE_AUTO';
-      await handle.sendCommand(initCmd).catch(() => undefined);
-      setStatusMessage(
-        bleStreamMode === 'realtime'
-          ? `Đã kết nối ${handle.deviceName} · Realtime 250Hz.`
-          : `Đã kết nối ${handle.deviceName} · Auto tiết kiệm pin (chỉ gửi khi có cảnh báo).`,
-      );
-    } catch (err) {
-      setBleStatus('error');
-      setStatusMessage(errorMessage(err));
-    }
-  }, [bleStreamMode, commitAccumulatorToQueue, deviceCode, deviceId, flushQueue]);
+    autoConnectAttemptedRef.current = true;
+    void connectRealBle(pairedDeviceId);
+  }, [connectRealBle, deviceCode, deviceId, pairedDeviceId]);
 
   const disconnectBle = useCallback(() => {
     bleHandleRef.current?.disconnect();
@@ -301,6 +363,8 @@ export function useBleFieldSync(params: {
   return {
     webBluetoothAvailable: isWebBluetoothSupported(),
     bleStatus,
+    pairedDeviceId,
+    savePairedDeviceId,
     bleDeviceName,
     bleLiveSamples,
     bleTelemetry,

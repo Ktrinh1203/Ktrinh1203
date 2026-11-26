@@ -32,11 +32,14 @@ public:
   using CommandCallback = void (*)(const String &cmdLine);
 
   void begin(CommandCallback onRemoteCmd = nullptr, bool autoAdvertise = true) {
+    initDeviceId();
     on_cmd_ = onRemoteCmd;
     enabled_ = autoAdvertise;
     if (!enabled_) return;
     ensureStarted();
   }
+
+  const char *deviceId() const { return device_id_; }
 
   void setEnabled(bool enabled) {
     enabled_ = enabled;
@@ -227,12 +230,22 @@ private:
     BleGattLink *owner_;
   };
 
+  void initDeviceId() {
+    if (device_id_[0] != '\0') return;
+    uint64_t mac = ESP.getEfuseMac();
+    uint8_t b3 = static_cast<uint8_t>((mac >> 24) & 0xFF);
+    uint8_t b4 = static_cast<uint8_t>((mac >> 32) & 0xFF);
+    uint8_t b5 = static_cast<uint8_t>((mac >> 40) & 0xFF);
+    snprintf(device_id_, sizeof(device_id_), "NL-%02X%02X%02X", b3, b4, b5);
+  }
+
   void ensureStarted() {
     if (initialized_) return;
+    initDeviceId();
     if (prebuf_ == nullptr) {
       prebuf_ = static_cast<int16_t *>(calloc(static_cast<size_t>(PREBUF_LEN) * 8U, sizeof(int16_t)));
     }
-    NimBLEDevice::init(NL_BLE_DEVICE_NAME);
+    NimBLEDevice::init(device_id_);
     NimBLEDevice::setMTU(512);
     NimBLEDevice::setPower(3); // +3 dBm cho kết nối đeo người tiết kiệm pin
 
@@ -261,13 +274,14 @@ private:
 
     NimBLEAdvertising *adv = NimBLEDevice::getAdvertising();
     adv->addServiceUUID(NL_BLE_SERVICE_UUID);
-    adv->setName(NL_BLE_DEVICE_NAME);
+    adv->setName(device_id_);
     adv->enableScanResponse(true);
     adv->setPreferredParams(0x06, 0x12);
     NimBLEDevice::startAdvertising();
     initialized_ = true;
   }
 
+  char device_id_[16] = "";
   CommandCallback on_cmd_ = nullptr;
   NimBLEServer *server_ = nullptr;
   NimBLECharacteristic *eeg_char_ = nullptr;

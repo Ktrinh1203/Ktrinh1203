@@ -1,4 +1,5 @@
-import { Bluetooth, CloudUpload, Database, Radio, Wifi, WifiOff } from 'lucide-react';
+import { useState } from 'react';
+import { Bluetooth, CloudUpload, Cpu, Database, Radio, Wifi, WifiOff } from 'lucide-react';
 import { cn } from './ui';
 import type { BleLinkStatus, BleStreamMode, BleTelemetrySnapshot } from '../hooks/useBleFieldSync';
 import type { NetworkSyncStatus, PendingBleBatch } from '../lib/offlineSyncQueue';
@@ -6,6 +7,8 @@ import type { NetworkSyncStatus, PendingBleBatch } from '../lib/offlineSyncQueue
 interface BleFieldSyncCardProps {
   webBluetoothAvailable: boolean;
   bleStatus: BleLinkStatus;
+  pairedDeviceId: string;
+  onSavePairedDeviceId: (id: string) => void;
   bleDeviceName: string | null;
   bleTelemetry: BleTelemetrySnapshot | null;
   bleStreamMode: BleStreamMode;
@@ -26,6 +29,8 @@ interface BleFieldSyncCardProps {
 export function BleFieldSyncCard({
   webBluetoothAvailable,
   bleStatus,
+  pairedDeviceId,
+  onSavePairedDeviceId,
   bleDeviceName,
   bleTelemetry,
   bleStreamMode,
@@ -44,6 +49,8 @@ export function BleFieldSyncCard({
 }: BleFieldSyncCardProps) {
   const isConnected = bleStatus === 'connected';
   const totalQueuedSamples = pendingBatches.reduce((sum, b) => sum + b.samples.length, 0);
+  const [editingId, setEditingId] = useState(false);
+  const [draftId, setDraftId] = useState(pairedDeviceId);
 
   return (
     <section
@@ -111,6 +118,51 @@ export function BleFieldSyncCard({
           </div>
         </div>
       )}
+
+      {/* Bound unique Device ID row */}
+      <div className="rounded-xl border border-[#EDF3EF] bg-[#FAFDFB] px-3 py-2 space-y-2">
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <span className="inline-flex items-center gap-1.5 text-[#5B6860] min-w-0">
+            <Cpu className="size-3.5 text-[#16A34A] shrink-0" aria-hidden />
+            <span className="truncate">ID thiết bị:</span>
+            <span className="font-mono font-bold text-[#111827] whitespace-nowrap">
+              {pairedDeviceId || 'Chưa gắn'}
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setDraftId(pairedDeviceId);
+              setEditingId((v) => !v);
+            }}
+            className="text-[11px] font-semibold text-[#15803D] hover:underline shrink-0 cursor-pointer"
+          >
+            {editingId ? 'Đóng' : pairedDeviceId ? 'Đổi mã' : 'Nhập mã'}
+          </button>
+        </div>
+
+        {editingId && (
+          <div className="flex items-center gap-1.5">
+            <input
+              type="text"
+              value={draftId}
+              onChange={(e) => setDraftId(e.target.value.toUpperCase())}
+              placeholder="VD: NL-205840"
+              className="flex-1 h-9 rounded-lg border border-[#DCE6DF] bg-white px-2.5 font-mono text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#16A34A]"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                onSavePairedDeviceId(draftId);
+                setEditingId(false);
+              }}
+              className="h-9 px-3 rounded-lg bg-[#16A34A] text-white text-xs font-semibold cursor-pointer shrink-0"
+            >
+              Lưu
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Auto Power-Save vs Realtime Stream Switcher */}
       <div className="rounded-xl border border-[#EDF3EF] bg-[#FAFDFB] p-2.5 space-y-1.5">

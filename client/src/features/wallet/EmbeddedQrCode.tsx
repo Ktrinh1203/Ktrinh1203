@@ -183,7 +183,7 @@ export function EmbeddedQrCode({
   const isPaid = status === 'PAID';
 
   return (
-    <Card className="p-4 sm:p-5 border-[#BBF7D0] bg-[#F5FAF7]">
+    <Card className="p-4 sm:p-5 border-[#BBF7D0] bg-[#F5FAF7] overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#DCE6DF]">
         <div className="flex items-center gap-2">
           <QrCode className="size-4 text-[#16A34A] shrink-0" aria-hidden />
@@ -228,7 +228,7 @@ export function EmbeddedQrCode({
         </div>
 
         {/* Copyable Bank Transfer Details */}
-        <div className="space-y-2.5 text-xs">
+        <div className="min-w-0 space-y-2.5 text-xs">
           <div className="rounded-lg border border-[#DCE6DF] bg-white px-3 py-2 flex items-center justify-between gap-2">
             <div className="min-w-0">
               <span className="text-[11px] text-[#6B7280] block">Ngân hàng</span>

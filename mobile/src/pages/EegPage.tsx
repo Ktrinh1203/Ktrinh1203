@@ -91,6 +91,63 @@ function buildDatasetPreview(rec: EegDatasetRecord) {
   return { time, channels, filtered };
 }
 
+function filterChannelForDisplay(samples: number[], fs: number): number[] {
+  const n = samples.length;
+  if (n === 0) return [];
+  const safeFs = fs > 10 ? fs : 250;
+  const alpha = 1 / (1 + (2 * Math.PI * 0.5) / safeFs);
+
+  // 1st-order causal 0.5 Hz highpass starting from samples[0] to remove DC offset without step transient
+  const hp = new Array<number>(n);
+  let prevX = Number.isFinite(samples[0]) ? samples[0]! : 0;
+  let prevY = 0;
+  hp[0] = 0;
+  for (let i = 1; i < n; i++) {
+    const raw = samples[i];
+    const x = Number.isFinite(raw) ? raw! : prevX;
+    const y = alpha * (prevY + x - prevX);
+    hp[i] = y;
+    prevX = x;
+    prevY = y;
+  }
+
+  // 2nd-order biquad 50 Hz notch (Q = 15) when Nyquist allows
+  let notched = hp;
+  if (safeFs > 110) {
+    const w0 = (2 * Math.PI * 50) / safeFs;
+    const cosW0 = Math.cos(w0);
+    const alphaNotch = Math.sin(w0) / (2 * 15);
+    const b0 = 1;
+    const b1 = -2 * cosW0;
+    const b2 = 1;
+    const a0 = 1 + alphaNotch;
+    const a1 = -2 * cosW0;
+    const a2 = 1 - alphaNotch;
+
+    notched = new Array<number>(n);
+    let x1 = 0;
+    let x2 = 0;
+    let y1 = 0;
+    let y2 = 0;
+    for (let i = 0; i < n; i++) {
+      const x0 = hp[i]!;
+      const y0 = (b0 * x0 + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+      notched[i] = y0;
+      x2 = x1;
+      x1 = x0;
+      y2 = y1;
+      y1 = y0;
+    }
+  }
+
+  let sum = 0;
+  for (let i = 0; i < n; i++) {
+    sum += notched[i]!;
+  }
+  const mean = sum / n;
+  return notched.map((v) => Number((v - mean).toFixed(2)));
+}
+
 function buildDeviceWaveform(
   bufferedSamples: number[][] | undefined,
   sampleRateSps: number,
@@ -101,11 +158,14 @@ function buildDeviceWaveform(
     const slice = bufferedSamples.slice(-250);
     const rate = sampleRateSps || 500;
     const time = slice.map((_, i) => Number((i / rate).toFixed(3)));
+    const raw: Record<string, number[]> = {};
     const filtered: Record<string, number[]> = {};
     channels.forEach((ch, ci) => {
-      filtered[ch] = slice.map((row) => Number((row[ci] ?? 0).toFixed(2)));
+      const rawArr = slice.map((row) => Number((row[ci] ?? 0).toFixed(2)));
+      raw[ch] = rawArr;
+      filtered[ch] = filterChannelForDisplay(rawArr, rate);
     });
-    return { time, channels, filtered };
+    return { time, channels, raw, filtered };
   }
 
   const n = 200;
@@ -813,6 +873,8 @@ export function EegPage() {
               <BleFieldSyncCard
                 webBluetoothAvailable={bleSync.webBluetoothAvailable}
                 bleStatus={bleSync.bleStatus}
+                pairedDeviceId={bleSync.pairedDeviceId}
+                onSavePairedDeviceId={(id) => void bleSync.savePairedDeviceId(id)}
                 bleDeviceName={bleSync.bleDeviceName}
                 bleTelemetry={bleSync.bleTelemetry}
                 bleStreamMode={bleSync.bleStreamMode}

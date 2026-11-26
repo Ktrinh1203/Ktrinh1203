@@ -53,7 +53,7 @@ const TRACE_COLORS = [
   '#10B981',
 ] as const;
 
-type ScopeScaleUv = 50 | 100 | 200;
+type ScopeScaleUv = 'auto' | 50 | 100 | 200;
 
 interface CreatedCredentialBanner {
   deviceCode: string;
@@ -220,6 +220,7 @@ const SCENARIO_LABELS: Record<DeviceSimulationScenario, string> = {
 interface OscilloscopeCanvasProps {
   isProfessional: boolean;
   scaleUv: ScopeScaleUv;
+  sampleRateSps: number;
   scopePaused: boolean;
   ringRef: MutableRefObject<Float32Array[]>;
   writeIdxRef: MutableRefObject<number>;
@@ -230,6 +231,7 @@ interface OscilloscopeCanvasProps {
 function OscilloscopeCanvas({
   isProfessional,
   scaleUv,
+  sampleRateSps,
   scopePaused,
   ringRef,
   writeIdxRef,
@@ -240,13 +242,15 @@ function OscilloscopeCanvas({
   const canvasWrapRef = useRef<HTMLDivElement | null>(null);
   const pausedRef = useRef<boolean>(scopePaused);
   const scaleUvRef = useRef<ScopeScaleUv>(scaleUv);
+  const sampleRateRef = useRef<number>(sampleRateSps);
 
   pausedRef.current = scopePaused;
   scaleUvRef.current = scaleUv;
+  sampleRateRef.current = sampleRateSps;
 
   useEffect(() => {
     dirtyRef.current = true;
-  }, [scaleUv, scopePaused, dirtyRef]);
+  }, [scaleUv, scopePaused, sampleRateSps, dirtyRef]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -257,6 +261,9 @@ function OscilloscopeCanvas({
     if (!ctx) return;
 
     const CANVAS_HEIGHT = isProfessional ? 432 : 396;
+    const hpBuf = new Float32Array(RING_CAPACITY);
+    const notchBuf = new Float32Array(RING_CAPACITY);
+    const absBuf = new Float32Array(RING_CAPACITY);
 
     const drawFrame = () => {
       const width = Math.max(280, Math.floor(wrap.clientWidth));
@@ -269,6 +276,18 @@ function OscilloscopeCanvas({
       const plotH = height - topPad - bottomPad;
       const laneH = plotH / CHANNEL_COUNT;
       const scale = scaleUvRef.current;
+      const fs = sampleRateRef.current > 10 ? sampleRateRef.current : 500;
+      const alphaHp = 1 / (1 + (2 * Math.PI * 0.5) / fs);
+      const useNotch = fs > 110;
+      const w0 = (2 * Math.PI * 50) / fs;
+      const cosW0 = Math.cos(w0);
+      const alphaNotch = Math.sin(w0) / (2 * 15);
+      const b0 = 1;
+      const b1 = -2 * cosW0;
+      const b2 = 1;
+      const a0 = 1 + alphaNotch;
+      const a1 = -2 * cosW0;
+      const a2 = 1 - alphaNotch;
 
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, width, height);
@@ -318,20 +337,91 @@ function OscilloscopeCanvas({
           const buf = rings[ch]!;
           const centerY = topPad + laneH * ch + laneH / 2;
 
-          ctx.strokeStyle = TRACE_COLORS[ch] ?? '#16A34A';
+          const raw0 = buf[startIdx] ?? 0;
+          let prevX = Number.isFinite(raw0) ? raw0 : 0;
+          let prevY = 0;
+          let minRaw = prevX;
+          let maxRaw = prevX;
+          let sumRaw = prevX;
+          hpBuf[0] = 0;
+
+          for (let i = 1; i < filled; i++) {
+            const sampleIdx = (startIdx + i) % RING_CAPACITY;
+            const rawVal = buf[sampleIdx] ?? 0;
+            const xVal = Number.isFinite(rawVal) ? rawVal : prevX;
+            if (xVal < minRaw) minRaw = xVal;
+            if (xVal > maxRaw) maxRaw = xVal;
+            sumRaw += xVal;
+            const hpVal = alphaHp * (prevY + xVal - prevX);
+            hpBuf[i] = hpVal;
+            prevX = xVal;
+            prevY = hpVal;
+          }
+
+          let displayBuf = hpBuf;
+          let sumDisp = 0;
+          if (useNotch) {
+            let nx1 = 0;
+            let nx2 = 0;
+            let ny1 = 0;
+            let ny2 = 0;
+            for (let i = 0; i < filled; i++) {
+              const nx0 = hpBuf[i]!;
+              const ny0 = (b0 * nx0 + b1 * nx1 + b2 * nx2 - a1 * ny1 - a2 * ny2) / a0;
+              notchBuf[i] = ny0;
+              sumDisp += ny0;
+              nx2 = nx1;
+              nx1 = nx0;
+              ny2 = ny1;
+              ny1 = ny0;
+            }
+            displayBuf = notchBuf;
+          } else {
+            for (let i = 0; i < filled; i++) {
+              sumDisp += hpBuf[i]!;
+            }
+          }
+
+          const meanDisp = sumDisp / filled;
+          for (let i = 0; i < filled; i++) {
+            const centered = displayBuf[i]! - meanDisp;
+            displayBuf[i] = centered;
+            absBuf[i] = Math.abs(centered);
+          }
+
+          const isRail = (maxRaw - minRaw) < 2 && Math.abs(sumRaw / filled) > 150000;
+          let chScale: number;
+          if (scale === 'auto') {
+            const sortedAbs = absBuf.subarray(0, filled).sort();
+            const p95Idx = Math.min(filled - 1, Math.floor(filled * 0.95));
+            const p95 = sortedAbs[p95Idx] ?? 0;
+            chScale = Math.max(25, p95 * 1.15);
+          } else {
+            chScale = scale;
+          }
+
+          ctx.strokeStyle = isRail ? '#DC2626' : (TRACE_COLORS[ch] ?? '#16A34A');
           ctx.lineWidth = 1.4;
           ctx.beginPath();
 
           for (let i = 0; i < filled; i++) {
-            const sampleIdx = (startIdx + i) % RING_CAPACITY;
-            const uv = buf[sampleIdx] ?? 0;
-            const clamped = Math.max(-scale, Math.min(scale, uv));
+            const uv = displayBuf[i]!;
+            const clamped = Math.max(-chScale, Math.min(chScale, uv));
             const x = leftGutter + i * stepX;
-            const y = centerY - (clamped / scale) * halfLane;
+            const y = centerY - (clamped / chScale) * halfLane;
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
           }
           ctx.stroke();
+
+          ctx.font = '600 10px ui-monospace, SFMono-Regular, Menlo, monospace';
+          ctx.textBaseline = 'middle';
+          ctx.textAlign = 'right';
+          ctx.fillStyle = isRail ? '#DC2626' : '#6E6D68';
+          const badgeText = isRail
+            ? 'RAIL!'
+            : `±${chScale >= 1000 ? `${(chScale / 1000).toFixed(1)}k` : Math.round(chScale)}µV`;
+          ctx.fillText(badgeText, leftGutter + plotW - 4, topPad + laneH * ch + 10);
         }
       } else {
         ctx.fillStyle = '#6E6D68';
@@ -351,7 +441,15 @@ function OscilloscopeCanvas({
       ctx.fillStyle = '#6E6D68';
       ctx.font = '500 10px ui-monospace, SFMono-Regular, Menlo, monospace';
       ctx.textAlign = 'left';
-      ctx.fillText(`Thang biên độ ±${scale} µV · Cửa sổ ${RING_CAPACITY} mẫu`, leftGutter, height - 6);
+      const footerScale =
+        scale === 'auto'
+          ? 'Thang biên độ: Tự động từng kênh (Auto/CH)'
+          : `Thang biên độ ±${scale} µV`;
+      ctx.fillText(
+        `${footerScale} · Lọc 0.5 Hz + Notch 50 Hz · Cửa sổ ${RING_CAPACITY} mẫu`,
+        leftGutter,
+        height - 6,
+      );
     };
 
     const syncCanvasSize = () => {
@@ -407,7 +505,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
   const [simScenario, setSimScenario] = useState<DeviceSimulationScenario>('normal');
   const [isSimulating, setIsSimulating] = useState(false);
   const [showRealSetup, setShowRealSetup] = useState(false);
-  const [scaleUv, setScaleUv] = useState<ScopeScaleUv>(100);
+  const [scaleUv, setScaleUv] = useState<ScopeScaleUv>('auto');
   const [scopePaused, setScopePaused] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showGatewayCenter, setShowGatewayCenter] = useState(false);
@@ -1324,7 +1422,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
 
               <div className="flex flex-wrap items-center gap-1.5">
                 <div className="inline-flex rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] p-0.5 text-xs">
-                  {([50, 100, 200] as const).map((uv) => (
+                  {(['auto', 50, 100, 200] as const).map((uv) => (
                     <button
                       key={uv}
                       type="button"
@@ -1336,7 +1434,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
                           : 'text-[#575652] hover:text-[#15803D]',
                       )}
                     >
-                      ±{uv}µV
+                      {uv === 'auto' ? 'Auto/CH' : `±${uv}µV`}
                     </button>
                   ))}
                 </div>
@@ -1364,6 +1462,7 @@ export function HardwareDevicePanel({ isProfessional = false }: HardwareDevicePa
               <OscilloscopeCanvas
                 isProfessional={isProfessional}
                 scaleUv={scaleUv}
+                sampleRateSps={selectedDevice?.sampleRateSps ?? 500}
                 scopePaused={scopePaused}
                 ringRef={ringRef}
                 writeIdxRef={writeIdxRef}

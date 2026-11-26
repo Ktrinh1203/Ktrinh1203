@@ -11,6 +11,64 @@ export const NEUROLINK_BLE_EEG_CHAR_UUID = '4f9a0002-b5a3-f393-e0a9-e50e24dcca9e
 export const NEUROLINK_BLE_TEL_CHAR_UUID = '4f9a0003-b5a3-f393-e0a9-e50e24dcca9e';
 export const NEUROLINK_BLE_CMD_CHAR_UUID = '4f9a0004-b5a3-f393-e0a9-e50e24dcca9e';
 
+const PAIRED_DEVICE_ID_KEY = 'neurolink_paired_device_id_v1';
+const PAIRED_BLE_MAC_KEY = 'neurolink_paired_ble_mac_v1';
+export const DEVICE_ID_SAVED_EVENT = 'neurolink:device-id-saved';
+
+export function normalizeDeviceId(raw: string): string {
+  return raw.trim().toUpperCase().replace(/\s+/g, '');
+}
+
+export function getPairedDeviceId(): string {
+  if (typeof localStorage === 'undefined') return '';
+  return normalizeDeviceId(localStorage.getItem(PAIRED_DEVICE_ID_KEY) ?? '');
+}
+
+export function setPairedDeviceId(raw: string): string {
+  const norm = normalizeDeviceId(raw);
+  if (typeof localStorage !== 'undefined') {
+    const prev = normalizeDeviceId(localStorage.getItem(PAIRED_DEVICE_ID_KEY) ?? '');
+    if (norm) {
+      localStorage.setItem(PAIRED_DEVICE_ID_KEY, norm);
+    } else {
+      localStorage.removeItem(PAIRED_DEVICE_ID_KEY);
+    }
+    if (prev !== norm) {
+      localStorage.removeItem(PAIRED_BLE_MAC_KEY);
+    }
+  }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(DEVICE_ID_SAVED_EVENT, { detail: { deviceId: norm } }));
+  }
+  return norm;
+}
+
+export function getPairedBleMac(): string {
+  if (typeof localStorage === 'undefined') return '';
+  return (localStorage.getItem(PAIRED_BLE_MAC_KEY) ?? '').trim();
+}
+
+export function setPairedBleMac(mac: string): void {
+  if (typeof localStorage === 'undefined') return;
+  const cleaned = mac.trim();
+  if (cleaned) localStorage.setItem(PAIRED_BLE_MAC_KEY, cleaned);
+  else localStorage.removeItem(PAIRED_BLE_MAC_KEY);
+}
+
+/**
+ * Ensures Bluetooth is enabled on native Android (prompts OS enable dialog automatically if off).
+ */
+export async function ensureNativeBluetoothEnabled(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return true;
+  await BleClient.initialize({ androidNeverForLocation: true });
+  const enabled = await BleClient.isEnabled();
+  if (!enabled) {
+    await BleClient.requestEnable();
+    return await BleClient.isEnabled();
+  }
+  return true;
+}
+
 const FRAME_6_SAMPLES_LEN = 197;
 const FRAME_1_SAMPLE_LEN = 37;
 
@@ -129,53 +187,152 @@ export function parseBleTelemetryJson(view: DataView): Record<string, unknown> |
   }
 }
 
+async function attachNativeBleNotifications(
+  deviceId: string,
+  deviceName: string,
+  handlers: {
+    onSamples: (samples: number[][]) => void;
+    onTelemetry: (telemetry: Record<string, unknown>) => void;
+    onDisconnected: () => void;
+  },
+): Promise<BleConnectionHandle> {
+  await BleClient.connect(deviceId, () => handlers.onDisconnected(), { timeout: 8000 });
+  await BleClient.startNotifications(
+    deviceId,
+    NEUROLINK_BLE_SERVICE_UUID,
+    NEUROLINK_BLE_EEG_CHAR_UUID,
+    (value) => {
+      const rows = decodeEsp32BleFrame(value);
+      if (rows.length > 0) handlers.onSamples(rows);
+    },
+  );
+  await BleClient.startNotifications(
+    deviceId,
+    NEUROLINK_BLE_SERVICE_UUID,
+    NEUROLINK_BLE_TEL_CHAR_UUID,
+    (value) => {
+      const parsed = parseBleTelemetryJson(value);
+      if (parsed) handlers.onTelemetry(parsed);
+    },
+  );
+
+  return {
+    deviceName,
+    sendCommand: async (cmd: string) => {
+      const encoded = new TextEncoder().encode(cmd.trim());
+      const dv = new DataView(encoded.buffer, encoded.byteOffset, encoded.byteLength);
+      await BleClient.writeWithoutResponse(
+        deviceId,
+        NEUROLINK_BLE_SERVICE_UUID,
+        NEUROLINK_BLE_CMD_CHAR_UUID,
+        dv,
+      );
+    },
+    disconnect: () => {
+      void BleClient.disconnect(deviceId).catch(() => undefined);
+    },
+  };
+}
+
+/**
+ * Silent auto-connect on native Android using the user's bound unique Device ID (e.g. NL-205840).
+ * 1) Automatically requests Android to enable Bluetooth if off.
+ * 2) Tries direct silent reconnect via cached BLE MAC.
+ * 3) Falls back to silent background LE scan matching targetId without showing a picker dialog.
+ */
+export async function autoConnectNeuroLinkBleById(
+  targetId: string,
+  handlers: {
+    onSamples: (samples: number[][]) => void;
+    onTelemetry: (telemetry: Record<string, unknown>) => void;
+    onDisconnected: () => void;
+  },
+): Promise<BleConnectionHandle> {
+  const normalizedTarget = normalizeDeviceId(targetId);
+  if (!Capacitor.isNativePlatform()) {
+    return connectNeuroLinkBle(handlers);
+  }
+
+  const btReady = await ensureNativeBluetoothEnabled();
+  if (!btReady) {
+    throw new Error('Vui lòng bật Bluetooth để tự động liên kết thiết bị.');
+  }
+
+  const cachedMac = getPairedBleMac();
+  if (cachedMac) {
+    try {
+      return await attachNativeBleNotifications(
+        cachedMac,
+        normalizedTarget || NEUROLINK_BLE_DEVICE_NAME,
+        handlers,
+      );
+    } catch {
+      // Cached MAC unreachable or changed -> fall through to silent scan by Device ID
+    }
+  }
+
+  const found = await new Promise<{ deviceId: string; name: string }>((resolve, reject) => {
+    let settled = false;
+    const finish = (cb: () => void) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      void BleClient.stopLEScan().catch(() => undefined);
+      cb();
+    };
+
+    const timer = window.setTimeout(() => {
+      finish(() =>
+        reject(
+          new Error(
+            `Không tìm thấy thiết bị ${normalizedTarget} gần đây. Hãy bật nguồn thiết bị rồi thử lại.`,
+          ),
+        ),
+      );
+    }, 10000);
+
+    void BleClient.requestLEScan(
+      { services: [NEUROLINK_BLE_SERVICE_UUID] },
+      (result) => {
+        const candidateName = normalizeDeviceId(result.device.name || result.localName || '');
+        if (!normalizedTarget || candidateName === normalizedTarget) {
+          finish(() =>
+            resolve({
+              deviceId: result.device.deviceId,
+              name: candidateName || normalizedTarget || NEUROLINK_BLE_DEVICE_NAME,
+            }),
+          );
+        }
+      },
+    ).catch((err) => {
+      finish(() => reject(err));
+    });
+  });
+
+  setPairedBleMac(found.deviceId);
+  return attachNativeBleNotifications(found.deviceId, found.name, handlers);
+}
+
 export async function connectNeuroLinkBle(handlers: {
   onSamples: (samples: number[][]) => void;
   onTelemetry: (telemetry: Record<string, unknown>) => void;
   onDisconnected: () => void;
 }): Promise<BleConnectionHandle> {
   if (Capacitor.isNativePlatform()) {
-    await BleClient.initialize({ androidNeverForLocation: true });
+    const btReady = await ensureNativeBluetoothEnabled();
+    if (!btReady) {
+      throw new Error('Vui lòng bật Bluetooth để ghép đôi thiết bị.');
+    }
     const dev = await BleClient.requestDevice({
       services: [NEUROLINK_BLE_SERVICE_UUID],
       optionalServices: [NEUROLINK_BLE_SERVICE_UUID],
     });
-    await BleClient.connect(dev.deviceId, () => handlers.onDisconnected());
-    await BleClient.startNotifications(
-      dev.deviceId,
-      NEUROLINK_BLE_SERVICE_UUID,
-      NEUROLINK_BLE_EEG_CHAR_UUID,
-      (value) => {
-        const rows = decodeEsp32BleFrame(value);
-        if (rows.length > 0) handlers.onSamples(rows);
-      },
-    );
-    await BleClient.startNotifications(
-      dev.deviceId,
-      NEUROLINK_BLE_SERVICE_UUID,
-      NEUROLINK_BLE_TEL_CHAR_UUID,
-      (value) => {
-        const parsed = parseBleTelemetryJson(value);
-        if (parsed) handlers.onTelemetry(parsed);
-      },
-    );
-
-    return {
-      deviceName: dev.name || NEUROLINK_BLE_DEVICE_NAME,
-      sendCommand: async (cmd: string) => {
-        const encoded = new TextEncoder().encode(cmd.trim());
-        const dv = new DataView(encoded.buffer, encoded.byteOffset, encoded.byteLength);
-        await BleClient.writeWithoutResponse(
-          dev.deviceId,
-          NEUROLINK_BLE_SERVICE_UUID,
-          NEUROLINK_BLE_CMD_CHAR_UUID,
-          dv,
-        );
-      },
-      disconnect: () => {
-        void BleClient.disconnect(dev.deviceId).catch(() => undefined);
-      },
-    };
+    const devName = normalizeDeviceId(dev.name || '') || NEUROLINK_BLE_DEVICE_NAME;
+    setPairedBleMac(dev.deviceId);
+    if (devName.startsWith('NL-')) {
+      setPairedDeviceId(devName);
+    }
+    return attachNativeBleNotifications(dev.deviceId, devName, handlers);
   }
 
   const nav = navigator as unknown as NavigatorWithBluetooth;

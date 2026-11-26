@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeftRight,
+  ArrowRight,
   BookOpen,
   Building2,
   Calendar,
@@ -20,6 +21,7 @@ import {
   Send,
   Ticket,
   Users,
+  X,
 } from 'lucide-react';
 import { paymentsApi, rewardsApi } from '../api/endpoints';
 import { errorMessage } from '../api/client';
@@ -38,7 +40,7 @@ import { useAuth } from '../features/auth/AuthContext';
 import { DeterministicQrMatrixSvg, EmbeddedQrCode } from '../features/wallet/EmbeddedQrCode';
 import { assetUrl } from '../lib/assets';
 
-type WalletTab = 'topup' | 'transfer' | 'catalog' | 'ledger';
+type WalletTab = 'topup' | 'orders' | 'transfer' | 'catalog' | 'ledger';
 
 const SUPPORTED_BANKS = [
   { bin: '970422', name: 'MB Bank' },
@@ -122,6 +124,7 @@ const REDEMPTION_STATUS_META: Record<RedemptionStatus, { label: string; classNam
 };
 
 function resolveTab(raw: string | null): WalletTab {
+  if (raw === 'orders' || raw === 'billing') return 'orders';
   if (raw === 'transfer') return 'transfer';
   if (raw === 'catalog') return 'catalog';
   if (raw === 'ledger' || raw === 'history') return 'ledger';
@@ -190,7 +193,15 @@ export function RewardsPage() {
   // Top-up state
   const [selectedOrderCode, setSelectedOrderCode] = useState<string | null>(null);
   const [latestCreatedOrder, setLatestCreatedOrder] = useState<PaymentOrderItem | null>(null);
+  const [qrPopupOpen, setQrPopupOpen] = useState(false);
   const [customVnd, setCustomVnd] = useState('');
+  const [draftTopup, setDraftTopup] = useState<{
+    packageId?: string;
+    label: string;
+    amountVnd: number;
+    credits: number;
+    bonusCredits: number;
+  } | null>(null);
 
   // Receive & Bank link state
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
@@ -306,8 +317,10 @@ export function RewardsPage() {
       paymentsApi.createTopupOrder(body),
     onSuccess: (res) => {
       setError(null);
+      setDraftTopup(null);
       setLatestCreatedOrder(res.order);
       setSelectedOrderCode(res.order.orderCode);
+      setQrPopupOpen(true);
       void queryClient.invalidateQueries({ queryKey: ['payments', 'topup-orders'] });
     },
     onError: (err) => setError(errorMessage(err)),
@@ -481,7 +494,14 @@ export function RewardsPage() {
       setError('Số tiền nạp tối thiểu 10.000 ₫.');
       return;
     }
-    createOrderMutation.mutate({ amountVnd: vnd });
+    setError(null);
+    const baseCredits = Math.max(1, Math.floor(vnd / Math.max(1, vndPerCredit)));
+    setDraftTopup({
+      label: `Nạp tùy chọn (${vnd.toLocaleString('vi-VN')} ₫)`,
+      amountVnd: vnd,
+      credits: baseCredits,
+      bonusCredits: 0,
+    });
   };
 
   const payoutCreditsPreview = Math.max(0, Number.parseInt(payoutAmount || '0', 10) || 0);
@@ -557,11 +577,12 @@ export function RewardsPage() {
         </div>
       )}
 
-      {/* 4 Clean Tabs for Everyone */}
+      {/* 5 Clean Tabs — Only ONE view shown at a time */}
       <div className="flex flex-wrap items-center gap-4 sm:gap-6 border-b border-[#DCE6DF]">
         {(
           [
             { key: 'topup', label: 'Nạp Credit', icon: PlusCircle },
+            { key: 'orders', label: 'Đơn nạp (Billing)', icon: QrCode },
             { key: 'transfer', label: 'Nhận & Chuyển', icon: ArrowLeftRight },
             { key: 'catalog', label: 'Đổi ưu đãi', icon: Gift },
             { key: 'ledger', label: 'Lịch sử giao dịch', icon: History },
@@ -596,16 +617,26 @@ export function RewardsPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {packages.map((pkg) => {
-                const isSelected = activeOrder?.amountVnd === pkg.amountVnd && activeOrder?.status === 'PENDING';
+                const isDraftSelected = draftTopup?.packageId === pkg.id;
                 return (
                   <button
                     key={pkg.id}
                     type="button"
                     disabled={createOrderMutation.isPending}
-                    onClick={() => createOrderMutation.mutate({ packageId: pkg.id })}
+                    onClick={() => {
+                      setError(null);
+                      setQrPopupOpen(false);
+                      setDraftTopup({
+                        packageId: pkg.id,
+                        label: `Gói ${pkg.amountVnd.toLocaleString('vi-VN')}đ`,
+                        amountVnd: pkg.amountVnd,
+                        credits: pkg.credits,
+                        bonusCredits: pkg.bonusCredits,
+                      });
+                    }}
                     className={`rounded-xl border p-3.5 text-left transition-colors flex flex-col justify-between gap-2 ${
-                      isSelected
-                        ? 'border-[#16A34A] bg-[#ECFDF3]'
+                      isDraftSelected
+                        ? 'border-[#16A34A] bg-[#ECFDF3] ring-2 ring-[#16A34A]/20'
                         : 'border-[#DCE6DF] bg-white hover:border-[#86EFAC] hover:bg-[#F5FAF7]'
                     }`}
                   >
@@ -642,33 +673,193 @@ export function RewardsPage() {
                 type="submit"
                 size="sm"
                 variant="outline"
-                loading={createOrderMutation.isPending}
-                icon={<QrCode className="size-3.5" aria-hidden />}
+                disabled={createOrderMutation.isPending}
+                icon={<ArrowRight className="size-3.5" aria-hidden />}
               >
-                Tạo mã QR
+                Tiếp tục
               </Button>
             </form>
           </Card>
+        </div>
+      )}
 
-          {activeOrder && (
-            <EmbeddedQrCode
-              orderCode={activeOrder.orderCode}
-              amountVnd={activeOrder.amountVnd}
-              creditsToGrant={activeOrder.creditsToGrant}
-              bonusCredits={activeOrder.bonusCredits}
-              status={activeOrder.status}
-              qrPayload={activeOrder.qrPayload}
-              vietQrImageUrl={activeOrder.vietQrImageUrl}
-              bankName={activeOrder.bankName ?? packagesData?.bankInfo?.bankName}
-              accountNo={activeOrder.accountNo ?? packagesData?.bankInfo?.accountNo}
-              accountName={activeOrder.accountName ?? packagesData?.bankInfo?.accountName}
-              expiresAt={activeOrder.expiresAt}
-              onPaid={() =>
-                setSuccessMsg(`Đã xác nhận thanh toán đơn ${activeOrder.orderCode} thành công!`)
-              }
-            />
+      {/* Popup Wizard: Step 2 (Billing Confirm) -> Step 3 (VietQR) — Only ONE step visible at a time */}
+          {(draftTopup || (qrPopupOpen && activeOrder)) && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4"
+              role="dialog"
+              aria-modal="true"
+            >
+              <div
+                className={`w-full ${
+                  draftTopup ? 'max-w-lg' : 'max-w-2xl'
+                } max-h-[92vh] overflow-y-auto overflow-x-hidden rounded-2xl border border-[#DCE6DF] bg-white shadow-2xl`}
+              >
+                {/* Popup Header + Stepper */}
+                <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#DCE6DF] bg-white px-5 py-3.5">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span
+                      className={`inline-flex items-center gap-1 font-semibold ${
+                        draftTopup ? 'text-[#15803D]' : 'text-[#6B7280]'
+                      }`}
+                    >
+                      <span
+                        className={`inline-flex size-5 items-center justify-center rounded-full text-[11px] font-bold ${
+                          draftTopup ? 'bg-[#16A34A] text-white' : 'bg-[#ECFDF3] text-[#15803D]'
+                        }`}
+                      >
+                        1
+                      </span>
+                      Xác nhận Billing
+                    </span>
+                    <span className="text-[#9CA3AF]">→</span>
+                    <span
+                      className={`inline-flex items-center gap-1 font-semibold ${
+                        !draftTopup && qrPopupOpen ? 'text-[#15803D]' : 'text-[#6B7280]'
+                      }`}
+                    >
+                      <span
+                        className={`inline-flex size-5 items-center justify-center rounded-full text-[11px] font-bold ${
+                          !draftTopup && qrPopupOpen
+                            ? 'bg-[#16A34A] text-white'
+                            : 'bg-[#F3F4F6] text-[#6B7280]'
+                        }`}
+                      >
+                        2
+                      </span>
+                      Thanh toán QR
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Đóng cửa sổ nạp Credit"
+                    disabled={createOrderMutation.isPending}
+                    onClick={() => {
+                      setDraftTopup(null);
+                      setQrPopupOpen(false);
+                    }}
+                    className="rounded-lg p-1.5 text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827] transition-colors"
+                  >
+                    <X className="size-4" aria-hidden />
+                  </button>
+                </div>
+
+                {/* Step 2: Billing Confirmation (Hides Step 1 background & Step 3) */}
+                {draftTopup ? (
+                  <div className="p-5 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <span className="inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-0.5 text-[11px] font-bold text-[#15803D]">
+                          Hóa đơn chờ xác nhận
+                        </span>
+                        <h3 className="mt-1.5 text-base font-bold text-[#111827]">
+                          Kiểm tra thông tin thanh toán
+                        </h3>
+                      </div>
+                      <span className="font-mono text-lg font-bold text-[#111827] tabular-nums">
+                        {draftTopup.amountVnd.toLocaleString('vi-VN')} ₫
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-[#DCE6DF] bg-[#F5FAF7] p-4 space-y-2.5 text-xs sm:text-sm tabular-nums">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[#6B7280]">Gói nạp đã chọn</span>
+                        <span className="font-semibold text-[#111827]">{draftTopup.label}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[#6B7280]">Credit cơ bản</span>
+                        <span className="font-semibold text-[#111827]">
+                          +{(draftTopup.credits - draftTopup.bonusCredits).toLocaleString('vi-VN')} Credit
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[#6B7280]">Credit thưởng thêm</span>
+                        <span className="font-semibold text-[#15803D]">
+                          +{draftTopup.bonusCredits.toLocaleString('vi-VN')} Credit
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[#6B7280]">Phương thức</span>
+                        <span className="font-medium text-[#111827]">Chuyển khoản VietQR 24/7</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[#6B7280]">Tài khoản thụ hưởng</span>
+                        <span className="font-medium text-[#111827] text-right">
+                          {packagesData?.bankInfo?.bankName ?? 'MB Bank'} ·{' '}
+                          <span className="font-mono">
+                            {packagesData?.bankInfo?.accountNo ?? '0888999777'}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 border-t border-[#DCE6DF] pt-2.5">
+                        <span className="font-bold text-[#111827]">Tổng Credit thực nhận</span>
+                        <span className="font-mono text-base font-bold text-[#16A34A]">
+                          +{draftTopup.credits.toLocaleString('vi-VN')} Credit
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-[#6B7280]">
+                      Đơn nạp chỉ được tạo vào mục Đơn của tôi sau khi bạn bấm nút xác nhận bên dưới.
+                    </p>
+
+                    <div className="flex flex-wrap items-center justify-end gap-2.5 pt-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={createOrderMutation.isPending}
+                        onClick={() => setDraftTopup(null)}
+                      >
+                        Chọn lại gói
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        loading={createOrderMutation.isPending}
+                        icon={<QrCode className="size-4" aria-hidden />}
+                        onClick={() =>
+                          createOrderMutation.mutate(
+                            draftTopup.packageId
+                              ? { packageId: draftTopup.packageId }
+                              : { amountVnd: draftTopup.amountVnd },
+                          )
+                        }
+                      >
+                        Xác nhận tạo đơn & lấy mã QR
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Step 3: VietQR Payment (Step 2 hidden) */
+                  activeOrder && (
+                    <div className="p-4">
+                      <EmbeddedQrCode
+                        orderCode={activeOrder.orderCode}
+                        amountVnd={activeOrder.amountVnd}
+                        creditsToGrant={activeOrder.creditsToGrant}
+                        bonusCredits={activeOrder.bonusCredits}
+                        status={activeOrder.status}
+                        qrPayload={activeOrder.qrPayload}
+                        vietQrImageUrl={activeOrder.vietQrImageUrl}
+                        bankName={activeOrder.bankName ?? packagesData?.bankInfo?.bankName}
+                        accountNo={activeOrder.accountNo ?? packagesData?.bankInfo?.accountNo}
+                        accountName={activeOrder.accountName ?? packagesData?.bankInfo?.accountName}
+                        expiresAt={activeOrder.expiresAt}
+                        onPaid={() =>
+                          setSuccessMsg(`Đã xác nhận thanh toán đơn ${activeOrder.orderCode} thành công!`)
+                        }
+                      />
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
           )}
 
+      {/* TAB 2: Đơn nạp (Billing) */}
+      {activeTab === 'orders' && (
+        <div className="space-y-5">
           {/* Recent Top-Up Orders */}
           <Card className="overflow-hidden">
             <div className="px-4 py-3 border-b border-[#DCE6DF] bg-[#F5FAF7] flex items-center justify-between">
@@ -716,7 +907,11 @@ export function RewardsPage() {
                           <td className="py-2.5 px-4 text-right">
                             <button
                               type="button"
-                              onClick={() => setSelectedOrderCode(ord.orderCode)}
+                              onClick={() => {
+                                setDraftTopup(null);
+                                setSelectedOrderCode(ord.orderCode);
+                                setQrPopupOpen(true);
+                              }}
                               className="text-xs font-semibold text-[#16A34A] hover:text-[#15803D] hover:underline"
                             >
                               Xem QR

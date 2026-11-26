@@ -20,6 +20,7 @@ export interface CompactWaveformProps {
 export function CompactWaveform({ waveforms, dark = false, plainLanguage = false }: CompactWaveformProps) {
   const hasRaw = Boolean(waveforms.raw && Object.keys(waveforms.raw).length > 0);
   const [mode, setMode] = useState<'filtered' | 'raw'>('filtered');
+  const [scaleMode, setScaleMode] = useState<'auto' | 'fixed'>('auto');
   const [playing, setPlaying] = useState(false);
   const [scrubIdx, setScrubIdx] = useState<number | null>(null);
   const [sweep, setSweep] = useState(0);
@@ -52,26 +53,45 @@ export function CompactWaveform({ waveforms, dark = false, plainLanguage = false
   const laneH = 34;
   const topPad = 6;
   const height = topPad + channels.length * laneH + 10;
-  const gainUv = 55;
-  const pxPerUv = 13.5 / gainUv;
+
+  const channelGains = useMemo(() => {
+    return channels.map((ch) => {
+      if (scaleMode === 'fixed') return 55;
+      const arr = activeMap[ch] ?? [];
+      const absVals: number[] = [];
+      for (let i = 0; i < arr.length; i++) {
+        const v = arr[i];
+        if (typeof v === 'number' && Number.isFinite(v)) {
+          absVals.push(Math.abs(v));
+        }
+      }
+      if (absVals.length === 0) return 25;
+      absVals.sort((a, b) => a - b);
+      const p95Idx = Math.min(absVals.length - 1, Math.floor(absVals.length * 0.95));
+      const p95 = absVals[p95Idx] ?? 0;
+      return Math.max(25, p95 * 1.15);
+    });
+  }, [channels, activeMap, scaleMode]);
 
   const paths = useMemo(() => {
     return channels.map((ch, idx) => {
       const arr = activeMap[ch] ?? [];
       const n = Math.min(arr.length, nTotal);
       if (n < 2) return '';
+      const chGain = channelGains[idx] ?? 55;
+      const pxPerUv = 13.5 / chGain;
       const step = Math.max(1, Math.floor(n / 150));
       const cy = topPad + idx * laneH + laneH / 2;
       const cmds: string[] = [];
       for (let i = 0; i < n; i += step) {
         const x = labelW + (i / (n - 1)) * plotW;
-        const uv = Math.max(-gainUv * 1.15, Math.min(gainUv * 1.15, arr[i]!));
+        const uv = Math.max(-chGain * 1.15, Math.min(chGain * 1.15, arr[i]!));
         const y = cy - uv * pxPerUv;
         cmds.push(`${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`);
       }
       return cmds.join(' ');
     });
-  }, [channels, activeMap, nTotal, plotW, pxPerUv]);
+  }, [channels, activeMap, nTotal, plotW, channelGains]);
 
   const activeIdx =
     scrubIdx !== null
@@ -143,6 +163,29 @@ export function CompactWaveform({ waveforms, dark = false, plainLanguage = false
               {mode === 'filtered' ? 'Đã lọc nhiễu' : 'Tín hiệu gốc'}
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => setScaleMode((s) => (s === 'auto' ? 'fixed' : 'auto'))}
+            title={
+              scaleMode === 'auto'
+                ? 'Đang tự động phóng đại riêng từng kênh (bấm để về thang chung ±55µV)'
+                : 'Đang dùng thang chung ±55µV (bấm để tự động từng kênh)'
+            }
+            aria-label={
+              scaleMode === 'auto'
+                ? 'Chuyển sang thang chung ±55µV'
+                : 'Chuyển sang tự động từng kênh'
+            }
+            className={cn(
+              'rounded-full px-2.5 h-8 text-xs font-medium border transition-colors cursor-pointer',
+              dark
+                ? 'border-white/15 text-emerald-100/80 hover:bg-white/10'
+                : 'border-[#DCE6DF] text-[#5B6860] hover:bg-[#F5FAF7]',
+            )}
+          >
+            {scaleMode === 'auto' ? 'Auto/CH' : '±55µV'}
+          </button>
         </div>
 
         <span
@@ -204,6 +247,9 @@ export function CompactWaveform({ waveforms, dark = false, plainLanguage = false
         {channels.map((ch, idx) => {
           const cy = topPad + idx * laneH + laneH / 2;
           const val = activeIdx !== null ? activeMap[ch]?.[activeIdx] : undefined;
+          const chGain = channelGains[idx] ?? 55;
+          const gainLabel =
+            chGain >= 1000 ? `±${(chGain / 1000).toFixed(1)}kµV` : `±${Math.round(chGain)}µV`;
           return (
             <g key={ch}>
               <line
@@ -232,7 +278,7 @@ export function CompactWaveform({ waveforms, dark = false, plainLanguage = false
                 strokeLinejoin="round"
                 strokeLinecap="round"
               />
-              {val !== undefined && cursorX !== null && (
+              {val !== undefined && cursorX !== null ? (
                 <text
                   x={width - 10}
                   y={cy - 7}
@@ -242,6 +288,17 @@ export function CompactWaveform({ waveforms, dark = false, plainLanguage = false
                   fill={dark ? '#6EE7B7' : '#15803D'}
                 >
                   {val.toFixed(0)}µV
+                </text>
+              ) : (
+                <text
+                  x={width - 10}
+                  y={cy - 7}
+                  textAnchor="end"
+                  fontSize="8"
+                  fontFamily="JetBrains Mono, monospace"
+                  fill={dark ? 'rgba(167,243,208,0.65)' : '#6B7280'}
+                >
+                  {gainLabel}
                 </text>
               )}
             </g>

@@ -35,6 +35,7 @@ import { useMode } from '../context/ModeContext';
 import { useRealtimeEvents } from '../hooks/useRealtimeEvents';
 import { preloadDockRoute, preloadDockRoutes } from '../routePreloaders';
 import { Avatar, BottomSheet, NeuroLinkLogo, Spinner, VerifiedCheck, cn, isUserVerified } from './ui';
+import { DeviceIdOnboardingModal } from './DeviceIdOnboardingModal';
 
 const PILL_SPRING_TRANSITION =
   'transform 400ms cubic-bezier(0.35, 1.04, 0.45, 1), opacity 200ms ease';
@@ -777,6 +778,8 @@ export function MobileShell() {
           </div>
         </BottomSheet>
       )}
+
+      {user && <DeviceIdOnboardingModal />}
     </div>
   );
 }
