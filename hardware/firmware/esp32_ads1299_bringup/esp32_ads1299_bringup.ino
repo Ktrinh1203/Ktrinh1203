@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <Preferences.h>
+#include <driver/gpio.h>
 #include "pins_config.h"
 #include "st7735s_drv.h"
 #include "ads1299_drv.h"
@@ -1250,6 +1251,10 @@ void setup() {
 
   g_vspiMutex = xSemaphoreCreateMutex();
   g_vspi.begin(PIN_VSPI_SCK, PIN_VSPI_MISO, PIN_VSPI_MOSI, -1);
+  // Deck 15 SPICE SI fix: tăng trở nội đệm nguồn R_drv ~68 Ohm khớp Z0 ~72 Ohm
+  // trên đường VSPI_SCK (178.95 mm) & VSPI_MOSI để dập ringing 4.95 V -> 3.52 V
+  gpio_set_drive_capability(static_cast<gpio_num_t>(PIN_VSPI_SCK), GPIO_DRIVE_CAP_1);
+  gpio_set_drive_capability(static_cast<gpio_num_t>(PIN_VSPI_MOSI), GPIO_DRIVE_CAP_1);
 
   g_tft.begin(g_vspi, g_vspiMutex);
   drawBootSplash("Booting System...", "Probing MicroSD");
