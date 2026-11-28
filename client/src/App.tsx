@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect } from 'react';
-import { Route, Routes } from 'react-router';
+import { Navigate, Route, Routes } from 'react-router';
 import { AppShell } from './components/layout/AppShell';
 import {
   GuestOnly,
@@ -136,6 +136,10 @@ export function App() {
           <Route path="/contributions" element={<ContributionsPage />} />
           <Route path="/eeg-hub" element={<EEGHubPage />} />
           <Route path="/eeg" element={<EEGHubPage />} />
+          <Route
+            path="/clinical-workstation"
+            element={<Navigate to="/eeg-hub?view=workspace&fullscreen=1" replace />}
+          />
           <Route path="/consultations" element={<ConsultationsPage />} />
           <Route path="/rewards" element={<RewardsPage />} />
           <Route path="/u/:username" element={<ProfilePage />} />

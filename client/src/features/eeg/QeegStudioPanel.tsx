@@ -7,7 +7,7 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Activity,
@@ -19,14 +19,15 @@ import {
   ChevronDown,
   ChevronUp,
   ClipboardCheck,
-  ExternalLink,
   FileDown,
   FileText,
   FileUp,
   Info,
   Layers,
   Lock,
+  Maximize2,
   MessageSquarePlus,
+  Minimize2,
   MoreHorizontal,
   RefreshCw,
   ShieldAlert,
@@ -1201,6 +1202,28 @@ export function QeegStudioPanel({
 }: QeegStudioPanelProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isOnEegHub = location.pathname.startsWith('/eeg-hub') || location.pathname === '/eeg';
+  const fullscreenParam = searchParams.get('fullscreen');
+  const [isFullscreenMode, setIsFullscreenMode] = useState<boolean>(
+    () => fullscreenParam === '1',
+  );
+
+  useEffect(() => {
+    if (fullscreenParam === '1') {
+      setIsFullscreenMode(true);
+    }
+  }, [fullscreenParam]);
+
+  const exitFullscreenMode = useCallback(() => {
+    setIsFullscreenMode(false);
+    if (searchParams.get('fullscreen') === '1') {
+      const next = new URLSearchParams(searchParams);
+      next.delete('fullscreen');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const [sourceMode, setSourceMode] = useState<'sample' | 'csv'>('sample');
   const [selectedCaseId, setSelectedCaseId] = useState<string>('case_healthy_alpha');
@@ -1479,15 +1502,50 @@ export function QeegStudioPanel({
     if (isProfessional) setShowReviewPanel(true);
   }, [isProfessional]);
 
-  // Close modal & dropdowns on Escape / outside click
+  // Lock background scroll while in Fullscreen Reading Mode
   useEffect(() => {
-    if (!showSaveModal && !showMoreMenu && !showFilterMenu && !showSampleMenu) return;
+    if (!isFullscreenMode) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isFullscreenMode]);
+
+  // Close modal & dropdowns on Escape / outside click; exit fullscreen on Escape when no child modal is open
+  useEffect(() => {
+    if (
+      !showSaveModal &&
+      !showMoreMenu &&
+      !showFilterMenu &&
+      !showSampleMenu &&
+      !openMetricInfo &&
+      !showAddAnnForm &&
+      !isFullscreenMode
+    ) {
+      return;
+    }
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setShowSaveModal(false);
-        setShowMoreMenu(false);
-        setShowFilterMenu(false);
-        setShowSampleMenu(false);
+        if (
+          showSaveModal ||
+          showMoreMenu ||
+          showFilterMenu ||
+          showSampleMenu ||
+          openMetricInfo ||
+          showAddAnnForm
+        ) {
+          setShowSaveModal(false);
+          setShowMoreMenu(false);
+          setShowFilterMenu(false);
+          setShowSampleMenu(false);
+          setOpenMetricInfo(null);
+          setShowAddAnnForm(false);
+          return;
+        }
+        if (isFullscreenMode) {
+          exitFullscreenMode();
+        }
       }
     };
     const onPointerDown = (e: MouseEvent) => {
@@ -1505,7 +1563,16 @@ export function QeegStudioPanel({
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('mousedown', onPointerDown);
     };
-  }, [showSaveModal, showMoreMenu, showFilterMenu, showSampleMenu]);
+  }, [
+    showSaveModal,
+    showMoreMenu,
+    showFilterMenu,
+    showSampleMenu,
+    openMetricInfo,
+    showAddAnnForm,
+    isFullscreenMode,
+    exitFullscreenMode,
+  ]);
 
   const handleSelectCase = (caseId: string) => {
     setSourceMode('sample');
@@ -1915,7 +1982,35 @@ export function QeegStudioPanel({
   };
 
   return (
-    <div className="space-y-3.5">
+    <div
+      className={cn(
+        isFullscreenMode
+          ? 'fixed inset-0 z-50 bg-[#F4F8F5] overflow-y-auto p-4 sm:p-6 space-y-3.5'
+          : 'space-y-3.5',
+      )}
+    >
+      {isFullscreenMode && (
+        <div className="rounded-xl bg-[#14532D] border border-[#166534] text-white px-4 py-2 flex flex-wrap items-center justify-between gap-2 shadow-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Activity className="size-4 text-emerald-300 shrink-0" aria-hidden />
+            <span className="text-xs sm:text-sm font-bold tracking-tight truncate">
+              NeuroLink · Trạm qEEG Lâm sàng Toàn màn hình
+            </span>
+            <span className="hidden sm:inline-flex items-center rounded-md bg-white/10 px-2 py-0.5 text-[10.5px] font-medium text-emerald-100">
+              {isProfessional ? 'Chế độ Chuyên môn' : 'Chế độ Phổ thông'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={exitFullscreenMode}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 px-3 py-1 text-xs font-semibold text-white transition-colors cursor-pointer shrink-0"
+          >
+            <Minimize2 className="size-3.5" aria-hidden />
+            <span>Thu gọn (ESC)</span>
+          </button>
+        </div>
+      )}
+
       <label htmlFor="qeeg-csv-upload" className="sr-only">
         Tải tệp CSV sóng não
       </label>
@@ -2118,26 +2213,42 @@ export function QeegStudioPanel({
                   <FileDown className="size-3.5 text-[#15803D]" aria-hidden />
                   <span>Xuất báo cáo PDF / In</span>
                 </button>
-                <a
+                <button
+                  type="button"
                   role="menuitem"
-                  href={`/clinical-workstation?mode=${isProfessional ? 'professional' : 'general'}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setShowMoreMenu(false)}
-                  className="flex items-center gap-2 px-3.5 py-2 text-[#262624] hover:bg-[#F5FAF7]"
+                  onClick={() => {
+                    if (isFullscreenMode) {
+                      exitFullscreenMode();
+                    } else {
+                      setIsFullscreenMode(true);
+                    }
+                    setShowMoreMenu(false);
+                  }}
+                  className="w-full text-left flex items-center gap-2 px-3.5 py-2 text-[#262624] hover:bg-[#F5FAF7] cursor-pointer"
                 >
-                  <ExternalLink className="size-3.5 text-[#575652]" aria-hidden />
-                  <span>Toàn màn hình</span>
-                </a>
-                <Link
-                  role="menuitem"
-                  to="/eeg-hub?view=workspace"
-                  onClick={() => setShowMoreMenu(false)}
-                  className="flex items-center gap-2 px-3.5 py-2 text-[#262624] hover:bg-[#F5FAF7]"
-                >
-                  <Activity className="size-3.5 text-[#575652]" aria-hidden />
-                  <span>Mở Trạm qEEG</span>
-                </Link>
+                  {isFullscreenMode ? (
+                    <>
+                      <Minimize2 className="size-3.5 text-[#575652]" aria-hidden />
+                      <span>Thu gọn (ESC)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 className="size-3.5 text-[#575652]" aria-hidden />
+                      <span>Toàn màn hình</span>
+                    </>
+                  )}
+                </button>
+                {!isOnEegHub && (
+                  <Link
+                    role="menuitem"
+                    to="/eeg-hub?view=workspace"
+                    onClick={() => setShowMoreMenu(false)}
+                    className="flex items-center gap-2 px-3.5 py-2 text-[#262624] hover:bg-[#F5FAF7]"
+                  >
+                    <Activity className="size-3.5 text-[#575652]" aria-hidden />
+                    <span>Mở Trạm qEEG</span>
+                  </Link>
+                )}
               </div>
             )}
           </div>

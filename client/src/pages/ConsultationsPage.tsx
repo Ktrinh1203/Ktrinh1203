@@ -447,7 +447,12 @@ export function ConsultationsPage() {
     }));
   };
 
-  const workstationHref = `/clinical-workstation?mode=${isProfessional ? 'professional' : 'general'}`;
+  const getWorkstationTo = (ticket: ConsultationTicketItem) => {
+    const sampleId = ticket.neuralSampleId || ticket.neuralSample?.id;
+    return sampleId
+      ? `/eeg-hub?view=workspace&fullscreen=1&sampleId=${encodeURIComponent(sampleId)}`
+      : '/eeg-hub?view=workspace&fullscreen=1';
+  };
   const isQueueView = activeScope === 'queue' && canAccessProfessionalMode;
 
   return (
@@ -1113,15 +1118,13 @@ export function ConsultationsPage() {
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <a
-                          href={workstationHref}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <Link
+                          to={getWorkstationTo(ticket)}
                           className="inline-flex items-center gap-1 rounded-lg border border-[#DCE6DF] bg-white px-2.5 py-1 text-[11px] font-medium text-[#141413] hover:bg-[#EFF6F1] transition-colors"
                         >
                           <span>Soi trên Trạm qEEG</span>
                           <ArrowUpRight className="size-3" aria-hidden />
-                        </a>
+                        </Link>
                         <Link
                           to="/eeg-hub"
                           className="inline-flex items-center gap-1 rounded-lg border border-[#DCE6DF] bg-white px-2.5 py-1 text-[11px] font-medium text-[#575652] hover:text-[#15803D]"
@@ -1240,15 +1243,13 @@ export function ConsultationsPage() {
                         Gửi phân tích cho người bệnh
                       </h3>
                       {!ticket.neuralSample && (
-                        <a
-                          href={workstationHref}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <Link
+                          to={getWorkstationTo(ticket)}
                           className="text-[11px] font-semibold text-[#16A34A] hover:text-[#15803D] hover:underline inline-flex items-center gap-1"
                         >
                           <span>Soi trên Trạm qEEG</span>
                           <ArrowUpRight className="size-3" aria-hidden />
-                        </a>
+                        </Link>
                       )}
                     </div>
 

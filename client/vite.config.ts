@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
-// In development the Vite dev server proxies API, upload, and clinical workstation
+// In development the Vite dev server proxies API, upload, and hardware WebSocket
 // requests to the Express backend, so the browser sees a single origin (cookies stay first-party).
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || '/',
@@ -15,7 +15,6 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'http://127.0.0.1:4000', changeOrigin: false },
       '/uploads': { target: 'http://127.0.0.1:4000', changeOrigin: false },
-      '/clinical-workstation': { target: 'http://127.0.0.1:4000', changeOrigin: false },
       '/ws/hardware': { target: 'http://127.0.0.1:4000', ws: true, changeOrigin: false },
     },
   },
