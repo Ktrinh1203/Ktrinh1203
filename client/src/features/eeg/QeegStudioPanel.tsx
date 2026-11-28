@@ -12,6 +12,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Activity,
   AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
   BookmarkPlus,
   CheckCircle2,
   ChevronDown,
@@ -22,6 +24,7 @@ import {
   FileText,
   FileUp,
   Info,
+  Layers,
   Lock,
   MessageSquarePlus,
   MoreHorizontal,
@@ -74,6 +77,16 @@ export interface QeegStudioPanelProps {
   onSavedToPlatform?: (dataset: EegDatasetRecord, sample: NeuralTrainingSampleItem) => void;
   onSwitchTab?: (tab: 'personal' | 'databank' | 'neural-db') => void;
 }
+
+type ClinicalSectionTab = 'overview' | 'waveform' | 'qeeg' | 'ai' | 'review';
+
+const CLINICAL_SECTION_TABS: ReadonlyArray<{ id: ClinicalSectionTab; label: string }> = [
+  { id: 'overview', label: '1. Tổng quan' },
+  { id: 'waveform', label: '2. Sóng EEG' },
+  { id: 'qeeg', label: '3. Phân tích QEEG' },
+  { id: 'ai', label: '4. Gợi ý AI' },
+  { id: 'review', label: '5. Nhận định & Báo cáo' },
+];
 
 interface PhysicianAnnotationItem extends BrainWaveformAnnotation {
   id: string;
@@ -1256,17 +1269,24 @@ export function QeegStudioPanel({
     text: string;
   } | null>(null);
 
-  // Secondary menu + filter menu + sample popover
+  // Tabbed clinical reading workspace state (default: waveform Hero view)
+  const [activeSection, setActiveSection] = useState<ClinicalSectionTab>('waveform');
+  const [viewAllSections, setViewAllSections] = useState<boolean>(false);
+  const [focusReviewTick, setFocusReviewTick] = useState<number>(0);
+
+  // Secondary menu + filter panel + sample popover
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [showSampleMenu, setShowSampleMenu] = useState(false);
 
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
-  const filterMenuRef = useRef<HTMLDivElement | null>(null);
+  const filterPanelRef = useRef<HTMLDivElement | null>(null);
   const sampleMenuRef = useRef<HTMLDivElement | null>(null);
+  const tabBarRef = useRef<HTMLDivElement | null>(null);
   const waveformSvgRef = useRef<SVGSVGElement | null>(null);
   const waveformContainerRef = useRef<HTMLDivElement | null>(null);
   const reviewSectionRef = useRef<HTMLDivElement | null>(null);
+  const reviewFindingsInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   const casesQuery = useQuery({
     queryKey: ['qeeg-cases'],
@@ -1474,9 +1494,6 @@ export function QeegStudioPanel({
       const target = e.target as Node;
       if (showMoreMenu && moreMenuRef.current && !moreMenuRef.current.contains(target)) {
         setShowMoreMenu(false);
-      }
-      if (showFilterMenu && filterMenuRef.current && !filterMenuRef.current.contains(target)) {
-        setShowFilterMenu(false);
       }
       if (showSampleMenu && sampleMenuRef.current && !sampleMenuRef.current.contains(target)) {
         setShowSampleMenu(false);
@@ -1838,20 +1855,64 @@ export function QeegStudioPanel({
     return found ? sanitizeNarrative(found.name) : 'Chọn mẫu';
   }, [cases, selectedCaseId]);
 
-  const scrollToSection = (sectionId: string, openReview = false) => {
-    if (openReview) {
-      setShowReviewPanel(true);
+  useEffect(() => {
+    if (focusReviewTick > 0) {
+      reviewFindingsInputRef.current?.focus();
     }
-    const el = document.getElementById(sectionId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
+  }, [focusReviewTick, activeSection, viewAllSections]);
+
+  const selectClinicalSection = useCallback(
+    (tab: ClinicalSectionTab, options?: { focusReview?: boolean; forceSingleTab?: boolean }) => {
+      if (options?.forceSingleTab !== false) {
+        setViewAllSections(false);
+      }
+      setActiveSection(tab);
+      if (tab === 'review') {
+        setShowReviewPanel(true);
+      }
+      if (options?.focusReview) {
+        setFocusReviewTick((n) => n + 1);
+      }
+      if (viewAllSections && options?.forceSingleTab === false) {
+        const elId = `sec-${tab}`;
+        requestAnimationFrame(() => {
+          document.getElementById(elId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+    },
+    [viewAllSections],
+  );
+
+  const openRecordingSettingsInline = useCallback(() => {
+    setShowFilterMenu(true);
+    requestAnimationFrame(() => {
+      filterPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }, []);
+
+  const handleJumpToWaveformSegment = useCallback(
+    (interval: BrainWaveformInterval, openForm = false) => {
+      setSelectedInterval(interval);
+      setNewAnnStartSec(interval.startSec.toFixed(2));
+      setNewAnnEndSec(interval.endSec.toFixed(2));
+      if (openForm) {
+        setShowAddAnnForm(true);
+      }
+      if (viewAllSections) {
+        requestAnimationFrame(() => {
+          waveformContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      } else {
+        setActiveSection('waveform');
+      }
+    },
+    [viewAllSections],
+  );
 
   const viewerOptionalProps = {
     hideInternalHeader: true,
-    onOpenRecordingSettings: () => setShowFilterMenu(true),
-  } as Record<string, unknown>;
+    onOpenRecordingSettings: openRecordingSettingsInline,
+  };
 
   return (
     <div className="space-y-3.5">
@@ -1867,11 +1928,11 @@ export function QeegStudioPanel({
       />
 
       {/* ===================================================================== */}
-      {/* Workspace Action Bar (Upload EEG + Demo Library + Settings & Export)  */}
+      {/* Workspace Action Bar (1-Row Desktop Layout)                           */}
       {/* ===================================================================== */}
-      <div className="rounded-xl border border-[#DCE6DF] bg-white px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
+      <div className="rounded-xl border border-[#DCE6DF] bg-white px-3 py-2 flex flex-wrap lg:flex-nowrap items-center justify-between gap-2">
         {/* Left: Primary CSV Upload + Demo Library Dropdown */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 min-w-0">
           <Button
             type="button"
             size="sm"
@@ -1879,7 +1940,7 @@ export function QeegStudioPanel({
             loading={analyzeCsvMutation.isPending}
             onClick={() => document.getElementById('qeeg-csv-upload')?.click()}
             className={cn(
-              'h-8.5 rounded-lg px-3 text-xs font-semibold',
+              'h-8 rounded-lg px-2.5 text-xs font-semibold whitespace-nowrap shrink-0',
               sourceMode === 'csv'
                 ? ''
                 : 'border-[#16A34A] text-[#15803D] hover:bg-[#F5FAF7]',
@@ -1892,32 +1953,32 @@ export function QeegStudioPanel({
           {sourceMode === 'csv' && csvFilename && (
             <span
               title={csvFilename}
-              className="inline-flex items-center rounded-md border border-[#BBF7D0] bg-[#ECFDF3] px-2 py-1 font-mono text-[11px] font-medium text-[#15803D] max-w-[180px] truncate"
+              className="inline-flex items-center rounded-md border border-[#BBF7D0] bg-[#ECFDF3] px-2 py-1 font-mono text-[11px] font-medium text-[#15803D] max-w-[140px] truncate shrink-0"
             >
               {csvFilename}
             </span>
           )}
 
-          <div ref={sampleMenuRef} className="relative">
+          <div ref={sampleMenuRef} className="relative min-w-0">
             <button
               type="button"
               aria-expanded={showSampleMenu}
               aria-haspopup="menu"
               onClick={() => setShowSampleMenu((v) => !v)}
               className={cn(
-                'inline-flex items-center gap-1.5 h-8.5 px-3 rounded-lg border text-xs transition-colors cursor-pointer',
+                'inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border text-xs transition-colors cursor-pointer whitespace-nowrap',
                 sourceMode === 'sample'
                   ? 'border-[#DCE6DF] bg-[#F5FAF7] text-[#141413] font-medium hover:bg-[#E2EFE6]'
                   : 'border-[#DCE6DF] bg-white text-[#575652] hover:bg-[#F5FAF7]',
               )}
             >
-              <span>Kho mẫu minh họa</span>
+              <span>Kho mẫu</span>
               {sourceMode === 'sample' && (
-                <span className="hidden sm:inline font-semibold text-[#15803D] max-w-[190px] truncate">
+                <span className="hidden sm:inline font-semibold text-[#15803D] max-w-[180px] xl:max-w-[230px] truncate">
                   · {activeSampleLabel}
                 </span>
               )}
-              <ChevronDown className="size-3.5 text-[#6E6D68]" aria-hidden />
+              <ChevronDown className="size-3.5 text-[#6E6D68] shrink-0" aria-hidden />
             </button>
 
             {showSampleMenu && (
@@ -1997,154 +2058,27 @@ export function QeegStudioPanel({
           </div>
         </div>
 
-        {/* Right: Recording Settings (Collapsed by default) + Save + More Actions */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div ref={filterMenuRef} className="relative">
-            <button
-              type="button"
-              aria-expanded={showFilterMenu}
-              onClick={() => setShowFilterMenu((v) => !v)}
-              className="inline-flex items-center gap-1.5 h-8.5 px-3 rounded-lg border border-[#DCE6DF] bg-white text-xs font-medium text-[#262624] hover:bg-[#F5FAF7] transition-colors cursor-pointer"
-            >
-              <SlidersHorizontal className="size-3.5 text-[#575652]" aria-hidden />
-              <span>Cài đặt đọc &amp; Bộ lọc</span>
-              <ChevronDown className="size-3.5 text-[#6E6D68]" aria-hidden />
-            </button>
-
-            {showFilterMenu && (
-              <div className="absolute right-0 top-full mt-1.5 z-40 w-80 sm:w-[360px] rounded-xl border border-[#DCE6DF] bg-white shadow-lg p-3.5 space-y-3 text-xs">
-                <div className="flex items-center justify-between border-b border-[#EFF6F1] pb-2">
-                  <span className="font-bold text-[#141413]">Cài đặt đọc &amp; Bộ lọc EEG</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowFilterMenu(false)}
-                    aria-label="Đóng cài đặt đọc"
-                    className="text-[#6E6D68] hover:text-[#141413]"
-                  >
-                    <X className="size-3.5" aria-hidden />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="space-y-1">
-                    <label htmlFor="qeeg-window-sec" className="font-medium text-[#262624] block">
-                      Cửa sổ phân tích
-                    </label>
-                    <select
-                      id="qeeg-window-sec"
-                      value={timeWindowSec}
-                      onChange={(e) => setTimeWindowSec(Number(e.target.value))}
-                      className="h-8 w-full rounded-md border border-[#DCE6DF] bg-white px-2 text-xs font-mono text-[#141413]"
-                    >
-                      <option value={4}>4 giây</option>
-                      <option value={6}>6 giây</option>
-                      <option value={8}>8 giây</option>
-                      <option value={10}>10 giây</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label htmlFor="qeeg-fast-score" className="font-medium text-[#262624] block">
-                      Điểm FAST (tùy chọn)
-                    </label>
-                    <select
-                      id="qeeg-fast-score"
-                      value={fastScore}
-                      onChange={(e) => setFastScore(Number(e.target.value))}
-                      className="h-8 w-full rounded-md border border-[#DCE6DF] bg-white px-2 text-xs font-mono text-[#141413]"
-                    >
-                      <option value={0}>0 · Không ghi nhận</option>
-                      <option value={1}>1 · Nghi ngờ nhẹ</option>
-                      <option value={2}>2 · Dấu hiệu cấp</option>
-                      <option value={3}>3 · Khẩn cấp</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label htmlFor="qeeg-csv-hz" className="font-medium text-[#262624] block">
-                      Tần số CSV
-                    </label>
-                    <select
-                      id="qeeg-csv-hz"
-                      value={csvSamplingRateMode === 'AUTO' ? 'AUTO' : String(csvSamplingRate)}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === 'AUTO') {
-                          setCsvSamplingRateMode('AUTO');
-                        } else {
-                          setCsvSamplingRateMode('MANUAL');
-                          setCsvSamplingRate(Number(val));
-                        }
-                      }}
-                      className="h-8 w-full rounded-md border border-[#DCE6DF] bg-white px-2 text-xs font-mono text-[#141413]"
-                    >
-                      <option value="AUTO">Tự động từ cột time</option>
-                      <option value="250">250 Hz</option>
-                      <option value="256">256 Hz</option>
-                      <option value="500">500 Hz</option>
-                      <option value="1000">1000 Hz</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label htmlFor="qeeg-csv-cat" className="font-medium text-[#262624] block">
-                      Nhóm chuyên khoa CSV
-                    </label>
-                    <select
-                      id="qeeg-csv-cat"
-                      value={csvCategory}
-                      onChange={(e) => setCsvCategory(e.target.value as ClinicalCategory)}
-                      className="h-8 w-full rounded-md border border-[#DCE6DF] bg-white px-2 text-xs text-[#141413]"
-                    >
-                      {CLINICAL_CATEGORY_ORDER.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {CLINICAL_CATEGORY_META[cat].shortLabel}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#EFF6F1]">
-                  <label
-                    htmlFor="qeeg-notch-50"
-                    className="inline-flex items-center gap-1.5 font-medium text-[#262624] cursor-pointer"
-                  >
-                    <input
-                      id="qeeg-notch-50"
-                      type="checkbox"
-                      checked={notch50Hz}
-                      onChange={(e) => setNotch50Hz(e.target.checked)}
-                      className="size-3.5 rounded border-[#DCE6DF] accent-[#16A34A] text-[#16A34A]"
-                    />
-                    <span>Notch 50 Hz</span>
-                  </label>
-                  <Button
-                    type="button"
-                    size="xs"
-                    variant="primary"
-                    loading={isBusy}
-                    onClick={() => {
-                      if (sourceMode === 'csv' && csvText) {
-                        analyzeCsvMutation.mutate();
-                      } else {
-                        analyzeCaseMutation.mutate({
-                          caseId: selectedCaseId,
-                          timeWindowSec,
-                          notch50Hz,
-                          fastScore,
-                        });
-                      }
-                      setShowFilterMenu(false);
-                    }}
-                    icon={<RefreshCw className="size-3" aria-hidden />}
-                  >
-                    Áp dụng
-                  </Button>
-                </div>
-              </div>
+        {/* Right: Recording Settings + Save + More Actions */}
+        <div className="flex flex-wrap lg:flex-nowrap items-center gap-1.5 min-w-0 max-w-full lg:shrink-0">
+          <button
+            type="button"
+            aria-expanded={showFilterMenu}
+            onClick={() => setShowFilterMenu((v) => !v)}
+            className={cn(
+              'inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer whitespace-nowrap',
+              showFilterMenu
+                ? 'border-[#16A34A] bg-[#ECFDF3] text-[#15803D]'
+                : 'border-[#DCE6DF] bg-white text-[#262624] hover:bg-[#F5FAF7]',
             )}
-          </div>
+          >
+            <SlidersHorizontal className="size-3.5" aria-hidden />
+            <span>Cài đặt đọc &amp; Bộ lọc</span>
+            {showFilterMenu ? (
+              <ChevronUp className="size-3.5" aria-hidden />
+            ) : (
+              <ChevronDown className="size-3.5 text-[#6E6D68]" aria-hidden />
+            )}
+          </button>
 
           <Button
             type="button"
@@ -2152,7 +2086,7 @@ export function QeegStudioPanel({
             variant="outline"
             disabled={!analysis}
             onClick={handleOpenSaveModal}
-            className="h-8.5 border-[#DCE6DF] bg-white text-[#141413]"
+            className="h-8 border-[#DCE6DF] bg-white text-[#141413] px-2.5 whitespace-nowrap"
           >
             {savedDatasetId ? 'Đã lưu ✓' : 'Lưu bản ghi'}
           </Button>
@@ -2163,7 +2097,7 @@ export function QeegStudioPanel({
               aria-expanded={showMoreMenu}
               aria-haspopup="menu"
               onClick={() => setShowMoreMenu((v) => !v)}
-              className="inline-flex items-center gap-1 h-8.5 rounded-lg border border-[#DCE6DF] bg-white px-2.5 text-xs font-medium text-[#575652] hover:bg-[#F5FAF7] hover:text-[#141413] transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 h-8 rounded-lg border border-[#DCE6DF] bg-white px-2.5 text-xs font-medium text-[#575652] hover:bg-[#F5FAF7] hover:text-[#141413] transition-colors cursor-pointer whitespace-nowrap"
             >
               <MoreHorizontal className="size-4" aria-hidden />
               <span>Tác vụ khác ▾</span>
@@ -2211,54 +2145,311 @@ export function QeegStudioPanel({
       </div>
 
       {/* ===================================================================== */}
-      {/* Compact Sticky Section Jump Strip + 1-Tap Physician Actions           */}
+      {/* Tabbed Clinical Reading Strip + Ultra-Slim Context Summary            */}
       {/* ===================================================================== */}
       {analysis && derivedContext && (
-        <nav
-          aria-label="Điều hướng nhanh các khu vực đọc EEG"
-          className="sticky top-2 z-20 rounded-xl border border-[#DCE6DF] bg-white/95 backdrop-blur-sm px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 shadow-xs"
+        <div
+          ref={tabBarRef}
+          className="rounded-xl border border-[#DCE6DF] bg-white overflow-hidden shadow-2xs"
         >
-          <div className="flex flex-wrap items-center gap-1 text-[11.5px]">
-            {[
-              { id: 'sec-overview', label: '1. Tổng quan' },
-              { id: 'sec-waveform', label: '2. Sóng EEG' },
-              { id: 'sec-qeeg', label: '3. Phân tích QEEG' },
-              { id: 'sec-ai', label: '4. Gợi ý AI' },
-              { id: 'sec-review', label: '5. Nhận định & Báo cáo' },
-            ].map((item) => (
-              <a
-                key={item.id}
-                href={`#${item.id}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToSection(item.id, item.id === 'sec-review');
-                }}
-                className="rounded-md px-2 py-1 font-medium text-[#575652] hover:bg-[#F5FAF7] hover:text-[#15803D] transition-colors whitespace-nowrap"
+          {/* Ultra-slim 1-line record context summary */}
+          {(() => {
+            const recordCode = sourceMode === 'csv' && csvFilename ? csvFilename : analysis.caseId;
+            const qualityPct = Math.round(
+              (analysis.signalQuality?.overallScore ?? analysis.biomarkers.signalQualityScore) *
+                100,
+            );
+            const hasNoisyChannel = derivedContext.qualityAssessment.channels.some(
+              (c) => c.status === 'NOISY' || c.status === 'DROPOUT' || c.status === 'SATURATED',
+            );
+            const qualityTextCls = derivedContext.aiSuppressedByQuality
+              ? 'font-semibold text-red-700'
+              : hasNoisyChannel
+                ? 'font-semibold text-amber-700'
+                : 'font-semibold text-[#15803D]';
+            return (
+              <div className="border-b border-[#EFF6F1] bg-[#FAFDFB] px-3 py-1 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                  <span
+                    className="font-mono font-semibold text-[#141413] truncate max-w-[200px] sm:max-w-[280px]"
+                    title={recordCode}
+                  >
+                    {recordCode}
+                  </span>
+                  <span className="text-[#9CA3AF]" aria-hidden>
+                    ·
+                  </span>
+                  <span className="font-mono text-[#575652]">{analysis.samplingRateHz} Hz</span>
+                  <span className="text-[#9CA3AF]" aria-hidden>
+                    ·
+                  </span>
+                  <span className="font-mono text-[#575652]">
+                    {derivedContext.recordedChannels.length} kênh
+                  </span>
+                  <span className="text-[#9CA3AF]" aria-hidden>
+                    ·
+                  </span>
+                  <span className={qualityTextCls}>
+                    Chất lượng {qualityPct}%
+                    {derivedContext.aiSuppressedByQuality ? ' (Không đạt chuẩn)' : ''}
+                  </span>
+                  {derivedContext.isDemonstrationData !== false && (
+                    <>
+                      <span className="text-[#9CA3AF]" aria-hidden>
+                        ·
+                      </span>
+                      <span className="text-amber-800 font-medium">Dữ liệu mô phỏng</span>
+                    </>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  aria-pressed={viewAllSections}
+                  onClick={() => setViewAllSections((v) => !v)}
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-medium transition-colors cursor-pointer shrink-0',
+                    viewAllSections
+                      ? 'bg-[#ECFDF3] text-[#15803D] font-semibold'
+                      : 'text-[#575652] hover:bg-[#EFF6F1] hover:text-[#141413]',
+                  )}
+                >
+                  <Layers className="size-3" aria-hidden />
+                  <span>{viewAllSections ? 'Đang xem tất cả' : 'Xem tất cả'}</span>
+                </button>
+              </div>
+            );
+          })()}
+
+          {/* 5-Tab Selection Bar + Direct Physician Actions */}
+          <div className="px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-2">
+            <div
+              role="tablist"
+              aria-label="Các mục đọc EEG lâm sàng"
+              className="flex flex-wrap items-center gap-1 text-[11.5px]"
+            >
+              {CLINICAL_SECTION_TABS.map((tab) => {
+                const isActive = !viewAllSections && activeSection === tab.id;
+                const showAiAmberDot =
+                  tab.id === 'ai' &&
+                  (derivedContext.patternPresentation.tone !== 'neutral' ||
+                    derivedContext.aiSuppressedByQuality);
+                const showReviewCheck = tab.id === 'review' && Boolean(reviewState.confirmedAt);
+                return (
+                  <button
+                    key={tab.id}
+                    id={`tab-${tab.id}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls={`sec-${tab.id}`}
+                    onClick={() =>
+                      selectClinicalSection(tab.id, {
+                        focusReview: false,
+                        forceSingleTab: true,
+                      })
+                    }
+                    className={cn(
+                      'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 transition-colors cursor-pointer whitespace-nowrap',
+                      isActive
+                        ? 'border-[#86EFAC] bg-[#ECFDF3] text-[#15803D] font-semibold shadow-2xs'
+                        : 'border-transparent text-[#575652] font-medium hover:bg-[#F5FAF7] hover:text-[#15803D]',
+                    )}
+                  >
+                    <span>{tab.label}</span>
+                    {showAiAmberDot && (
+                      <span
+                        className="size-1.5 rounded-full bg-amber-500 shrink-0"
+                        title="Có mẫu cần lưu ý hoặc tín hiệu lỗi"
+                        aria-hidden
+                      />
+                    )}
+                    {showReviewCheck && (
+                      <CheckCircle2
+                        className="size-3 text-[#16A34A] shrink-0"
+                        aria-hidden
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() =>
+                  selectClinicalSection('review', { focusReview: true, forceSingleTab: true })
+                }
+                className="inline-flex items-center gap-1 rounded-lg bg-[#16A34A] hover:bg-[#15803D] px-2.5 py-1 text-[11.5px] font-semibold text-white transition-colors cursor-pointer whitespace-nowrap"
               >
-                {item.label}
-              </a>
-            ))}
+                <ClipboardCheck className="size-3.5" aria-hidden />
+                <span>Viết nhận định</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleExportClinicalReport}
+                className="inline-flex items-center gap-1 rounded-lg border border-[#DCE6DF] bg-white hover:bg-[#F5FAF7] px-2.5 py-1 text-[11.5px] font-medium text-[#141413] transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <FileDown className="size-3.5 text-[#15803D]" aria-hidden />
+                <span>Xuất báo cáo</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* Inline Recording Settings & Filter Drawer (Always In-View)            */}
+      {/* ===================================================================== */}
+      {showFilterMenu && (
+        <div
+          ref={filterPanelRef}
+          className="rounded-xl border border-[#86EFAC] bg-[#FAFDFB] p-3.5 space-y-3 text-xs shadow-xs"
+        >
+          <div className="flex items-center justify-between border-b border-[#DCE6DF] pb-2">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="size-3.5 text-[#15803D]" aria-hidden />
+              <span className="font-bold text-[#141413]">Cài đặt đọc &amp; Bộ lọc EEG</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowFilterMenu(false)}
+              aria-label="Đóng cài đặt đọc"
+              className="text-[#6E6D68] hover:text-[#141413] cursor-pointer"
+            >
+              <X className="size-4" aria-hidden />
+            </button>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => scrollToSection('sec-review', true)}
-              className="inline-flex items-center gap-1 rounded-lg bg-[#16A34A] hover:bg-[#15803D] px-2.5 py-1 text-[11.5px] font-semibold text-white transition-colors cursor-pointer whitespace-nowrap"
-            >
-              <ClipboardCheck className="size-3.5" aria-hidden />
-              <span>Viết nhận định</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleExportClinicalReport}
-              className="inline-flex items-center gap-1 rounded-lg border border-[#DCE6DF] bg-white hover:bg-[#F5FAF7] px-2.5 py-1 text-[11.5px] font-medium text-[#141413] transition-colors cursor-pointer whitespace-nowrap"
-            >
-              <FileDown className="size-3.5 text-[#15803D]" aria-hidden />
-              <span>Xuất báo cáo</span>
-            </button>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <div className="space-y-1">
+              <label htmlFor="qeeg-window-sec" className="font-medium text-[#262624] block">
+                Cửa sổ phân tích
+              </label>
+              <select
+                id="qeeg-window-sec"
+                value={timeWindowSec}
+                onChange={(e) => setTimeWindowSec(Number(e.target.value))}
+                className="h-8 w-full rounded-md border border-[#DCE6DF] bg-white px-2 text-xs font-mono text-[#141413]"
+              >
+                <option value={4}>4 giây</option>
+                <option value={6}>6 giây</option>
+                <option value={8}>8 giây</option>
+                <option value={10}>10 giây</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="qeeg-fast-score" className="font-medium text-[#262624] block">
+                Điểm FAST (tùy chọn)
+              </label>
+              <select
+                id="qeeg-fast-score"
+                value={fastScore}
+                onChange={(e) => setFastScore(Number(e.target.value))}
+                className="h-8 w-full rounded-md border border-[#DCE6DF] bg-white px-2 text-xs font-mono text-[#141413]"
+              >
+                <option value={0}>0 · Không ghi nhận</option>
+                <option value={1}>1 · Nghi ngờ nhẹ</option>
+                <option value={2}>2 · Dấu hiệu cấp</option>
+                <option value={3}>3 · Khẩn cấp</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="qeeg-csv-hz" className="font-medium text-[#262624] block">
+                Tần số CSV
+              </label>
+              <select
+                id="qeeg-csv-hz"
+                value={csvSamplingRateMode === 'AUTO' ? 'AUTO' : String(csvSamplingRate)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'AUTO') {
+                    setCsvSamplingRateMode('AUTO');
+                  } else {
+                    setCsvSamplingRateMode('MANUAL');
+                    setCsvSamplingRate(Number(val));
+                  }
+                }}
+                className="h-8 w-full rounded-md border border-[#DCE6DF] bg-white px-2 text-xs font-mono text-[#141413]"
+              >
+                <option value="AUTO">Tự động từ cột time</option>
+                <option value="250">250 Hz</option>
+                <option value="256">256 Hz</option>
+                <option value="500">500 Hz</option>
+                <option value="1000">1000 Hz</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="qeeg-csv-cat" className="font-medium text-[#262624] block">
+                Nhóm chuyên khoa CSV
+              </label>
+              <select
+                id="qeeg-csv-cat"
+                value={csvCategory}
+                onChange={(e) => setCsvCategory(e.target.value as ClinicalCategory)}
+                className="h-8 w-full rounded-md border border-[#DCE6DF] bg-white px-2 text-xs text-[#141413]"
+              >
+                {CLINICAL_CATEGORY_ORDER.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {CLINICAL_CATEGORY_META[cat].shortLabel}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        </nav>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#DCE6DF]">
+            <label
+              htmlFor="qeeg-notch-50"
+              className="inline-flex items-center gap-1.5 font-medium text-[#262624] cursor-pointer"
+            >
+              <input
+                id="qeeg-notch-50"
+                type="checkbox"
+                checked={notch50Hz}
+                onChange={(e) => setNotch50Hz(e.target.checked)}
+                className="size-3.5 rounded border-[#DCE6DF] accent-[#16A34A] text-[#16A34A]"
+              />
+              <span>Notch 50 Hz</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={() => setShowFilterMenu(false)}
+              >
+                Đóng
+              </Button>
+              <Button
+                type="button"
+                size="xs"
+                variant="primary"
+                loading={isBusy}
+                onClick={() => {
+                  if (sourceMode === 'csv' && csvText) {
+                    analyzeCsvMutation.mutate();
+                  } else {
+                    analyzeCaseMutation.mutate({
+                      caseId: selectedCaseId,
+                      timeWindowSec,
+                      notch50Hz,
+                      fastScore,
+                    });
+                  }
+                  setShowFilterMenu(false);
+                }}
+                icon={<RefreshCw className="size-3" aria-hidden />}
+              >
+                Áp dụng
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {analysisError && <Alert tone="error">{analysisError}</Alert>}
@@ -2291,12 +2482,12 @@ export function QeegStudioPanel({
       {isBusy && !analysis && <Spinner label="Đang phân tích sóng não..." />}
 
       {analysis && derivedContext && (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* Subtle Single-line Demonstration Data Notice */}
           {derivedContext.isDemonstrationData !== false && (
             <div
               role="status"
-              className="rounded-lg border border-amber-200/90 bg-amber-50/75 px-3 py-1.5 flex items-center gap-2 text-[11.5px] text-amber-900"
+              className="rounded-lg border border-amber-200/90 bg-amber-50/75 px-3 py-1 flex items-center gap-2 text-[11px] text-amber-900"
             >
               <ShieldAlert className="size-3.5 text-amber-700 shrink-0" aria-hidden />
               <span>
@@ -2308,7 +2499,13 @@ export function QeegStudioPanel({
           {/* ================================================================= */}
           {/* KHU VỰC 1: Tổng quan bản ghi (Record Overview & Signal Quality)    */}
           {/* ================================================================= */}
-          <section id="sec-overview" className="scroll-mt-14">
+          {(viewAllSections || activeSection === 'overview') && (
+            <section
+              id="sec-overview"
+              role="tabpanel"
+              aria-labelledby="tab-overview"
+              className="scroll-mt-14"
+            >
             <Card className="p-4 border-[#DCE6DF] bg-white space-y-3.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-sm font-bold text-[#141413]">
@@ -2486,12 +2683,23 @@ export function QeegStudioPanel({
                 </div>
               </div>
             </Card>
-          </section>
+            </section>
+          )}
 
           {/* ================================================================= */}
-          {/* KHU VỰC 2: Sóng điện não (EEG Waveform — Central Hero View)       */}
+          {/* KHU VỰC 2: Sóng điện não (EEG Waveform — Always Mounted)          */}
           {/* ================================================================= */}
-          <section id="sec-waveform" ref={waveformContainerRef} className="scroll-mt-14 space-y-2.5">
+          <section
+            id="sec-waveform"
+            ref={waveformContainerRef}
+            role="tabpanel"
+            aria-labelledby="tab-waveform"
+            aria-hidden={!viewAllSections && activeSection !== 'waveform'}
+            className={cn(
+              'scroll-mt-14 space-y-2.5',
+              viewAllSections || activeSection === 'waveform' ? 'block' : 'hidden',
+            )}
+          >
             <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-sm font-bold text-[#141413]">
@@ -2623,7 +2831,13 @@ export function QeegStudioPanel({
           {/* ================================================================= */}
           {/* KHU VỰC 3: Phân tích QEEG (Primary Overview + Collapsible Adv.)   */}
           {/* ================================================================= */}
-          <section id="sec-qeeg" className="scroll-mt-14 space-y-3">
+          {(viewAllSections || activeSection === 'qeeg') && (
+            <section
+              id="sec-qeeg"
+              role="tabpanel"
+              aria-labelledby="tab-qeeg"
+              className="scroll-mt-14 space-y-3"
+            >
             <div className="flex flex-wrap items-baseline justify-between gap-2 px-0.5">
               <h2 className="text-sm font-bold text-[#141413]">3. Phân tích QEEG</h2>
               <span className="text-[11px] text-[#575652]">
@@ -3012,12 +3226,19 @@ export function QeegStudioPanel({
                 </div>
               )}
             </div>
-          </section>
+            </section>
+          )}
 
           {/* ================================================================= */}
           {/* KHU VỰC 4: Gợi ý hỗ trợ từ AI (Calm, Secondary Decision Support)  */}
           {/* ================================================================= */}
-          <section id="sec-ai" className="scroll-mt-14">
+          {(viewAllSections || activeSection === 'ai') && (
+            <section
+              id="sec-ai"
+              role="tabpanel"
+              aria-labelledby="tab-ai"
+              className="scroll-mt-14"
+            >
             <Card
               className={cn(
                 'p-4 space-y-3.5',
@@ -3221,16 +3442,20 @@ export function QeegStudioPanel({
                 </div>
               </div>
             </Card>
-          </section>
+            </section>
+          )}
 
           {/* ================================================================= */}
           {/* KHU VỰC 5: Nhận định Bác sĩ & Báo cáo (Physician Review & Report) */}
           {/* ================================================================= */}
-          <section
-            id="sec-review"
-            ref={reviewSectionRef}
-            className="scroll-mt-14 rounded-xl border border-[#DCE6DF] bg-white overflow-hidden"
-          >
+          {(viewAllSections || activeSection === 'review') && (
+            <section
+              id="sec-review"
+              ref={reviewSectionRef}
+              role="tabpanel"
+              aria-labelledby="tab-review"
+              className="scroll-mt-14 rounded-xl border border-[#DCE6DF] bg-white overflow-hidden"
+            >
             <button
               type="button"
               aria-expanded={showReviewPanel}
@@ -3274,7 +3499,16 @@ export function QeegStudioPanel({
                       type="button"
                       onClick={() => {
                         setShowAddAnnForm(true);
-                        scrollToSection('sec-waveform');
+                        if (viewAllSections) {
+                          requestAnimationFrame(() => {
+                            waveformContainerRef.current?.scrollIntoView({
+                              behavior: 'smooth',
+                              block: 'start',
+                            });
+                          });
+                        } else {
+                          setActiveSection('waveform');
+                        }
                       }}
                       className="text-[11px] font-semibold text-[#15803D] hover:underline cursor-pointer"
                     >
@@ -3304,12 +3538,13 @@ export function QeegStudioPanel({
                           >
                             <button
                               type="button"
-                              onClick={() => {
-                                setSelectedInterval({
+                              onClick={() =>
+                                handleJumpToWaveformSegment({
                                   startSec: ann.startSec,
                                   endSec: ann.endSec,
-                                });
-                              }}
+                                })
+                              }
+                              title="Bấm để chuyển sang sóng EEG và soi đoạn này"
                               className="text-left hover:underline cursor-pointer"
                             >
                               <span className="font-mono font-bold">
@@ -3405,6 +3640,7 @@ export function QeegStudioPanel({
                         Nhận định lâm sàng &amp; Mô tả điện não
                       </label>
                       <Textarea
+                        ref={reviewFindingsInputRef}
                         id="rev-bg-findings"
                         rows={3}
                         value={reviewState.backgroundAndFindings}
@@ -3526,7 +3762,73 @@ export function QeegStudioPanel({
                 </div>
               </div>
             )}
-          </section>
+            </section>
+          )}
+
+          {/* Subtle Sequential Step Navigation Footer (Single-Tab Mode) */}
+          {!viewAllSections && (() => {
+            const idx = CLINICAL_SECTION_TABS.findIndex((t) => t.id === activeSection);
+            const prevTab = idx > 0 ? CLINICAL_SECTION_TABS[idx - 1] : null;
+            const nextTab =
+              idx >= 0 && idx < CLINICAL_SECTION_TABS.length - 1
+                ? CLINICAL_SECTION_TABS[idx + 1]
+                : null;
+            return (
+              <div className="rounded-xl border border-[#DCE6DF] bg-[#FAFDFB] px-3 py-2 flex items-center justify-between gap-2 text-xs">
+                <div className="min-w-0">
+                  {prevTab ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        selectClinicalSection(prevTab.id, { forceSingleTab: true });
+                        requestAnimationFrame(() => {
+                          tabBarRef.current?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'nearest',
+                          });
+                        });
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCE6DF] bg-white hover:bg-[#F5FAF7] px-2.5 py-1 font-medium text-[#262624] transition-colors cursor-pointer"
+                    >
+                      <ArrowLeft className="size-3.5 text-[#575652]" aria-hidden />
+                      <span>Bước trước: {prevTab.label}</span>
+                    </button>
+                  ) : (
+                    <span className="text-[11px] text-[#8A8882]">Đầu quy trình đọc</span>
+                  )}
+                </div>
+
+                <span className="hidden sm:inline font-mono text-[11px] text-[#6E6D68]">
+                  Mục {idx + 1} / {CLINICAL_SECTION_TABS.length}
+                </span>
+
+                <div className="min-w-0">
+                  {nextTab ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        selectClinicalSection(nextTab.id, { forceSingleTab: true });
+                        requestAnimationFrame(() => {
+                          tabBarRef.current?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'nearest',
+                          });
+                        });
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#BBF7D0] bg-[#ECFDF3] hover:bg-[#DCFCE7] px-2.5 py-1 font-semibold text-[#15803D] transition-colors cursor-pointer"
+                    >
+                      <span>Bước tiếp theo: {nextTab.label}</span>
+                      <ArrowRight className="size-3.5" aria-hidden />
+                    </button>
+                  ) : (
+                    <span className="text-[11px] font-medium text-[#15803D]">
+                      Hoàn tất 5 bước đọc
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
