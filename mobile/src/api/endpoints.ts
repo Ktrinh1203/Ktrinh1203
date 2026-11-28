@@ -181,19 +181,39 @@ export const rewardsApi = {
 
 export const paymentsApi = {
   getPackages: () =>
-    api<import('./types').TopupPackagesResponse>('/payments/packages'),
+    api<
+      import('./types').TopupPackagesResponse & {
+        orderTtlSeconds?: number;
+        reminderWindowSeconds?: number;
+        sandboxEnabled?: boolean;
+        serverNow?: string;
+      }
+    >('/payments/packages'),
   createTopupOrder: (body: { packageId?: string; amountVnd?: number }) =>
-    api<{ order: import('./types').PaymentOrderItem }>('/payments/topup-orders', {
-      method: 'POST',
-      body,
-    }),
-  topup: (body: { packageId?: string; amountVnd?: number }) =>
-    api<{ order: import('./types').PaymentOrderItem }>('/payments/topup-orders', {
+    api<{
+      order: import('./types').PaymentOrderItem;
+      serverNow?: string;
+      orderTtlSeconds?: number;
+      reminderWindowSeconds?: number;
+    }>('/payments/topup-orders', {
       method: 'POST',
       body,
     }),
   getTopupOrders: () =>
-    api<{ orders: import('./types').PaymentOrderItem[] }>('/payments/topup-orders'),
+    api<{ orders: import('./types').PaymentOrderItem[]; serverNow?: string }>(
+      '/payments/topup-orders',
+    ),
+  getTopupOrder: (orderCode: string) =>
+    api<{
+      order: import('./types').PaymentOrderItem;
+      serverNow?: string;
+      reminderWindowSeconds?: number;
+    }>(`/payments/topup-orders/${encodeURIComponent(orderCode)}`),
+  cancelTopupOrder: (orderCode: string) =>
+    api<{ order: import('./types').PaymentOrderItem; serverNow?: string }>(
+      `/payments/topup-orders/${encodeURIComponent(orderCode)}/cancel`,
+      { method: 'POST' },
+    ),
   simulateOrderPaid: (orderCode: string) =>
     api<{ order: import('./types').PaymentOrderItem; wallet: import('./types').CreditWalletItem }>(
       `/payments/topup-orders/${encodeURIComponent(orderCode)}/simulate-paid`,

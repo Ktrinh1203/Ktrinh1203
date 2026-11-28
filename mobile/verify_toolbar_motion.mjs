@@ -30,6 +30,18 @@ async function saveShot(page, filename) {
   report.shots.push({ shotPath, brainPath });
 }
 
+async function dismissOnboardingIfPresent(page) {
+  const modal = page.locator('[role="dialog"][aria-label*="Liên kết mã thiết bị"]');
+  await modal.waitFor({ state: 'visible', timeout: 400 }).catch(() => {});
+  if (await modal.isVisible().catch(() => false)) {
+    const skipBtn = modal.locator('button[aria-label="Bỏ qua"], button:has-text("Để sau")').first();
+    if (await skipBtn.isVisible().catch(() => false)) {
+      await skipBtn.click();
+      await modal.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+    }
+  }
+}
+
 async function readPillMetrics(page) {
   return page.evaluate(() => {
     const nav = document.querySelector('nav[aria-label="Điều hướng chính"]');
@@ -154,6 +166,7 @@ try {
   await page.click('button:has-text("Thành viên")');
   await page.waitForURL('**/feed', { timeout: 10000 });
   await page.waitForSelector('article');
+  await dismissOnboardingIfPresent(page);
   // Allow idle chunk preloader to complete before measuring
   await page.waitForTimeout(700);
 
@@ -270,6 +283,7 @@ try {
   await proPage.click('button:has-text("Bác sĩ")');
   await proPage.waitForURL('**/dashboard', { timeout: 10000 });
   await proPage.waitForSelector('text=Ca ưu tiên');
+  await dismissOnboardingIfPresent(proPage);
   await proPage.waitForTimeout(700);
 
   const proGlide = await measureTabGlide(proPage, '/chat', 480);

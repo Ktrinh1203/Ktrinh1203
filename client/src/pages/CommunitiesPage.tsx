@@ -2,9 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
-  MessageSquare,
   Search,
-  ShieldCheck,
   Users,
 } from 'lucide-react';
 import { communitiesApi } from '../api/endpoints';
@@ -253,22 +251,7 @@ export function CommunitiesPage() {
               key={c.id}
               className="p-5 flex flex-col justify-between space-y-4 hover:border-[#86EFAC] transition-colors"
             >
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <span className="inline-flex items-center rounded-full bg-[#EFF6F1] text-[#15803D] border border-[#DCE6DF] px-2.5 py-0.5 text-xs font-semibold">
-                    {c.specialtyLabel}
-                  </span>
-                  {isProfessional && c.isVerifiedOnly ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#F5FAF7] text-[#262624] border border-[#DCE6DF] px-2.5 py-0.5 text-[11px] font-mono font-semibold">
-                      <ShieldCheck className="size-3 text-[#16A34A]" aria-hidden /> {c.code}
-                    </span>
-                  ) : c.isVerifiedOnly ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#F5FAF7] text-[#6E6D68] border border-[#DCE6DF] px-2.5 py-0.5 text-[11px] font-medium">
-                      <ShieldCheck className="size-3 text-[#16A34A]" aria-hidden /> Chuyên gia
-                    </span>
-                  ) : null}
-                </div>
-
+              <div className="space-y-2">
                 <h2 className="text-base font-bold text-[#141413] leading-snug">
                   {c.name}
                 </h2>
@@ -276,26 +259,13 @@ export function CommunitiesPage() {
                 <p className="text-xs sm:text-sm text-[#6E6D68] leading-relaxed line-clamp-2">
                   {c.description}
                 </p>
-
-                {isProfessional && c.leadInstitution && (
-                  <p className="text-[11px] text-[#6E6D68] truncate">
-                    Đơn vị: <span className="font-medium text-[#262624]">{c.leadInstitution}</span>
-                  </p>
-                )}
               </div>
 
               <div className="pt-3 border-t border-[#DCE6DF] flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 text-xs text-[#6E6D68] tabular-nums">
-                  <span className="flex items-center gap-1 font-medium text-[#262624]">
-                    <Users className="size-3.5 text-[#16A34A]" aria-hidden />
-                    {c.membersCount.toLocaleString('vi-VN')} thành viên
-                  </span>
-                  <span>·</span>
-                  <span className="flex items-center gap-1">
-                    <MessageSquare className="size-3.5 text-[#6E6D68]" aria-hidden />
-                    {c.discussionsCount}
-                  </span>
-                </div>
+                <span className="flex items-center gap-1.5 text-xs font-medium text-[#262624] tabular-nums">
+                  <Users className="size-3.5 text-[#16A34A]" aria-hidden />
+                  {c.membersCount.toLocaleString('vi-VN')} thành viên
+                </span>
 
                 <Button
                   size="sm"

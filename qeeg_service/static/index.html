@@ -1580,7 +1580,7 @@
         let token = state.csrfToken || readCookieValue('csrf_token');
         const buildHeaders = (csrf) => ({
           'Content-Type': 'application/json',
-          ...(csrf ? { 'x-csrf-token': csrf } : {}),
+          ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
         });
         let res = await fetch(url, {
           method: 'POST',
@@ -2098,7 +2098,7 @@
             credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
-              'x-csrf-token': csrf,
+              'X-CSRF-Token': csrf,
             },
             body: JSON.stringify(payload),
           });

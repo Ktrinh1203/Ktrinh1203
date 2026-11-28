@@ -343,7 +343,7 @@ def test_static_workstation_html_clean_and_dual_mode() -> None:
         "/api/qeeg/save-to-platform",
         "/eeg-hub",
         "/consultations",
-        "Dữ liệu chi tiết: Phổ tần số &amp; Ma trận 80 đặc trưng (Mở rộng)",
+        "Dữ liệu chi tiết: Phổ tần số &amp; 80 chỉ số đặc trưng",
         "<details ",
     ):
         assert expected in html, f"Missing required element in static/index.html: {expected}"

@@ -6,6 +6,7 @@ import {
   bankProfileSchema,
   createPayoutRequestSchema,
   createTopupOrderSchema,
+  orderCodeParamSchema,
   reviewPayoutRequestSchema,
   transferCreditsSchema,
 } from './payments.schemas.js';
@@ -36,8 +37,9 @@ export const paymentsRouter = Router();
 
 paymentsRouter.use(requireAuth);
 
-paymentsRouter.get('/packages', (_req, res) => {
-  res.json(paymentsService.getTopupPackagesInfo());
+paymentsRouter.get('/packages', (req, res) => {
+  const auth = getAuth(req);
+  res.json(paymentsService.getTopupPackagesInfo(auth.role));
 });
 
 paymentsRouter.post('/topup-orders', financialLimiter, async (req, res) => {
@@ -53,13 +55,23 @@ paymentsRouter.get('/topup-orders', async (req, res) => {
   res.json(result);
 });
 
+paymentsRouter.get('/topup-orders/:orderCode', async (req, res) => {
+  const auth = getAuth(req);
+  const orderCode = orderCodeParamSchema.parse(req.params.orderCode);
+  const result = await paymentsService.getUserTopupOrderByCode(auth.userId, auth.role, orderCode);
+  res.json(result);
+});
+
+paymentsRouter.post('/topup-orders/:orderCode/cancel', financialLimiter, async (req, res) => {
+  const auth = getAuth(req);
+  const orderCode = orderCodeParamSchema.parse(req.params.orderCode);
+  const result = await paymentsService.cancelTopupOrder(auth.userId, auth.role, orderCode);
+  res.json(result);
+});
+
 paymentsRouter.post('/topup-orders/:orderCode/simulate-paid', financialLimiter, async (req, res) => {
   const auth = getAuth(req);
-  const orderCode = z
-    .string()
-    .trim()
-    .regex(/^NL[A-Za-z0-9]{8}$/, 'Mã đơn nạp không hợp lệ')
-    .parse(req.params.orderCode);
+  const orderCode = orderCodeParamSchema.parse(req.params.orderCode);
   const result = await paymentsService.simulateOrderPaid(auth.userId, auth.role, orderCode);
   res.json(result);
 });

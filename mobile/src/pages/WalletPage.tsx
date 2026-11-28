@@ -1,23 +1,24 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  AlertTriangle,
   ArrowDownLeft,
   ArrowUpRight,
   Check,
   CheckCircle2,
+  Clock,
   Coins,
   Copy,
   Gift,
   Loader2,
   QrCode,
+  RefreshCw,
+  XCircle,
   Zap,
 } from 'lucide-react';
 import { paymentsApi, rewardsApi } from '../api/endpoints';
 import { errorMessage } from '../api/client';
-import type {
-  PaymentOrderItem,
-  TopupPackageItem,
-} from '../api/types';
+import type { PaymentOrderItem, TopupPackageItem } from '../api/types';
 import { BottomSheet, EmptyView, Spinner, cn, relativeTime } from '../components/ui';
 
 function formatTxDescription(description: string, type?: string): string {
@@ -68,97 +69,47 @@ const FALLBACK_PACKAGES: TopupPackageItem[] = [
   { id: 'pkg_500k', label: '500.000đ', amountVnd: 500_000, credits: 575, bonusCredits: 75 },
 ];
 
-function hashSeed(input: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < input.length; i += 1) {
-    h ^= input.charCodeAt(i);
-    h = Math.imul(h, 16777619) >>> 0;
-  }
-  return h || 0x9e3779b9;
+const DEFAULT_ORDER_TTL_SECONDS = 600;
+const DEFAULT_REMINDER_WINDOW_SECONDS = 60;
+
+function getRemainingSeconds(expiresAt: string | undefined, effectiveNowMs: number): number {
+  if (!expiresAt) return 0;
+  const expiresMs = Date.parse(expiresAt);
+  if (!Number.isFinite(expiresMs)) return 0;
+  return Math.max(0, Math.ceil((expiresMs - effectiveNowMs) / 1000));
 }
 
-function CompactQrSvg({ payload, label }: { payload: string; label: string }) {
-  const matrix = useMemo(() => {
-    const size = 25;
-    const grid: boolean[][] = Array.from({ length: size }, () => Array(size).fill(false));
-    const reserved: boolean[][] = Array.from({ length: size }, () => Array(size).fill(false));
+function formatMmSs(totalSeconds: number): string {
+  const clamped = Math.max(0, Math.floor(totalSeconds));
+  const mm = String(Math.floor(clamped / 60)).padStart(2, '0');
+  const ss = String(clamped % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
+}
 
-    const placeFinder = (ro: number, co: number) => {
-      for (let r = -1; r <= 7; r += 1) {
-        for (let c = -1; c <= 7; c += 1) {
-          const rr = ro + r;
-          const cc = co + c;
-          if (rr < 0 || rr >= size || cc < 0 || cc >= size) continue;
-          reserved[rr]![cc] = true;
-          const inOuter = r >= 0 && r <= 6 && c >= 0 && c <= 6;
-          const onBorder = r === 0 || r === 6 || c === 0 || c === 6;
-          const inCore = r >= 2 && r <= 4 && c >= 2 && c <= 4;
-          grid[rr]![cc] = inOuter && (onBorder || inCore);
-        }
-      }
-    };
-
-    placeFinder(0, 0);
-    placeFinder(0, size - 7);
-    placeFinder(size - 7, 0);
-
-    for (let i = 8; i < size - 8; i += 1) {
-      reserved[6]![i] = true;
-      reserved[i]![6] = true;
-      grid[6]![i] = i % 2 === 0;
-      grid[i]![6] = i % 2 === 0;
-    }
-
-    const safe = payload || 'NEUROLINK';
-    let state = hashSeed(safe);
-    let idx = 0;
-    for (let r = 0; r < size; r += 1) {
-      for (let c = 0; c < size; c += 1) {
-        if (reserved[r]![c]) continue;
-        state ^= safe.charCodeAt(idx % safe.length) + ((r * 31 + c * 17) & 0xff);
-        state ^= state << 13;
-        state ^= state >>> 17;
-        state ^= state << 5;
-        state >>>= 0;
-        idx += 1;
-        grid[r]![c] = (state & 3) === 0 || (state & 7) === 3;
-      }
-    }
-    return grid;
-  }, [payload]);
-
-  const total = matrix.length + 4;
-
-  return (
-    <svg
-      viewBox={`0 0 ${total} ${total}`}
-      role="img"
-      aria-label={label}
-      shapeRendering="crispEdges"
-      className="size-44"
-    >
-      <rect width={total} height={total} fill="#FFFFFF" rx="1.2" />
-      {matrix.map((row, r) =>
-        row.map((dark, c) =>
-          dark ? (
-            <rect key={`${r}-${c}`} x={c + 2} y={r + 2} width={1} height={1} fill="#111827" />
-          ) : null,
-        ),
-      )}
-    </svg>
-  );
+function appendCacheBust(url: string, nonce: number): string {
+  if (nonce <= 0) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}retry=${nonce}`;
 }
 
 export function WalletPage() {
   const queryClient = useQueryClient();
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
-  const [draftPkg, setDraftPkg] = useState<TopupPackageItem | null>(null);
   const [sheetOrder, setSheetOrder] = useState<PaymentOrderItem | null>(null);
+  const [creatingPkgId, setCreatingPkgId] = useState<string | null>(null);
   const [qrImgErr, setQrImgErr] = useState(false);
+  const [qrReloadNonce, setQrReloadNonce] = useState(0);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [sheetErr, setSheetErr] = useState<string | null>(null);
+  const [serverOffsetMs, setServerOffsetMs] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [reminderOrderCode, setReminderOrderCode] = useState<string | null>(null);
+
   const toastTimerRef = useRef<number | null>(null);
   const copyTimerRef = useRef<number | null>(null);
+  const remindedCodesRef = useRef<Set<string>>(new Set());
+  const zeroSyncedCodesRef = useRef<Set<string>>(new Set());
+  const prevSheetOrderStatusRef = useRef<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -167,13 +118,21 @@ export function WalletPage() {
     };
   }, []);
 
-  const showToast = (kind: 'ok' | 'err', text: string) => {
+  const syncServerClock = useCallback((serverNow?: string) => {
+    if (!serverNow) return;
+    const parsed = Date.parse(serverNow);
+    if (Number.isFinite(parsed)) {
+      setServerOffsetMs(parsed - Date.now());
+    }
+  }, []);
+
+  const showToast = useCallback((kind: 'ok' | 'err', text: string) => {
     if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
     setToast({ kind, text });
     if (kind === 'ok') {
       toastTimerRef.current = window.setTimeout(() => setToast(null), 2600);
     }
-  };
+  }, []);
 
   const copyField = (key: string, value: string) => {
     void navigator.clipboard?.writeText(value);
@@ -189,13 +148,37 @@ export function WalletPage() {
 
   const packagesQuery = useQuery({
     queryKey: ['payments', 'packages'],
-    queryFn: () => paymentsApi.getPackages(),
+    queryFn: async () => {
+      const res = await paymentsApi.getPackages();
+      syncServerClock(res.serverNow);
+      return res;
+    },
     staleTime: 60_000,
   });
 
   const ordersQuery = useQuery({
     queryKey: ['payments', 'topup-orders'],
-    queryFn: () => paymentsApi.getTopupOrders(),
+    queryFn: async () => {
+      const res = await paymentsApi.getTopupOrders();
+      syncServerClock(res.serverNow);
+      return res;
+    },
+  });
+
+  const sheetOrderCode = sheetOrder?.orderCode ?? null;
+
+  const orderDetailQuery = useQuery({
+    queryKey: ['payments', 'topup-order', sheetOrderCode],
+    queryFn: async () => {
+      const res = await paymentsApi.getTopupOrder(sheetOrderCode!);
+      syncServerClock(res.serverNow);
+      return res;
+    },
+    enabled: Boolean(sheetOrderCode),
+    refetchInterval: (query) => {
+      const latestStatus = query.state.data?.order?.status ?? sheetOrder?.status;
+      return latestStatus === 'PENDING' ? 4000 : false;
+    },
   });
 
   const claimMut = useMutation({
@@ -208,59 +191,232 @@ export function WalletPage() {
   });
 
   const createOrderMut = useMutation({
-    mutationFn: (pkgId: string) => paymentsApi.createTopupOrder({ packageId: pkgId }),
-    onMutate: () => {
+    mutationFn: (body: { packageId?: string; amountVnd?: number }) =>
+      paymentsApi.createTopupOrder(body),
+    onMutate: (body) => {
       setSheetErr(null);
+      setCreatingPkgId(body.packageId ?? null);
     },
     onSuccess: (res) => {
-      setDraftPkg(null);
+      syncServerClock(res.serverNow);
+      setCreatingPkgId(null);
       setQrImgErr(false);
+      setQrReloadNonce(0);
+      setReminderOrderCode(null);
       setSheetOrder(res.order);
       void queryClient.invalidateQueries({ queryKey: ['payments', 'topup-orders'] });
     },
-    onError: (e) => showToast('err', errorMessage(e)),
+    onError: (e) => {
+      setCreatingPkgId(null);
+      showToast('err', errorMessage(e));
+    },
+  });
+
+  const cancelMut = useMutation({
+    mutationFn: (orderCode: string) => paymentsApi.cancelTopupOrder(orderCode),
+    onSuccess: (res) => {
+      syncServerClock(res.serverNow);
+      setSheetErr(null);
+      setReminderOrderCode((prev) => (prev === res.order.orderCode ? null : prev));
+      if (sheetOrder?.orderCode === res.order.orderCode) {
+        setSheetOrder(res.order);
+      }
+      showToast('ok', 'Đã hủy đơn nạp');
+      void queryClient.invalidateQueries({ queryKey: ['payments', 'topup-orders'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['payments', 'topup-order', res.order.orderCode],
+      });
+    },
+    onError: (e) => {
+      const msg = errorMessage(e);
+      if (sheetOrder) {
+        setSheetErr(msg);
+      } else {
+        showToast('err', msg);
+      }
+    },
   });
 
   const simulateMut = useMutation({
     mutationFn: (orderCode: string) => paymentsApi.simulateOrderPaid(orderCode),
     onSuccess: (res) => {
       setSheetErr(null);
+      setReminderOrderCode((prev) => (prev === res.order.orderCode ? null : prev));
       setSheetOrder(res.order);
       showToast('ok', `+${res.order.creditsToGrant} Credit`);
       void queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
       void queryClient.invalidateQueries({ queryKey: ['payments', 'topup-orders'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['payments', 'topup-order', res.order.orderCode],
+      });
     },
-    onError: (e) => setSheetErr(errorMessage(e)),
+    onError: (e) => {
+      setSheetErr(errorMessage(e));
+      if (sheetOrderCode) {
+        void queryClient.invalidateQueries({
+          queryKey: ['payments', 'topup-order', sheetOrderCode],
+        });
+      }
+      void queryClient.invalidateQueries({ queryKey: ['payments', 'topup-orders'] });
+    },
   });
 
   const orders = ordersQuery.data?.orders ?? [];
   const activeOrder = useMemo(() => {
     if (!sheetOrder) return null;
+    const polled = orderDetailQuery.data?.order;
+    if (polled && polled.orderCode === sheetOrder.orderCode) return polled;
     return orders.find((o) => o.orderCode === sheetOrder.orderCode) ?? sheetOrder;
-  }, [orders, sheetOrder]);
+  }, [orderDetailQuery.data?.order, orders, sheetOrder]);
+
+  const effectiveNowMs = nowMs + serverOffsetMs;
+  const orderTtlSeconds = packagesQuery.data?.orderTtlSeconds ?? DEFAULT_ORDER_TTL_SECONDS;
+  const reminderWindowSeconds =
+    orderDetailQuery.data?.reminderWindowSeconds ??
+    packagesQuery.data?.reminderWindowSeconds ??
+    DEFAULT_REMINDER_WINDOW_SECONDS;
+  const sandboxEnabled = packagesQuery.data?.sandboxEnabled === true;
+
+  const latestPendingOrder = useMemo(() => {
+    return (
+      orders.find(
+        (o) => o.status === 'PENDING' && getRemainingSeconds(o.expiresAt, effectiveNowMs) > 0,
+      ) ?? null
+    );
+  }, [orders, effectiveNowMs]);
+
+  const hasTickingOrder = Boolean(
+    latestPendingOrder || (activeOrder && activeOrder.status === 'PENDING'),
+  );
+
+  useEffect(() => {
+    if (!hasTickingOrder) return;
+    setNowMs(Date.now());
+    const id = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [hasTickingOrder]);
+
+  const activeRemainingSec = activeOrder
+    ? activeOrder.status === 'PENDING'
+      ? getRemainingSeconds(activeOrder.expiresAt, effectiveNowMs)
+      : 0
+    : 0;
+
+  const bannerRemainingSec = latestPendingOrder
+    ? getRemainingSeconds(latestPendingOrder.expiresAt, effectiveNowMs)
+    : 0;
 
   useEffect(() => {
     setQrImgErr(false);
+    setQrReloadNonce(0);
     setSheetErr(null);
+    prevSheetOrderStatusRef.current = activeOrder?.status ?? null;
   }, [activeOrder?.orderCode]);
+
+  // Sync wallet + orders when polled order transitions out of PENDING
+  useEffect(() => {
+    if (!activeOrder) return;
+    const prev = prevSheetOrderStatusRef.current;
+    if (prev && prev !== activeOrder.status) {
+      if (activeOrder.status === 'PAID') {
+        showToast('ok', `+${activeOrder.creditsToGrant} Credit`);
+        void queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
+      }
+      void queryClient.invalidateQueries({ queryKey: ['payments', 'topup-orders'] });
+    }
+    prevSheetOrderStatusRef.current = activeOrder.status;
+  }, [activeOrder, queryClient, showToast]);
+
+  // Immediately sync with server when activeOrder countdown reaches 00:00
+  useEffect(() => {
+    if (!activeOrder || activeOrder.status !== 'PENDING') return;
+    if (activeRemainingSec > 0) return;
+    if (zeroSyncedCodesRef.current.has(activeOrder.orderCode)) return;
+    zeroSyncedCodesRef.current.add(activeOrder.orderCode);
+    void orderDetailQuery.refetch();
+    void queryClient.invalidateQueries({ queryKey: ['payments', 'topup-orders'] });
+  }, [activeOrder, activeRemainingSec, orderDetailQuery, queryClient]);
+
+  // Trigger 1-minute final reminder popup once per orderCode
+  useEffect(() => {
+    const candidate = activeOrder?.status === 'PENDING' ? activeOrder : latestPendingOrder;
+    if (!candidate || candidate.status !== 'PENDING') return;
+    const rem = getRemainingSeconds(candidate.expiresAt, effectiveNowMs);
+    if (rem > 0 && rem <= reminderWindowSeconds && !remindedCodesRef.current.has(candidate.orderCode)) {
+      remindedCodesRef.current.add(candidate.orderCode);
+      setReminderOrderCode(candidate.orderCode);
+    }
+  }, [activeOrder, latestPendingOrder, effectiveNowMs, reminderWindowSeconds]);
+
+  // Auto-dismiss reminder popup if the order is no longer PENDING or has expired
+  const reminderOrder = useMemo(() => {
+    if (!reminderOrderCode) return null;
+    if (activeOrder?.orderCode === reminderOrderCode) return activeOrder;
+    return orders.find((o) => o.orderCode === reminderOrderCode) ?? null;
+  }, [reminderOrderCode, activeOrder, orders]);
+
+  const reminderRemainingSec = reminderOrder
+    ? getRemainingSeconds(reminderOrder.expiresAt, effectiveNowMs)
+    : 0;
+
+  useEffect(() => {
+    if (!reminderOrderCode) return;
+    if (!reminderOrder || reminderOrder.status !== 'PENDING' || reminderRemainingSec <= 0) {
+      setReminderOrderCode(null);
+    }
+  }, [reminderOrderCode, reminderOrder, reminderRemainingSec]);
+
+  const packages = packagesQuery.data?.packages?.length
+    ? packagesQuery.data.packages
+    : FALLBACK_PACKAGES;
+
+  const recreateOrder = (order: PaymentOrderItem) => {
+    if (createOrderMut.isPending) return;
+    const matchedPkg = packages.find(
+      (p) => p.amountVnd === order.amountVnd && p.credits === order.creditsToGrant,
+    );
+    if (matchedPkg) {
+      createOrderMut.mutate({ packageId: matchedPkg.id });
+    } else {
+      createOrderMut.mutate({ amountVnd: order.amountVnd });
+    }
+  };
 
   if (walletQuery.isLoading) return <Spinner />;
 
   const wallet = walletQuery.data?.wallet;
   const txs = walletQuery.data?.transactions ?? [];
   const hasGrant = txs.some((t) => t.type === 'STARTER_GRANT');
-  const packages = packagesQuery.data?.packages?.length
-    ? packagesQuery.data.packages
-    : FALLBACK_PACKAGES;
   const vndPerCredit = packagesQuery.data?.vndPerCredit ?? 1000;
   const bankInfo = packagesQuery.data?.bankInfo;
-  const latestPendingOrder = orders.find((o) => o.status === 'PENDING') ?? null;
 
   const resolvedBankName = activeOrder?.bankName ?? bankInfo?.bankName ?? 'MB Bank';
   const resolvedAccountNo = activeOrder?.accountNo ?? bankInfo?.accountNo ?? '0888999777';
   const resolvedAccountName =
     activeOrder?.accountName ?? bankInfo?.accountName ?? 'CONG TY NEUROLINK VIET NAM';
+
   const isOrderPaid = activeOrder?.status === 'PAID';
+  const isOrderCancelled = activeOrder?.status === 'CANCELLED';
+  const isOrderExpired =
+    activeOrder?.status === 'EXPIRED' ||
+    (activeOrder?.status === 'PENDING' && activeRemainingSec === 0);
+  const isOrderPendingActive = activeOrder?.status === 'PENDING' && activeRemainingSec > 0;
+  const isUrgentCountdown = isOrderPendingActive && activeRemainingSec <= reminderWindowSeconds;
+
+  const orderDurationSec = activeOrder
+    ? Math.max(
+        1,
+        Math.round((Date.parse(activeOrder.expiresAt) - Date.parse(activeOrder.createdAt)) / 1000) ||
+          orderTtlSeconds,
+      )
+    : orderTtlSeconds;
+  const progressPct = Math.max(0, Math.min(100, (activeRemainingSec / orderDurationSec) * 100));
+
+  const qrImageSrc = activeOrder?.vietQrImageUrl
+    ? appendCacheBust(activeOrder.vietQrImageUrl, qrReloadNonce)
+    : '';
 
   return (
     <div className="px-3.5 pt-3.5 space-y-4">
@@ -319,7 +475,7 @@ export function WalletPage() {
         )}
       </section>
 
-      {/* Compact VietQR Top-Up Package Pills */}
+      {/* Compact VietQR Top-Up Package Grid (1-tap direct VietQR) */}
       <section className="space-y-2.5">
         <div className="flex items-center justify-between gap-2">
           <h2 className="inline-flex items-center gap-1.5 text-sm font-bold text-[#111827]">
@@ -333,28 +489,30 @@ export function WalletPage() {
 
         <div className="grid grid-cols-2 gap-2">
           {packages.map((pkg) => {
-            const isDraft = draftPkg?.id === pkg.id;
+            const isCreatingThis = createOrderMut.isPending && creatingPkgId === pkg.id;
             return (
               <button
                 key={pkg.id}
                 type="button"
                 disabled={createOrderMut.isPending}
-                onClick={() => setDraftPkg(pkg)}
+                onClick={() => createOrderMut.mutate({ packageId: pkg.id })}
                 className={cn(
-                  'flex flex-col items-start justify-between gap-1.5 rounded-2xl border p-3.5 text-left active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60',
-                  isDraft
-                    ? 'border-[#16A34A] bg-[#ECFDF3] ring-2 ring-[#16A34A]/20'
-                    : 'border-[#DCE6DF] bg-white hover:border-[#16A34A]',
+                  'flex flex-col items-start justify-between gap-1.5 rounded-2xl border border-[#DCE6DF] bg-white p-3.5 text-left hover:border-[#16A34A] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60',
+                  isCreatingThis && 'border-[#16A34A] bg-[#ECFDF3]',
                 )}
               >
                 <div className="flex w-full items-center justify-between gap-1">
                   <span className="font-mono text-sm font-bold text-[#111827] tabular-nums">
                     {pkg.label}
                   </span>
-                  {pkg.bonusCredits > 0 && (
-                    <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-[10px] font-bold text-[#15803D] tabular-nums">
-                      +{pkg.bonusCredits}
-                    </span>
+                  {isCreatingThis ? (
+                    <Loader2 className="size-3.5 animate-spin text-[#16A34A]" aria-hidden />
+                  ) : (
+                    pkg.bonusCredits > 0 && (
+                      <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-[10px] font-bold text-[#15803D] tabular-nums">
+                        +{pkg.bonusCredits}
+                      </span>
+                    )
                   )}
                 </div>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#16A34A] tabular-nums">
@@ -365,24 +523,50 @@ export function WalletPage() {
           })}
         </div>
 
-        {latestPendingOrder && (
-          <button
-            type="button"
-            onClick={() => setSheetOrder(latestPendingOrder)}
-            className="flex w-full items-center justify-between gap-2 rounded-2xl border border-amber-200 bg-amber-50/90 px-3.5 py-2.5 text-left active:scale-[0.99] transition-transform cursor-pointer"
-          >
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-amber-900 truncate">
-                Đơn chờ · <span className="font-mono">{latestPendingOrder.orderCode}</span>
-              </p>
-              <p className="text-[11px] text-amber-800/80 tabular-nums">
-                {latestPendingOrder.amountVnd.toLocaleString('vi-VN')}đ · +{latestPendingOrder.creditsToGrant} Credit
+        {/* Compact Pending Order Banner */}
+        {latestPendingOrder && bannerRemainingSec > 0 && (
+          <div className="flex items-center justify-between gap-2 rounded-2xl border border-amber-200 bg-amber-50/90 px-3.5 py-2.5">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <p className="text-xs font-bold text-amber-900 truncate">
+                  Đơn chờ · <span className="font-mono">{latestPendingOrder.orderCode}</span>
+                </p>
+              </div>
+              <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-amber-900/80 tabular-nums truncate">
+                <span
+                  className={cn(
+                    'font-mono font-bold',
+                    bannerRemainingSec <= reminderWindowSeconds
+                      ? 'text-red-700'
+                      : 'text-amber-900',
+                  )}
+                >
+                  Còn {formatMmSs(bannerRemainingSec)}
+                </span>
+                <span aria-hidden>·</span>
+                <span className="truncate">
+                  {latestPendingOrder.amountVnd.toLocaleString('vi-VN')}đ
+                </span>
               </p>
             </div>
-            <span className="shrink-0 rounded-full bg-white border border-amber-200 px-3 py-1 text-[11px] font-semibold text-amber-900">
-              Mở QR
-            </span>
-          </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSheetOrder(latestPendingOrder)}
+                className="h-9 rounded-full bg-white border border-amber-300 px-3 text-[11px] font-semibold text-amber-950 active:scale-95 transition-transform cursor-pointer"
+              >
+                Mở QR
+              </button>
+              <button
+                type="button"
+                disabled={cancelMut.isPending}
+                onClick={() => cancelMut.mutate(latestPendingOrder.orderCode)}
+                className="h-9 rounded-full border border-amber-200/90 bg-amber-100/70 px-2.5 text-[11px] font-semibold text-amber-900 active:scale-95 transition-transform cursor-pointer disabled:opacity-50"
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
         )}
       </section>
 
@@ -432,94 +616,11 @@ export function WalletPage() {
         )}
       </section>
 
-      {/* Step 2: Billing Confirmation Bottom Sheet (Before Creating Order) */}
-      <BottomSheet
-        open={Boolean(draftPkg)}
-        onClose={() => {
-          if (!createOrderMut.isPending) setDraftPkg(null);
-        }}
-        title="Xác nhận hóa đơn (Billing)"
-        headerRight={
-          <span className="rounded-full border border-[#BBF7D0] bg-[#ECFDF3] px-2.5 py-0.5 text-[11px] font-semibold text-[#15803D]">
-            Bước 2/3
-          </span>
-        }
-      >
-        {draftPkg && (
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-[#DCE6DF] bg-[#F5FAF7] p-4 space-y-2.5 text-xs tabular-nums">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[#5B6860]">Gói nạp</span>
-                <span className="font-bold text-[#111827]">{draftPkg.label}</span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[#5B6860]">Số tiền thanh toán</span>
-                <span className="font-mono font-bold text-[#111827]">
-                  {draftPkg.amountVnd.toLocaleString('vi-VN')} ₫
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[#5B6860]">Credit cơ bản</span>
-                <span className="font-semibold text-[#111827]">
-                  +{(draftPkg.credits - draftPkg.bonusCredits).toLocaleString('vi-VN')} Credit
-                </span>
-              </div>
-              {draftPkg.bonusCredits > 0 && (
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[#5B6860]">Thưởng thêm</span>
-                  <span className="font-semibold text-[#15803D]">
-                    +{draftPkg.bonusCredits.toLocaleString('vi-VN')} Credit
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[#5B6860]">Kênh thanh toán</span>
-                <span className="font-medium text-[#111827]">VietQR 24/7</span>
-              </div>
-              <div className="flex items-center justify-between gap-2 border-t border-[#DCE6DF] pt-2.5">
-                <span className="font-bold text-[#111827]">Tổng Credit nhận</span>
-                <span className="font-mono text-base font-bold text-[#16A34A]">
-                  +{draftPkg.credits.toLocaleString('vi-VN')} Credit
-                </span>
-              </div>
-            </div>
-
-            <p className="text-[11px] text-[#5B6860] text-center">
-              Đơn nạp chỉ được tạo sau khi bạn bấm xác nhận bên dưới.
-            </p>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                disabled={createOrderMut.isPending}
-                onClick={() => setDraftPkg(null)}
-                className="h-11 rounded-full border border-[#DCE6DF] bg-white text-xs font-semibold text-[#111827] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
-              >
-                Chọn lại gói
-              </button>
-              <button
-                type="button"
-                disabled={createOrderMut.isPending}
-                onClick={() => createOrderMut.mutate(draftPkg.id)}
-                className="flex items-center justify-center gap-1.5 h-11 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-xs font-semibold text-white active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
-              >
-                {createOrderMut.isPending ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                ) : (
-                  <QrCode className="size-4" aria-hidden />
-                )}
-                <span>Xác nhận & lấy QR</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </BottomSheet>
-
-      {/* Compact VietQR Bottom Sheet */}
+      {/* Direct VietQR Payment Bottom Sheet */}
       <BottomSheet
         open={Boolean(activeOrder)}
         onClose={() => setSheetOrder(null)}
-        title="Mã VietQR"
+        title="Thanh toán VietQR"
         headerRight={
           activeOrder && (
             <span
@@ -527,16 +628,58 @@ export function WalletPage() {
                 'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
                 isOrderPaid
                   ? 'border-[#86EFAC] bg-[#ECFDF3] text-[#15803D]'
-                  : 'border-amber-200 bg-amber-50 text-amber-800',
+                  : isOrderExpired
+                    ? 'border-red-200 bg-red-50 text-red-700'
+                    : isOrderCancelled
+                      ? 'border-slate-200 bg-slate-100 text-slate-600'
+                      : 'border-amber-200 bg-amber-50 text-amber-800',
               )}
             >
-              {isOrderPaid ? 'Đã nạp' : 'Chờ CK'}
+              {isOrderPaid
+                ? 'Đã nạp'
+                : isOrderExpired
+                  ? 'Hết hạn'
+                  : isOrderCancelled
+                    ? 'Đã hủy'
+                    : 'Chờ CK'}
             </span>
           )
         }
       >
         {activeOrder && (
-          <div className="space-y-4">
+          <div className="space-y-3.5">
+            {/* Live Server-Synced Countdown Bar (PENDING & active) */}
+            {isOrderPendingActive && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1.5 font-semibold tabular-nums',
+                      isUrgentCountdown ? 'text-red-600' : 'text-[#15803D]',
+                    )}
+                  >
+                    <Clock className="size-3.5 shrink-0" aria-hidden />
+                    <span>
+                      Còn lại:{' '}
+                      <span className="font-mono font-bold">{formatMmSs(activeRemainingSec)}</span>
+                    </span>
+                  </span>
+                  <span className="text-[11px] text-[#5B6860] font-mono tabular-nums">
+                    {activeOrder.orderCode}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-[#E5EFE8] overflow-hidden">
+                  <div
+                    className={cn(
+                      'h-full rounded-full transition-[width] duration-700',
+                      isUrgentCountdown ? 'bg-red-500' : 'bg-[#16A34A]',
+                    )}
+                    style={{ width: `${progressPct}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Centered Amount + QR Box */}
             <div className="flex flex-col items-center rounded-2xl border border-[#DCE6DF] bg-[#F5FAF7] p-4 text-center">
               <p className="font-mono text-xl font-bold text-[#111827] tabular-nums">
@@ -547,36 +690,78 @@ export function WalletPage() {
                 {activeOrder.bonusCredits > 0 ? ` (Tặng +${activeOrder.bonusCredits})` : ''}
               </p>
 
-              <div className="mt-3 rounded-2xl border border-[#DCE6DF] bg-white p-2.5">
-                {activeOrder.vietQrImageUrl && !qrImgErr ? (
+              <div className="relative mt-3 rounded-2xl border border-[#DCE6DF] bg-white p-2.5 overflow-hidden">
+                {qrImageSrc && !qrImgErr ? (
                   <img
-                    src={activeOrder.vietQrImageUrl}
+                    src={qrImageSrc}
                     alt={`VietQR ${activeOrder.orderCode}`}
                     onError={() => setQrImgErr(true)}
-                    className="size-44 object-contain rounded-lg"
+                    className={cn(
+                      'size-44 object-contain rounded-lg transition-opacity',
+                      (isOrderExpired || isOrderCancelled) && 'opacity-20 grayscale',
+                    )}
                   />
                 ) : (
-                  <CompactQrSvg
-                    payload={activeOrder.qrPayload || activeOrder.orderCode}
-                    label={`Mã VietQR ${activeOrder.orderCode}`}
-                  />
+                  <div
+                    className={cn(
+                      'size-44 flex flex-col items-center justify-center gap-2 rounded-lg bg-[#F5FAF7] px-3 text-center',
+                      (isOrderExpired || isOrderCancelled) && 'opacity-30',
+                    )}
+                  >
+                    <QrCode className="size-7 text-[#5B6860]" aria-hidden />
+                    <p className="text-[11px] font-semibold text-[#111827]">
+                      Không tải được ảnh QR
+                    </p>
+                    <p className="text-[10px] text-[#5B6860]">
+                      Hãy chuyển khoản theo thông tin bên dưới
+                    </p>
+                    {isOrderPendingActive && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQrImgErr(false);
+                          setQrReloadNonce((n) => n + 1);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-full border border-[#DCE6DF] bg-white px-3 h-7 text-[11px] font-semibold text-[#15803D] cursor-pointer active:scale-95"
+                      >
+                        <RefreshCw className="size-3" aria-hidden />
+                        <span>Tải lại QR</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {(isOrderExpired || isOrderCancelled) && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/55 backdrop-blur-[1px] p-2">
+                    <span
+                      className={cn(
+                        'rounded-full px-3 py-1.5 text-[11px] font-bold tracking-wide shadow-sm',
+                        isOrderExpired
+                          ? 'bg-red-600 text-white'
+                          : 'bg-slate-800 text-white',
+                      )}
+                    >
+                      {isOrderExpired ? 'MÃ QR ĐÃ HẾT HẠN' : 'ĐƠN ĐÃ HỦY'}
+                    </span>
+                  </div>
                 )}
               </div>
+
               <p className="mt-2 text-[11px] text-[#5B6860]">
-                Quét bằng ứng dụng ngân hàng
-                {!isOrderPaid && activeOrder.expiresAt
-                  ? ` · Hết hạn ${new Date(activeOrder.expiresAt).toLocaleTimeString('vi-VN', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}`
-                  : ''}
+                {isOrderPaid
+                  ? 'Thanh toán đã hoàn tất'
+                  : isOrderExpired
+                    ? 'Vui lòng tạo mã QR mới để tiếp tục nạp'
+                    : isOrderCancelled
+                      ? 'Đơn nạp này đã được hủy'
+                      : 'Quét bằng ứng dụng ngân hàng để nhận Credit tự động'}
               </p>
             </div>
 
-            {/* Copyable Bank + Order Code Rows */}
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between gap-2 rounded-2xl border border-[#DCE6DF] bg-white px-3.5 py-2.5">
-                <div className="min-w-0">
+            {/* Single Consolidated Bank Account + Transfer Code Card */}
+            <div className="rounded-2xl border border-[#DCE6DF] bg-white divide-y divide-[#EDF3EF] text-xs">
+              <div className="flex items-center justify-between gap-2 px-3.5 py-2.5">
+                <div className="min-w-0 flex-1">
                   <span className="block text-[11px] text-[#5B6860] truncate">
                     {resolvedBankName} · {resolvedAccountName}
                   </span>
@@ -587,7 +772,7 @@ export function WalletPage() {
                 <button
                   type="button"
                   onClick={() => copyField('acc', resolvedAccountNo)}
-                  className="inline-flex items-center gap-1 rounded-full border border-[#DCE6DF] bg-[#F5FAF7] px-3 h-8 text-[11px] font-semibold text-[#15803D] shrink-0 cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded-full border border-[#DCE6DF] bg-[#F5FAF7] px-3 h-8 text-[11px] font-semibold text-[#15803D] shrink-0 cursor-pointer active:scale-95"
                 >
                   {copiedKey === 'acc' ? (
                     <>
@@ -601,8 +786,8 @@ export function WalletPage() {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between gap-2 rounded-2xl border border-[#86EFAC] bg-[#ECFDF3] px-3.5 py-2.5">
-                <div className="min-w-0">
+              <div className="flex items-center justify-between gap-2 bg-[#ECFDF3]/60 px-3.5 py-2.5 rounded-b-2xl">
+                <div className="min-w-0 flex-1">
                   <span className="block text-[11px] font-medium text-[#15803D]">
                     Nội dung chuyển khoản
                   </span>
@@ -613,7 +798,7 @@ export function WalletPage() {
                 <button
                   type="button"
                   onClick={() => copyField('code', activeOrder.orderCode)}
-                  className="inline-flex items-center gap-1 rounded-full bg-[#16A34A] px-3 h-8 text-[11px] font-semibold text-white shrink-0 cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded-full bg-[#16A34A] px-3 h-8 text-[11px] font-semibold text-white shrink-0 cursor-pointer active:scale-95"
                 >
                   {copiedKey === 'code' ? (
                     <>
@@ -621,7 +806,7 @@ export function WalletPage() {
                     </>
                   ) : (
                     <>
-                      <Copy className="size-3" aria-hidden /> Chép mã
+                      <Copy className="size-3" aria-hidden /> Chép nội dung
                     </>
                   )}
                 </button>
@@ -634,38 +819,159 @@ export function WalletPage() {
               </p>
             )}
 
+            {/* Status-Specific Actions */}
             {isOrderPaid ? (
               <div className="space-y-2.5">
                 <div className="flex items-center justify-center gap-1.5 rounded-2xl border border-[#BBF7D0] bg-[#ECFDF3] py-2.5 text-xs font-bold text-[#15803D]">
                   <CheckCircle2 className="size-4 text-[#16A34A]" aria-hidden />
-                  <span>Đã cộng +{activeOrder.creditsToGrant} Credit vào ví</span>
+                  <span>Đã cộng +{activeOrder.creditsToGrant} Credit</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSheetOrder(null)}
-                  className="w-full h-11 rounded-full bg-[#14532D] text-sm font-semibold text-white cursor-pointer"
+                  className="w-full h-11 rounded-full bg-[#14532D] text-sm font-semibold text-white cursor-pointer active:scale-[0.98]"
                 >
                   Xong
                 </button>
               </div>
-            ) : (
-              <button
-                type="button"
-                disabled={simulateMut.isPending}
-                onClick={() => simulateMut.mutate(activeOrder.orderCode)}
-                className="flex w-full items-center justify-center gap-1.5 h-11 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-xs font-semibold text-white active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
-              >
-                {simulateMut.isPending ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                ) : (
-                  <Zap className="size-4" aria-hidden />
+            ) : isOrderExpired || isOrderCancelled ? (
+              <div className="space-y-2">
+                {isOrderCancelled && (
+                  <div className="flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 py-2 text-xs font-semibold text-slate-700">
+                    <XCircle className="size-4 text-slate-500" aria-hidden />
+                    <span>Đơn đã hủy</span>
+                  </div>
                 )}
-                <span>Xác nhận nạp thử nghiệm</span>
-              </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSheetOrder(null)}
+                    className="h-11 px-5 rounded-full border border-[#DCE6DF] bg-white text-xs font-semibold text-[#111827] cursor-pointer active:scale-[0.98]"
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="button"
+                    disabled={createOrderMut.isPending}
+                    onClick={() => recreateOrder(activeOrder)}
+                    className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-xs font-semibold text-white cursor-pointer active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {createOrderMut.isPending ? (
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                    ) : (
+                      <RefreshCw className="size-4" aria-hidden />
+                    )}
+                    <span>Tạo mã QR mới</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={cancelMut.isPending || simulateMut.isPending}
+                  onClick={() => cancelMut.mutate(activeOrder.orderCode)}
+                  className={cn(
+                    'h-11 rounded-full border border-[#DCE6DF] bg-white text-xs font-semibold text-[#374151] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50',
+                    sandboxEnabled ? 'px-4 shrink-0' : 'w-full',
+                  )}
+                >
+                  {cancelMut.isPending ? 'Đang hủy...' : 'Hủy đơn'}
+                </button>
+                {sandboxEnabled && (
+                  <button
+                    type="button"
+                    disabled={simulateMut.isPending || cancelMut.isPending}
+                    onClick={() => simulateMut.mutate(activeOrder.orderCode)}
+                    className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-xs font-semibold text-white active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {simulateMut.isPending ? (
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                    ) : (
+                      <Zap className="size-4" aria-hidden />
+                    )}
+                    <span>Xác nhận thử (Sandbox)</span>
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}
       </BottomSheet>
+
+      {/* Final 1-Minute Auto Reminder Dialog */}
+      {reminderOrder && reminderOrder.status === 'PENDING' && reminderRemainingSec > 0 && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
+          <div
+            className="fixed inset-0 bg-[#052E16]/45 backdrop-blur-[2px]"
+            onClick={() => setReminderOrderCode(null)}
+            aria-hidden="true"
+          />
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="payment-reminder-title"
+            aria-describedby="payment-reminder-desc"
+            className="relative z-10 w-full max-w-[343px] rounded-[24px] border border-amber-200 bg-white p-5 shadow-2xl space-y-4"
+          >
+            <div className="flex items-start gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                <AlertTriangle className="size-5" aria-hidden />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h3
+                  id="payment-reminder-title"
+                  className="text-[15px] font-bold text-[#111827]"
+                >
+                  Sắp hết giờ thanh toán!
+                </h3>
+                <p className="mt-0.5 font-mono text-sm font-bold text-red-600 tabular-nums">
+                  Còn {formatMmSs(reminderRemainingSec)}
+                </p>
+              </div>
+            </div>
+
+            <p id="payment-reminder-desc" className="text-xs leading-relaxed text-[#4B5563]">
+              Mã QR đơn <span className="font-mono font-bold text-[#111827]">{reminderOrder.orderCode}</span> sắp hết hạn. Vui lòng hoàn tất chuyển khoản ngay để nhận Credit tự động.
+            </p>
+
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setSheetOrder(reminderOrder);
+                  setReminderOrderCode(null);
+                }}
+                className="w-full h-11 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-xs font-semibold text-white active:scale-[0.98] transition-transform cursor-pointer"
+              >
+                Tiếp tục quét QR
+              </button>
+              <button
+                type="button"
+                disabled={createOrderMut.isPending}
+                onClick={() => {
+                  setReminderOrderCode(null);
+                  recreateOrder(reminderOrder);
+                }}
+                className="w-full h-11 rounded-full border border-[#DCE6DF] bg-[#F5FAF7] text-xs font-semibold text-[#15803D] active:scale-[0.98] transition-transform cursor-pointer disabled:opacity-50"
+              >
+                Tạo mã QR mới
+              </button>
+              <button
+                type="button"
+                disabled={cancelMut.isPending}
+                onClick={() => {
+                  setReminderOrderCode(null);
+                  cancelMut.mutate(reminderOrder.orderCode);
+                }}
+                className="w-full h-11 rounded-full border border-red-200 bg-red-50 text-xs font-semibold text-red-700 active:scale-[0.98] transition-transform cursor-pointer disabled:opacity-50"
+              >
+                Hủy đơn
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

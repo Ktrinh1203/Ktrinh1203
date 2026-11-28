@@ -41,6 +41,18 @@ async function shot(page, name) {
   results.shots.push(p);
 }
 
+async function dismissOnboardingIfPresent(page) {
+  const modal = page.locator('[role="dialog"][aria-label*="Liên kết mã thiết bị"]');
+  await modal.waitFor({ state: 'visible', timeout: 400 }).catch(() => {});
+  if (await modal.isVisible().catch(() => false)) {
+    const skipBtn = modal.locator('button[aria-label="Bỏ qua"], button:has-text("Để sau")').first();
+    if (await skipBtn.isVisible().catch(() => false)) {
+      await skipBtn.click();
+      await modal.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+    }
+  }
+}
+
 async function checkStoryStripUnclipped(page, label) {
   const metrics = await page.evaluate(() => {
     const strip = document.querySelector('[data-story-strip="true"]');
@@ -232,6 +244,7 @@ try {
   await page.click('button:has-text("Thành viên")');
   await page.waitForURL('**/feed', { timeout: 20000 });
   await page.waitForSelector('article');
+  await dismissOnboardingIfPresent(page);
   await page.waitForTimeout(400);
   await checkNoHorizontalOverflow(page, 'feed-general-375');
   await checkStoryStripUnclipped(page, 'feed-general-375');
@@ -263,6 +276,7 @@ try {
   await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
   assert(page.url().endsWith('/feed'), `Unverified user redirected from /dashboard to /feed (${page.url()})`);
   await page.waitForSelector('article');
+  await dismissOnboardingIfPresent(page);
 
   // 1b. Like toggle + cross-tab cache persistence check!
   const firstLikeBtn = page.locator('article button[aria-label="Thích"], article button[aria-label="Bỏ thích"]').first();
@@ -531,6 +545,7 @@ try {
   }
 
   await page.goto(`${BASE_URL}/u/hoa_health`, { waitUntil: 'networkidle' });
+  await dismissOnboardingIfPresent(page);
   await page.waitForSelector('button:has-text("Chỉnh sửa")');
   await page.click('button:has-text("Chỉnh sửa")');
   await page.waitForSelector('[role="dialog"]:has-text("Chỉnh sửa hồ sơ")');
@@ -538,6 +553,7 @@ try {
   await page.click('[role="dialog"] button[aria-label="Đóng"]');
 
   await page.goto(`${BASE_URL}/u/dr_minh`, { waitUntil: 'networkidle' });
+  await dismissOnboardingIfPresent(page);
   await page.waitForSelector('button:has-text("Theo dõi"), button:has-text("Đang theo dõi")');
   const followBtn = page.locator('button:has-text("Theo dõi"), button:has-text("Đang theo dõi")').first();
   const followBefore = (await followBtn.textContent())?.trim();
@@ -552,6 +568,7 @@ try {
 
   // 1j. Wallet: Clean consumer Wallet UI (no HMAC/hash/ledger/Sandbox jargon) + Compact VietQR topup sheet + Test confirm
   await page.goto(`${BASE_URL}/wallet`, { waitUntil: 'networkidle' });
+  await dismissOnboardingIfPresent(page);
   await page.waitForSelector('text=Số dư Credit', { timeout: 8000 });
   await page.waitForSelector('text=Nạp VietQR', { timeout: 8000 });
   await page.waitForTimeout(350);
@@ -580,7 +597,7 @@ try {
 
   // Open VietQR bottom sheet via 50.000đ package pill
   await page.click('button:has-text("50.000đ")');
-  await page.waitForSelector('[role="dialog"]:has-text("Mã VietQR")', { timeout: 15000 });
+  await page.waitForSelector('[role="dialog"]:has-text("Thanh toán VietQR")', { timeout: 15000 });
   await page.locator('[role="dialog"] span.select-all').waitFor({ state: 'visible', timeout: 8000 });
   await page.locator('[role="dialog"] img, [role="dialog"] svg[role="img"]').first().waitFor({ state: 'visible', timeout: 8000 });
   await checkNoHorizontalOverflow(page, 'wallet-vietqr-sheet-375');
@@ -589,18 +606,18 @@ try {
   const qrRendered = await page.locator('[role="dialog"] img, [role="dialog"] svg[role="img"]').first().isVisible();
   assert(qrRendered, 'VietQR bottom sheet rendered scannable QR code cleanly');
 
-  const confirmBtnVisible = await page.locator('[role="dialog"] button:has-text("Xác nhận nạp thử nghiệm")').isVisible();
-  assert(confirmBtnVisible, 'VietQR bottom sheet shows plain Vietnamese "Xác nhận nạp thử nghiệm" button');
+  const confirmBtnVisible = await page.locator('[role="dialog"] button:has-text("Xác nhận thử (Sandbox)")').isVisible();
+  assert(confirmBtnVisible, 'VietQR bottom sheet shows "Xác nhận thử (Sandbox)" button in sandbox mode');
 
   // Copy order code feedback
-  await page.click('[role="dialog"] button:has-text("Chép mã")');
+  await page.click('[role="dialog"] button:has-text("Chép nội dung")');
   await page.waitForSelector('[role="dialog"] button:has-text("Đã chép")', { timeout: 4000 });
   assert(true, 'VietQR order code 1-tap copy feedback works');
   await shot(page, '08b_mobile_wallet_vietqr_sheet_375');
 
   // Confirm test payment -> balance +50 Credit + history remains clean without hash
-  await page.click('[role="dialog"] button:has-text("Xác nhận nạp thử nghiệm")');
-  await page.waitForSelector('[role="dialog"]:has-text("Đã cộng +50 Credit vào ví")', { timeout: 20000 });
+  await page.click('[role="dialog"] button:has-text("Xác nhận thử (Sandbox)")');
+  await page.waitForSelector('[role="dialog"]:has-text("Đã cộng +50 Credit")', { timeout: 20000 });
   await page.click('[role="dialog"] button:has-text("Xong")');
   await page.locator('[role="dialog"]').waitFor({ state: 'detached', timeout: 5000 });
   await page.waitForFunction(
@@ -656,6 +673,7 @@ try {
   // STRICT: Must land DIRECTLY on /dashboard with NO fallback navigation!
   await proPage.waitForURL('**/dashboard', { timeout: 20000 });
   await proPage.waitForSelector('text=Ca ưu tiên');
+  await dismissOnboardingIfPresent(proPage);
   await proPage.waitForFunction(() => !document.querySelector('main [role="status"] svg.animate-spin'), { timeout: 8000 });
   await checkNoHorizontalOverflow(proPage, 'pro-dashboard-375');
   const dataMode = await proPage.getAttribute('[data-mode]', 'data-mode');
@@ -739,6 +757,7 @@ try {
 
   // Tablet 768x1024 & Desktop 1440x900 framing verification + No self-avatar in Active Doctors strip
   await proPage.goto(`${ALT_HOST_URL}/feed`, { waitUntil: 'networkidle' });
+  await dismissOnboardingIfPresent(proPage);
   await proPage.waitForSelector('button:has-text("Mai Lan")', { timeout: 8000 });
   const activeDoctorsRailText = (await proPage.locator('main .overflow-x-auto').first().textContent()) ?? '';
   assert(

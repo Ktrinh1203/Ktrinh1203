@@ -5,6 +5,7 @@ import {
   Plus,
   ShieldCheck,
   UserX,
+  X,
 } from 'lucide-react';
 import { eegDatasetsApi } from '../api/endpoints';
 import { ApiError } from '../api/client';
@@ -269,6 +270,15 @@ export function EEGHubPage() {
   const [newDuration, setNewDuration] = useState('15 phút 00 giây');
   const [newClinicalNote, setNewClinicalNote] = useState('');
   const [createBusy, setCreateBusy] = useState(false);
+
+  useEffect(() => {
+    if (!showCreateForm) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowCreateForm(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [showCreateForm]);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -579,94 +589,109 @@ export function EEGHubPage() {
       {/* TAB 2: Personal EEG Datasets & Data-Owner Doctor Consent */}
       {activeTab === 'personal' && (
         <div className="space-y-4">
-          {/* Create Dataset Form */}
-          {showCreateForm && (
-            <Card className="p-4 border-[#DCE6DF] bg-[#F5FAF7] space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-[#141413]">Thêm bản ghi mới</h2>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateForm(false)}
-                  className="text-xs font-medium text-[#6E6D68] hover:text-[#141413]"
-                >
-                  Đóng
-                </button>
-              </div>
-              <form onSubmit={handleCreateDataset} className="grid gap-3 sm:grid-cols-3 text-xs">
-                <div className="sm:col-span-2 space-y-1">
-                  <label htmlFor="personal-eeg-title" className="font-semibold text-[#262624] block">
-                    Tiêu đề *
-                  </label>
-                  <Input
-                    id="personal-eeg-title"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="Nhập tên bản ghi..."
-                    className="bg-white"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label htmlFor="personal-eeg-rate" className="font-semibold text-[#262624] block">
-                    Tần số
-                  </label>
-                  <Input
-                    id="personal-eeg-rate"
-                    value={newSamplingRate}
-                    onChange={(e) => setNewSamplingRate(e.target.value)}
-                    placeholder="250 Hz"
-                    className="bg-white"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label htmlFor="personal-eeg-ch" className="font-semibold text-[#262624] block">
-                    Số kênh
-                  </label>
-                  <Input
-                    id="personal-eeg-ch"
-                    type="number"
-                    value={newChannelsCount}
-                    onChange={(e) => setNewChannelsCount(e.target.value)}
-                    placeholder="8"
-                    className="bg-white"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label htmlFor="personal-eeg-dur" className="font-semibold text-[#262624] block">
-                    Thời lượng
-                  </label>
-                  <Input
-                    id="personal-eeg-dur"
-                    value={newDuration}
-                    onChange={(e) => setNewDuration(e.target.value)}
-                    placeholder="15 phút 00 giây"
-                    className="bg-white"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label htmlFor="personal-eeg-note" className="font-semibold text-[#262624] block">
-                    Ghi chú
-                  </label>
-                  <Input
-                    id="personal-eeg-note"
-                    value={newClinicalNote}
-                    onChange={(e) => setNewClinicalNote(e.target.value)}
-                    placeholder="Ghi chú ngắn gọn..."
-                    className="bg-white"
-                  />
-                </div>
-                <div className="sm:col-span-3 flex justify-end gap-2 pt-1">
-                  <Button type="button" size="sm" variant="outline" onClick={() => setShowCreateForm(false)}>
-                    Hủy
-                  </Button>
-                  <Button type="submit" size="sm" variant="primary" loading={createBusy} icon={<Plus className="size-3.5" aria-hidden />}>
-                    Lưu
-                  </Button>
-                </div>
-              </form>
-            </Card>
-          )}
-
           {consentFeedback && <Alert tone={consentFeedback.tone}>{consentFeedback.text}</Alert>}
+
+          {/* Create Dataset Pop-up Modal */}
+          {showCreateForm && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[1px]"
+              onClick={() => setShowCreateForm(false)}
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="create-eeg-modal-title"
+                className="w-full max-w-lg rounded-2xl border border-[#DCE6DF] bg-white shadow-xl overflow-hidden text-[#141413]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between gap-4 border-b border-[#DCE6DF] bg-[#F5FAF7] px-5 py-3.5">
+                  <h2 id="create-eeg-modal-title" className="text-sm font-bold text-[#141413]">
+                    Thêm bản ghi vào Hồ sơ
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateForm(false)}
+                    aria-label="Đóng hộp thoại thêm bản ghi"
+                    className="flex size-7 shrink-0 items-center justify-center rounded-md text-[#6E6D68] hover:bg-[#E2EFE6] hover:text-[#141413] transition-colors"
+                  >
+                    <X className="size-4" aria-hidden />
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateDataset} className="p-5 grid gap-3 sm:grid-cols-2 text-xs">
+                  <div className="sm:col-span-2 space-y-1">
+                    <label htmlFor="personal-eeg-title" className="font-semibold text-[#262624] block">
+                      Tiêu đề *
+                    </label>
+                    <Input
+                      id="personal-eeg-title"
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                      placeholder="Nhập tên bản ghi..."
+                      className="bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="personal-eeg-rate" className="font-semibold text-[#262624] block">
+                      Tần số
+                    </label>
+                    <Input
+                      id="personal-eeg-rate"
+                      value={newSamplingRate}
+                      onChange={(e) => setNewSamplingRate(e.target.value)}
+                      placeholder="250 Hz"
+                      className="bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="personal-eeg-ch" className="font-semibold text-[#262624] block">
+                      Số kênh
+                    </label>
+                    <Input
+                      id="personal-eeg-ch"
+                      type="number"
+                      value={newChannelsCount}
+                      onChange={(e) => setNewChannelsCount(e.target.value)}
+                      placeholder="8"
+                      className="bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="personal-eeg-dur" className="font-semibold text-[#262624] block">
+                      Thời lượng
+                    </label>
+                    <Input
+                      id="personal-eeg-dur"
+                      value={newDuration}
+                      onChange={(e) => setNewDuration(e.target.value)}
+                      placeholder="15 phút 00 giây"
+                      className="bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="personal-eeg-note" className="font-semibold text-[#262624] block">
+                      Ghi chú
+                    </label>
+                    <Input
+                      id="personal-eeg-note"
+                      value={newClinicalNote}
+                      onChange={(e) => setNewClinicalNote(e.target.value)}
+                      placeholder="Ghi chú ngắn gọn..."
+                      className="bg-white"
+                    />
+                  </div>
+                  <div className="sm:col-span-2 flex justify-end gap-2 pt-3 border-t border-[#DCE6DF]">
+                    <Button type="button" size="sm" variant="outline" onClick={() => setShowCreateForm(false)}>
+                      Hủy
+                    </Button>
+                    <Button type="submit" size="sm" variant="primary" loading={createBusy} icon={<Plus className="size-3.5" aria-hidden />}>
+                      Lưu ngay
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* Recordings List / Table */}
           {isProfessional ? (

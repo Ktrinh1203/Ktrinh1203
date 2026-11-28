@@ -21,9 +21,6 @@ import {
   Clock,
   AlertCircle,
   ChevronDown,
-  HelpCircle,
-  X,
-  ArrowRight,
   type LucideIcon,
 } from 'lucide-react';
 import { Avatar, cn } from '../ui';
@@ -31,7 +28,7 @@ import { assetUrl } from '../../lib/assets';
 import { useAuth } from '../../features/auth/AuthContext';
 import { ACCOUNT_ROLE_LABELS, useMode } from '../../context/ModeContext';
 import { notificationsApi, messagesApi, rewardsApi } from '../../api/endpoints';
-import { ChatPopupProvider, useChatPopup } from '../../features/messages/ChatPopupContext';
+import { ChatPopupProvider } from '../../features/messages/ChatPopupContext';
 import { ChatPopupDock } from '../../features/messages/ChatPopupDock';
 import { useRealtimeEvents } from '../../features/realtime/useRealtimeEvents';
 
@@ -309,11 +306,8 @@ function UserMenu({ inverted = false }: { inverted?: boolean }) {
 
 function AppShellContent() {
   const { user } = useAuth();
-  const { isOpen, togglePopup, openInbox } = useChatPopup();
   const {
-    setMode,
     isProfessional,
-    isGeneral,
     canAccessProfessionalMode,
     enableVerificationCenter,
     enableResubmission,
@@ -322,18 +316,8 @@ function AppShellContent() {
   } = useMode();
   const navigate = useNavigate();
   const [globalSearch, setGlobalSearch] = useState('');
-  const [showGuideModal, setShowGuideModal] = useState(false);
 
   useRealtimeEvents(Boolean(user));
-
-  useEffect(() => {
-    if (!showGuideModal) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setShowGuideModal(false);
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [showGuideModal]);
 
   const rejectedProfile = user?.professionalProfiles?.find((p) => p.verificationStatus === 'REJECTED');
   const pendingProfile = user?.professionalProfiles?.find((p) => p.verificationStatus === 'PENDING');
@@ -480,15 +464,6 @@ function AppShellContent() {
               <Search className="size-4 sm:size-4.5" aria-hidden />
             </Link>
 
-            <button type="button" onClick={togglePopup} aria-label="Tin nhắn" className={iconBtnClass}>
-              <MessageCircle className="size-4 sm:size-4.5" aria-hidden />
-              {Boolean(unreadConvs && unreadConvs > 0) && (
-                <span className="absolute top-0.5 right-0.5 flex min-w-4 h-4 px-0.5 items-center justify-center rounded-full bg-[#B91C1C] text-[10px] font-semibold text-white leading-none">
-                  {unreadConvs > 9 ? '9+' : unreadConvs}
-                </span>
-              )}
-            </button>
-
             <Link to="/notifications" aria-label="Thông báo" className={iconBtnClass}>
               <Bell className="size-4 sm:size-4.5" aria-hidden />
               {Boolean(unreadNotifs && unreadNotifs > 0) && (
@@ -497,45 +472,6 @@ function AppShellContent() {
                 </span>
               )}
             </Link>
-
-            <button
-              type="button"
-              onClick={() => setShowGuideModal(true)}
-              aria-label="Hướng dẫn nhanh"
-              title="Hướng dẫn nhanh"
-              className={cn(iconBtnClass, 'hidden sm:flex')}
-            >
-              <HelpCircle className="size-4.5" aria-hidden />
-            </button>
-
-            {canAccessProfessionalMode ? (
-              <button
-                type="button"
-                onClick={() => setMode(isGeneral ? 'professional' : 'general')}
-                className={cn(
-                  'hidden sm:inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap shrink-0',
-                  isProfessional
-                    ? 'text-white/80 hover:bg-white/10 hover:text-white'
-                    : 'text-[#575652] hover:bg-[#EFECE6] hover:text-[#141413]',
-                )}
-              >
-                {isProfessional ? 'Thành viên' : 'Chuyên gia'}
-              </button>
-            ) : enableResubmission ? (
-              <Link
-                to="/settings?resubmit=true#verification-center"
-                className="hidden sm:inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-medium text-[#B91C1C] hover:bg-[#EFECE6] transition-colors whitespace-nowrap shrink-0"
-              >
-                Nộp lại hồ sơ
-              </Link>
-            ) : enableVerificationCenter ? (
-              <Link
-                to="/settings#verification-center"
-                className="hidden sm:inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-medium text-[#575652] hover:bg-[#EFECE6] hover:text-[#141413] transition-colors whitespace-nowrap shrink-0"
-              >
-                Chờ duyệt
-              </Link>
-            ) : null}
 
             <UserMenu inverted={isProfessional} />
           </div>
@@ -550,81 +486,41 @@ function AppShellContent() {
           className="hidden md:flex flex-col w-[208px] shrink-0 sticky top-[76px] self-start pr-4 border-r border-[#DCE6DF]"
         >
           <nav className="flex flex-col gap-0.5">
-            {sidebarItems.map(({ to, label, icon: Icon, badge }) =>
-              to === '/messages' ? (
-                <button
-                  key={to}
-                  type="button"
-                  onClick={openInbox}
-                  onMouseEnter={() => preloadRoute(to)}
-                  onFocus={() => preloadRoute(to)}
-                  className={cn(
-                    'flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-[14px] transition-[background-color,color,transform] duration-150 ease-out hover:translate-x-0.5 active:scale-[0.98]',
-                    isOpen
+            {sidebarItems.map(({ to, label, icon: Icon, badge }) => (
+              <NavLink
+                key={to}
+                to={to}
+                onMouseEnter={() => preloadRoute(to)}
+                onFocus={() => preloadRoute(to)}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 rounded-lg px-2.5 py-2 text-[14px] transition-[background-color,color,transform] duration-150 ease-out hover:translate-x-0.5 active:scale-[0.98]',
+                    isActive
                       ? 'font-semibold text-[#15803D] bg-[#ECFDF3]'
                       : 'font-normal text-[#4B5563] hover:text-[#111827] hover:bg-[#EAF4EE]',
-                  )}
-                >
-                  <Icon
-                    className={cn('size-4 shrink-0', isOpen ? 'text-[#16A34A]' : 'text-[#6B7280]')}
-                    aria-hidden
-                  />
-                  <span className="truncate flex-1">{label}</span>
-                  {Boolean(badge && badge > 0) && (
-                    <span className="rounded-full bg-[#DCFCE7] px-1.5 py-0.2 text-[11px] font-semibold text-[#15803D] tabular-nums">
-                      {badge}
-                    </span>
-                  )}
-                </button>
-              ) : (
-                <NavLink
-                  key={to}
-                  to={to}
-                  onMouseEnter={() => preloadRoute(to)}
-                  onFocus={() => preloadRoute(to)}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 rounded-lg px-2.5 py-2 text-[14px] transition-[background-color,color,transform] duration-150 ease-out hover:translate-x-0.5 active:scale-[0.98]',
-                      isActive
-                        ? 'font-semibold text-[#15803D] bg-[#ECFDF3]'
-                        : 'font-normal text-[#4B5563] hover:text-[#111827] hover:bg-[#EAF4EE]',
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <Icon
-                        className={cn(
-                          'size-4 shrink-0',
-                          isActive ? 'text-[#16A34A]' : 'text-[#6B7280]',
-                        )}
-                        aria-hidden
-                      />
-                      <span className="truncate flex-1">{label}</span>
-                      {Boolean(badge && badge > 0) && (
-                        <span className="rounded-full bg-[#DCFCE7] px-1.5 py-0.2 text-[11px] font-semibold text-[#15803D] tabular-nums">
-                          {badge}
-                        </span>
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <Icon
+                      className={cn(
+                        'size-4 shrink-0',
+                        isActive ? 'text-[#16A34A]' : 'text-[#6B7280]',
                       )}
-                    </>
-                  )}
-                </NavLink>
-              ),
-            )}
+                      aria-hidden
+                    />
+                    <span className="truncate flex-1">{label}</span>
+                    {Boolean(badge && badge > 0) && (
+                      <span className="rounded-full bg-[#DCFCE7] px-1.5 py-0.2 text-[11px] font-semibold text-[#15803D] tabular-nums">
+                        {badge}
+                      </span>
+                    )}
+                  </>
+                )}
+              </NavLink>
+            ))}
           </nav>
-
-          {user && (
-            <Link
-              to={`/u/${user.username}`}
-              className="mt-4 pt-4 border-t border-[#E6E4DF] flex items-center gap-2.5 px-2 text-xs text-[#575652] hover:text-[#141413] transition-colors"
-            >
-              <Avatar name={user.displayName} src={user.avatarUrl} size="xs" />
-              <div className="min-w-0">
-                <p className="truncate font-medium text-[#141413]">{user.displayName}</p>
-                <p className="truncate text-[11px] text-[#8A8882]">@{user.username}</p>
-              </div>
-            </Link>
-          )}
         </aside>
 
         {/* Main Content Area */}
@@ -700,111 +596,6 @@ function AppShellContent() {
           </NavLink>
         ))}
       </nav>
-
-      {/* Quick Guide Modal */}
-      {showGuideModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setShowGuideModal(false)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="guide-modal-title"
-            className="w-full max-w-2xl rounded-xl border border-[#E6E4DF] bg-white shadow-lg overflow-hidden text-[#141413]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-4 border-b border-[#E6E4DF] bg-[#FAF9F6] px-5 py-3.5">
-              <h2 id="guide-modal-title" className="text-sm font-semibold text-[#141413]">
-                Hướng dẫn nhanh
-              </h2>
-              <button
-                type="button"
-                onClick={() => setShowGuideModal(false)}
-                aria-label="Đóng hướng dẫn"
-                className="flex size-7 shrink-0 items-center justify-center rounded-md text-[#6E6D68] hover:bg-[#EFECE6] hover:text-[#141413] transition-colors"
-              >
-                <X className="size-4" aria-hidden />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {[
-                  {
-                    title: '1. Đo sóng não',
-                    to: '/eeg-hub',
-                    desc: 'Xem mẫu thử hoặc tải file .csv.',
-                    Icon: Activity,
-                  },
-                  {
-                    title: '2. Hỏi Bác sĩ',
-                    to: '/consultations?ask=1',
-                    desc: 'Gửi triệu chứng kèm bản đo sóng não.',
-                    Icon: Stethoscope,
-                  },
-                  {
-                    title: '3. Nhật ký',
-                    to: '/my-health',
-                    desc: 'Chấm giấc ngủ & xem lịch hôm nay.',
-                    Icon: Heart,
-                  },
-                ].map(({ title, to, desc, Icon }) => (
-                  <button
-                    key={to}
-                    type="button"
-                    onClick={() => {
-                      navigate(to);
-                      setShowGuideModal(false);
-                    }}
-                    className="group flex flex-col justify-between rounded-xl border border-[#E6E4DF] bg-white p-3.5 text-left hover:border-[#1B4332] transition-colors"
-                  >
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-sm font-semibold text-[#141413]">{title}</h3>
-                        <Icon className="size-4 text-[#6E6D68] shrink-0" aria-hidden />
-                      </div>
-                      <p className="text-xs text-[#575652]">{desc}</p>
-                    </div>
-                    <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#1B4332]">
-                      <span>Mở</span>
-                      <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="rounded-lg border border-[#E6E4DF] bg-[#FAF9F6] px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <p className="text-xs text-[#575652]">
-                  <strong className="text-[#141413]">Bác sĩ / Nghiên cứu: </strong>
-                  Chuyển chế độ Chuyên gia ở góc phải màn hình.
-                </p>
-                <div className="flex items-center gap-2 shrink-0">
-                  {canAccessProfessionalMode && !isProfessional && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMode('professional');
-                        setShowGuideModal(false);
-                      }}
-                      className="rounded-lg bg-[#141413] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#292927] transition-colors whitespace-nowrap"
-                    >
-                      Chuyển sang Chuyên gia
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setShowGuideModal(false)}
-                    className="rounded-lg border border-[#E6E4DF] bg-white px-3 py-1.5 text-xs font-medium text-[#575652] hover:bg-[#F3F2EE] transition-colors whitespace-nowrap"
-                  >
-                    Đóng
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       <ChatPopupDock />
     </div>
   );

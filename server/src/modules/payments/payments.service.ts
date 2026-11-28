@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import type { PaymentOrder, PayoutRequest } from '@prisma/client';
 import { env } from '../../config/env.js';
 import { prisma } from '../../lib/prisma.js';
@@ -38,7 +38,33 @@ export const TOPUP_PACKAGES: readonly TopupPackage[] = [
 ] as const;
 
 const ORDER_CODE_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-const ORDER_TTL_MS = 15 * 60 * 1000;
+const DEFAULT_ORDER_TTL_SECONDS = 600;
+const MIN_ORDER_TTL_SECONDS = 60;
+export const PAYMENT_REMINDER_WINDOW_SECONDS = 60;
+
+export function getOrderTtlSeconds(): number {
+  const raw = process.env.PAYMENT_ORDER_TTL_SECONDS;
+  if (raw === undefined || raw.trim() === '') {
+    return DEFAULT_ORDER_TTL_SECONDS;
+  }
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_ORDER_TTL_SECONDS;
+  }
+  return Math.max(MIN_ORDER_TTL_SECONDS, Math.floor(parsed));
+}
+
+export const ORDER_TTL_MS = getOrderTtlSeconds() * 1000;
+
+export function isSandboxTopupEnabled(userRole?: string): boolean {
+  if (env.NODE_ENV !== 'production') {
+    return true;
+  }
+  if (process.env.ENABLE_SANDBOX_PAYMENTS === 'true') {
+    return true;
+  }
+  return userRole === 'ADMIN';
+}
 
 function generateOrderCode(): string {
   const bytes = randomBytes(8);
@@ -73,9 +99,13 @@ export function formatPaymentOrderDto(order: PaymentOrder) {
   };
 }
 
-export function getTopupPackagesInfo() {
+export function getTopupPackagesInfo(userRole?: string) {
   return {
     vndPerCredit: env.VND_PER_CREDIT,
+    orderTtlSeconds: getOrderTtlSeconds(),
+    reminderWindowSeconds: PAYMENT_REMINDER_WINDOW_SECONDS,
+    sandboxEnabled: isSandboxTopupEnabled(userRole),
+    serverNow: new Date().toISOString(),
     bankInfo: {
       bankBin: env.VIETQR_BANK_BIN,
       bankName: env.VIETQR_BANK_NAME,
@@ -101,6 +131,11 @@ export async function createTopupOrder(userId: string, input: CreateTopupOrderIn
     bonusCredits = pkg.bonusCredits;
   } else {
     amountVnd = input.amountVnd!;
+    if (amountVnd % env.VND_PER_CREDIT !== 0) {
+      throw badRequest(
+        `Số tiền nạp phải chia hết cho ${env.VND_PER_CREDIT.toLocaleString('vi-VN')} VNĐ để quy đổi tròn Credit.`,
+      );
+    }
     creditsToGrant = Math.floor(amountVnd / env.VND_PER_CREDIT);
     if (creditsToGrant < 1) {
       throw badRequest(`Số tiền nạp phải tối thiểu tương đương 1 Credit (${env.VND_PER_CREDIT} VNĐ).`);
@@ -108,55 +143,91 @@ export async function createTopupOrder(userId: string, input: CreateTopupOrderIn
     bonusCredits = 0;
   }
 
-  let orderCode = generateOrderCode();
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const collision = await prisma.paymentOrder.findUnique({ where: { orderCode } });
-    if (!collision) break;
-    orderCode = generateOrderCode();
-  }
+  const orderTtlSeconds = getOrderTtlSeconds();
 
-  const qrPayload = buildVietQrPayload({
-    bankBin: env.VIETQR_BANK_BIN,
-    accountNo: env.VIETQR_ACCOUNT_NO,
-    accountName: env.VIETQR_ACCOUNT_NAME,
-    amountVnd,
-    addInfo: orderCode,
-  });
+  const { order, now } = await prisma.$transaction(async (tx) => {
+    // Serialize order creation per user so concurrent requests cannot leave multiple PENDING orders
+    await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId}::uuid FOR UPDATE`;
 
-  const vietQrImageUrl = buildVietQrImageUrl({
-    bankBin: env.VIETQR_BANK_BIN,
-    accountNo: env.VIETQR_ACCOUNT_NO,
-    accountName: env.VIETQR_ACCOUNT_NAME,
-    amountVnd,
-    addInfo: orderCode,
-  });
+    const txNow = new Date();
 
-  const expiresAt = new Date(Date.now() + ORDER_TTL_MS);
+    // 1. Expire any overdue PENDING orders of this user
+    await tx.paymentOrder.updateMany({
+      where: {
+        userId,
+        status: 'PENDING',
+        expiresAt: { lte: txNow },
+      },
+      data: { status: 'EXPIRED' },
+    });
 
-  const order = await prisma.paymentOrder.create({
-    data: {
-      userId,
-      orderCode,
+    // 2. Cancel any remaining active PENDING orders so each user holds at most 1 active QR session
+    await tx.paymentOrder.updateMany({
+      where: {
+        userId,
+        status: 'PENDING',
+      },
+      data: { status: 'CANCELLED' },
+    });
+
+    let orderCode = generateOrderCode();
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const collision = await tx.paymentOrder.findUnique({ where: { orderCode } });
+      if (!collision) break;
+      orderCode = generateOrderCode();
+    }
+
+    const qrPayload = buildVietQrPayload({
+      bankBin: env.VIETQR_BANK_BIN,
+      accountNo: env.VIETQR_ACCOUNT_NO,
+      accountName: env.VIETQR_ACCOUNT_NAME,
       amountVnd,
-      creditsToGrant,
-      bonusCredits,
-      status: 'PENDING',
-      provider: 'VIETQR',
-      qrPayload,
-      vietQrImageUrl,
-      expiresAt,
-    },
+      addInfo: orderCode,
+    });
+
+    const vietQrImageUrl = buildVietQrImageUrl({
+      bankBin: env.VIETQR_BANK_BIN,
+      accountNo: env.VIETQR_ACCOUNT_NO,
+      accountName: env.VIETQR_ACCOUNT_NAME,
+      amountVnd,
+      addInfo: orderCode,
+    });
+
+    const expiresAt = new Date(txNow.getTime() + orderTtlSeconds * 1000);
+
+    const created = await tx.paymentOrder.create({
+      data: {
+        userId,
+        orderCode,
+        amountVnd,
+        creditsToGrant,
+        bonusCredits,
+        status: 'PENDING',
+        provider: 'VIETQR',
+        qrPayload,
+        vietQrImageUrl,
+        expiresAt,
+      },
+    });
+
+    return { order: created, now: txNow };
   });
 
-  return { order: formatPaymentOrderDto(order) };
+  return {
+    order: formatPaymentOrderDto(order),
+    serverNow: now.toISOString(),
+    orderTtlSeconds,
+    reminderWindowSeconds: PAYMENT_REMINDER_WINDOW_SECONDS,
+  };
 }
 
 export async function listUserTopupOrders(userId: string) {
+  const now = new Date();
   await prisma.paymentOrder.updateMany({
     where: {
       userId,
       status: 'PENDING',
-      expiresAt: { lt: new Date() },
+      expiresAt: { lte: now },
     },
     data: { status: 'EXPIRED' },
   });
@@ -167,7 +238,91 @@ export async function listUserTopupOrders(userId: string) {
     take: 30,
   });
 
-  return { orders: orders.map(formatPaymentOrderDto) };
+  return {
+    orders: orders.map(formatPaymentOrderDto),
+    serverNow: new Date().toISOString(),
+  };
+}
+
+export async function getUserTopupOrderByCode(
+  actorId: string,
+  actorRole: string,
+  orderCodeParam: string,
+) {
+  const orderCode = orderCodeParam.trim().toUpperCase();
+
+  const order = await prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw<PaymentOrder[]>`
+      SELECT * FROM "PaymentOrder" WHERE "orderCode" = ${orderCode} FOR UPDATE
+    `;
+    const found = rows[0];
+    if (!found) {
+      throw notFound(`Không tìm thấy đơn nạp ${orderCode}.`);
+    }
+    if (actorRole !== 'ADMIN' && found.userId !== actorId) {
+      throw forbidden('Bạn không có quyền xem đơn nạp này.');
+    }
+
+    if (found.status === 'PENDING' && new Date(found.expiresAt).getTime() <= Date.now()) {
+      return tx.paymentOrder.update({
+        where: { id: found.id },
+        data: { status: 'EXPIRED' },
+      });
+    }
+
+    return found;
+  });
+
+  return {
+    order: formatPaymentOrderDto(order),
+    serverNow: new Date().toISOString(),
+    reminderWindowSeconds: PAYMENT_REMINDER_WINDOW_SECONDS,
+  };
+}
+
+export async function cancelTopupOrder(
+  actorId: string,
+  actorRole: string,
+  orderCodeParam: string,
+) {
+  const orderCode = orderCodeParam.trim().toUpperCase();
+
+  const outcome = await prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw<PaymentOrder[]>`
+      SELECT * FROM "PaymentOrder" WHERE "orderCode" = ${orderCode} FOR UPDATE
+    `;
+    const found = rows[0];
+    if (!found) {
+      throw notFound(`Không tìm thấy đơn nạp ${orderCode}.`);
+    }
+    if (actorRole !== 'ADMIN' && found.userId !== actorId) {
+      throw forbidden('Bạn không có quyền hủy đơn nạp này.');
+    }
+
+    if (found.status === 'PAID') {
+      return { kind: 'ALREADY_PAID' as const, order: found };
+    }
+
+    if (found.status === 'CANCELLED' || found.status === 'EXPIRED') {
+      return { kind: 'DONE' as const, order: found };
+    }
+
+    const nextStatus = new Date(found.expiresAt).getTime() <= Date.now() ? 'EXPIRED' : 'CANCELLED';
+    const updated = await tx.paymentOrder.update({
+      where: { id: found.id },
+      data: { status: nextStatus },
+    });
+    return { kind: 'DONE' as const, order: updated };
+  });
+
+  if (outcome.kind === 'ALREADY_PAID') {
+    throw conflict('Đơn đã thanh toán thành công, không thể hủy.', 'PAYMENT_ORDER_ALREADY_PAID');
+  }
+
+  return {
+    order: formatPaymentOrderDto(outcome.order),
+    serverNow: new Date().toISOString(),
+  };
 }
 
 export function computeWebhookSignature(serializedBody: string): string {
@@ -257,9 +412,36 @@ export async function processBankTransferWebhook(
     if (order.status === 'PAID') {
       const existingWallet = await lockWalletForUpdate(tx, order.userId);
       return {
+        kind: 'PROCESSED' as const,
         newlyPaid: false,
         order,
         wallet: existingWallet,
+      };
+    }
+
+    // Critical expiry & cancellation guard: persist EXPIRED state inside tx and reject outside tx (so DB update is not rolled back)
+    if (order.status === 'PENDING' && new Date(order.expiresAt).getTime() <= Date.now()) {
+      const expiredOrder = await tx.paymentOrder.update({
+        where: { id: order.id },
+        data: { status: 'EXPIRED' },
+      });
+      return {
+        kind: 'EXPIRED' as const,
+        order: expiredOrder,
+      };
+    }
+
+    if (order.status === 'EXPIRED') {
+      return {
+        kind: 'EXPIRED' as const,
+        order,
+      };
+    }
+
+    if (order.status === 'CANCELLED') {
+      return {
+        kind: 'CANCELLED' as const,
+        order,
       };
     }
 
@@ -271,6 +453,7 @@ export async function processBankTransferWebhook(
         if (duplicateProvider.id === order.id) {
           const existingWallet = await lockWalletForUpdate(tx, order.userId);
           return {
+            kind: 'PROCESSED' as const,
             newlyPaid: false,
             order: duplicateProvider,
             wallet: existingWallet,
@@ -278,10 +461,6 @@ export async function processBankTransferWebhook(
         }
         throw conflict('Mã giao dịch ngân hàng này đã được đối soát cho một đơn nạp khác.', 'DUPLICATE_PROVIDER_TX');
       }
-    }
-
-    if (order.status === 'CANCELLED' || order.status === 'EXPIRED') {
-      throw badRequest(`Đơn nạp ${orderCode} đã hết hạn hoặc đã bị hủy.`);
     }
 
     if (transferAmount < order.amountVnd) {
@@ -304,6 +483,7 @@ export async function processBankTransferWebhook(
         data: { status: 'PAID', paidAt: order.paidAt ?? new Date() },
       });
       return {
+        kind: 'PROCESSED' as const,
         newlyPaid: false,
         order: paidOrder,
         wallet: lockedWallet,
@@ -352,11 +532,26 @@ export async function processBankTransferWebhook(
     });
 
     return {
+      kind: 'PROCESSED' as const,
       newlyPaid: true,
       order: updatedOrder,
       wallet: sealedWallet,
     };
   });
+
+  if (outcome.kind === 'EXPIRED') {
+    throw conflict(
+      'Đơn nạp đã hết hạn thanh toán. Vui lòng tạo mã QR mới.',
+      'PAYMENT_ORDER_EXPIRED',
+    );
+  }
+
+  if (outcome.kind === 'CANCELLED') {
+    throw conflict(
+      `Đơn nạp ${orderCode} đã bị hủy. Vui lòng tạo mã QR mới.`,
+      'PAYMENT_ORDER_CANCELLED',
+    );
+  }
 
   if (outcome.newlyPaid) {
     realtimeBus.emitToUser(outcome.order.userId, 'payment:paid', {
@@ -382,25 +577,73 @@ export async function simulateOrderPaid(
   actorRole: string,
   orderCodeParam: string,
 ) {
-  if (env.NODE_ENV === 'production' && actorRole !== 'ADMIN') {
+  if (!isSandboxTopupEnabled(actorRole)) {
     throw forbidden('Chức năng giả lập thanh toán chỉ khả dụng trong môi trường Sandbox/Dev hoặc cho Quản trị viên.');
   }
 
   const orderCode = orderCodeParam.trim().toUpperCase();
-  const order = await prisma.paymentOrder.findUnique({
-    where: { orderCode },
+
+  const precheck = await prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw<PaymentOrder[]>`
+      SELECT * FROM "PaymentOrder" WHERE "orderCode" = ${orderCode} FOR UPDATE
+    `;
+    const order = rows[0];
+    if (!order) {
+      throw notFound(`Không tìm thấy đơn nạp ${orderCode}.`);
+    }
+    if (actorRole !== 'ADMIN' && order.userId !== actorId) {
+      throw forbidden('Bạn chỉ có thể xác nhận thử đơn nạp của chính mình.');
+    }
+
+    if (order.status === 'PAID') {
+      const existingWallet = await lockWalletForUpdate(tx, order.userId);
+      return { kind: 'PAID' as const, order, wallet: existingWallet };
+    }
+
+    if (order.status === 'CANCELLED') {
+      return { kind: 'CANCELLED' as const, order };
+    }
+
+    if (order.status === 'EXPIRED') {
+      return { kind: 'EXPIRED' as const, order };
+    }
+
+    if (order.status === 'PENDING' && new Date(order.expiresAt).getTime() <= Date.now()) {
+      const expiredOrder = await tx.paymentOrder.update({
+        where: { id: order.id },
+        data: { status: 'EXPIRED' },
+      });
+      return { kind: 'EXPIRED' as const, order: expiredOrder };
+    }
+
+    return { kind: 'READY' as const, order };
   });
-  if (!order) {
-    throw notFound(`Không tìm thấy đơn nạp ${orderCode}.`);
+
+  if (precheck.kind === 'PAID') {
+    return {
+      order: formatPaymentOrderDto(precheck.order),
+      wallet: formatFullWalletDto(precheck.wallet),
+    };
   }
-  if (actorRole !== 'ADMIN' && order.userId !== actorId) {
-    throw forbidden('Bạn chỉ có thể xác nhận thử đơn nạp của chính mình.');
+
+  if (precheck.kind === 'CANCELLED') {
+    throw conflict(
+      `Đơn nạp ${orderCode} đã bị hủy. Vui lòng tạo mã QR mới.`,
+      'PAYMENT_ORDER_CANCELLED',
+    );
+  }
+
+  if (precheck.kind === 'EXPIRED') {
+    throw conflict(
+      'Đơn nạp đã hết hạn thanh toán. Vui lòng tạo mã QR mới.',
+      'PAYMENT_ORDER_EXPIRED',
+    );
   }
 
   const simulatedPayload = {
-    content: `SANDBOX VIETQR ${order.orderCode}`,
-    transferAmount: order.amountVnd,
-    providerTxId: `SANDBOX-${order.orderCode}`,
+    content: `SANDBOX VIETQR ${precheck.order.orderCode}`,
+    transferAmount: precheck.order.amountVnd,
+    providerTxId: `SANDBOX-${precheck.order.orderCode}`,
   };
   const signature = computeWebhookSignature(JSON.stringify(simulatedPayload));
 
@@ -637,8 +880,30 @@ export async function transferCreditsP2P(senderId: string, input: TransferCredit
 }
 
 export async function createPayoutRequest(userId: string, input: CreatePayoutRequestInput) {
+  const customIdempotencyKey = input.idempotencyKey
+    ? `payout-lock:${createHash('sha256').update(`${userId}:${input.idempotencyKey}`).digest('hex')}`
+    : null;
+
   const result = await prisma.$transaction(async (tx) => {
     const locked = await lockWalletForUpdate(tx, userId);
+
+    if (customIdempotencyKey) {
+      const existingLockTx = await tx.creditTransaction.findUnique({
+        where: { idempotencyKey: customIdempotencyKey },
+      });
+      if (existingLockTx?.referenceId) {
+        const existingPayout = await tx.payoutRequest.findUnique({
+          where: { id: existingLockTx.referenceId },
+        });
+        if (existingPayout && existingPayout.userId === userId) {
+          return {
+            idempotentReplay: true,
+            payout: existingPayout,
+            wallet: locked,
+          };
+        }
+      }
+    }
 
     const bankBin = input.bankBin?.trim() || locked.bankBin;
     const bankName = input.bankName?.trim() || locked.bankName;
@@ -712,18 +977,21 @@ export async function createPayoutRequest(userId: string, input: CreatePayoutReq
       bucket: 'EARNED',
       type: 'PAYOUT_LOCK',
       referenceId: payout.id,
-      idempotencyKey: `payout-lock:${payout.id}`,
+      idempotencyKey: customIdempotencyKey ?? `payout-lock:${payout.id}`,
       description: `Khóa ký quỹ rút tiền ngân hàng ${bankName} (${amountVnd.toLocaleString('vi-VN')}đ · -${input.amountCredits} Credit)`,
       actorId: userId,
     });
 
-    return { payout, wallet: sealedWallet };
+    return { idempotentReplay: false, payout, wallet: sealedWallet };
   });
 
-  realtimeBus.emitToUser(userId, 'wallet:updated', { balance: result.wallet.balance });
+  if (!result.idempotentReplay) {
+    realtimeBus.emitToUser(userId, 'wallet:updated', { balance: result.wallet.balance });
+  }
   return {
     payout: result.payout,
     wallet: formatFullWalletDto(result.wallet),
+    idempotentReplay: result.idempotentReplay,
   };
 }
 

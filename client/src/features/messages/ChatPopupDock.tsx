@@ -117,29 +117,8 @@ export function ChatPopupDock() {
     sendMutation.mutate(draft.trim());
   };
 
-  if (!user || isMessagesRoute) {
+  if (!user || isMessagesRoute || !isOpen) {
     return null;
-  }
-
-  // State A: Closed
-  if (!isOpen) {
-    return (
-      <button
-        type="button"
-        onClick={togglePopup}
-        aria-label="Mở tin nhắn"
-        className="hidden md:inline-flex fixed bottom-0 right-5 z-40 items-center gap-2 rounded-t-xl border border-b-0 border-[#DCE6DF] bg-white px-4 py-2.5 text-xs font-semibold text-[#111827] shadow-[0_-2px_10px_rgba(15,23,42,0.07)] hover:bg-[#F5FAF7] transition-colors"
-      >
-        <span className="size-2 rounded-full bg-[#16A34A]" aria-hidden />
-        <MessageCircle className="size-4 text-[#16A34A]" aria-hidden />
-        <span>Tin nhắn</span>
-        {unreadCount > 0 && (
-          <span className="bg-[#DC2626] text-white px-1.5 py-0.5 rounded-full text-[10px] tabular-nums">
-            {unreadCount}
-          </span>
-        )}
-      </button>
-    );
   }
 
   // State B: Minimized

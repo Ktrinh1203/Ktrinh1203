@@ -5,7 +5,6 @@ import {
   Activity,
   Coins,
   FileSpreadsheet,
-  Plus,
   Stethoscope,
 } from 'lucide-react';
 import { Alert, Button, Card, DataTableContainer, cn } from '../components/ui';
@@ -158,44 +157,26 @@ export function ProfessionalDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Structured Command Header + Unified Clinical Telemetry Ledger Strip */}
-      <div className="overflow-hidden rounded-md border border-slate-300/90 bg-white shadow-2xs">
-        <div className="bg-[#162B47] p-6 text-white flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="overflow-hidden rounded-xl border border-[#DCE6DF] bg-white shadow-2xs">
+        <div className="bg-gradient-to-r from-[#14532D] to-[#166534] p-6 text-white flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
               Trung tâm Chuyên khoa & Nghiên cứu
             </h1>
-            <p className="text-xs sm:text-sm text-slate-200 max-w-3xl line-clamp-1">
+            <p className="text-xs sm:text-sm text-emerald-100/90 max-w-3xl">
               {verifiedProfile?.title || 'Chuyên gia Y tế & Nghiên cứu'} {user?.displayName} ·{' '}
               {verifiedProfile?.institution || 'Hội đồng Chuyên môn NeuroLink'} ·{' '}
               <strong className="text-white">{verifiedProfile?.specialty || 'Thần kinh học & BCI'}</strong>
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            <Link to="/consultations?tab=queue">
-              <Button size="sm" variant="accent" icon={<Stethoscope className="size-3.5" />}>
-                Đọc ca Từ xa {openQueueCount > 0 ? `(${openQueueCount})` : ''}
-              </Button>
-            </Link>
-            <Link to="/contributions">
-              <Button
-                size="sm"
-                variant="outline"
-                className="bg-white/10 text-white border-white/25 hover:bg-white/20"
-                icon={<Plus className="size-3.5" />}
-              >
-                Công bố Ca bệnh
-              </Button>
-            </Link>
-            <Link to="/eeg-hub?view=workspace">
-              <Button
-                size="sm"
-                variant="outline"
-                className="bg-white/10 text-white border-white/25 hover:bg-white/20"
-                icon={<Activity className="size-3.5 text-teal-300" />}
-              >
-                Mở EEG Workspace
-              </Button>
+          <div className="shrink-0">
+            <Link
+              to="/consultations?tab=queue"
+              className="inline-flex items-center justify-center transition-all duration-150 select-none active:scale-[0.98] h-8.5 px-3.5 text-xs sm:text-sm gap-1.5 rounded-lg font-semibold border bg-white text-[#14532D] border-white hover:bg-[#ECFDF3]"
+            >
+              <Stethoscope className="size-3.5 shrink-0" aria-hidden />
+              Mở ca chờ đọc {openQueueCount > 0 ? `(${openQueueCount})` : ''}
             </Link>
           </div>
         </div>
@@ -271,7 +252,7 @@ export function ProfessionalDashboardPage() {
                     className={cn(
                       'rounded-md px-2.5 py-1 font-semibold transition-colors',
                       activeTableTab === 'cases'
-                        ? 'bg-[#162B47] text-white'
+                        ? 'bg-[#14532D] text-white'
                         : 'text-slate-600 hover:text-slate-900',
                     )}
                   >
@@ -283,7 +264,7 @@ export function ProfessionalDashboardPage() {
                     className={cn(
                       'rounded-md px-2.5 py-1 font-semibold transition-colors',
                       activeTableTab === 'projects'
-                        ? 'bg-[#162B47] text-white'
+                        ? 'bg-[#14532D] text-white'
                         : 'text-slate-600 hover:text-slate-900',
                     )}
                   >
@@ -390,18 +371,18 @@ export function ProfessionalDashboardPage() {
         {/* Right 4 Columns: Authorized EEG Queue */}
         <div className="lg:col-span-4 space-y-6">
           {/* Detailed Panel 1: Authorized EEG Datasets Queue */}
-          <Card className="overflow-hidden border-slate-300/90 rounded-md shadow-2xs">
-            <div className="bg-[#162B47] px-4 py-3 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity className="size-4 text-teal-300" />
-                <h2 className="text-xs sm:text-sm font-bold">Hồ sơ EEG Đã Cấp Quyền</h2>
+          <Card className="overflow-hidden border-[#DCE6DF] rounded-xl shadow-2xs">
+            <div className="bg-[#14532D] px-4 py-3 text-white flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Activity className="size-4 text-emerald-300 shrink-0" />
+                <h2 className="text-xs sm:text-sm font-bold">Hồ sơ EEG chia sẻ</h2>
               </div>
-              <span className="rounded bg-teal-500/20 border border-teal-400/40 px-2 py-0.5 text-[10px] font-mono font-bold text-teal-200">
-                Chủ sở hữu chia sẻ
+              <span className="shrink-0 whitespace-nowrap rounded bg-emerald-400/20 border border-emerald-300/40 px-2 py-0.5 text-[10px] font-mono font-bold text-emerald-100">
+                Đã chia sẻ
               </span>
             </div>
 
-            <div className="p-6 space-y-3 divide-y divide-slate-200/80 text-xs">
+            <div className="p-4 sm:p-5 space-y-3 divide-y divide-slate-200/80 text-xs">
               {(workspaceDatasets.length > 0
                 ? workspaceDatasets
                 : [
@@ -426,10 +407,10 @@ export function ProfessionalDashboardPage() {
                   ]
               ).map((rec) => (
                 <div key={rec.id} className="pt-3 first:pt-0 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-slate-900">{rec.patientCode}</span>
-                    <span className="rounded bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800">
-                      Chủ sở hữu: @{rec.ownerUsername}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono font-bold text-slate-900 truncate">{rec.patientCode}</span>
+                    <span className="shrink-0 whitespace-nowrap text-[11px] font-medium text-[#15803D]">
+                      @{rec.ownerUsername}
                     </span>
                   </div>
                   <p className="text-slate-700 font-medium leading-snug line-clamp-2">{rec.title}</p>
@@ -439,7 +420,7 @@ export function ProfessionalDashboardPage() {
                     </span>
                     <Link
                       to={`/eeg-hub?view=workspace&rec=${rec.id}`}
-                      className="font-sans font-bold text-brand-700 hover:underline"
+                      className="font-sans font-bold text-[#15803D] hover:underline"
                     >
                       Mở đạo trình →
                     </Link>

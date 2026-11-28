@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Trash2,
   Upload,
+  X,
 } from 'lucide-react';
 import { Alert, Avatar, Button, Input, Spinner, Textarea, cn } from '../components/ui';
 import { authApi, usersApi, verificationsApi } from '../api/endpoints';
@@ -224,23 +225,12 @@ function ProfileTab() {
       <div className="px-5 pb-5">
         {/* Avatar Row */}
         <div className="-mt-10 mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div className="relative">
-            <Avatar
-              name={user?.displayName ?? 'U'}
-              src={user?.avatarUrl}
-              size="xl"
-              className="size-20 ring-4 ring-white"
-            />
-            <button
-              type="button"
-              disabled={uploadingAvatar}
-              onClick={() => avatarInputRef.current?.click()}
-              aria-label="Đổi ảnh đại diện"
-              className="absolute bottom-0 right-0 flex size-7 items-center justify-center rounded-full border border-[#DCE6DF] bg-white text-[#15803D] shadow-xs hover:bg-[#F5FAF7] disabled:opacity-50"
-            >
-              <Camera className="size-3.5" />
-            </button>
-          </div>
+          <Avatar
+            name={user?.displayName ?? 'U'}
+            src={user?.avatarUrl}
+            size="xl"
+            className="size-20 ring-4 ring-white"
+          />
 
           <input
             ref={avatarInputRef}
@@ -256,6 +246,7 @@ function ProfileTab() {
               size="xs"
               variant="outline"
               loading={uploadingAvatar}
+              icon={<Camera className="size-3.5 text-[#15803D]" />}
               onClick={() => avatarInputRef.current?.click()}
               className="border-[#DCE6DF] text-[#15803D] hover:bg-[#F5FAF7]"
             >
@@ -450,6 +441,8 @@ function VerificationTab() {
   const [files, setFiles] = useState<File[]>([]);
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [verifyModalOpen, setVerifyModalOpen] = useState(false);
+  const [verifyStep, setVerifyStep] = useState<1 | 2>(1);
 
   const { data: myVerifData, isLoading: loadingRequests } = useQuery({
     queryKey: ['my-verifications'],
@@ -458,6 +451,8 @@ function VerificationTab() {
 
   const myRequests: VerificationRequestItem[] = myVerifData?.requests ?? [];
   const existingProfiles = user?.professionalProfiles ?? [];
+  const hasVerifiedProfile = existingProfiles.some((p) => p.verificationStatus === 'VERIFIED');
+  const latestRequest = myRequests[0] ?? null;
 
   useEffect(() => {
     if (searchParams.get('resubmit') === 'true' && myRequests.length > 0 && !title) {
@@ -470,9 +465,38 @@ function VerificationTab() {
         setSpecialty(targetReq.claimedSpecialty);
         setInstitution(targetReq.claimedInstitution ?? '');
         setLicenseOrOrcidNumber(targetReq.licenseOrOrcidNumber ?? '');
+        setVerifyStep(1);
+        setVerifyModalOpen(true);
       }
     }
   }, [searchParams, myRequests, title]);
+
+  useEffect(() => {
+    if (!verifyModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setStatus(null);
+        setVerifyModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [verifyModalOpen]);
+
+  function openVerifyModal() {
+    setStatus(null);
+    setVerifyStep(1);
+    setVerifyModalOpen(true);
+  }
+
+  function handleNextStep() {
+    setStatus(null);
+    if (!title.trim() || !specialty.trim() || !institution.trim()) {
+      setStatus({ tone: 'error', text: 'Vui lòng điền đủ chức danh, chuyên khoa và đơn vị công tác.' });
+      return;
+    }
+    setVerifyStep(2);
+  }
 
   function handleRoleChange(nextType: 'HEALTHCARE_PROFESSIONAL' | 'RESEARCHER') {
     setType(nextType);
@@ -533,6 +557,8 @@ function VerificationTab() {
       setInstitution('');
       setLicenseOrOrcidNumber('');
       setFiles([]);
+      setVerifyModalOpen(false);
+      setVerifyStep(1);
       setStatus({ tone: 'success', text: 'Đã gửi hồ sơ xác minh.' });
     } catch (err) {
       setStatus({ tone: 'error', text: errorMessage(err) });
@@ -542,10 +568,39 @@ function VerificationTab() {
   }
 
   return (
-    <div id="verification-center" className="rounded-xl border border-[#DCE6DF] bg-white p-5 space-y-5">
-      <div className="rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] px-3.5 py-2.5 text-xs sm:text-sm text-[#374151] leading-relaxed">
-        Xác minh hồ sơ giúp bác sĩ và nhà nghiên cứu gắn tích xanh, đọc ca tư vấn và đóng góp dữ liệu. Hãy tải lên ảnh hoặc PDF giấy tờ hợp lệ để được xét duyệt.
+    <div id="verification-center" className="rounded-xl border border-[#DCE6DF] bg-white p-5 space-y-4">
+      {/* Compact Verification Status Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#DCE6DF] bg-[#F5FAF7] p-4">
+        <div className="space-y-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="size-4 text-[#16A34A] shrink-0" />
+            <h2 className="text-sm font-bold text-[#111827]">
+              {hasVerifiedProfile
+                ? 'Đã xác minh chuyên gia'
+                : latestRequest
+                  ? `Hồ sơ gần nhất: ${REQUEST_STATUS_META[latestRequest.status].label}`
+                  : 'Chưa xác minh chuyên gia'}
+            </h2>
+          </div>
+          <p className="text-xs text-[#4B5563] leading-relaxed">
+            Gửi chứng chỉ hành nghề hoặc ORCID để gắn tích xanh, đọc ca tư vấn và đóng góp nghiên cứu.
+          </p>
+        </div>
+
+        <Button
+          type="button"
+          size="sm"
+          onClick={openVerifyModal}
+          icon={<ShieldCheck className="size-4" />}
+          className="bg-[#16A34A] hover:bg-[#15803D] text-white shrink-0"
+        >
+          {existingProfiles.length > 0 || myRequests.length > 0
+            ? 'Cập nhật hồ sơ'
+            : 'Gửi hồ sơ xác minh'}
+        </Button>
       </div>
+
+      {!verifyModalOpen && status && <Alert tone={status.tone}>{status.text}</Alert>}
 
       {existingProfiles.length > 0 && (
         <div className="space-y-2">
@@ -609,162 +664,265 @@ function VerificationTab() {
         )
       )}
 
-      <form onSubmit={onSubmit} className="space-y-4 border-t border-[#DCE6DF] pt-4" noValidate>
-        {status && <Alert tone={status.tone}>{status.text}</Alert>}
-
-        <div className="grid gap-3.5 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label htmlFor="requestedRole" className="block text-xs font-medium text-[#374151]">
-              Vai trò
-            </label>
-            <select
-              id="requestedRole"
-              value={type}
-              onChange={(e) =>
-                handleRoleChange(e.target.value as 'HEALTHCARE_PROFESSIONAL' | 'RESEARCHER')
-              }
-              className="h-9.5 w-full rounded-lg border border-[#DCE6DF] bg-white px-3 text-sm text-[#111827] focus:border-[#16A34A] focus:outline-none"
-            >
-              <option value="HEALTHCARE_PROFESSIONAL">Bác sĩ / Nhân viên y tế</option>
-              <option value="RESEARCHER">Nhà nghiên cứu</option>
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="profTitle" className="block text-xs font-medium text-[#374151]">
-              Chức danh
-            </label>
-            <Input
-              id="profTitle"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="border-[#DCE6DF] focus:border-[#16A34A]"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="specialty" className="block text-xs font-medium text-[#374151]">
-              Chuyên khoa
-            </label>
-            <Input
-              id="specialty"
-              value={specialty}
-              onChange={(e) => setSpecialty(e.target.value)}
-              className="border-[#DCE6DF] focus:border-[#16A34A]"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="institution" className="block text-xs font-medium text-[#374151]">
-              Đơn vị công tác
-            </label>
-            <Input
-              id="institution"
-              value={institution}
-              onChange={(e) => setInstitution(e.target.value)}
-              className="border-[#DCE6DF] focus:border-[#16A34A]"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="licenseOrOrcid" className="block text-xs font-medium text-[#374151]">
-              Số CCHN / ORCID
-            </label>
-            <Input
-              id="licenseOrOrcid"
-              value={licenseOrOrcidNumber}
-              onChange={(e) => setLicenseOrOrcidNumber(e.target.value)}
-              className="border-[#DCE6DF] focus:border-[#16A34A]"
-            />
-          </div>
-
-          {type === 'HEALTHCARE_PROFESSIONAL' && (
-            <div className="space-y-1.5">
-              <label htmlFor="issuingAuthority" className="block text-xs font-medium text-[#374151]">
-                Cơ quan cấp
-              </label>
-              <select
-                id="issuingAuthority"
-                value={issuingAuthority}
-                onChange={(e) => setIssuingAuthority(e.target.value)}
-                className="h-9.5 w-full rounded-lg border border-[#DCE6DF] bg-white px-3 text-sm text-[#111827] focus:border-[#16A34A] focus:outline-none"
+      {/* Sequential 2-Step Verification Pop-up Modal */}
+      {verifyModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Hồ sơ xác minh chuyên gia"
+          onClick={() => {
+            setStatus(null);
+            setVerifyModalOpen(false);
+          }}
+        >
+          <div
+            className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-[#DCE6DF] bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-[#DCE6DF] px-5 py-3.5">
+              <h3 className="text-sm font-bold text-[#111827]">
+                {verifyStep === 1
+                  ? 'Bước 1/2 · Thông tin chuyên môn'
+                  : 'Bước 2/2 · Giấy tờ & Minh chứng'}
+              </h3>
+              <button
+                type="button"
+                aria-label="Đóng cửa sổ xác minh"
+                onClick={() => {
+                  setStatus(null);
+                  setVerifyModalOpen(false);
+                }}
+                className="rounded-lg p-1.5 text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827] transition-colors"
               >
-                {ISSUING_AUTHORITIES.map((auth) => (
-                  <option key={auth} value={auth}>
-                    {auth}
-                  </option>
-                ))}
-              </select>
+                <X className="size-4" />
+              </button>
             </div>
-          )}
 
-          <div className="space-y-1.5 sm:col-span-2">
-            <label htmlFor="documentType" className="block text-xs font-medium text-[#374151]">
-              Loại giấy tờ
-            </label>
-            <select
-              id="documentType"
-              value={documentType}
-              onChange={(e) => setDocumentType(e.target.value as CredentialDocumentType)}
-              className="h-9.5 w-full rounded-lg border border-[#DCE6DF] bg-white px-3 text-sm text-[#111827] focus:border-[#16A34A] focus:outline-none"
-            >
-              {DOCUMENT_TYPE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <form onSubmit={onSubmit} className="p-5 space-y-4" noValidate>
+              <div className="flex items-center gap-2 text-xs">
+                <span
+                  className={cn(
+                    'flex-1 rounded-lg border px-2.5 py-1.5 text-center font-semibold',
+                    verifyStep === 1
+                      ? 'border-[#16A34A] bg-[#ECFDF3] text-[#15803D]'
+                      : 'border-[#DCE6DF] bg-[#F5FAF7] text-[#6B7280]',
+                  )}
+                >
+                  1. Chuyên môn
+                </span>
+                <span
+                  className={cn(
+                    'flex-1 rounded-lg border px-2.5 py-1.5 text-center font-semibold',
+                    verifyStep === 2
+                      ? 'border-[#16A34A] bg-[#ECFDF3] text-[#15803D]'
+                      : 'border-[#DCE6DF] bg-[#F5FAF7] text-[#6B7280]',
+                  )}
+                >
+                  2. Minh chứng
+                </span>
+              </div>
+
+              {status && <Alert tone={status.tone}>{status.text}</Alert>}
+
+              {verifyStep === 1 ? (
+                <div className="space-y-3.5">
+                  <div className="space-y-1.5">
+                    <label htmlFor="requestedRole" className="block text-xs font-medium text-[#374151]">
+                      Vai trò
+                    </label>
+                    <select
+                      id="requestedRole"
+                      value={type}
+                      onChange={(e) =>
+                        handleRoleChange(e.target.value as 'HEALTHCARE_PROFESSIONAL' | 'RESEARCHER')
+                      }
+                      className="h-9.5 w-full rounded-lg border border-[#DCE6DF] bg-white px-3 text-sm text-[#111827] focus:border-[#16A34A] focus:outline-none"
+                    >
+                      <option value="HEALTHCARE_PROFESSIONAL">Bác sĩ / Nhân viên y tế</option>
+                      <option value="RESEARCHER">Nhà nghiên cứu</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="profTitle" className="block text-xs font-medium text-[#374151]">
+                      Chức danh
+                    </label>
+                    <Input
+                      id="profTitle"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="VD: BS. CKII / TS. Nghiên cứu"
+                      className="border-[#DCE6DF] focus:border-[#16A34A]"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="specialty" className="block text-xs font-medium text-[#374151]">
+                      Chuyên khoa
+                    </label>
+                    <Input
+                      id="specialty"
+                      value={specialty}
+                      onChange={(e) => setSpecialty(e.target.value)}
+                      placeholder="VD: Thần kinh lâm sàng / BCI"
+                      className="border-[#DCE6DF] focus:border-[#16A34A]"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="institution" className="block text-xs font-medium text-[#374151]">
+                      Đơn vị công tác
+                    </label>
+                    <Input
+                      id="institution"
+                      value={institution}
+                      onChange={(e) => setInstitution(e.target.value)}
+                      placeholder="VD: Bệnh viện Bạch Mai"
+                      className="border-[#DCE6DF] focus:border-[#16A34A]"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#DCE6DF]">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setStatus(null);
+                        setVerifyModalOpen(false);
+                      }}
+                    >
+                      Hủy
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleNextStep}
+                      className="bg-[#16A34A] hover:bg-[#15803D] text-white"
+                    >
+                      Tiếp tục
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3.5">
+                  <div className="space-y-1.5">
+                    <label htmlFor="licenseOrOrcid" className="block text-xs font-medium text-[#374151]">
+                      Số CCHN / ORCID
+                    </label>
+                    <Input
+                      id="licenseOrOrcid"
+                      value={licenseOrOrcidNumber}
+                      onChange={(e) => setLicenseOrOrcidNumber(e.target.value)}
+                      placeholder="VD: 001234/BYT-CCHN hoặc 0000-0002-..."
+                      className="border-[#DCE6DF] focus:border-[#16A34A]"
+                    />
+                  </div>
+
+                  {type === 'HEALTHCARE_PROFESSIONAL' && (
+                    <div className="space-y-1.5">
+                      <label htmlFor="issuingAuthority" className="block text-xs font-medium text-[#374151]">
+                        Cơ quan cấp
+                      </label>
+                      <select
+                        id="issuingAuthority"
+                        value={issuingAuthority}
+                        onChange={(e) => setIssuingAuthority(e.target.value)}
+                        className="h-9.5 w-full rounded-lg border border-[#DCE6DF] bg-white px-3 text-sm text-[#111827] focus:border-[#16A34A] focus:outline-none"
+                      >
+                        {ISSUING_AUTHORITIES.map((auth) => (
+                          <option key={auth} value={auth}>
+                            {auth}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="documentType" className="block text-xs font-medium text-[#374151]">
+                      Loại giấy tờ
+                    </label>
+                    <select
+                      id="documentType"
+                      value={documentType}
+                      onChange={(e) => setDocumentType(e.target.value as CredentialDocumentType)}
+                      className="h-9.5 w-full rounded-lg border border-[#DCE6DF] bg-white px-3 text-sm text-[#111827] focus:border-[#16A34A] focus:outline-none"
+                    >
+                      {DOCUMENT_TYPE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="verificationFiles" className="block text-xs font-medium text-[#374151]">
+                      Tải ảnh hoặc PDF minh chứng
+                    </label>
+                    <label
+                      htmlFor="verificationFiles"
+                      className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[#DCE6DF] bg-[#F5FAF7] px-4 py-3 text-xs font-medium text-[#15803D] hover:border-[#16A34A] transition-colors"
+                    >
+                      <Upload className="size-4" />
+                      <span>Chọn tối đa 3 tệp (.pdf, .jpg, .png, .webp)</span>
+                      <input
+                        id="verificationFiles"
+                        type="file"
+                        multiple
+                        accept=".pdf,image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const selected = Array.from(e.target.files ?? []).slice(0, 3);
+                          setFiles(selected);
+                        }}
+                      />
+                    </label>
+                    {files.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {files.map((f, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1 rounded-md border border-[#DCE6DF] bg-[#F5FAF7] px-2 py-1 text-xs text-[#15803D]"
+                          >
+                            <FileText className="size-3.5" />
+                            <span className="truncate max-w-[180px]">{f.name}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#DCE6DF]">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setStatus(null);
+                        setVerifyStep(1);
+                      }}
+                    >
+                      Quay lại
+                    </Button>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      loading={saving}
+                      icon={<ShieldCheck className="size-4" />}
+                      className="bg-[#16A34A] hover:bg-[#15803D] text-white"
+                    >
+                      Gửi xác minh
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </form>
           </div>
         </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor="verificationFiles" className="block text-xs font-medium text-[#374151]">
-            Tải ảnh hoặc PDF minh chứng
-          </label>
-          <label
-            htmlFor="verificationFiles"
-            className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[#DCE6DF] bg-[#F5FAF7] px-4 py-3 text-xs font-medium text-[#15803D] hover:border-[#16A34A] transition-colors"
-          >
-            <Upload className="size-4" />
-            <span>Chọn tối đa 3 tệp (.pdf, .jpg, .png, .webp)</span>
-            <input
-              id="verificationFiles"
-              type="file"
-              multiple
-              accept=".pdf,image/png,image/jpeg,image/webp"
-              className="hidden"
-              onChange={(e) => {
-                const selected = Array.from(e.target.files ?? []).slice(0, 3);
-                setFiles(selected);
-              }}
-            />
-          </label>
-          {files.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {files.map((f, idx) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center gap-1 rounded-md border border-[#DCE6DF] bg-[#F5FAF7] px-2 py-1 text-xs text-[#15803D]"
-                >
-                  <FileText className="size-3.5" />
-                  <span className="truncate max-w-[180px]">{f.name}</span>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-end">
-          <Button
-            type="submit"
-            loading={saving}
-            icon={<ShieldCheck className="size-4" />}
-            className="bg-[#16A34A] hover:bg-[#15803D] text-white"
-          >
-            Gửi xác minh
-          </Button>
-        </div>
-      </form>
+      )}
     </div>
   );
 }

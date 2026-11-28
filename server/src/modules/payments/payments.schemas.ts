@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import { env } from '../../config/env.js';
+
+export const orderCodeParamSchema = z
+  .string()
+  .trim()
+  .regex(/^NL[A-Za-z0-9]{8}$/i, 'Mã đơn nạp không hợp lệ');
 
 export const createTopupOrderSchema = z
   .object({
@@ -13,7 +19,18 @@ export const createTopupOrderSchema = z
   .refine((data) => Boolean(data.packageId) || typeof data.amountVnd === 'number', {
     message: 'Vui lòng chọn gói nạp hoặc nhập số tiền VNĐ hợp lệ',
     path: ['packageId'],
-  });
+  })
+  .refine((data) => !(Boolean(data.packageId) && typeof data.amountVnd === 'number'), {
+    message: 'Chỉ được chọn gói nạp (packageId) hoặc nhập số tiền (amountVnd), không gửi đồng thời cả hai',
+    path: ['packageId'],
+  })
+  .refine(
+    (data) => typeof data.amountVnd !== 'number' || data.amountVnd % env.VND_PER_CREDIT === 0,
+    {
+      message: `Số tiền nạp phải chia hết cho ${env.VND_PER_CREDIT.toLocaleString('vi-VN')} VNĐ để quy đổi tròn Credit`,
+      path: ['amountVnd'],
+    },
+  );
 
 export type CreateTopupOrderInput = z.infer<typeof createTopupOrderSchema>;
 
@@ -60,6 +77,12 @@ export const createPayoutRequestSchema = z.object({
     .min(50, 'Số Credit rút tối thiểu là 50 Credit')
     .max(1_000_000, 'Số Credit rút vượt quá hạn mức'),
   note: z.string().trim().max(500).optional(),
+  idempotencyKey: z
+    .string()
+    .trim()
+    .min(1, 'idempotencyKey không được để trống')
+    .max(120, 'idempotencyKey tối đa 120 ký tự')
+    .optional(),
   bankBin: z.string().trim().regex(/^\d{6,8}$/).optional(),
   bankName: z.string().trim().min(2).max(80).optional(),
   bankAccountNo: z.string().trim().regex(/^[A-Za-z0-9]{5,34}$/).optional(),

@@ -428,4 +428,196 @@ describe('Adversarial FinTech Ledger, VietQR Payments & Cybersecurity Hardening 
     expect(docIntegrity.valid).toBe(true);
     expect(docIntegrity.balanceMatchesLedger).toBe(true);
   });
+
+  it('8. Server-Driven TTL, Single Active PENDING Order & Validation Hardening', async () => {
+    const buyer = await registerUser({ username: 'ttl_buyer' });
+
+    // Packages metadata includes TTL, reminder window, sandbox flag, and serverNow
+    const pkgRes = await buyer.get('/api/payments/packages').expect(200);
+    expect(pkgRes.body.orderTtlSeconds).toBe(600);
+    expect(pkgRes.body.reminderWindowSeconds).toBe(60);
+    expect(pkgRes.body.sandboxEnabled).toBe(true);
+    expect(Number.isNaN(Date.parse(pkgRes.body.serverNow))).toBe(false);
+
+    // Reject sending both packageId and amountVnd simultaneously
+    await buyer
+      .post('/api/payments/topup-orders', { packageId: 'pkg_50k', amountVnd: 50000 })
+      .expect(400);
+
+    // Reject amountVnd not divisible by 1000 (VND_PER_CREDIT)
+    await buyer.post('/api/payments/topup-orders', { amountVnd: 50500 }).expect(400);
+
+    // Create order #1
+    const res1 = await buyer.post('/api/payments/topup-orders', { packageId: 'pkg_50k' }).expect(201);
+    const order1 = res1.body.order;
+    expect(res1.body.orderTtlSeconds).toBe(600);
+    expect(res1.body.reminderWindowSeconds).toBe(60);
+    expect(Number.isNaN(Date.parse(res1.body.serverNow))).toBe(false);
+
+    // Verify TTL is ~600s (within reasonable clock skew)
+    const ttlDeltaMs = new Date(order1.expiresAt).getTime() - new Date(res1.body.serverNow).getTime();
+    expect(ttlDeltaMs).toBeGreaterThanOrEqual(595_000);
+    expect(ttlDeltaMs).toBeLessThanOrEqual(605_000);
+
+    // Create order #2 -> automatically cancels order #1 so only 1 PENDING QR exists
+    const res2 = await buyer.post('/api/payments/topup-orders', { packageId: 'pkg_100k' }).expect(201);
+    const order2 = res2.body.order;
+    expect(order2.status).toBe('PENDING');
+    expect(order2.orderCode).not.toBe(order1.orderCode);
+
+    const listRes = await buyer.get('/api/payments/topup-orders').expect(200);
+    expect(Number.isNaN(Date.parse(listRes.body.serverNow))).toBe(false);
+    const dbOrder1 = listRes.body.orders.find((o: any) => o.orderCode === order1.orderCode);
+    const dbOrder2 = listRes.body.orders.find((o: any) => o.orderCode === order2.orderCode);
+    expect(dbOrder1.status).toBe('CANCELLED');
+    expect(dbOrder2.status).toBe('PENDING');
+  });
+
+  it('9. Expired Order Security Gate: blocks webhook & simulate-paid (409 PAYMENT_ORDER_EXPIRED), auto-expires DB, zero credit granted', async () => {
+    const buyer = await registerUser({ username: 'expired_buyer' });
+    const otherUser = await registerUser({ username: 'expired_snooper' });
+
+    const ord1 = (await buyer.post('/api/payments/topup-orders', { amountVnd: 50000 }).expect(201)).body.order;
+
+    // Backdate expiresAt in DB to simulate TTL expiration
+    await prisma.paymentOrder.update({
+      where: { id: ord1.id },
+      data: { expiresAt: new Date(Date.now() - 5_000) },
+    });
+
+    // 9a. Bank webhook for expired order -> 409 PAYMENT_ORDER_EXPIRED, DB status becomes EXPIRED, wallet unchanged
+    const webhookBody = {
+      gateway: 'MBBank-VietQR',
+      transactionId: `FT-EXPIRED-${Date.now()}`,
+      transferAmount: 50000,
+      content: `Nap tien ${ord1.orderCode}`,
+    };
+    const whRes = await request(getApp())
+      .post('/api/payments/webhook/bank-transfer')
+      .set('x-payment-signature', signWebhookPayload(webhookBody))
+      .send(webhookBody)
+      .expect(409);
+    expect(whRes.body.error.code).toBe('PAYMENT_ORDER_EXPIRED');
+
+    const dbOrd1AfterWh = await prisma.paymentOrder.findUniqueOrThrow({ where: { id: ord1.id } });
+    expect(dbOrd1AfterWh.status).toBe('EXPIRED');
+
+    const walletAfterWh = (await buyer.get('/api/rewards/wallet').expect(200)).body.wallet;
+    expect(walletAfterWh.purchasedCredits).toBe(0);
+    expect(walletAfterWh.balance).toBe(250);
+
+    // 9b. Create another order and backdate expiresAt -> simulate-paid MUST reject with 409 PAYMENT_ORDER_EXPIRED & mark EXPIRED
+    const ord2 = (await buyer.post('/api/payments/topup-orders', { amountVnd: 80000 }).expect(201)).body.order;
+    await prisma.paymentOrder.update({
+      where: { id: ord2.id },
+      data: { expiresAt: new Date(Date.now() - 5_000) },
+    });
+
+    const simRes = await buyer
+      .post(`/api/payments/topup-orders/${ord2.orderCode}/simulate-paid`)
+      .expect(409);
+    expect(simRes.body.error.code).toBe('PAYMENT_ORDER_EXPIRED');
+
+    const dbOrd2AfterSim = await prisma.paymentOrder.findUniqueOrThrow({ where: { id: ord2.id } });
+    expect(dbOrd2AfterSim.status).toBe('EXPIRED');
+
+    const walletAfterSim = (await buyer.get('/api/rewards/wallet').expect(200)).body.wallet;
+    expect(walletAfterSim.purchasedCredits).toBe(0);
+    expect(walletAfterSim.balance).toBe(250);
+
+    // 9c. GET /api/payments/topup-orders/:orderCode auto-expires overdue PENDING order & returns serverNow; blocks non-owner
+    const ord3 = (await buyer.post('/api/payments/topup-orders', { amountVnd: 60000 }).expect(201)).body.order;
+    await prisma.paymentOrder.update({
+      where: { id: ord3.id },
+      data: { expiresAt: new Date(Date.now() - 5_000) },
+    });
+
+    await otherUser.get(`/api/payments/topup-orders/${ord3.orderCode}`).expect(403);
+
+    const getOrd3 = await buyer.get(`/api/payments/topup-orders/${ord3.orderCode}`).expect(200);
+    expect(getOrd3.body.order.status).toBe('EXPIRED');
+    expect(getOrd3.body.reminderWindowSeconds).toBe(60);
+    expect(Number.isNaN(Date.parse(getOrd3.body.serverNow))).toBe(false);
+  });
+
+  it('10. Cancel Topup Order Endpoint & Payout Idempotency Key Defense', async () => {
+    const buyer = await registerUser({ username: 'cancel_buyer' });
+    const snooper = await registerUser({ username: 'cancel_snooper' });
+
+    const ord = (await buyer.post('/api/payments/topup-orders', { packageId: 'pkg_50k' }).expect(201)).body.order;
+
+    // Non-owner cannot cancel
+    await snooper.post(`/api/payments/topup-orders/${ord.orderCode}/cancel`).expect(403);
+
+    // Owner cancels PENDING -> CANCELLED
+    const cancelRes = await buyer.post(`/api/payments/topup-orders/${ord.orderCode}/cancel`).expect(200);
+    expect(cancelRes.body.order.status).toBe('CANCELLED');
+    expect(Number.isNaN(Date.parse(cancelRes.body.serverNow))).toBe(false);
+
+    // Idempotent repeat cancel -> stays CANCELLED (200)
+    const repeatCancelRes = await buyer
+      .post(`/api/payments/topup-orders/${ord.orderCode}/cancel`)
+      .expect(200);
+    expect(repeatCancelRes.body.order.status).toBe('CANCELLED');
+
+    // Cancelled order cannot be paid via simulate-paid or webhook -> 409 PAYMENT_ORDER_CANCELLED
+    const simCancelled = await buyer
+      .post(`/api/payments/topup-orders/${ord.orderCode}/simulate-paid`)
+      .expect(409);
+    expect(simCancelled.body.error.code).toBe('PAYMENT_ORDER_CANCELLED');
+
+    // Paid order cannot be cancelled -> 409 PAYMENT_ORDER_ALREADY_PAID
+    const paidOrd = (await buyer.post('/api/payments/topup-orders', { packageId: 'pkg_100k' }).expect(201)).body
+      .order;
+    await buyer.post(`/api/payments/topup-orders/${paidOrd.orderCode}/simulate-paid`).expect(200);
+
+    const cancelPaidRes = await buyer
+      .post(`/api/payments/topup-orders/${paidOrd.orderCode}/cancel`)
+      .expect(409);
+    expect(cancelPaidRes.body.error.code).toBe('PAYMENT_ORDER_ALREADY_PAID');
+
+    // Payout double-click idempotencyKey test
+    const earner = await registerUser({ username: 'payout_idem_earner' });
+    await earner
+      .patch('/api/payments/bank-profile', {
+        bankBin: '970422',
+        bankName: 'MB Bank',
+        bankAccountNo: '0123456789',
+        bankAccountName: 'NGUYEN VAN TEST',
+      })
+      .expect(200);
+
+    // Transfer 100 transferable credits to earner (buyer has 105 purchasedCredits from pkg_100k)
+    await buyer
+      .post('/api/payments/transfer', {
+        recipientCodeOrUsername: earner.user.username,
+        amountCredits: 100,
+      })
+      .expect(200);
+
+    const idemKey = `payout-click-${Date.now()}`;
+    const p1 = await earner
+      .post('/api/payments/payout-requests', {
+        amountCredits: 60,
+        note: 'Double click test',
+        idempotencyKey: idemKey,
+      })
+      .expect(201);
+    const p2 = await earner
+      .post('/api/payments/payout-requests', {
+        amountCredits: 60,
+        note: 'Double click test',
+        idempotencyKey: idemKey,
+      })
+      .expect(201);
+
+    expect(p1.body.idempotentReplay).toBe(false);
+    expect(p2.body.idempotentReplay).toBe(true);
+    expect(p2.body.payout.id).toBe(p1.body.payout.id);
+    expect(p2.body.wallet.earnedCredits).toBe(40);
+    expect(p2.body.wallet.lockedCredits).toBe(60);
+
+    const payoutsList = (await earner.get('/api/payments/payout-requests').expect(200)).body.payouts;
+    expect(payoutsList).toHaveLength(1);
+  });
 });

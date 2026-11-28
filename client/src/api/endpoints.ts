@@ -177,16 +177,62 @@ export const rewardsApi = {
     ),
 };
 
-export const paymentsApi = {
-  getPackages: () =>
-    api<import('./types').TopupPackagesResponse>('/payments/packages'),
-  createTopupOrder: (body: { packageId?: string; amountVnd?: number }) =>
-    api<{ order: import('./types').PaymentOrderItem }>('/payments/topup-orders', {
+function generateIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `nl-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export type TopupPackagesApiResponse = import('./types').TopupPackagesResponse & {
+  orderTtlSeconds?: number;
+  reminderWindowSeconds?: number;
+  sandboxEnabled?: boolean;
+  serverNow?: string;
+};
+
+export type TopupOrderApiResponse = {
+  order: import('./types').PaymentOrderItem;
+  serverNow?: string;
+  orderTtlSeconds?: number;
+  reminderWindowSeconds?: number;
+};
+
+export type TopupOrderListApiResponse = {
+  orders: import('./types').PaymentOrderItem[];
+  serverNow?: string;
+};
+
+const fetchTopupOrders = () => api<TopupOrderListApiResponse>('/payments/topup-orders');
+
+const createPayoutOrder = (body: { amountCredits: number; note?: string; idempotencyKey?: string }) =>
+  api<{ payout: import('./types').PayoutRequestItem; wallet: import('./types').CreditWalletItem }>(
+    '/payments/payout-requests',
+    {
       method: 'POST',
-      body,
+      body: {
+        ...body,
+        idempotencyKey: body.idempotencyKey ?? generateIdempotencyKey(),
+      },
+    },
+  );
+
+export const paymentsApi = {
+  getPackages: () => api<TopupPackagesApiResponse>('/payments/packages'),
+  createTopupOrder: (body: { packageId: string; amountVnd?: never } | { packageId?: never; amountVnd: number }) =>
+    api<TopupOrderApiResponse>('/payments/topup-orders', {
+      method: 'POST',
+      body: body.packageId ? { packageId: body.packageId } : { amountVnd: body.amountVnd },
     }),
-  getTopupOrders: () =>
-    api<{ orders: import('./types').PaymentOrderItem[] }>('/payments/topup-orders'),
+  getTopupOrders: fetchTopupOrders,
+  listTopupOrders: fetchTopupOrders,
+  getTopupOrder: (orderCode: string) =>
+    api<TopupOrderApiResponse>(`/payments/topup-orders/${encodeURIComponent(orderCode)}`),
+  cancelTopupOrder: (orderCode: string) =>
+    api<{ order: import('./types').PaymentOrderItem; serverNow?: string }>(
+      `/payments/topup-orders/${encodeURIComponent(orderCode)}/cancel`,
+      { method: 'POST' },
+    ),
   simulateOrderPaid: (orderCode: string) =>
     api<{ order: import('./types').PaymentOrderItem; wallet: import('./types').CreditWalletItem }>(
       `/payments/topup-orders/${encodeURIComponent(orderCode)}/simulate-paid`,
@@ -212,13 +258,16 @@ export const paymentsApi = {
   }) =>
     api<{ transferId: string; senderWallet: import('./types').CreditWalletItem }>(
       '/payments/transfer',
-      { method: 'POST', body },
+      {
+        method: 'POST',
+        body: {
+          ...body,
+          idempotencyKey: body.idempotencyKey ?? generateIdempotencyKey(),
+        },
+      },
     ),
-  requestPayout: (body: { amountCredits: number; note?: string }) =>
-    api<{ payout: import('./types').PayoutRequestItem; wallet: import('./types').CreditWalletItem }>(
-      '/payments/payout-requests',
-      { method: 'POST', body },
-    ),
+  requestPayout: createPayoutOrder,
+  createPayoutRequest: createPayoutOrder,
   getPayoutRequests: () =>
     api<{ payouts: import('./types').PayoutRequestItem[] }>('/payments/payout-requests'),
 };

@@ -205,26 +205,18 @@ export function ModeProvider({ children }: { children: ReactNode }) {
     }
 
     // SECURITY INVARIANT: Non-verified accounts (GENERAL_USER, PENDING, REJECTED)
-    // MUST ALWAYS resolve to GENERAL_MODE ('general').
+    // MUST ALWAYS resolve to GENERAL_MODE ('general') without polluting global storage.
     if (!resolution.canAccessProfessionalMode) {
       setManualOverride(null);
-      try {
-        localStorage.setItem(STORAGE_KEY, 'general');
-      } catch {
-        // Ignore storage errors
-      }
       return;
     }
 
     // For VERIFIED professionals, automatic default is PROFESSIONAL_MODE ('professional'),
-    // unless an explicit user-scoped or global preview mode was chosen by this verified user.
+    // unless an explicit user-scoped preview mode was chosen by this verified user.
     try {
       const userScoped = localStorage.getItem(`${STORAGE_KEY}_${user.id}`);
-      const globalSaved = localStorage.getItem(STORAGE_KEY);
       if (userScoped === 'general' || userScoped === 'professional') {
         setManualOverride({ userId: user.id, mode: userScoped });
-      } else if (globalSaved === 'general') {
-        setManualOverride({ userId: user.id, mode: 'general' });
       } else {
         setManualOverride({ userId: user.id, mode: 'professional' });
         localStorage.setItem(STORAGE_KEY, 'professional');

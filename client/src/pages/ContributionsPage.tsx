@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Award,
   CheckCircle2,
-  AlertCircle,
   RotateCcw,
   PlusCircle,
   FileText,
@@ -12,6 +11,7 @@ import {
   Star,
   BookOpen,
   Users,
+  ShieldCheck,
 } from 'lucide-react';
 import { contributionsApi, searchApi } from '../api/endpoints';
 import { useAuth } from '../features/auth/AuthContext';
@@ -63,9 +63,6 @@ export function ContributionsPage() {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const preselectedPostId = searchParams.get('postId');
-  const [activeTab, setActiveTab] = useState<'my' | 'submit' | 'projects' | 'researchers'>(
-    preselectedPostId ? 'submit' : 'my',
-  );
   const [selectedPostId, setSelectedPostId] = useState<string>(preselectedPostId ?? '');
   const [category, setCategory] = useState<ContributionCategory>('HEALTHCARE_EDUCATION');
   const [summary, setSummary] = useState('');
@@ -79,12 +76,18 @@ export function ContributionsPage() {
     (p) => p.verificationStatus === 'VERIFIED',
   );
 
+  const [activeTab, setActiveTab] = useState<'my' | 'submit' | 'projects' | 'researchers'>(() =>
+    preselectedPostId ? 'submit' : isVerified ? 'my' : 'projects',
+  );
+
   useEffect(() => {
     if (preselectedPostId && isVerified) {
       setActiveTab('submit');
       setSelectedPostId(preselectedPostId);
+    } else if (!isVerified && (activeTab === 'my' || activeTab === 'submit')) {
+      setActiveTab('projects');
     }
-  }, [preselectedPostId, isVerified]);
+  }, [preselectedPostId, isVerified, activeTab]);
 
   const { data: researchersData } = useQuery({
     queryKey: ['research-hub-specialists'],
@@ -157,40 +160,42 @@ export function ContributionsPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       {/* Header Banner - Research Hub */}
-      <section className="rounded-lg border border-slate-300 bg-white shadow-2xs overflow-hidden">
-        <div className="bg-[#162B47] px-6 py-5 text-white">
+      <section className="rounded-xl border border-[#DCE6DF] bg-white shadow-2xs overflow-hidden">
+        <div className="bg-[#14532D] px-6 py-5 text-white">
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-            Trung tâm Nghiên cứu Khoa học & Đóng góp Chuyên môn
+            Trung tâm Nghiên cứu &amp; Đóng góp Chuyên môn
           </h1>
         </div>
-        <TelemetryStrip
-          items={[
-            { label: 'Bài đóng góp của tôi', value: myContributions.length, valueClassName: 'text-[#1E3A5F]' },
-            { label: 'Ấn phẩm & Preprint', value: 14, valueClassName: 'text-[#2C6865]' },
-            { label: 'Đề tài Hợp tác Mở', value: 6 },
-            { label: 'Chuyên gia & Nhà nghiên cứu', value: researchersData?.professionals?.length ?? 8 },
-          ]}
-        />
+        {isVerified && (
+          <TelemetryStrip
+            items={[
+              { label: 'Bài đóng góp của tôi', value: myContributions.length, valueClassName: 'text-[#15803D]' },
+              { label: 'Ấn phẩm & Preprint', value: 14, valueClassName: 'text-[#166534]' },
+              { label: 'Đề tài Hợp tác Mở', value: 6 },
+              { label: 'Chuyên gia & Nhà nghiên cứu', value: researchersData?.professionals?.length ?? 8 },
+            ]}
+          />
+        )}
       </section>
 
-      {/* Verification Status Warning / Card */}
+      {/* Single Clean Verification Guide Card for Unverified Accounts */}
       {!isVerified && (
-        <Card className="p-4 sm:p-5 border-amber-300 bg-amber-50/70 text-amber-900 space-y-2">
-          <div className="flex items-center gap-2 font-bold text-sm text-amber-800">
-            <AlertCircle className="size-5 text-amber-600 shrink-0" />
-            Yêu cầu Xác minh Tích xanh Chuyên môn
+        <Card className="p-4 sm:p-5 border-[#BBF7D0] bg-[#F5FAF7] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 font-bold text-sm text-[#14532D]">
+              <ShieldCheck className="size-4 text-[#16A34A] shrink-0" />
+              Xác minh chuyên gia để nộp bài nghiên cứu
+            </div>
+            <p className="text-xs text-[#374151] leading-relaxed">
+              Chương trình khen thưởng đóng góp áp dụng cho bác sĩ (CCHN) và nhà nghiên cứu (ORCID) đã xác minh tích xanh.
+            </p>
           </div>
-          <p className="text-xs text-amber-800/90 leading-relaxed">
-            Chương trình Khen thưởng Đóng góp hiện áp dụng độc quyền cho các chuyên gia Y tế (Bác sĩ có CCHN) và Nhà nghiên cứu khoa học (có hồ sơ ORCID) đã được Hội đồng Thẩm định duyệt tích xanh.
-          </p>
-          <div className="pt-1">
-            <Link
-              to="/settings"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:underline"
-            >
-              Đến trang Cài đặt để nộp hồ sơ xác minh chuyên gia →
-            </Link>
-          </div>
+          <Link
+            to="/settings?tab=verify"
+            className="inline-flex items-center justify-center rounded-lg bg-[#16A34A] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#15803D] transition-colors whitespace-nowrap shrink-0"
+          >
+            Đi tới Xác minh chuyên gia
+          </Link>
         </Card>
       )}
 
@@ -212,65 +217,64 @@ export function ContributionsPage() {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-200">
+      {/* Concise 4 Tabs (never clipped/truncated at 768px or 1440px) */}
+      <div className="flex flex-wrap items-center gap-1 border-b border-[#DCE6DF]">
         <button
           type="button"
+          disabled={!isVerified}
           onClick={() => setActiveTab('my')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
-            activeTab === 'my'
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+          className={`flex items-center gap-1.5 border-b-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
+            !isVerified
+              ? 'opacity-50 cursor-not-allowed border-transparent text-slate-400'
+              : activeTab === 'my'
+                ? 'border-[#16A34A] text-[#15803D]'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          <Award className="size-4" /> Bài đóng góp của tôi ({myContributions.length})
+          <Award className="size-4 shrink-0" /> Đóng góp của tôi ({myContributions.length})
         </button>
         <button
           type="button"
           disabled={!isVerified}
           onClick={() => setActiveTab('submit')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-1.5 border-b-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
             !isVerified
               ? 'opacity-50 cursor-not-allowed border-transparent text-slate-400'
               : activeTab === 'submit'
-                ? 'border-brand-600 text-brand-700'
+                ? 'border-[#16A34A] text-[#15803D]'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          <PlusCircle className="size-4" /> Nộp bài viết mới
+          <PlusCircle className="size-4 shrink-0" /> Nộp bài mới
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('projects')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-1.5 border-b-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
             activeTab === 'projects'
-              ? 'border-brand-600 text-brand-700'
+              ? 'border-[#16A34A] text-[#15803D]'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          <BookOpen className="size-4" /> Công bố & Đề tài Hợp tác
+          <BookOpen className="size-4 shrink-0" /> Công bố &amp; Đề tài
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('researchers')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-1.5 border-b-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
             activeTab === 'researchers'
-              ? 'border-brand-600 text-brand-700'
+              ? 'border-[#16A34A] text-[#15803D]'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          <Users className="size-4" /> Nhà nghiên cứu & Thảo luận Học thuật
+          <Users className="size-4 shrink-0" /> Nhà nghiên cứu
         </button>
       </div>
 
       {/* Tab 1: My Contributions */}
-      {activeTab === 'my' && (
+      {activeTab === 'my' && isVerified && (
         <div className="space-y-4">
-          {!isVerified ? (
-            <Card className="p-8 text-center text-slate-500 text-sm">
-              Bạn chưa có hồ sơ chuyên môn xác minh tích xanh.
-            </Card>
-          ) : loadingMy ? (
+          {loadingMy ? (
             <Spinner label="Đang tải danh sách bài nộp đóng góp..." />
           ) : myContributions.length === 0 ? (
             <Card>
@@ -587,7 +591,7 @@ export function ContributionsPage() {
           <DataTableContainer
             title="Ấn phẩm Khoa học & Báo cáo Bình duyệt (Publications Registry)"
             subtitle="Các công bố khoa học thần kinh, điện não đồ định lượng (qEEG) và mô hình BCI"
-            icon={<BookOpen className="size-4 text-[#1E3A5F]" />}
+            icon={<BookOpen className="size-4 text-[#15803D]" />}
             metaLabel="DOI / ORCID Indexed"
           >
             <table className="w-full text-left border-collapse text-xs tabular-nums">
@@ -631,7 +635,7 @@ export function ContributionsPage() {
                   },
                 ].map((pub) => (
                   <tr key={pub.code} className="hover:bg-slate-50/90">
-                    <td className="py-3 px-4 font-mono font-bold text-[#1E3A5F] whitespace-nowrap">
+                    <td className="py-3 px-4 font-mono font-bold text-[#14532D] whitespace-nowrap">
                       {pub.code}
                     </td>
                     <td className="py-3 px-4">
@@ -643,7 +647,7 @@ export function ContributionsPage() {
                         {pub.field}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right font-mono font-semibold text-[#2C6865] whitespace-nowrap">
+                    <td className="py-3 px-4 text-right font-mono font-semibold text-[#15803D] whitespace-nowrap">
                       {pub.metric}
                     </td>
                   </tr>
@@ -655,7 +659,7 @@ export function ContributionsPage() {
           <DataTableContainer
             title="Dự án Nghiên cứu & Cơ hội Hợp tác Đa trung tâm (Research Projects & Collaboration)"
             subtitle="Các đề tài đang mở tuyển đồng tác giả lâm sàng, kỹ sư giải mã tín hiệu và bác sĩ đọc bản đồ não"
-            icon={<Award className="size-4 text-[#2C6865]" />}
+            icon={<Award className="size-4 text-[#15803D]" />}
             metaLabel="Multi-Center Consortia"
           >
             <table className="w-full text-left border-collapse text-xs tabular-nums">
@@ -683,7 +687,7 @@ export function ContributionsPage() {
                   },
                 ].map((prj) => (
                   <tr key={prj.id} className="hover:bg-slate-50/90">
-                    <td className="py-3 px-4 font-mono font-bold text-[#2C6865] whitespace-nowrap">
+                    <td className="py-3 px-4 font-mono font-bold text-[#15803D] whitespace-nowrap">
                       {prj.id}
                     </td>
                     <td className="py-3 px-4">
@@ -694,7 +698,7 @@ export function ContributionsPage() {
                     <td className="py-3 px-4 text-right whitespace-nowrap">
                       <Link
                         to="/messages"
-                        className="inline-flex rounded bg-[#162B47] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[#1E3A5F]"
+                        className="inline-flex rounded bg-[#16A34A] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[#15803D]"
                       >
                         Đăng ký hợp tác
                       </Link>
@@ -728,7 +732,7 @@ export function ContributionsPage() {
                       ORCID / CCHN
                     </span>
                   </div>
-                  <p className="mt-2.5 text-xs font-semibold text-[#1E3A5F]">
+                  <p className="mt-2.5 text-xs font-semibold text-[#15803D]">
                     {prof.specialty} · {prof.institution}
                   </p>
                   {prof.researchInterests.length > 0 && (

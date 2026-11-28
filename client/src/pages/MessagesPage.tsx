@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { useSearchParams, Link } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Send, MessageSquare, ArrowLeft, Shield } from 'lucide-react';
+import { Send, MessageSquare, ArrowLeft } from 'lucide-react';
 import { messagesApi } from '../api/endpoints';
 import { Avatar, Button, Card, Spinner } from '../components/ui';
 import { ProfessionalBadge } from '../components/user/ProfessionalBadge';
@@ -199,11 +199,6 @@ export function MessagesPage() {
                     </div>
                     <span className="text-[11px] text-slate-400">@{activeConv.otherUser?.username}</span>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-xs text-[#6B7280] font-medium">
-                  <Shield className="size-3.5 text-[#16A34A]" />
-                  <span className="hidden sm:inline">Mã hoá bảo mật</span>
                 </div>
               </div>
 

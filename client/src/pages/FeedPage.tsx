@@ -5,10 +5,8 @@ import { Newspaper } from 'lucide-react';
 import {
   postsApi,
   rewardsApi,
-  communitiesApi,
   communityInsightsApi,
 } from '../api/endpoints';
-import { FALLBACK_COMMUNITIES } from './CommunitiesPage';
 import { Avatar, Button, EmptyState, Spinner, cn } from '../components/ui';
 import { ProfessionalBadge } from '../components/user/ProfessionalBadge';
 import { useAuth } from '../features/auth/AuthContext';
@@ -91,8 +89,8 @@ function SpotlightSection({
           {professionals.slice(0, 4).map((item) => {
             const subtitle = item.user.specialty || item.user.institution || 'Thần kinh học & BCI';
             return (
-              <div key={item.user.id} className="flex items-center gap-2.5">
-                <Link to={`/u/${item.user.username}`} className="relative shrink-0">
+              <div key={item.user.id} className="flex items-start gap-2.5">
+                <Link to={`/u/${item.user.username}`} className="relative shrink-0 mt-0.5">
                   <Avatar name={item.user.displayName} src={item.user.avatarUrl} size="xs" />
                   <span
                     className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-[#16A34A] ring-2 ring-[#F5FAF7]"
@@ -102,13 +100,13 @@ function SpotlightSection({
                 <div className="min-w-0 flex-1">
                   <Link
                     to={`/u/${item.user.username}`}
-                    className="block truncate text-[13px] font-medium text-[#141413] hover:underline"
+                    className="block text-[13px] font-medium leading-snug text-[#141413] hover:underline"
                   >
                     {item.user.displayName}
                   </Link>
                   <p className="truncate text-[11px] text-[#6E6D68]">{subtitle}</p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 pt-0.5">
                   {item.user.id !== user?.id && (
                     <button
                       type="button"
@@ -162,22 +160,11 @@ export function FeedPage() {
     enabled: Boolean(user && isProfessional),
   });
 
-  const { data: communitiesData } = useQuery({
-    queryKey: ['communities'],
-    queryFn: () => communitiesApi.list(),
-    initialData: { communities: FALLBACK_COMMUNITIES },
-    staleTime: 30 * 1000,
-  });
-
   const { data: spotlightData, isLoading: loadingSpotlight } = useQuery({
     queryKey: ['community-spotlight'],
     queryFn: () => communityInsightsApi.getSpotlight(),
     staleTime: 60 * 1000,
   });
-
-  const recommendedGeneralCommunities = (communitiesData?.communities ?? FALLBACK_COMMUNITIES)
-    .filter((c) => !c.isVerifiedOnly)
-    .slice(0, 3);
 
   const rawPosts = data?.pages.flatMap((page) => page.items) ?? [];
   const activeCategoryMeta = MEDICAL_CATEGORY_FILTERS.find((c) => c.id === selectedCategory);
@@ -326,84 +313,32 @@ export function FeedPage() {
 
   if (!isProfessional) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,620px)_256px] gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,620px)_300px] gap-7 items-start">
         {renderStreamSheet(false)}
 
         {/* Right Editorial Sidebar */}
-        <aside className="hidden lg:block space-y-6 sticky top-[76px] text-xs">
-          <section className="border-b border-[#DCE6DF] pb-5">
-            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[#6E6D68] mb-2.5">
-              Công cụ
-            </h2>
-            <div className="divide-y divide-[#DCE6DF]/60">
-              <Link
-                to="/eeg-hub"
-                className="py-1.5 flex items-center justify-between text-[13px] font-medium text-[#262624] hover:text-[#15803D] transition-colors"
-              >
-                <span>Đọc file sóng não (.csv)</span>
-                <span className="text-[#8A8882]">→</span>
-              </Link>
-              <Link
-                to="/consultations?ask=1"
-                className="py-1.5 flex items-center justify-between text-[13px] font-medium text-[#262624] hover:text-[#15803D] transition-colors"
-              >
-                <span>Gửi câu hỏi cho bác sĩ</span>
-                <span className="text-[#8A8882]">→</span>
-              </Link>
-              <Link
-                to="/my-health"
-                className="py-1.5 flex items-center justify-between text-[13px] font-medium text-[#262624] hover:text-[#15803D] transition-colors"
-              >
-                <span>Ghi nhật ký giấc ngủ</span>
-                <span className="text-[#8A8882]">→</span>
-              </Link>
-            </div>
-          </section>
-
+        <aside className="hidden lg:block space-y-5 sticky top-[76px] text-xs">
           <SpotlightSection
             title="Bác sĩ trực tuyến"
             professionals={spotlightProfessionals}
             isLoading={loadingSpotlight}
           />
-
-          <section className="pb-2">
-            <div className="flex items-center justify-between mb-2.5">
-              <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[#6E6D68]">
-                Cộng đồng
-              </h2>
-              <Link to="/communities" className="text-[11px] font-medium text-[#16A34A] hover:text-[#15803D] hover:underline">
-                Xem hết
-              </Link>
-            </div>
-            <div className="space-y-2.5">
-              {recommendedGeneralCommunities.map((comm) => (
-                <Link key={comm.id} to="/communities" className="block group">
-                  <p className="text-[13px] font-medium text-[#262624] group-hover:text-[#15803D] group-hover:underline truncate">
-                    {comm.name}
-                  </p>
-                  <p className="text-[11px] text-[#8A8882]">
-                    {comm.membersCount.toLocaleString()} thành viên
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </section>
         </aside>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,620px)_256px] gap-8 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,620px)_300px] gap-7 items-start">
       {renderStreamSheet(true)}
 
       {/* Professional Right Editorial Sidebar */}
-      <aside className="hidden lg:block space-y-6 sticky top-[76px] text-xs">
+      <aside className="hidden lg:block space-y-5 sticky top-[76px] text-xs">
         {user && (
-          <section className="border-b border-[#DCE6DF] pb-5 space-y-3">
+          <section className="rounded-xl border border-[#DCE6DF] bg-white p-4 space-y-3 shadow-[0_1px_2px_rgba(16,26,20,0.03)]">
             <div className="flex items-center justify-between">
               <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[#6E6D68]">
-                Hồ sơ chuyên môn
+                Hồ sơ & CME
               </h2>
               <Link to={`/u/${user.username}`} className="text-[11px] font-medium text-[#16A34A] hover:text-[#15803D] hover:underline">
                 Hồ sơ
@@ -412,8 +347,8 @@ export function FeedPage() {
 
             <div className="flex items-center gap-2.5">
               <Avatar name={user.displayName} src={user.avatarUrl} size="xs" />
-              <div className="min-w-0">
-                <p className="truncate text-[13px] font-semibold text-[#141413]">{user.displayName}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold leading-snug text-[#141413]">{user.displayName}</p>
                 <p className="truncate text-[11px] text-[#6E6D68]">@{user.username}</p>
               </div>
             </div>
@@ -432,9 +367,10 @@ export function FeedPage() {
                 {walletData?.wallet?.balance ?? 0} điểm
               </Link>
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-[#6E6D68]">Đóng góp học thuật</span>
-              <Link to="/contributions" className="font-medium text-[#16A34A] hover:text-[#15803D] hover:underline">
+
+            <div className="flex items-center justify-between border-t border-[#EDF3EF] pt-2.5 text-[11px] text-[#575652] tabular-nums">
+              <span>Hội chẩn +30 · Nghiên cứu +50 · Phản biện +20</span>
+              <Link to="/contributions" className="font-semibold text-[#16A34A] hover:text-[#15803D] hover:underline shrink-0 ml-2">
                 Nộp bài →
               </Link>
             </div>
@@ -442,26 +378,10 @@ export function FeedPage() {
         )}
 
         <SpotlightSection
-          title="Chuyên gia trực tuyến"
+          title="Bác sĩ trực tuyến"
           professionals={spotlightProfessionals}
           isLoading={loadingSpotlight}
         />
-
-        <section className="pb-2">
-          <div className="flex items-center justify-between mb-1.5">
-            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[#6E6D68]">
-              Định mức CME
-            </h2>
-            <Link to="/contributions" className="text-[11px] font-medium text-[#16A34A] hover:text-[#15803D] hover:underline">
-              Nộp bài
-            </Link>
-          </div>
-          <p className="text-xs text-[#575652] leading-relaxed tabular-nums">
-            Hội chẩn <span className="font-semibold text-[#141413]">+30</span> · Nghiên cứu BCI{' '}
-            <span className="font-semibold text-[#141413]">+50</span> · Phản biện{' '}
-            <span className="font-semibold text-[#141413]">+20 CME</span>
-          </p>
-        </section>
       </aside>
     </div>
   );
