@@ -688,11 +688,11 @@ export function CorticalTopomap2D({
     ctx.putImageData(imgData, 0, 0);
   }, [displayMode, measuredNodes]);
 
-  const statusPill = useMemo(() => {
+  const summaryState = useMemo(() => {
     if (qualitySuppressed) {
       return {
         label: 'Tín hiệu không đạt chuẩn',
-        cls: 'bg-amber-50 text-amber-900 border-amber-300',
+        cls: 'text-amber-800',
       };
     }
     if (trafficLight === 'purple') {
@@ -700,100 +700,110 @@ export function CorticalTopomap2D({
         label: isProfessional
           ? 'Cảnh báo sóng chậm nặng · Đối chiếu CT'
           : 'Cảnh báo bất thường nặng · Kiểm tra CT',
-        cls: 'bg-red-900 text-white border-red-950',
+        cls: 'text-red-800',
       };
     }
     if (trafficLight === 'red') {
+      const sideText =
+        lateralization.leftAvgDar >= lateralization.rightAvgDar
+          ? 'Tăng sóng chậm bán cầu trái'
+          : 'Tăng sóng chậm bán cầu phải';
       return {
-        label: isProfessional
-          ? 'Sóng chậm khu trú (Bất đối xứng L/R)'
-          : 'Sóng chậm khu trú (Lệch 2 bên)',
-        cls: 'bg-rose-50 text-rose-800 border-rose-200',
+        label: sideText,
+        cls: 'text-rose-700',
       };
     }
     if (trafficLight === 'yellow') {
       return {
-        label: isProfessional
-          ? 'Sóng chậm lan tỏa đối xứng'
-          : 'Sóng chậm nhẹ (Hai bên cân đối)',
-        cls: 'bg-amber-50 text-amber-800 border-amber-200',
+        label: isProfessional ? 'Sóng chậm lan tỏa đối xứng' : 'Sóng chậm nhẹ (Hai bên cân đối)',
+        cls: 'text-amber-700',
+      };
+    }
+    if (meanBsi > 0.15) {
+      return {
+        label:
+          lateralization.leftAvgDar >= lateralization.rightAvgDar
+            ? 'Tăng sóng chậm bán cầu trái'
+            : 'Tăng sóng chậm bán cầu phải',
+        cls: 'text-rose-700',
       };
     }
     return {
       label: isProfessional ? 'Phân bố sinh lý bình thường' : 'Hoạt động bình thường',
-      cls: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+      cls: 'text-emerald-700',
     };
-  }, [trafficLight, isProfessional, qualitySuppressed]);
+  }, [trafficLight, isProfessional, qualitySuppressed, meanBsi, lateralization]);
 
   return (
     <div
       className={cn(
-        'rounded-lg border bg-white overflow-hidden shadow-2xs flex flex-col justify-between',
+        'rounded-lg border bg-white overflow-hidden flex flex-col',
         isProfessional ? 'border-slate-300' : 'border-slate-200/90',
       )}
     >
-      {/* Header — Never truncate official title & English subtitle */}
-      <div className="px-3.5 py-2.5 bg-slate-50/90 border-b border-slate-200 space-y-2">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="flex items-start gap-2 min-w-0">
-            <Compass
-              className={cn(
-                'size-4 shrink-0 mt-0.5',
-                isProfessional ? 'text-[#1E3A5F]' : 'text-teal-700',
-              )}
-              aria-hidden
-            />
-            <div className="min-w-0">
-              <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">
-                Bản đồ phân bố EEG trên da đầu
-              </h3>
-              <p className="text-[11px] font-medium text-slate-500 leading-tight">
-                EEG Scalp Topography
-              </p>
-            </div>
-          </div>
-
-          <div
-            className="inline-flex shrink-0 rounded-md border border-slate-200 bg-white p-0.5 text-[11px] font-semibold"
-            role="group"
-            aria-label="Chọn đại lượng hiển thị trên bản đồ phân bố EEG"
-          >
-            <button
-              type="button"
-              aria-pressed={metricMode === 'DELTA_REL'}
-              onClick={() => setMetricMode('DELTA_REL')}
-              className={cn(
-                'rounded px-2 py-0.5 transition-colors',
-                metricMode === 'DELTA_REL'
-                  ? isProfessional
-                    ? 'bg-[#162B47] text-white font-bold'
-                    : 'bg-teal-700 text-white font-bold'
-                  : 'text-slate-600 hover:bg-slate-100',
-              )}
-            >
-              {isProfessional ? 'Delta (%)' : 'Sóng chậm'}
-            </button>
-            <button
-              type="button"
-              aria-pressed={metricMode === 'DAR'}
-              onClick={() => setMetricMode('DAR')}
-              className={cn(
-                'rounded px-2 py-0.5 transition-colors',
-                metricMode === 'DAR'
-                  ? isProfessional
-                    ? 'bg-[#162B47] text-white font-bold'
-                    : 'bg-teal-700 text-white font-bold'
-                  : 'text-slate-600 hover:bg-slate-100',
-              )}
-            >
-              {isProfessional ? 'DAR' : 'Mức chậm'}
-            </button>
+      {/* 1-line Header */}
+      <div className="px-3.5 py-2.5 border-b border-slate-100 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Compass
+            className={cn(
+              'size-4 shrink-0',
+              isProfessional ? 'text-[#1E3A5F]' : 'text-teal-700',
+            )}
+            aria-hidden
+          />
+          <div className="min-w-0">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight truncate">
+              Bản đồ phân bố EEG trên da đầu
+            </h3>
+            <p className="text-[10.5px] font-medium text-slate-500 leading-tight truncate">
+              EEG Scalp Topography
+            </p>
           </div>
         </div>
 
-        {/* Display Mode Switch: Measured Channels vs Interpolated Estimate */}
         <div
-          className="inline-flex w-full rounded-md border border-slate-200 bg-white p-0.5 text-[11px] font-semibold"
+          className="inline-flex shrink-0 rounded-md border border-slate-200 bg-slate-50 p-0.5 text-[11px] font-semibold"
+          role="group"
+          aria-label="Chọn đại lượng hiển thị trên bản đồ phân bố EEG"
+        >
+          <button
+            type="button"
+            aria-pressed={metricMode === 'DELTA_REL'}
+            onClick={() => setMetricMode('DELTA_REL')}
+            className={cn(
+              'rounded px-2 py-0.5 transition-colors',
+              metricMode === 'DELTA_REL'
+                ? isProfessional
+                  ? 'bg-[#162B47] text-white font-bold'
+                  : 'bg-teal-700 text-white font-bold'
+                : 'text-slate-600 hover:bg-white',
+            )}
+          >
+            Delta (%)
+          </button>
+          <button
+            type="button"
+            aria-pressed={metricMode === 'DAR'}
+            onClick={() => setMetricMode('DAR')}
+            className={cn(
+              'rounded px-2 py-0.5 transition-colors',
+              metricMode === 'DAR'
+                ? isProfessional
+                  ? 'bg-[#162B47] text-white font-bold'
+                  : 'bg-teal-700 text-white font-bold'
+                : 'text-slate-600 hover:bg-white',
+            )}
+          >
+            DAR
+          </button>
+        </div>
+      </div>
+
+      {/* Flat Body */}
+      <div className={cn(compact ? 'p-2.5 space-y-2' : 'p-3.5 space-y-2.5')}>
+        {/* Compact Display Mode Switch */}
+        <div
+          className="inline-flex w-full rounded-md border border-slate-200 bg-slate-50 p-0.5 text-[11px] font-semibold"
           role="group"
           aria-label="Chọn chế độ hiển thị kênh đo thực tế hoặc nội suy tham khảo"
         >
@@ -807,7 +817,7 @@ export function CorticalTopomap2D({
                 ? isProfessional
                   ? 'bg-[#162B47] text-white font-bold'
                   : 'bg-teal-700 text-white font-bold'
-                : 'text-slate-600 hover:bg-slate-100',
+                : 'text-slate-600 hover:bg-white',
             )}
           >
             Kênh đo ({measuredCount > 0 ? measuredCount : 6})
@@ -820,33 +830,20 @@ export function CorticalTopomap2D({
               'flex-1 rounded px-2 py-1 transition-colors text-center',
               displayMode === 'INTERPOLATED_ESTIMATE'
                 ? 'bg-amber-600 text-white font-bold'
-                : 'text-slate-600 hover:bg-slate-100',
+                : 'text-slate-600 hover:bg-white',
             )}
           >
             Nội suy (Tham khảo)
           </button>
         </div>
-      </div>
 
-      {/* Body */}
-      <div className={cn(compact ? 'p-2.5 space-y-2' : 'p-3 space-y-2.5')}>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span
-            className={cn(
-              'inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-bold',
-              statusPill.cls,
-            )}
-          >
-            {statusPill.label}
-          </span>
-          <span className="text-[11px] font-mono tabular-nums font-bold text-slate-700">
+        {/* Single Summary Line */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+          <span className={cn('font-semibold', summaryState.cls)}>{summaryState.label}</span>
+          <span className="font-mono tabular-nums text-slate-600">
             {qualitySuppressed && measuredCount === 0
-              ? isProfessional
-                ? 'BSI: N/A · DAR: N/A'
-                : 'Lệch: N/A · Chậm: N/A'
-              : isProfessional
-                ? `BSI: ${meanBsi.toFixed(3)} · DAR: ${meanDar.toFixed(2)}`
-                : `Lệch: ${meanBsi.toFixed(3)} · Chậm: ${meanDar.toFixed(2)}`}
+              ? 'BSI: N/A · DAR: N/A'
+              : `BSI: ${meanBsi.toFixed(3)} · DAR: ${meanDar.toFixed(2)}`}
           </span>
         </div>
 
@@ -887,118 +884,84 @@ export function CorticalTopomap2D({
           </svg>
         </div>
 
-        {/* Interpolation Caution Note when in Interpolated Mode */}
+        {/* Interpolation Caution Note */}
         {displayMode === 'INTERPOLATED_ESTIMATE' && (
-          <p className="rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 text-[10.5px] leading-snug text-amber-900">
-            Nội suy từ {measuredCount > 0 ? measuredCount : 6} điện cực thưa — không dùng để định
-            khu thùy thái dương (T3–T6) hay cực trán (Fp1–Fp2).
+          <p className="text-[10.5px] leading-snug text-amber-800 text-center">
+            Nội suy tham khảo từ {measuredCount > 0 ? measuredCount : 6} kênh đo — không dùng để
+            định khu vùng không đo.
           </p>
         )}
 
-        {/* Selected Electrode Inspection Pill */}
+        {/* Selected Electrode Inline Readout */}
         {activeNode && (
-          <div className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 space-y-0.5 text-[11px]">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="font-semibold text-slate-800">
-                <span className="font-mono font-bold text-[#1E3A5F]">
-                  {activeNode.displayName}
-                </span>{' '}
-                <span className="text-slate-500">
-                  ({CHANNEL_ANATOMY_MAP[activeNode.name.toUpperCase()] ?? 'Vị trí 10-20'})
-                </span>
-              </div>
-              {activeNode.state === 'INVALID' ? (
-                <span className="font-semibold text-amber-800">
-                  Lỗi tín hiệu ({activeNode.invalidReason ?? 'DROPOUT/SATURATED'})
-                </span>
-              ) : activeNode.state === 'NOT_RECORDED' ? (
-                <span className="font-semibold text-slate-500">Chưa có dữ liệu</span>
-              ) : (
-                <div className="font-mono tabular-nums font-bold text-slate-900">
-                  {isProfessional
-                    ? `Delta: ${(activeNode.value * 100).toFixed(1)}% · DAR: ${activeNode.dar.toFixed(2)}`
-                    : `Sóng chậm: ${(activeNode.value * 100).toFixed(1)}% · Mức chậm: ${activeNode.dar.toFixed(2)}`}
-                </div>
-              )}
-            </div>
-            <div className="text-[10px] text-slate-600">
-              {activeNode.state === 'INVALID'
-                ? '[Kênh bị mất tín hiệu hoặc bão hòa biên độ — Đã loại khỏi thang màu sinh lý]'
-                : activeNode.state === 'MEASURED'
-                  ? '[Đo trực tiếp từ cảm biến trên montage]'
-                  : activeNode.state === 'INTERPOLATED'
-                    ? `[Ước lượng nội suy Spline từ ${measuredCount > 0 ? measuredCount : 6} kênh — Không đo trực tiếp]`
-                    : `${activeNode.displayName} — Không đo / Chưa có dữ liệu (Not Recorded in ${measuredCount > 0 ? measuredCount : 6}-ch montage)`}
-            </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600 pt-1 border-t border-slate-100">
+            <span className="truncate">
+              <strong className="font-mono text-slate-900">{activeNode.displayName}</strong>{' '}
+              <span className="text-slate-500">
+                ({CHANNEL_ANATOMY_MAP[activeNode.name.toUpperCase()] ?? '10-20'})
+              </span>
+            </span>
+            {activeNode.state === 'INVALID' ? (
+              <span className="font-medium text-amber-800">
+                Lỗi ({activeNode.invalidReason ?? 'DROPOUT/SATURATED'})
+              </span>
+            ) : activeNode.state === 'NOT_RECORDED' ? (
+              <span className="text-slate-500">Không đo / Chưa có dữ liệu</span>
+            ) : (
+              <span className="font-mono tabular-nums font-semibold text-slate-800">
+                Delta {(activeNode.value * 100).toFixed(1)}% · DAR {activeNode.dar.toFixed(2)}
+                {activeNode.state === 'INTERPOLATED' ? ' (Nội suy)' : ''}
+              </span>
+            )}
           </div>
         )}
 
-        {/* Inline Hemispheric Asymmetry (BSI L/R) */}
-        <div className="rounded-md border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-          <span
-            className={cn(
-              'font-bold',
-              qualitySuppressed
-                ? 'text-amber-800'
-                : meanBsi > 0.15
-                  ? 'text-rose-700'
-                  : 'text-emerald-700',
-            )}
-          >
-            {lateralization.dominantSide}
-          </span>
-          <span className="font-mono tabular-nums text-[10.5px] text-slate-700">
-            {isProfessional ? 'BSI L:' : 'Trái:'}{' '}
-            <strong className="text-slate-900">{lateralization.leftAvgDar.toFixed(2)}</strong> ·{' '}
-            {isProfessional ? 'R:' : 'Phải:'}{' '}
-            <strong className="text-slate-900">{lateralization.rightAvgDar.toFixed(2)}</strong>
-          </span>
-        </div>
-
-        {/* Quantitative Color Scale & Mandatory 3-State Electrode Legend */}
+        {/* Minimalist Color Scale + Single 3-State Legend */}
         <div className="space-y-1.5 pt-1.5 border-t border-slate-100 text-[10px] text-slate-600">
-          <div className="flex items-center justify-between font-semibold text-slate-700">
-            <span>{metricMode === 'DAR' ? 'Thang chỉ số DAR' : 'Tỷ trọng Delta (%)'}</span>
-            <span className="font-mono tabular-nums text-slate-500">
-              {metricMode === 'DAR' ? '0.6 → 7.0+' : '8% → 78%+'}
+          <div className="flex items-center gap-2">
+            <span className="font-mono tabular-nums text-slate-500 shrink-0">
+              {metricMode === 'DAR' ? '0.6' : '8%'}
+            </span>
+            <div
+              className="h-1.5 flex-1 rounded-full border border-slate-200"
+              style={{
+                background:
+                  'linear-gradient(to right, #0284c7 0%, #14b8a6 35%, #f59e0b 65%, #dc2626 100%)',
+              }}
+            />
+            <span className="font-mono tabular-nums text-slate-500 shrink-0">
+              {metricMode === 'DAR' ? '7.0+ DAR' : '78%+ Delta'}
             </span>
           </div>
-          <div
-            className="h-2 w-full rounded-full border border-slate-200"
-            style={{
-              background:
-                'linear-gradient(to right, #0284c7 0%, #14b8a6 35%, #f59e0b 65%, #dc2626 100%)',
-            }}
-          />
-          <div className="flex justify-between font-mono tabular-nums text-[9.5px] text-slate-500">
-            <span>{metricMode === 'DAR' ? '0.6 Bình thường' : '8% Bình thường'}</span>
-            <span>{metricMode === 'DAR' ? '3.5' : '42%'}</span>
-            <span>{metricMode === 'DAR' ? '7.0+ DAR' : '78%+ Delta'}</span>
-          </div>
 
-          {/* Mandatory 3-State Explicit Legend */}
-          <div className="space-y-1 pt-1 border-t border-slate-100 text-[10px] text-slate-700">
-            <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[10.5px] text-slate-600">
+            <span className="inline-flex items-center gap-1">
               <span
-                className="inline-block size-2.5 shrink-0 rounded-full border-2 border-slate-900 bg-slate-900"
+                className="inline-block size-2 rounded-full bg-slate-900 border border-slate-900"
                 aria-hidden
               />
-              <span>Dữ liệu đo trực tiếp (Measured Data)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
+              Đo trực tiếp
+            </span>
+            <span aria-hidden className="text-slate-300">
+              ·
+            </span>
+            <span className="inline-flex items-center gap-1">
               <span
-                className="inline-block size-2.5 shrink-0 rounded-full border border-dashed border-slate-600 bg-slate-100"
+                className="inline-block size-2 rounded-full border border-dashed border-slate-600 bg-slate-100"
                 aria-hidden
               />
-              <span>Ước lượng nội suy (Interpolated Estimate)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
+              Nội suy tham khảo
+            </span>
+            <span aria-hidden className="text-slate-300">
+              ·
+            </span>
+            <span className="inline-flex items-center gap-1">
               <span
-                className="inline-block size-2.5 shrink-0 rounded-full border border-slate-300 bg-white"
+                className="inline-block size-2 rounded-full border border-slate-400 bg-white"
                 aria-hidden
               />
-              <span>Không đo / Chưa có dữ liệu (Not Recorded)</span>
-            </div>
+              Không đo
+            </span>
           </div>
         </div>
       </div>

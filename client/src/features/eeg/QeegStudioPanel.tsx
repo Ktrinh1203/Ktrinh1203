@@ -174,11 +174,24 @@ const FALLBACK_CASES: QeegCaseItem[] = [
   },
 ];
 
-const QUICK_SAMPLE_PRESETS = [
-  { id: 'case_healthy_alpha', label: 'Nhịp nền Alpha (Tham chiếu)' },
-  { id: 'case_sleep_fatigue_n3', label: 'Buồn ngủ / Giảm cảnh tỉnh' },
-  { id: 'case_epilepsy_temporal', label: 'Dạng động kinh (F3–C3)' },
-  { id: 'case_ischemia_lvo', label: 'Sóng chậm lệch bán cầu' },
+const SAMPLE_CASE_DISPLAY_META: Record<
+  string,
+  { group: 'SIMULATED' | 'HARDWARE'; label: string }
+> = {
+  case_healthy_alpha: { group: 'SIMULATED', label: 'Nhịp nền Alpha tham chiếu' },
+  case_ischemia_lvo: { group: 'SIMULATED', label: 'Sóng chậm lệch bán cầu' },
+  case_ich_hemorrhage: { group: 'SIMULATED', label: 'Sóng chậm biên độ cao lan tỏa' },
+  case_epilepsy_temporal: { group: 'SIMULATED', label: 'Hoạt động dạng động kinh (F3–C3)' },
+  case_sleep_fatigue_n3: { group: 'SIMULATED', label: 'Buồn ngủ / Giảm cảnh tỉnh' },
+  case_ads1299_hardware: { group: 'HARDWARE', label: 'Mẫu ADS1299 500 Hz' },
+};
+
+const SIMULATED_CASE_ORDER = [
+  'case_healthy_alpha',
+  'case_ischemia_lvo',
+  'case_ich_hemorrhage',
+  'case_epilepsy_temporal',
+  'case_sleep_fatigue_n3',
 ] as const;
 
 type MetricDetailKey = 'dar' | 'bsi' | 'alphaPeak' | 'psd' | 'tar' | 'wpli' | 'pri';
@@ -1199,7 +1212,8 @@ export function QeegStudioPanel({
   // Metric info drawer & secondary sections
   const [openMetricInfo, setOpenMetricInfo] = useState<MetricDetailKey | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [showReviewPanel, setShowReviewPanel] = useState<boolean>(isProfessional);
+  const [showReviewPanel, setShowReviewPanel] = useState<boolean>(true);
+  const [showAdditionalReviewFields, setShowAdditionalReviewFields] = useState<boolean>(false);
 
   // Waveform selection & annotation builder state
   const [selectedInterval, setSelectedInterval] = useState<BrainWaveformInterval | null>(null);
@@ -1242,12 +1256,14 @@ export function QeegStudioPanel({
     text: string;
   } | null>(null);
 
-  // Secondary menu + filter menu
+  // Secondary menu + filter menu + sample popover
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [showSampleMenu, setShowSampleMenu] = useState(false);
 
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
   const filterMenuRef = useRef<HTMLDivElement | null>(null);
+  const sampleMenuRef = useRef<HTMLDivElement | null>(null);
   const waveformSvgRef = useRef<SVGSVGElement | null>(null);
   const waveformContainerRef = useRef<HTMLDivElement | null>(null);
   const reviewSectionRef = useRef<HTMLDivElement | null>(null);
@@ -1265,16 +1281,20 @@ export function QeegStudioPanel({
       const raw = localStorage.getItem(`neurolink_eeg_review_${caseId}`);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<PhysicianReviewState>;
+        const nextBg = parsed.backgroundAndFindings ?? '';
+        const nextArt = parsed.artifactAndTechnicalLimits ?? '';
+        const nextConc = parsed.conclusionAndPlan ?? '';
         setReviewState({
-          backgroundAndFindings: parsed.backgroundAndFindings ?? '',
-          artifactAndTechnicalLimits: parsed.artifactAndTechnicalLimits ?? '',
-          conclusionAndPlan: parsed.conclusionAndPlan ?? '',
+          backgroundAndFindings: nextBg,
+          artifactAndTechnicalLimits: nextArt,
+          conclusionAndPlan: nextConc,
           lastKnownWellText: parsed.lastKnownWellText ?? '',
           confirmedAt: parsed.confirmedAt ?? null,
           confirmedByName: parsed.confirmedByName ?? null,
           confirmedByUsername: parsed.confirmedByUsername ?? null,
           annotations: Array.isArray(parsed.annotations) ? parsed.annotations : [],
         });
+        setShowAdditionalReviewFields(Boolean(nextArt.trim() || nextConc.trim()));
         return;
       }
     } catch {
@@ -1290,6 +1310,7 @@ export function QeegStudioPanel({
       confirmedByUsername: null,
       annotations: [],
     });
+    setShowAdditionalReviewFields(false);
   }, []);
 
   const persistReviewForCase = useCallback(
@@ -1440,12 +1461,13 @@ export function QeegStudioPanel({
 
   // Close modal & dropdowns on Escape / outside click
   useEffect(() => {
-    if (!showSaveModal && !showMoreMenu && !showFilterMenu) return;
+    if (!showSaveModal && !showMoreMenu && !showFilterMenu && !showSampleMenu) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setShowSaveModal(false);
         setShowMoreMenu(false);
         setShowFilterMenu(false);
+        setShowSampleMenu(false);
       }
     };
     const onPointerDown = (e: MouseEvent) => {
@@ -1456,6 +1478,9 @@ export function QeegStudioPanel({
       if (showFilterMenu && filterMenuRef.current && !filterMenuRef.current.contains(target)) {
         setShowFilterMenu(false);
       }
+      if (showSampleMenu && sampleMenuRef.current && !sampleMenuRef.current.contains(target)) {
+        setShowSampleMenu(false);
+      }
     };
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('mousedown', onPointerDown);
@@ -1463,7 +1488,7 @@ export function QeegStudioPanel({
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('mousedown', onPointerDown);
     };
-  }, [showSaveModal, showMoreMenu, showFilterMenu]);
+  }, [showSaveModal, showMoreMenu, showFilterMenu, showSampleMenu]);
 
   const handleSelectCase = (caseId: string) => {
     setSourceMode('sample');
@@ -1779,6 +1804,55 @@ export function QeegStudioPanel({
     setOpenMetricInfo((curr) => (curr === key ? null : key));
   };
 
+  const groupedSampleCases = useMemo(() => {
+    const mapCase = (c: QeegCaseItem) => {
+      const meta = SAMPLE_CASE_DISPLAY_META[c.id];
+      const fallbackMatch = FALLBACK_CASES.find((fc) => fc.id === c.id);
+      const group: 'SIMULATED' | 'HARDWARE' =
+        meta?.group ?? (c.clinicalCategory === 'HARDWARE_BCI' ? 'HARDWARE' : 'SIMULATED');
+      const label =
+        meta?.label ?? (fallbackMatch ? fallbackMatch.name : sanitizeNarrative(c.name));
+      return { item: c, group, label };
+    };
+
+    const mapped = cases.map(mapCase);
+    const simulated = mapped
+      .filter((x) => x.group === 'SIMULATED')
+      .sort((a, b) => {
+        const ia = SIMULATED_CASE_ORDER.indexOf(
+          a.item.id as (typeof SIMULATED_CASE_ORDER)[number],
+        );
+        const ib = SIMULATED_CASE_ORDER.indexOf(
+          b.item.id as (typeof SIMULATED_CASE_ORDER)[number],
+        );
+        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+      });
+    const hardware = mapped.filter((x) => x.group === 'HARDWARE');
+    return { simulated, hardware };
+  }, [cases]);
+
+  const activeSampleLabel = useMemo(() => {
+    const meta = SAMPLE_CASE_DISPLAY_META[selectedCaseId];
+    if (meta) return meta.label;
+    const found = cases.find((c) => c.id === selectedCaseId);
+    return found ? sanitizeNarrative(found.name) : 'Chọn mẫu';
+  }, [cases, selectedCaseId]);
+
+  const scrollToSection = (sectionId: string, openReview = false) => {
+    if (openReview) {
+      setShowReviewPanel(true);
+    }
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const viewerOptionalProps = {
+    hideInternalHeader: true,
+    onOpenRecordingSettings: () => setShowFilterMenu(true),
+  } as Record<string, unknown>;
+
   return (
     <div className="space-y-3.5">
       <label htmlFor="qeeg-csv-upload" className="sr-only">
@@ -1793,90 +1867,168 @@ export function QeegStudioPanel({
       />
 
       {/* ===================================================================== */}
-      {/* LEVEL 1: Recording & Patient Context + Signal Quality                 */}
+      {/* Workspace Action Bar (Upload EEG + Demo Library + Settings & Export)  */}
       {/* ===================================================================== */}
-      <Card className="px-3.5 py-2.5 border-[#DCE6DF]">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Button
-              type="button"
-              size="xs"
-              variant={sourceMode === 'csv' ? 'primary' : 'outline'}
-              loading={analyzeCsvMutation.isPending}
-              onClick={() => document.getElementById('qeeg-csv-upload')?.click()}
-              className="h-8 rounded-lg px-3 text-xs border-[#DCE6DF]"
-              icon={<FileUp className="size-3.5" aria-hidden />}
+      <div className="rounded-xl border border-[#DCE6DF] bg-white px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
+        {/* Left: Primary CSV Upload + Demo Library Dropdown */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant={sourceMode === 'csv' ? 'primary' : 'outline'}
+            loading={analyzeCsvMutation.isPending}
+            onClick={() => document.getElementById('qeeg-csv-upload')?.click()}
+            className={cn(
+              'h-8.5 rounded-lg px-3 text-xs font-semibold',
+              sourceMode === 'csv'
+                ? ''
+                : 'border-[#16A34A] text-[#15803D] hover:bg-[#F5FAF7]',
+            )}
+            icon={<FileUp className="size-3.5" aria-hidden />}
+          >
+            <span>Tải tệp EEG (CSV)</span>
+          </Button>
+
+          {sourceMode === 'csv' && csvFilename && (
+            <span
+              title={csvFilename}
+              className="inline-flex items-center rounded-md border border-[#BBF7D0] bg-[#ECFDF3] px-2 py-1 font-mono text-[11px] font-medium text-[#15803D] max-w-[180px] truncate"
             >
-              {sourceMode === 'csv' && csvFilename
-                ? csvFilename.slice(0, 14) + (csvFilename.length > 14 ? '…' : '')
-                : 'Tải CSV'}
-            </Button>
+              {csvFilename}
+            </span>
+          )}
 
-            {QUICK_SAMPLE_PRESETS.map((preset) => {
-              const isActive = sourceMode === 'sample' && selectedCaseId === preset.id;
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  disabled={isBusy}
-                  aria-pressed={isActive}
-                  onClick={() => handleSelectCase(preset.id)}
-                  className={cn(
-                    'h-8 rounded-lg px-2.5 text-xs transition-colors whitespace-nowrap',
-                    isActive
-                      ? 'bg-[#16A34A] text-white font-semibold'
-                      : 'bg-[#EFF6F1] text-[#374151] hover:bg-[#E2EFE6] font-medium',
-                  )}
-                >
-                  {preset.label}
-                </button>
-              );
-            })}
+          <div ref={sampleMenuRef} className="relative">
+            <button
+              type="button"
+              aria-expanded={showSampleMenu}
+              aria-haspopup="menu"
+              onClick={() => setShowSampleMenu((v) => !v)}
+              className={cn(
+                'inline-flex items-center gap-1.5 h-8.5 px-3 rounded-lg border text-xs transition-colors cursor-pointer',
+                sourceMode === 'sample'
+                  ? 'border-[#DCE6DF] bg-[#F5FAF7] text-[#141413] font-medium hover:bg-[#E2EFE6]'
+                  : 'border-[#DCE6DF] bg-white text-[#575652] hover:bg-[#F5FAF7]',
+              )}
+            >
+              <span>Kho mẫu minh họa</span>
+              {sourceMode === 'sample' && (
+                <span className="hidden sm:inline font-semibold text-[#15803D] max-w-[190px] truncate">
+                  · {activeSampleLabel}
+                </span>
+              )}
+              <ChevronDown className="size-3.5 text-[#6E6D68]" aria-hidden />
+            </button>
+
+            {showSampleMenu && (
+              <div
+                role="menu"
+                className="absolute left-0 top-full mt-1.5 z-40 w-80 sm:w-96 rounded-xl border border-[#DCE6DF] bg-white shadow-lg p-2.5 space-y-2.5 text-xs"
+              >
+                <div>
+                  <div className="px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wide text-[#6E6D68]">
+                    Tình huống mẫu mô phỏng (Không phải phân loại chẩn đoán)
+                  </div>
+                  <div className="mt-1 space-y-0.5">
+                    {groupedSampleCases.simulated.map(({ item, label }) => {
+                      const active = sourceMode === 'sample' && selectedCaseId === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          role="menuitem"
+                          data-case-id={item.id}
+                          disabled={isBusy}
+                          onClick={() => {
+                            handleSelectCase(item.id);
+                            setShowSampleMenu(false);
+                          }}
+                          className={cn(
+                            'w-full text-left flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg transition-colors cursor-pointer',
+                            active
+                              ? 'bg-[#ECFDF3] text-[#15803D] font-semibold'
+                              : 'text-[#262624] hover:bg-[#F5FAF7]',
+                          )}
+                        >
+                          <span className="truncate">{label}</span>
+                          {active && <CheckCircle2 className="size-3.5 shrink-0" aria-hidden />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {groupedSampleCases.hardware.length > 0 && (
+                  <div className="pt-2 border-t border-[#EFF6F1]">
+                    <div className="px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wide text-[#6E6D68]">
+                      Mẫu tệp phần cứng
+                    </div>
+                    <div className="mt-1 space-y-0.5">
+                      {groupedSampleCases.hardware.map(({ item, label }) => {
+                        const active = sourceMode === 'sample' && selectedCaseId === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            role="menuitem"
+                            data-case-id={item.id}
+                            disabled={isBusy}
+                            onClick={() => {
+                              handleSelectCase(item.id);
+                              setShowSampleMenu(false);
+                            }}
+                            className={cn(
+                              'w-full text-left flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg transition-colors cursor-pointer',
+                              active
+                                ? 'bg-[#ECFDF3] text-[#15803D] font-semibold'
+                                : 'text-[#262624] hover:bg-[#F5FAF7]',
+                            )}
+                          >
+                            <span className="truncate">{label}</span>
+                            {active && <CheckCircle2 className="size-3.5 shrink-0" aria-hidden />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+        </div>
 
-          <div ref={filterMenuRef} className="relative shrink-0">
+        {/* Right: Recording Settings (Collapsed by default) + Save + More Actions */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div ref={filterMenuRef} className="relative">
             <button
               type="button"
               aria-expanded={showFilterMenu}
               onClick={() => setShowFilterMenu((v) => !v)}
-              className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-[#DCE6DF] bg-white text-xs font-medium text-[#262624] hover:bg-[#F5FAF7] transition-colors"
+              className="inline-flex items-center gap-1.5 h-8.5 px-3 rounded-lg border border-[#DCE6DF] bg-white text-xs font-medium text-[#262624] hover:bg-[#F5FAF7] transition-colors cursor-pointer"
             >
               <SlidersHorizontal className="size-3.5 text-[#575652]" aria-hidden />
-              <span>Ca khác &amp; Bộ lọc</span>
+              <span>Cài đặt đọc &amp; Bộ lọc</span>
               <ChevronDown className="size-3.5 text-[#6E6D68]" aria-hidden />
             </button>
 
             {showFilterMenu && (
-              <div className="absolute right-0 top-full mt-1.5 z-30 w-80 rounded-xl border border-[#DCE6DF] bg-white shadow-md p-3.5 space-y-3 text-xs">
-                <div className="space-y-1">
-                  <label htmlFor="qeeg-case-select" className="font-semibold text-[#262624] block">
-                    Tất cả ca mẫu (bao gồm Phần cứng ADS1299)
-                  </label>
-                  <select
-                    id="qeeg-case-select"
-                    value={selectedCaseId}
-                    disabled={isBusy}
-                    onChange={(e) => {
-                      handleSelectCase(e.target.value);
-                      setShowFilterMenu(false);
-                    }}
-                    className="h-8 w-full rounded-md border border-[#DCE6DF] bg-white px-2 text-xs font-medium text-[#141413]"
+              <div className="absolute right-0 top-full mt-1.5 z-40 w-80 sm:w-[360px] rounded-xl border border-[#DCE6DF] bg-white shadow-lg p-3.5 space-y-3 text-xs">
+                <div className="flex items-center justify-between border-b border-[#EFF6F1] pb-2">
+                  <span className="font-bold text-[#141413]">Cài đặt đọc &amp; Bộ lọc EEG</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowFilterMenu(false)}
+                    aria-label="Đóng cài đặt đọc"
+                    className="text-[#6E6D68] hover:text-[#141413]"
                   >
-                    {cases.map((c) => {
-                      const fallbackMatch = FALLBACK_CASES.find((fc) => fc.id === c.id);
-                      return (
-                        <option key={c.id} value={c.id}>
-                          {fallbackMatch ? fallbackMatch.name : sanitizeNarrative(c.name)}
-                        </option>
-                      );
-                    })}
-                  </select>
+                    <X className="size-3.5" aria-hidden />
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-1">
                     <label htmlFor="qeeg-window-sec" className="font-medium text-[#262624] block">
-                      Cửa sổ mẫu
+                      Cửa sổ phân tích
                     </label>
                     <select
                       id="qeeg-window-sec"
@@ -1884,14 +2036,16 @@ export function QeegStudioPanel({
                       onChange={(e) => setTimeWindowSec(Number(e.target.value))}
                       className="h-8 w-full rounded-md border border-[#DCE6DF] bg-white px-2 text-xs font-mono text-[#141413]"
                     >
-                      <option value={5}>5 giây</option>
+                      <option value={4}>4 giây</option>
                       <option value={6}>6 giây</option>
+                      <option value={8}>8 giây</option>
                       <option value={10}>10 giây</option>
                     </select>
                   </div>
+
                   <div className="space-y-1">
                     <label htmlFor="qeeg-fast-score" className="font-medium text-[#262624] block">
-                      Triệu chứng FAST (lâm sàng)
+                      Điểm FAST (tùy chọn)
                     </label>
                     <select
                       id="qeeg-fast-score"
@@ -1905,6 +2059,7 @@ export function QeegStudioPanel({
                       <option value={3}>3 · Khẩn cấp</option>
                     </select>
                   </div>
+
                   <div className="space-y-1">
                     <label htmlFor="qeeg-csv-hz" className="font-medium text-[#262624] block">
                       Tần số CSV
@@ -1923,16 +2078,17 @@ export function QeegStudioPanel({
                       }}
                       className="h-8 w-full rounded-md border border-[#DCE6DF] bg-white px-2 text-xs font-mono text-[#141413]"
                     >
-                      <option value="AUTO">Tự động từ cột time (hoặc 500 Hz)</option>
+                      <option value="AUTO">Tự động từ cột time</option>
                       <option value="250">250 Hz</option>
                       <option value="256">256 Hz</option>
                       <option value="500">500 Hz</option>
                       <option value="1000">1000 Hz</option>
                     </select>
                   </div>
+
                   <div className="space-y-1">
                     <label htmlFor="qeeg-csv-cat" className="font-medium text-[#262624] block">
-                      Nhóm CSV
+                      Nhóm chuyên khoa CSV
                     </label>
                     <select
                       id="qeeg-csv-cat"
@@ -1949,7 +2105,7 @@ export function QeegStudioPanel({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#EFF6F1]">
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#EFF6F1]">
                   <label
                     htmlFor="qeeg-notch-50"
                     className="inline-flex items-center gap-1.5 font-medium text-[#262624] cursor-pointer"
@@ -1961,12 +2117,12 @@ export function QeegStudioPanel({
                       onChange={(e) => setNotch50Hz(e.target.checked)}
                       className="size-3.5 rounded border-[#DCE6DF] accent-[#16A34A] text-[#16A34A]"
                     />
-                    <span>Lọc nhiễu 50 Hz</span>
+                    <span>Notch 50 Hz</span>
                   </label>
                   <Button
                     type="button"
                     size="xs"
-                    variant="outline"
+                    variant="primary"
                     loading={isBusy}
                     onClick={() => {
                       if (sourceMode === 'csv' && csvText) {
@@ -1989,8 +2145,121 @@ export function QeegStudioPanel({
               </div>
             )}
           </div>
+
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={!analysis}
+            onClick={handleOpenSaveModal}
+            className="h-8.5 border-[#DCE6DF] bg-white text-[#141413]"
+          >
+            {savedDatasetId ? 'Đã lưu ✓' : 'Lưu bản ghi'}
+          </Button>
+
+          <div ref={moreMenuRef} className="relative">
+            <button
+              type="button"
+              aria-expanded={showMoreMenu}
+              aria-haspopup="menu"
+              onClick={() => setShowMoreMenu((v) => !v)}
+              className="inline-flex items-center gap-1 h-8.5 rounded-lg border border-[#DCE6DF] bg-white px-2.5 text-xs font-medium text-[#575652] hover:bg-[#F5FAF7] hover:text-[#141413] transition-colors cursor-pointer"
+            >
+              <MoreHorizontal className="size-4" aria-hidden />
+              <span>Tác vụ khác ▾</span>
+            </button>
+
+            {showMoreMenu && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full mt-1.5 z-40 w-56 rounded-xl border border-[#DCE6DF] bg-white shadow-lg py-1 text-xs"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={!analysis}
+                  onClick={handleExportClinicalReport}
+                  className="w-full text-left flex items-center gap-2 px-3.5 py-2 text-[#262624] hover:bg-[#F5FAF7] disabled:opacity-50"
+                >
+                  <FileDown className="size-3.5 text-[#15803D]" aria-hidden />
+                  <span>Xuất báo cáo PDF / In</span>
+                </button>
+                <a
+                  role="menuitem"
+                  href={`/clinical-workstation?mode=${isProfessional ? 'professional' : 'general'}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setShowMoreMenu(false)}
+                  className="flex items-center gap-2 px-3.5 py-2 text-[#262624] hover:bg-[#F5FAF7]"
+                >
+                  <ExternalLink className="size-3.5 text-[#575652]" aria-hidden />
+                  <span>Toàn màn hình</span>
+                </a>
+                <Link
+                  role="menuitem"
+                  to="/eeg-hub?view=workspace"
+                  onClick={() => setShowMoreMenu(false)}
+                  className="flex items-center gap-2 px-3.5 py-2 text-[#262624] hover:bg-[#F5FAF7]"
+                >
+                  <Activity className="size-3.5 text-[#575652]" aria-hidden />
+                  <span>Mở Trạm qEEG</span>
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
-      </Card>
+      </div>
+
+      {/* ===================================================================== */}
+      {/* Compact Sticky Section Jump Strip + 1-Tap Physician Actions           */}
+      {/* ===================================================================== */}
+      {analysis && derivedContext && (
+        <nav
+          aria-label="Điều hướng nhanh các khu vực đọc EEG"
+          className="sticky top-2 z-20 rounded-xl border border-[#DCE6DF] bg-white/95 backdrop-blur-sm px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 shadow-xs"
+        >
+          <div className="flex flex-wrap items-center gap-1 text-[11.5px]">
+            {[
+              { id: 'sec-overview', label: '1. Tổng quan' },
+              { id: 'sec-waveform', label: '2. Sóng EEG' },
+              { id: 'sec-qeeg', label: '3. Phân tích QEEG' },
+              { id: 'sec-ai', label: '4. Gợi ý AI' },
+              { id: 'sec-review', label: '5. Nhận định & Báo cáo' },
+            ].map((item) => (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection(item.id, item.id === 'sec-review');
+                }}
+                className="rounded-md px-2 py-1 font-medium text-[#575652] hover:bg-[#F5FAF7] hover:text-[#15803D] transition-colors whitespace-nowrap"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => scrollToSection('sec-review', true)}
+              className="inline-flex items-center gap-1 rounded-lg bg-[#16A34A] hover:bg-[#15803D] px-2.5 py-1 text-[11.5px] font-semibold text-white transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <ClipboardCheck className="size-3.5" aria-hidden />
+              <span>Viết nhận định</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleExportClinicalReport}
+              className="inline-flex items-center gap-1 rounded-lg border border-[#DCE6DF] bg-white hover:bg-[#F5FAF7] px-2.5 py-1 text-[11.5px] font-medium text-[#141413] transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <FileDown className="size-3.5 text-[#15803D]" aria-hidden />
+              <span>Xuất báo cáo</span>
+            </button>
+          </div>
+        </nav>
+      )}
 
       {analysisError && <Alert tone="error">{analysisError}</Alert>}
       {saveFeedback && !showSaveModal && (
@@ -2022,150 +2291,212 @@ export function QeegStudioPanel({
       {isBusy && !analysis && <Spinner label="Đang phân tích sóng não..." />}
 
       {analysis && derivedContext && (
-        <div className="space-y-4">
-          {/* Demonstration Data Banner */}
-          {derivedContext.isDemonstrationData && (
+        <div className="space-y-5">
+          {/* Subtle Single-line Demonstration Data Notice */}
+          {derivedContext.isDemonstrationData !== false && (
             <div
               role="status"
-              className="rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 flex items-center gap-2 text-[11.5px] font-bold text-amber-900"
+              className="rounded-lg border border-amber-200/90 bg-amber-50/75 px-3 py-1.5 flex items-center gap-2 text-[11.5px] text-amber-900"
             >
-              <ShieldAlert className="size-4 text-amber-700 shrink-0" aria-hidden />
+              <ShieldAlert className="size-3.5 text-amber-700 shrink-0" aria-hidden />
               <span>
-                DỮ LIỆU MÔ PHỎNG – KHÔNG DÙNG CHO QUYẾT ĐỊNH LÂM SÀNG (DEMONSTRATION DATA – NOT FOR CLINICAL DECISION-MAKING)
+                <strong>Dữ liệu mô phỏng (Demonstration Data)</strong> — Chỉ phục vụ minh họa, không dùng cho quyết định lâm sàng.
               </span>
             </div>
           )}
 
-          {/* Dynamic Recording Metadata Strip */}
-          <Card className="p-3.5 border-[#DCE6DF] bg-[#F5FAF7]/60 space-y-2.5">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#DCE6DF] pb-2">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-[#141413]">
-                <Activity className="size-4 text-[#15803D]" aria-hidden />
-                <span>LEVEL 1 · Bối cảnh Bản ghi &amp; Chất lượng Tín hiệu</span>
-              </div>
-              <span className="text-[11px] font-mono text-[#575652]">
-                Nguồn: <strong className="text-[#141413]">{derivedContext.dataOriginLabel}</strong> ·{' '}
-                {analysis.recordingTimestamp
-                  ? new Date(analysis.recordingTimestamp).toLocaleString('vi-VN')
-                  : 'Phiên phân tích hiện tại'}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1.5 text-[11.5px] text-[#262624]">
-              <div>
-                <span className="text-[#6E6D68]">Thời lượng ghi / Khả dụng: </span>
-                <strong className="font-mono text-[#141413]">
-                  {derivedContext.totalDurationSec.toFixed(1)} s (Khả dụng:{' '}
-                  {derivedContext.usableDurationSec.toFixed(1)} s)
-                </strong>
-              </div>
-              <div>
-                <span className="text-[#6E6D68]">Tần số lấy mẫu: </span>
-                <strong className="font-mono text-[#141413]">{analysis.samplingRateHz} Hz</strong>
-              </div>
-              <div>
-                <span className="text-[#6E6D68]">Số kênh &amp; Montage: </span>
-                <strong className="text-[#141413]">
-                  {derivedContext.recordedChannels.length} kênh đo (
-                  {derivedContext.recordedChannels.join(', ')}) · Hệ 10–20 rút gọn
-                </strong>
-              </div>
-              <div>
-                <span className="text-[#6E6D68]">Tham chiếu (Reference): </span>
-                <strong className="text-[#141413]">
-                  Tính toán: {analysis.filterConfig?.reference || 'CAR'} · Tham chiếu vật lý gốc:{' '}
-                  {analysis.filterConfig?.physicalReference || 'Chưa có dữ liệu'}
-                </strong>
-              </div>
-              <div>
-                <span className="text-[#6E6D68]">Cấu hình lọc: </span>
-                <strong className="text-[#141413]">{derivedContext.filterDescription}</strong>
-              </div>
-              <div>
-                <span className="text-[#6E6D68]">Trở kháng điện cực (Impedance): </span>
-                <strong className="text-[#575652]">Chưa có dữ liệu (Not available)</strong>
-              </div>
-            </div>
-
-            {/* Signal Quality & Artifact Assessment per 6 Channels */}
-            <div className="pt-2 border-t border-[#DCE6DF] space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                <span className="font-semibold text-[#141413]">
-                  Chất lượng Tín hiệu Từng Kênh (6 kênh chuẩn):
+          {/* ================================================================= */}
+          {/* KHU VỰC 1: Tổng quan bản ghi (Record Overview & Signal Quality)    */}
+          {/* ================================================================= */}
+          <section id="sec-overview" className="scroll-mt-14">
+            <Card className="p-4 border-[#DCE6DF] bg-white space-y-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-sm font-bold text-[#141413]">
+                  1. Tổng quan bản ghi
+                </h2>
+                <span className="text-[11px] font-mono text-[#575652]">
+                  {derivedContext.dataOriginLabel} ·{' '}
+                  {analysis.recordingTimestamp
+                    ? new Date(analysis.recordingTimestamp).toLocaleString('vi-VN')
+                    : 'Phiên phân tích hiện tại'}
                 </span>
-                <span className="font-mono text-[#575652]">
-                  Điểm tổng hợp:{' '}
-                  <strong className="text-[#141413]">
-                    {Math.round(
-                      (analysis.signalQuality?.overallScore ??
-                        analysis.biomarkers.signalQualityScore) * 100,
-                    )}
-                    %
+              </div>
+
+              {/* Slim 6-column flat metadata grid (no nested sub-cards) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-4 gap-y-2.5 text-xs">
+                <div className="min-w-0">
+                  <span className="text-[11px] text-[#6E6D68] block">Mã bản ghi</span>
+                  <strong className="font-mono text-[#141413] truncate block" title={sourceMode === 'csv' && csvFilename ? csvFilename : analysis.caseId}>
+                    {sourceMode === 'csv' && csvFilename ? csvFilename : analysis.caseId}
                   </strong>
-                  {analysis.signalQuality?.overallStatus
-                    ? ` (${analysis.signalQuality.overallStatus})`
-                    : ''}
-                </span>
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[11px] text-[#6E6D68] block">Thời lượng / Khả dụng</span>
+                  <strong className="font-mono text-[#141413]">
+                    {derivedContext.totalDurationSec.toFixed(1)} s ({derivedContext.usableDurationSec.toFixed(1)} s đạt chuẩn)
+                  </strong>
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[11px] text-[#6E6D68] block">Tần số lấy mẫu</span>
+                  <strong className="font-mono text-[#141413]">{analysis.samplingRateHz} Hz</strong>
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[11px] text-[#6E6D68] block">Số kênh &amp; Montage</span>
+                  <strong className="text-[#141413]">
+                    {derivedContext.recordedChannels.length} kênh ({derivedContext.recordedChannels.join(', ')}) · 10–20 rút gọn
+                  </strong>
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[11px] text-[#6E6D68] block">Tham chiếu</span>
+                  <strong className="text-[#141413]">
+                    {analysis.filterConfig?.reference || 'CAR'} · Vật lý:{' '}
+                    {analysis.filterConfig?.physicalReference || 'Chưa có dữ liệu'}
+                  </strong>
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[11px] text-[#6E6D68] block">Bộ lọc áp dụng</span>
+                  <strong className="text-[#141413]">{derivedContext.filterDescription}</strong>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-                {derivedContext.qualityAssessment.channels.map((ch) => {
-                  const badge = getChannelStatusBadge(ch.status);
-                  return (
-                    <div
-                      key={ch.channel}
-                      className="rounded-lg border border-[#DCE6DF] bg-white px-2.5 py-1.5 text-[11px] flex items-center justify-between gap-1.5"
-                    >
-                      <div className="min-w-0">
-                        <span className="font-mono font-bold text-[#141413] block">
-                          {ch.channel}
+              {/* Clean Separator: Signal Quality vs Electrode Impedance */}
+              <div className="pt-3 border-t border-[#DCE6DF] grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                <div className="lg:col-span-8 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="font-semibold text-[#141413]">Chất lượng tín hiệu:</span>
+                    {(() => {
+                      const pct = Math.round(
+                        (analysis.signalQuality?.overallScore ??
+                          analysis.biomarkers.signalQualityScore) * 100,
+                      );
+                      const hasIssues = derivedContext.qualityAssessment.channels.some(
+                        (c) => c.status === 'NOISY' || c.status === 'DROPOUT' || c.status === 'SATURATED',
+                      );
+                      const label = derivedContext.aiSuppressedByQuality
+                        ? `Không đạt chuẩn · ${pct}%`
+                        : hasIssues
+                          ? `Có nhiễu · ${pct}%`
+                          : `Đạt chuẩn · ${pct}%`;
+                      const cls = derivedContext.aiSuppressedByQuality
+                        ? 'border-red-200 bg-red-50 text-red-800'
+                        : hasIssues
+                          ? 'border-amber-200 bg-amber-50 text-amber-800'
+                          : 'border-[#BBF7D0] bg-[#ECFDF3] text-[#15803D]';
+                      return (
+                        <span
+                          className={cn(
+                            'inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[11px] font-semibold',
+                            cls,
+                          )}
+                        >
+                          {label}
                         </span>
-                        <span className="text-[10px] text-[#6E6D68] font-mono">
-                          {ch.rmsUv !== null && ch.rmsUv !== undefined ? `${ch.rmsUv} µV` : '—'}
+                      );
+                    })()}
+                  </div>
+
+                  {/* 6 ultra-compact channel chips on 1 row */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {derivedContext.qualityAssessment.channels.map((ch) => {
+                      const dotCls =
+                        ch.status === 'GOOD'
+                          ? 'text-[#16A34A]'
+                          : ch.status === 'NOISY'
+                            ? 'text-amber-600'
+                            : ch.status === 'DROPOUT' || ch.status === 'SATURATED'
+                              ? 'text-red-600'
+                              : 'text-slate-400';
+                      const chipCls =
+                        ch.status === 'GOOD'
+                          ? 'border-[#DCE6DF] bg-[#F5FAF7] text-[#141413]'
+                          : ch.status === 'NOISY'
+                            ? 'border-amber-200 bg-amber-50 text-amber-900'
+                            : ch.status === 'DROPOUT' || ch.status === 'SATURATED'
+                              ? 'border-red-200 bg-red-50 text-red-900'
+                              : 'border-slate-200 bg-slate-50 text-slate-600';
+                      const detailSuffix =
+                        ch.status === 'UNAVAILABLE'
+                          ? ' · Không đo'
+                          : ch.status === 'DROPOUT'
+                            ? ' · Mất tín hiệu'
+                            : ch.status === 'SATURATED'
+                              ? ' · Bão hòa'
+                              : ch.status === 'NOISY'
+                                ? ' · Nhiễu'
+                                : '';
+                      const tooltipText = [
+                        `${ch.channel}: ${ch.noteVi ?? getChannelStatusBadge(ch.status).label}`,
+                        ch.rmsUv != null ? `RMS ${ch.rmsUv} µV` : null,
+                        ch.ptpUv != null ? `PtP ${ch.ptpUv} µVpp` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ');
+
+                      return (
+                        <span
+                          key={ch.channel}
+                          title={tooltipText}
+                          className={cn(
+                            'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-mono font-semibold',
+                            chipCls,
+                          )}
+                        >
+                          <span className={dotCls} aria-hidden>
+                            {ch.status === 'UNAVAILABLE' ? '○' : '●'}
+                          </span>
+                          <span>
+                            {ch.channel}
+                            {detailSuffix && (
+                              <span className="font-sans font-medium">{detailSuffix}</span>
+                            )}
+                          </span>
                         </span>
-                      </div>
-                      <span
-                        className={cn(
-                          'inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap',
-                          badge.cls,
-                        )}
-                      >
-                        {badge.label}
+                      );
+                    })}
+                  </div>
+
+                  {(derivedContext.qualityAssessment.hasLineNoiseWarning ||
+                    derivedContext.qualityAssessment.hasEmgWarning ||
+                    derivedContext.qualityAssessment.hasLowFreqArtifactWarning) && (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-amber-800">
+                      <span className="inline-flex items-center gap-1 font-semibold">
+                        <AlertTriangle className="size-3.5 text-amber-700" aria-hidden />
+                        Lưu ý nhiễu:
                       </span>
+                      {derivedContext.qualityAssessment.hasLineNoiseWarning && (
+                        <span>Nhiễu 50 Hz trên tín hiệu gốc</span>
+                      )}
+                      {derivedContext.qualityAssessment.hasEmgWarning && (
+                        <span>Nhiễu cơ EMG cao tần</span>
+                      )}
+                      {derivedContext.qualityAssessment.hasLowFreqArtifactWarning && (
+                        <span>Trôi tần số thấp / chớp mắt</span>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-
-              {(derivedContext.qualityAssessment.hasLineNoiseWarning ||
-                derivedContext.qualityAssessment.hasEmgWarning ||
-                derivedContext.qualityAssessment.hasLowFreqArtifactWarning) && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-1.5 text-[11px] text-amber-900 flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span className="font-semibold inline-flex items-center gap-1">
-                    <AlertTriangle className="size-3.5 text-amber-700" aria-hidden />
-                    Cảnh báo nhiễu ghi nhận:
-                  </span>
-                  {derivedContext.qualityAssessment.hasLineNoiseWarning && (
-                    <span>• Nhiễu đường dây 50 Hz trên tín hiệu gốc</span>
-                  )}
-                  {derivedContext.qualityAssessment.hasEmgWarning && (
-                    <span>• Nhiễu cơ EMG cao tần</span>
-                  )}
-                  {derivedContext.qualityAssessment.hasLowFreqArtifactWarning && (
-                    <span>• Nhiễu biên độ lớn tần số thấp (chớp mắt / chuyển động)</span>
                   )}
                 </div>
-              )}
-            </div>
-          </Card>
 
-          {/* ===================================================================== */}
-          {/* LEVEL 2: Primary EEG Evidence (Large Central Waveform Viewer)         */}
-          {/* ===================================================================== */}
-          <div ref={waveformContainerRef} className="space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#141413]">
-                <span>LEVEL 2 · Bằng chứng Điện não Chính (Primary EEG Evidence)</span>
+                <div className="lg:col-span-4 lg:border-l lg:border-[#DCE6DF] lg:pl-4 space-y-1 text-xs">
+                  <span className="text-[11px] font-semibold text-[#575652] block">
+                    Trở kháng điện cực (Electrode Impedance)
+                  </span>
+                  <strong className="text-[#262624] block">
+                    Chưa có dữ liệu (Not available)
+                  </strong>
+                </div>
+              </div>
+            </Card>
+          </section>
+
+          {/* ================================================================= */}
+          {/* KHU VỰC 2: Sóng điện não (EEG Waveform — Central Hero View)       */}
+          {/* ================================================================= */}
+          <section id="sec-waveform" ref={waveformContainerRef} className="scroll-mt-14 space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-sm font-bold text-[#141413]">
+                  2. Sóng điện não (EEG Waveform)
+                </h2>
                 {selectedInterval && (
                   <span className="rounded-md border border-[#86EFAC] bg-[#ECFDF3] px-2 py-0.5 font-mono text-[11px] text-[#15803D]">
                     Đang chọn: {selectedInterval.startSec.toFixed(2)}s –{' '}
@@ -2173,15 +2504,43 @@ export function QeegStudioPanel({
                   </span>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => setShowAddAnnForm((v) => !v)}
-                className="inline-flex items-center gap-1 rounded-lg border border-[#DCE6DF] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#15803D] hover:bg-[#F5FAF7] transition-colors"
-              >
-                <BookmarkPlus className="size-3.5" aria-hidden />
-                <span>+ Đánh dấu đoạn sóng vào nhận định</span>
-              </button>
+              {selectedInterval && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddAnnForm((v) => !v)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#16A34A] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[#15803D] hover:bg-[#F5FAF7] transition-colors cursor-pointer"
+                >
+                  <BookmarkPlus className="size-3.5" aria-hidden />
+                  <span>+ Đánh dấu đoạn</span>
+                </button>
+              )}
             </div>
+
+            <BrainWaveformViewer
+              waveforms={analysis.waveforms}
+              samplingRateHz={analysis.samplingRateHz}
+              isProfessional={isProfessional}
+              title={`Sóng điện não ${derivedContext.recordedChannels.length} kênh (${analysis.samplingRateHz} Hz)`}
+              subtitle={`${derivedContext.recordedChannels.join(', ')} · ${derivedContext.filterDescription}`}
+              montageLabel={`${derivedContext.recordedChannels.length} kênh · Hệ 10–20 rút gọn`}
+              referenceLabel={
+                analysis.filterConfig?.reference || 'CAR (Vật lý gốc: Chưa có dữ liệu)'
+              }
+              filterDescription={derivedContext.filterDescription}
+              channelQuality={derivedContext.qualityAssessment.channels}
+              annotations={derivedContext.allAnnotations}
+              selectedInterval={selectedInterval}
+              onSelectInterval={(interval) => {
+                setSelectedInterval(interval);
+                if (interval) {
+                  setNewAnnStartSec(interval.startSec.toFixed(2));
+                  setNewAnnEndSec(interval.endSec.toFixed(2));
+                }
+              }}
+              onAddAnnotationFromSelection={handleAddAnnotationFromSelection}
+              svgRef={waveformSvgRef}
+              {...viewerOptionalProps}
+            />
 
             {showAddAnnForm && (
               <form
@@ -2259,54 +2618,23 @@ export function QeegStudioPanel({
                 </div>
               </form>
             )}
+          </section>
 
-            <BrainWaveformViewer
-              waveforms={analysis.waveforms}
-              samplingRateHz={analysis.samplingRateHz}
-              isProfessional={isProfessional}
-              title={`Bằng chứng Điện não ${derivedContext.recordedChannels.length} Kênh (${analysis.samplingRateHz} Hz)`}
-              subtitle={`${derivedContext.recordedChannels.join(', ')} · ${derivedContext.filterDescription}`}
-              montageLabel={`${derivedContext.recordedChannels.length} kênh · Hệ 10–20 rút gọn`}
-              referenceLabel={
-                analysis.filterConfig?.reference || 'CAR (Vật lý gốc: Chưa có dữ liệu)'
-              }
-              filterDescription={derivedContext.filterDescription}
-              channelQuality={derivedContext.qualityAssessment.channels}
-              annotations={derivedContext.allAnnotations}
-              selectedInterval={selectedInterval}
-              onSelectInterval={(interval) => {
-                setSelectedInterval(interval);
-                if (interval) {
-                  setNewAnnStartSec(interval.startSec.toFixed(2));
-                  setNewAnnEndSec(interval.endSec.toFixed(2));
-                }
-              }}
-              onAddAnnotationFromSelection={handleAddAnnotationFromSelection}
-              svgRef={waveformSvgRef}
-            />
-          </div>
-
-          {/* ===================================================================== */}
-          {/* LEVEL 3: Spatial & Quantitative QEEG                                  */}
-          {/* ===================================================================== */}
-          <div className="space-y-3">
-            {/* Transparent Pipeline Separation Strip */}
-            <div className="rounded-xl border border-[#DCE6DF] bg-[#F5FAF7] px-3.5 py-2 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-              <span className="font-bold text-[#141413]">
-                LEVEL 3 · Phân tích Không gian &amp; Định lượng QEEG
-              </span>
-              <span className="font-medium text-[#262624]">
-                <strong className="text-[#15803D]">1. Dữ liệu EEG đo được</strong> →{' '}
-                <strong className="text-[#15803D]">2. Chỉ số QEEG dẫn xuất</strong> →{' '}
-                <strong className="text-[#141413]">
-                  3. Gợi ý Mô hình Thực nghiệm &amp; Nhận định Bác sĩ
-                </strong>
+          {/* ================================================================= */}
+          {/* KHU VỰC 3: Phân tích QEEG (Primary Overview + Collapsible Adv.)   */}
+          {/* ================================================================= */}
+          <section id="sec-qeeg" className="scroll-mt-14 space-y-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 px-0.5">
+              <h2 className="text-sm font-bold text-[#141413]">3. Phân tích QEEG</h2>
+              <span className="text-[11px] text-[#575652]">
+                Dữ liệu EEG đo được → Chỉ số QEEG dẫn xuất (không tự kết luận chẩn đoán)
               </span>
             </div>
 
+            {/* Part A: Primary Overview (2 airy columns, minimal nesting) */}
             <div className="grid gap-4 lg:grid-cols-12 items-start">
-              {/* Spatial Column: CorticalTopomap2D */}
-              <div className="lg:col-span-5 min-w-0 space-y-2">
+              {/* Left: Topomap 2D */}
+              <div className="lg:col-span-5 min-w-0">
                 <CorticalTopomap2D
                   nodes={analysis.topomap as unknown as QeegTopomapNode[]}
                   meanBsi={analysis.biomarkers.meanBsi}
@@ -2325,157 +2653,95 @@ export function QeegStudioPanel({
                   metricMode={topomapMetricMode}
                   onMetricModeChange={setTopomapMetricMode}
                 />
-                <div className="rounded-lg border border-[#DCE6DF] bg-white px-3 py-2 text-[10.5px] text-[#575652] space-y-1">
-                  <div className="font-semibold text-[#141413]">
-                    Bản đồ phân bố EEG trên da đầu (EEG Scalp Topography · Chế độ 6 kênh đo)
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="size-2 rounded-full border-2 border-[#141413] bg-white" />
-                      Measured Data ({derivedContext.recordedChannels.join(', ')})
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <span className="size-2 rounded-full border border-dashed border-slate-500 bg-slate-100" />
-                      Interpolated Estimate
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <span className="size-2 rounded-full bg-slate-300" />
-                      Not Recorded
-                    </span>
-                  </div>
-                </div>
               </div>
 
-              {/* Quantitative Column: 4 Primary QEEG Metrics */}
+              {/* Right: 3 Core Metrics in 1 Divided Row + PSD Bands & Curve */}
               <div className="lg:col-span-7 min-w-0 space-y-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {/* 1. DAR */}
-                  <Card className="p-3.5 border-[#DCE6DF] bg-white">
-                    <div className="flex items-start justify-between gap-2">
+                <div className="rounded-xl border border-[#DCE6DF] bg-white overflow-hidden">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#DCE6DF]">
+                    {/* DAR */}
+                    <div className="p-3.5 space-y-1.5 flex flex-col justify-between">
                       <div>
-                        <span className="text-xs font-bold text-[#141413] block">
-                          DAR (Delta/Alpha Ratio)
-                        </span>
-                        <span className="text-[11px] font-mono text-[#6E6D68]">
-                          0.5–4 Hz / 8–13 Hz
-                        </span>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-xs font-bold text-[#141413]">DAR (Delta/Alpha)</span>
+                          <span className="font-mono text-base font-bold text-[#141413] tabular-nums">
+                            {derivedContext.aiSuppressedByQuality && !derivedContext.hasValidChannels
+                              ? 'N/A'
+                              : analysis.biomarkers.meanDar.toFixed(2)}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[11px] text-[#575652] leading-snug">
+                          {derivedContext.aiSuppressedByQuality
+                            ? derivedContext.hasValidChannels
+                              ? 'Không tin cậy (Lỗi tín hiệu)'
+                              : 'N/A — Tín hiệu hỏng'
+                            : 'Tỷ lệ sóng chậm Delta so với nhịp Alpha'}
+                        </p>
                       </div>
-                      <span className="font-mono text-lg font-bold text-[#141413] tabular-nums">
-                        {derivedContext.aiSuppressedByQuality && !derivedContext.hasValidChannels
-                          ? 'N/A'
-                          : analysis.biomarkers.meanDar.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
-                      <span
-                        className={cn(
-                          derivedContext.aiSuppressedByQuality
-                            ? 'font-medium text-amber-800'
-                            : 'text-[#575652]',
-                        )}
-                      >
-                        {derivedContext.aiSuppressedByQuality
-                          ? derivedContext.hasValidChannels
-                            ? 'Không tin cậy (Lỗi tín hiệu)'
-                            : 'N/A — Tín hiệu hỏng'
-                          : analysis.biomarkers.meanDar > 2.0
-                            ? 'Tỷ trọng sóng chậm tăng cao'
-                            : 'Trong biên độ nền tham chiếu'}
-                      </span>
                       <button
                         type="button"
                         onClick={() => toggleMetricInfo('dar')}
-                        className="inline-flex items-center gap-1 font-semibold text-[#15803D] hover:underline shrink-0"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#15803D] hover:underline self-start cursor-pointer"
                       >
                         <Info className="size-3" aria-hidden />
                         <span>Chi tiết chỉ số</span>
                       </button>
                     </div>
-                    {openMetricInfo === 'dar' && (
-                      <MetricInfoDrawer metricKey="dar" onClose={() => setOpenMetricInfo(null)} />
-                    )}
-                  </Card>
 
-                  {/* 2. BSI */}
-                  <Card className="p-3.5 border-[#DCE6DF] bg-white">
-                    <div className="flex items-start justify-between gap-2">
+                    {/* BSI */}
+                    <div className="p-3.5 space-y-1.5 flex flex-col justify-between">
                       <div>
-                        <span className="text-xs font-bold text-[#141413] block">
-                          BSI (Brain Symmetry Index)
-                        </span>
-                        <span className="text-[11px] font-mono text-[#6E6D68]">
-                          F3–F4 · C3–C4 · O1–O2
-                        </span>
-                      </div>
-                      <span className="font-mono text-lg font-bold text-[#141413] tabular-nums">
-                        {derivedContext.aiSuppressedByQuality && !derivedContext.hasValidChannels
-                          ? 'N/A'
-                          : analysis.biomarkers.meanBsi.toFixed(3)}
-                      </span>
-                    </div>
-                    <div className="mt-1.5 flex flex-wrap gap-1.5 font-mono text-[10.5px] text-[#575652]">
-                      {derivedContext.bsiPairs.map((pair) => (
-                        <span
-                          key={pair.pair}
-                          className="rounded border border-[#DCE6DF] bg-[#F5FAF7] px-1.5 py-0.5"
-                        >
-                          {pair.pair}:{' '}
-                          <strong className="text-[#141413]">
-                            {pair.isAvailable ? pair.bsi.toFixed(3) : 'N/A'}
-                          </strong>
-                        </span>
-                      ))}
-                      {analysis.pdBsi1To25Hz !== undefined && (
-                        <span className="rounded border border-[#DCE6DF] bg-[#F5FAF7] px-1.5 py-0.5">
-                          pdBSI(1–25Hz):{' '}
-                          <strong className="text-[#141413]">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-xs font-bold text-[#141413]">BSI (Độ bất đối xứng)</span>
+                          <span className="font-mono text-base font-bold text-[#141413] tabular-nums">
                             {derivedContext.aiSuppressedByQuality && !derivedContext.hasValidChannels
                               ? 'N/A'
-                              : analysis.pdBsi1To25Hz.toFixed(3)}
-                          </strong>
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
-                      <span
-                        className={cn(
-                          derivedContext.aiSuppressedByQuality
-                            ? 'font-medium text-amber-800'
-                            : 'text-[#575652]',
-                        )}
-                      >
-                        {derivedContext.aiSuppressedByQuality
-                          ? derivedContext.hasValidChannels
-                            ? 'Không tin cậy (Lỗi tín hiệu)'
-                            : 'N/A — Tín hiệu hỏng'
-                          : analysis.biomarkers.meanBsi > 0.15
-                            ? 'Chênh lệch công suất 2 bán cầu'
-                            : 'Tương đối đối xứng 2 bên'}
-                      </span>
+                              : analysis.biomarkers.meanBsi.toFixed(3)}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[11px] text-[#575652] leading-snug">
+                          {derivedContext.aiSuppressedByQuality
+                            ? derivedContext.hasValidChannels
+                              ? 'Không tin cậy (Lỗi tín hiệu)'
+                              : 'N/A — Tín hiệu hỏng'
+                            : 'Chênh lệch công suất giữa bán cầu trái và phải'}
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 font-mono text-[10px] text-[#575652]">
+                          {derivedContext.bsiPairs.map((pair) => (
+                            <span key={pair.pair}>
+                              {pair.pair}:{' '}
+                              <strong className="text-[#141413]">
+                                {pair.isAvailable ? pair.bsi.toFixed(2) : 'N/A'}
+                              </strong>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                       <button
                         type="button"
                         onClick={() => toggleMetricInfo('bsi')}
-                        className="inline-flex items-center gap-1 font-semibold text-[#15803D] hover:underline shrink-0"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#15803D] hover:underline self-start cursor-pointer"
                       >
                         <Info className="size-3" aria-hidden />
                         <span>Chi tiết chỉ số</span>
                       </button>
                     </div>
-                    {openMetricInfo === 'bsi' && (
-                      <MetricInfoDrawer metricKey="bsi" onClose={() => setOpenMetricInfo(null)} />
-                    )}
-                  </Card>
 
-                  {/* 3. Alpha Peak Frequency */}
-                  <Card className="p-3.5 border-[#DCE6DF] bg-white sm:col-span-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
+                    {/* Alpha Peak */}
+                    <div className="p-3.5 space-y-1.5 flex flex-col justify-between">
                       <div>
-                        <span className="text-xs font-bold text-[#141413] block">
-                          Tần số Đỉnh Alpha (Alpha Peak Frequency · Kênh O1, O2 · 8–13 Hz)
-                        </span>
-                        <span
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-xs font-bold text-[#141413]">Đỉnh Alpha (O1, O2)</span>
+                          <span className="font-mono text-base font-bold text-[#141413] tabular-nums">
+                            {derivedContext.aiSuppressedByQuality &&
+                            (!derivedContext.hasValidChannels || analysis.biomarkers.alphaPeakHz <= 0)
+                              ? 'N/A'
+                              : `${analysis.biomarkers.alphaPeakHz.toFixed(1)} Hz`}
+                          </span>
+                        </div>
+                        <p
                           className={cn(
-                            'text-[11px]',
+                            'mt-1 text-[11px] leading-snug',
                             derivedContext.aiSuppressedByQuality || derivedContext.alphaBandLowOrMasked
                               ? 'font-medium text-amber-800'
                               : 'text-[#575652]',
@@ -2487,45 +2753,39 @@ export function QeegStudioPanel({
                               : 'N/A — Tín hiệu hỏng'
                             : derivedContext.alphaBandLowOrMasked
                               ? 'Biên độ Alpha thấp / bị lấn át bởi sóng chậm'
-                              : analysis.biomarkers.alphaPeakHz >= 8.5 &&
-                                  analysis.biomarkers.alphaPeakHz <= 12.0
-                                ? 'Đỉnh phổ nằm trong dải Alpha chuẩn (nhắm mắt nghỉ ngơi)'
-                                : 'Đỉnh phổ lệch dải Alpha chuẩn'}
-                        </span>
+                              : 'Đỉnh phổ nằm trong dải Alpha chuẩn (8.5–12 Hz)'}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono text-lg font-bold text-[#141413] tabular-nums">
-                          {derivedContext.aiSuppressedByQuality &&
-                          (!derivedContext.hasValidChannels || analysis.biomarkers.alphaPeakHz <= 0)
-                            ? 'N/A'
-                            : `${analysis.biomarkers.alphaPeakHz.toFixed(1)} Hz`}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => toggleMetricInfo('alphaPeak')}
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#15803D] hover:underline shrink-0"
-                        >
-                          <Info className="size-3" aria-hidden />
-                          <span>Chi tiết chỉ số</span>
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => toggleMetricInfo('alphaPeak')}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#15803D] hover:underline self-start cursor-pointer"
+                      >
+                        <Info className="size-3" aria-hidden />
+                        <span>Chi tiết chỉ số</span>
+                      </button>
                     </div>
-                    {openMetricInfo === 'alphaPeak' && (
+                  </div>
+
+                  {(openMetricInfo === 'dar' ||
+                    openMetricInfo === 'bsi' ||
+                    openMetricInfo === 'alphaPeak') && (
+                    <div className="px-3.5 pb-3.5 border-t border-[#DCE6DF]">
                       <MetricInfoDrawer
-                        metricKey="alphaPeak"
+                        metricKey={openMetricInfo}
                         onClose={() => setOpenMetricInfo(null)}
                       />
-                    )}
-                  </Card>
+                    </div>
+                  )}
                 </div>
 
-                {/* 4. PSD Normalized 100% (0.5–30 Hz) + Spectral Curve SVG */}
-                <Card className="p-3.5 border-[#DCE6DF] bg-white space-y-3">
+                {/* PSD 4 Bands + Welch Spectrum Curve Side-by-Side */}
+                <div className="rounded-xl border border-[#DCE6DF] bg-white p-3.5 space-y-2.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <h4 className="text-xs font-bold text-[#141413]">
-                        Phổ Mật độ Công suất (PSD — Chuẩn hóa 100% trên 0.5–30 Hz)
-                      </h4>
+                      <h3 className="text-xs font-bold text-[#141413]">
+                        Phổ công suất 4 dải tần &amp; Đường cong Welch PSD
+                      </h3>
                       <span
                         className={cn(
                           'text-[10.5px]',
@@ -2537,18 +2797,18 @@ export function QeegStudioPanel({
                         {derivedContext.aiSuppressedByQuality
                           ? derivedContext.hasValidChannels
                             ? 'Không tin cậy (Lỗi tín hiệu) · '
-                            : 'N/A — Tín hiệu hỏng (Không có kênh sạch) · '
+                            : 'N/A — Tín hiệu hỏng · '
                           : ''}
-                        Gamma 30–45 Hz tách riêng khỏi mẫu số 100% để hạn chế nhiễu cơ EMG
+                        0.5–30 Hz = 100%
                         {analysis.psdCurve?.gammaRelRatio !== undefined
-                          ? ` · Gamma: ${(analysis.psdCurve.gammaRelRatio * 100).toFixed(1)}%`
-                          : ''}
+                          ? ` · Gamma (30–45 Hz tách riêng): ${(analysis.psdCurve.gammaRelRatio * 100).toFixed(1)}%`
+                          : ' · Gamma 30–45 Hz tách riêng'}
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => toggleMetricInfo('psd')}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#15803D] hover:underline shrink-0"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#15803D] hover:underline shrink-0 cursor-pointer"
                     >
                       <Info className="size-3" aria-hidden />
                       <span>Chi tiết chỉ số</span>
@@ -2609,19 +2869,19 @@ export function QeegStudioPanel({
                       />
                     </div>
                   </div>
-                </Card>
+                </div>
               </div>
             </div>
 
-            {/* Expandable Secondary QEEG Metrics (TAR, wPLI, PRI, 80-feature vector) */}
-            <div className="rounded-xl border border-[#DCE6DF] bg-[#F5FAF7]">
+            {/* Part B: Advanced QEEG Analysis (Collapsed by default) */}
+            <div className="rounded-xl border border-[#DCE6DF] bg-[#F5FAF7]/80 overflow-hidden">
               <button
                 type="button"
                 aria-expanded={showDetails}
                 onClick={() => setShowDetails((v) => !v)}
                 className="w-full px-4 py-2.5 flex items-center justify-between text-xs font-semibold text-[#262624] hover:text-[#141413] transition-colors cursor-pointer"
               >
-                <span>Phân tích QEEG chi tiết (TAR · wPLI · PRI · Vector 80 đặc trưng)</span>
+                <span>Phân tích nâng cao (TAR · wPLI · PRI · 80 đặc trưng)</span>
                 {showDetails ? (
                   <ChevronUp className="size-4 text-[#575652]" aria-hidden />
                 ) : (
@@ -2630,302 +2890,224 @@ export function QeegStudioPanel({
               </button>
 
               {showDetails && (
-                <div className="px-4 pb-4 pt-2 border-t border-[#DCE6DF] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                  <div className="rounded-lg border border-[#DCE6DF] bg-white p-3 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#141413]">TAR (Theta/Alpha)</span>
-                      <button
-                        type="button"
-                        onClick={() => toggleMetricInfo('tar')}
-                        className="text-[10.5px] font-semibold text-[#15803D] hover:underline"
+                <div className="border-t border-[#DCE6DF] bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#DCE6DF] text-xs">
+                    <div className="p-3.5 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-[#141413]">TAR (Theta/Alpha)</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleMetricInfo('tar')}
+                          className="text-[10.5px] font-semibold text-[#15803D] hover:underline cursor-pointer"
+                        >
+                          ⓘ Chi tiết chỉ số
+                        </button>
+                      </div>
+                      <strong className="block font-mono text-base text-[#141413] tabular-nums">
+                        {derivedContext.aiSuppressedByQuality && !derivedContext.hasValidChannels
+                          ? 'N/A'
+                          : analysis.biomarkers.meanTar.toFixed(2)}
+                      </strong>
+                      <p
+                        className={cn(
+                          'text-[10.5px]',
+                          derivedContext.aiSuppressedByQuality
+                            ? 'font-medium text-amber-800'
+                            : 'text-[#6E6D68]',
+                        )}
                       >
-                        ⓘ Chi tiết
-                      </button>
+                        {derivedContext.aiSuppressedByQuality
+                          ? derivedContext.hasValidChannels
+                            ? 'Không tin cậy (Lỗi tín hiệu)'
+                            : 'N/A — Tín hiệu hỏng'
+                          : '4–8 Hz / 8–13 Hz · Tăng khi buồn ngủ hoặc giảm cảnh tỉnh.'}
+                      </p>
                     </div>
-                    <strong className="block font-mono text-base text-[#141413] tabular-nums">
-                      {derivedContext.aiSuppressedByQuality && !derivedContext.hasValidChannels
-                        ? 'N/A'
-                        : analysis.biomarkers.meanTar.toFixed(2)}
-                    </strong>
-                    <p
-                      className={cn(
-                        'text-[10.5px]',
-                        derivedContext.aiSuppressedByQuality
-                          ? 'font-medium text-amber-800'
-                          : 'text-[#6E6D68]',
-                      )}
-                    >
-                      {derivedContext.aiSuppressedByQuality
-                        ? derivedContext.hasValidChannels
-                          ? 'Không tin cậy (Lỗi tín hiệu)'
-                          : 'N/A — Tín hiệu hỏng'
-                        : '4–8 Hz / 8–13 Hz · 6 kênh · nhạy với trạng thái buồn ngủ / mở mắt.'}
-                    </p>
-                    {openMetricInfo === 'tar' && (
-                      <MetricInfoDrawer metricKey="tar" onClose={() => setOpenMetricInfo(null)} />
-                    )}
+
+                    <div className="p-3.5 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-[#141413]">wPLI (Vinck 2011)</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleMetricInfo('wpli')}
+                          className="text-[10.5px] font-semibold text-[#15803D] hover:underline cursor-pointer"
+                        >
+                          ⓘ Chi tiết chỉ số
+                        </button>
+                      </div>
+                      <strong className="block font-mono text-base text-[#141413] tabular-nums">
+                        {derivedContext.aiSuppressedByQuality && !derivedContext.hasValidChannels
+                          ? 'N/A'
+                          : analysis.biomarkers.wpli.toFixed(2)}
+                      </strong>
+                      <p
+                        className={cn(
+                          'text-[10.5px]',
+                          derivedContext.aiSuppressedByQuality
+                            ? 'font-medium text-amber-800'
+                            : 'text-[#6E6D68]',
+                        )}
+                      >
+                        {derivedContext.aiSuppressedByQuality
+                          ? derivedContext.hasValidChannels
+                            ? 'Không tin cậy (Lỗi tín hiệu)'
+                            : 'N/A — Tín hiệu hỏng'
+                          : '[0, 1] · Lưu ý thiên lệch trên mẫu ngắn & thưa 6 kênh.'}
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-[#141413]">PRI (Nagata 1989)</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleMetricInfo('pri')}
+                          className="text-[10.5px] font-semibold text-[#15803D] hover:underline cursor-pointer"
+                        >
+                          ⓘ Chi tiết chỉ số
+                        </button>
+                      </div>
+                      <strong className="block font-mono text-base text-[#141413] tabular-nums">
+                        {derivedContext.aiSuppressedByQuality && !derivedContext.hasValidChannels
+                          ? 'N/A'
+                          : analysis.biomarkers.pri.toFixed(2)}
+                      </strong>
+                      <p
+                        className={cn(
+                          'text-[10.5px]',
+                          derivedContext.aiSuppressedByQuality
+                            ? 'font-medium text-amber-800'
+                            : 'text-[#6E6D68]',
+                        )}
+                      >
+                        {derivedContext.aiSuppressedByQuality
+                          ? derivedContext.hasValidChannels
+                            ? 'Không tin cậy (Lỗi tín hiệu)'
+                            : 'N/A — Tín hiệu hỏng'
+                          : '(Delta + Theta) / (Alpha + Beta) · Chậm hóa nền không đặc hiệu.'}
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 space-y-1">
+                      <span className="font-semibold text-[#141413] block">Vector 80 đặc trưng</span>
+                      <strong className="block font-mono text-base text-[#141413] tabular-nums">
+                        {analysis.featureVector80.length || 80} đặc trưng
+                      </strong>
+                      <p className="text-[10.5px] text-[#6E6D68]">
+                        F01–F60 phổ/Hjorth 6 kênh · F61–F66 BSI · F67–F72 wPLI · F73–F80 tổng hợp ({analysis.latencyMs} ms).
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="rounded-lg border border-[#DCE6DF] bg-white p-3 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#141413]">wPLI (Vinck et al. 2011)</span>
-                      <button
-                        type="button"
-                        onClick={() => toggleMetricInfo('wpli')}
-                        className="text-[10.5px] font-semibold text-[#15803D] hover:underline"
-                      >
-                        ⓘ Chi tiết
-                      </button>
+                  {(openMetricInfo === 'tar' ||
+                    openMetricInfo === 'wpli' ||
+                    openMetricInfo === 'pri') && (
+                    <div className="px-3.5 pb-3.5 border-t border-[#DCE6DF]">
+                      <MetricInfoDrawer
+                        metricKey={openMetricInfo}
+                        onClose={() => setOpenMetricInfo(null)}
+                      />
                     </div>
-                    <strong className="block font-mono text-base text-[#141413] tabular-nums">
-                      {derivedContext.aiSuppressedByQuality && !derivedContext.hasValidChannels
-                        ? 'N/A'
-                        : analysis.biomarkers.wpli.toFixed(2)}
-                    </strong>
-                    <p
-                      className={cn(
-                        'text-[10.5px]',
-                        derivedContext.aiSuppressedByQuality
-                          ? 'font-medium text-amber-800'
-                          : 'text-[#6E6D68]',
-                      )}
-                    >
-                      {derivedContext.aiSuppressedByQuality
-                        ? derivedContext.hasValidChannels
-                          ? 'Không tin cậy (Lỗi tín hiệu)'
-                          : 'N/A — Tín hiệu hỏng'
-                        : '[0, 1] · Thiên lệch mẫu ngắn & mật độ thưa 6 kênh.'}
-                    </p>
-                    {openMetricInfo === 'wpli' && (
-                      <MetricInfoDrawer metricKey="wpli" onClose={() => setOpenMetricInfo(null)} />
-                    )}
-                  </div>
-
-                  <div className="rounded-lg border border-[#DCE6DF] bg-white p-3 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#141413]">PRI (Nagata et al. 1989)</span>
-                      <button
-                        type="button"
-                        onClick={() => toggleMetricInfo('pri')}
-                        className="text-[10.5px] font-semibold text-[#15803D] hover:underline"
-                      >
-                        ⓘ Chi tiết
-                      </button>
-                    </div>
-                    <strong className="block font-mono text-base text-[#141413] tabular-nums">
-                      {derivedContext.aiSuppressedByQuality && !derivedContext.hasValidChannels
-                        ? 'N/A'
-                        : analysis.biomarkers.pri.toFixed(2)}
-                    </strong>
-                    <p
-                      className={cn(
-                        'text-[10.5px]',
-                        derivedContext.aiSuppressedByQuality
-                          ? 'font-medium text-amber-800'
-                          : 'text-[#6E6D68]',
-                      )}
-                    >
-                      {derivedContext.aiSuppressedByQuality
-                        ? derivedContext.hasValidChannels
-                          ? 'Không tin cậy (Lỗi tín hiệu)'
-                          : 'N/A — Tín hiệu hỏng'
-                        : '(Delta + Theta) / (Alpha + Beta) · Chỉ số chậm hóa nền không đặc hiệu.'}
-                    </p>
-                    {openMetricInfo === 'pri' && (
-                      <MetricInfoDrawer metricKey="pri" onClose={() => setOpenMetricInfo(null)} />
-                    )}
-                  </div>
-
-                  <div className="rounded-lg border border-[#DCE6DF] bg-white p-3 space-y-1">
-                    <span className="font-semibold text-[#141413] block">Vector 80 Đặc trưng</span>
-                    <strong className="block font-mono text-base text-[#141413] tabular-nums">
-                      {analysis.featureVector80.length || 80} đặc trưng
-                    </strong>
-                    <p className="text-[10.5px] text-[#6E6D68]">
-                      F01–F60 phổ/Hjorth 6 kênh · F61–F66 BSI · F67–F72 wPLI · F73–F80 tổng hợp ({analysis.latencyMs} ms).
-                    </p>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
-          </div>
+          </section>
 
-          {/* ===================================================================== */}
-          {/* LEVEL 4: AI-Assisted Findings & Physician Clinical Review Workflow    */}
-          {/* ===================================================================== */}
-          <div className="space-y-4">
-            {/* (a)(b)(c) Waveform Pattern Observation & Experimental Model Card */}
+          {/* ================================================================= */}
+          {/* KHU VỰC 4: Gợi ý hỗ trợ từ AI (Calm, Secondary Decision Support)  */}
+          {/* ================================================================= */}
+          <section id="sec-ai" className="scroll-mt-14">
             <Card
               className={cn(
                 'p-4 space-y-3.5',
-                derivedContext.patternPresentation.tone === 'quality'
-                  ? 'border-amber-300 bg-slate-50'
-                  : fastScore >= 2
-                    ? 'border-red-300 bg-red-50/35'
-                    : derivedContext.patternPresentation.tone === 'amber'
-                      ? 'border-amber-300 bg-amber-50/30'
-                      : 'border-[#DCE6DF] bg-white',
+                derivedContext.patternPresentation.tone === 'quality' ||
+                  derivedContext.patternPresentation.tone === 'amber'
+                  ? 'border-amber-300 bg-amber-50/20'
+                  : 'border-[#DCE6DF] bg-white',
               )}
             >
-              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
-                <div className="space-y-1.5 min-w-0">
+              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#EFF6F1] pb-3">
+                <div className="space-y-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-sm font-bold text-[#141413]">4. Gợi ý hỗ trợ từ AI</h2>
+                    <span className="inline-flex items-center rounded-md border border-[#DCE6DF] bg-[#F5FAF7] px-2 py-0.5 text-[10.5px] font-medium text-[#575652]">
+                      Công cụ hỗ trợ — Không phải chẩn đoán lâm sàng
+                    </span>
                     <span
                       className={cn(
-                        'inline-flex items-center rounded-md border px-2 py-0.5 text-[10.5px] font-bold tracking-wide',
-                        derivedContext.patternPresentation.tone === 'quality'
-                          ? 'border-amber-400 bg-amber-100 text-amber-950'
-                          : fastScore >= 2
-                            ? 'border-red-300 bg-red-100 text-red-900'
-                            : derivedContext.patternPresentation.tone === 'amber'
-                              ? 'border-amber-300 bg-amber-100 text-amber-900'
-                              : 'border-[#BBF7D0] bg-[#ECFDF3] text-[#15803D]',
+                        'inline-flex items-center rounded-md border px-2 py-0.5 text-[10.5px] font-semibold',
+                        derivedContext.patternPresentation.tone === 'neutral'
+                          ? 'border-[#BBF7D0] bg-[#ECFDF3] text-[#15803D]'
+                          : 'border-amber-300 bg-amber-50 text-amber-900',
                       )}
                     >
                       {derivedContext.patternPresentation.badgeLabel}
                     </span>
-                    <span className="text-[11px] font-medium text-[#6E6D68]">
-                      LEVEL 4 · Quan sát Mẫu sóng &amp; Gợi ý Hỗ trợ (Chưa xác thực lâm sàng)
-                    </span>
                   </div>
-                  <h3 className="text-sm sm:text-base font-bold text-[#141413]">
+                  <p className="text-xs font-semibold text-[#262624]">
                     {derivedContext.patternPresentation.title}
-                  </h3>
+                  </p>
                 </div>
 
-                {/* Role-aware CTAs */}
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  {isProfessional ? (
-                    <>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="primary"
-                        onClick={() => {
-                          setShowReviewPanel(true);
-                          reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                        icon={<ClipboardCheck className="size-3.5" aria-hidden />}
-                      >
-                        Ghi nhận định Bác sĩ ↓
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={handleExportClinicalReport}
-                        className="border-[#DCE6DF] bg-white text-[#141413]"
-                        icon={<FileDown className="size-3.5 text-[#15803D]" aria-hidden />}
-                      >
-                        Xuất báo cáo EEG
-                      </Button>
-                    </>
-                  ) : (
-                    <Link
-                      to={
-                        savedSampleId
-                          ? `/consultations?sampleId=${encodeURIComponent(savedSampleId)}${savedDatasetId ? `&datasetId=${encodeURIComponent(savedDatasetId)}` : ''}&category=${analysis.clinicalCategory}&ask=1`
-                          : `/consultations?category=${analysis.clinicalCategory}&ask=1`
-                      }
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#16A34A] hover:bg-[#15803D] px-3.5 py-2 text-xs font-semibold text-white transition-colors whitespace-nowrap"
-                    >
-                      <MessageSquarePlus className="size-3.5" aria-hidden />
-                      <span>Gửi hỏi Bác sĩ →</span>
-                    </Link>
-                  )}
-
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleOpenSaveModal}
-                    className="border-[#DCE6DF] bg-white text-[#141413]"
+                {!isProfessional && (
+                  <Link
+                    to={
+                      savedSampleId
+                        ? `/consultations?sampleId=${encodeURIComponent(savedSampleId)}${savedDatasetId ? `&datasetId=${encodeURIComponent(savedDatasetId)}` : ''}&category=${analysis.clinicalCategory}&ask=1`
+                        : `/consultations?category=${analysis.clinicalCategory}&ask=1`
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#16A34A] hover:bg-[#15803D] px-3 py-1.5 text-xs font-semibold text-white transition-colors whitespace-nowrap shrink-0"
                   >
-                    {savedDatasetId ? 'Đã lưu ✓' : 'Lưu bản ghi'}
-                  </Button>
-
-                  <div ref={moreMenuRef} className="relative">
-                    <button
-                      type="button"
-                      aria-expanded={showMoreMenu}
-                      aria-haspopup="menu"
-                      onClick={() => setShowMoreMenu((v) => !v)}
-                      title="Tác vụ khác"
-                      className="inline-flex items-center gap-1 rounded-lg border border-[#DCE6DF] bg-white px-2.5 py-2 text-xs font-medium text-[#575652] hover:bg-[#F5FAF7] hover:text-[#141413] transition-colors cursor-pointer whitespace-nowrap"
-                    >
-                      <MoreHorizontal className="size-4" aria-hidden />
-                      <span className="hidden sm:inline">Tác vụ khác ▾</span>
-                    </button>
-
-                    {showMoreMenu && (
-                      <div
-                        role="menu"
-                        className="absolute right-0 top-full mt-1.5 z-30 w-52 rounded-xl border border-[#DCE6DF] bg-white shadow-md py-1 text-xs"
-                      >
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={handleExportClinicalReport}
-                          className="w-full text-left flex items-center gap-2 px-3.5 py-2 text-[#262624] hover:bg-[#F5FAF7]"
-                        >
-                          <FileDown className="size-3.5 text-[#575652]" aria-hidden />
-                          <span>Xuất báo cáo EEG / In PDF</span>
-                        </button>
-                        <a
-                          role="menuitem"
-                          href={`/clinical-workstation?mode=${isProfessional ? 'professional' : 'general'}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => setShowMoreMenu(false)}
-                          className="flex items-center gap-2 px-3.5 py-2 text-[#262624] hover:bg-[#F5FAF7]"
-                        >
-                          <ExternalLink className="size-3.5 text-[#575652]" aria-hidden />
-                          <span>Toàn màn hình</span>
-                        </a>
-                        <Link
-                          role="menuitem"
-                          to="/eeg-hub?view=workspace"
-                          onClick={() => setShowMoreMenu(false)}
-                          className="flex items-center gap-2 px-3.5 py-2 text-[#262624] hover:bg-[#F5FAF7]"
-                        >
-                          <Activity className="size-3.5 text-[#575652]" aria-hidden />
-                          <span>Mở Trạm qEEG</span>
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                    <MessageSquarePlus className="size-3.5" aria-hidden />
+                    <span>Gửi hỏi Bác sĩ →</span>
+                  </Link>
+                )}
               </div>
 
-              {/* 3 Structured Sub-blocks */}
-              <div className="grid gap-3 lg:grid-cols-3 text-xs">
-                {/* (a) Objective Signal Observation */}
-                <div className="rounded-lg border border-[#DCE6DF] bg-white p-3 space-y-1.5">
-                  <div className="font-bold text-[#141413]">(a) Quan sát tín hiệu EEG</div>
-                  <p className="text-[#262624] leading-relaxed">
-                    {derivedContext.patternPresentation.observation}
-                  </p>
-                  {analysis.decisionReason && (
-                    <p className="text-[11px] text-[#575652] border-t border-[#EFF6F1] pt-1.5">
-                      Ghi nhận kỹ thuật: {sanitizeNarrative(analysis.decisionReason)}
-                    </p>
+              {/* 4 Clearly Separated Blocks */}
+              <div className="grid gap-4 md:grid-cols-2 text-xs">
+                {/* 1. Quan sát đặc trưng EEG */}
+                <div className="space-y-1.5">
+                  <div className="font-bold text-[#141413]">1. Quan sát đặc trưng EEG</div>
+                  {derivedContext.aiSuppressedByQuality ? (
+                    <div className="rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-[11.5px] text-amber-950 flex items-start gap-2">
+                      <Lock className="size-4 text-amber-700 shrink-0 mt-0.5" aria-hidden />
+                      <div>
+                        <strong className="block">
+                          TÍN HIỆU KHÔNG ĐẠT CHUẨN KỸ THUẬT · Không đủ điều kiện diễn giải EEG
+                        </strong>
+                        <span className="text-[11px] text-amber-900">
+                          {derivedContext.patternPresentation.observation}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1 text-[#262624] leading-relaxed">
+                      <p>{derivedContext.patternPresentation.observation}</p>
+                      {analysis.decisionReason && (
+                        <p className="text-[11px] text-[#575652]">
+                          Ghi nhận kỹ thuật: {sanitizeNarrative(analysis.decisionReason)}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
 
-                {/* (b) Experimental 5-Class Uncalibrated Model Score */}
-                <div className="rounded-lg border border-[#DCE6DF] bg-white p-3 space-y-2">
+                {/* 2. Đầu ra mô hình thực nghiệm (Chưa hiệu chuẩn xác suất) */}
+                <div className="space-y-1.5">
                   <div>
                     <div className="font-bold text-[#141413]">
-                      (b) Điểm phân loại mô hình thực nghiệm 5 nhóm
+                      2. Đầu ra mô hình thực nghiệm (Chưa hiệu chuẩn xác suất)
                     </div>
-                    <div className="text-[10px] text-[#6E6D68]">
-                      Điểm mô hình tương đối — Chưa hiệu chuẩn xác suất lâm sàng (Experimental Uncalibrated Model Score)
-                    </div>
+                    <span className="text-[10.5px] text-[#6E6D68]">
+                      Điểm phân loại tương đối (Experimental Uncalibrated Model Score — Không phải xác suất bệnh lý)
+                    </span>
                   </div>
 
                   {derivedContext.aiSuppressedByQuality ? (
-                    <div className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-[11px] text-amber-900 flex items-start gap-2">
-                      <Lock className="size-4 text-amber-700 shrink-0 mt-0.5" aria-hidden />
+                    <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 text-[11px] text-amber-900 flex items-start gap-2">
+                      <Lock className="size-3.5 text-amber-700 shrink-0 mt-0.5" aria-hidden />
                       <span>{derivedContext.suppressionReasonVi}</span>
                     </div>
                   ) : (
@@ -2947,7 +3129,7 @@ export function QeegStudioPanel({
                           key: 'hemorrhagic',
                           label: 'Sóng chậm biên độ cao (mẫu ICH)',
                           val: analysis.probabilities.hemorrhagic,
-                          bar: 'bg-rose-700',
+                          bar: 'bg-amber-700',
                         },
                         {
                           key: 'epileptiform',
@@ -2977,21 +3159,34 @@ export function QeegStudioPanel({
                           </div>
                         );
                       })}
-                      <p className="font-sans text-[10px] text-[#6E6D68] pt-1 leading-snug">
-                        Lưu ý: 5 nhóm gộp các phạm trù khác nhau (mạch máu, sự kiện kịch phát, trạng thái buồn ngủ, nền tham chiếu).{' '}
-                        <strong className="text-[#141413]">
-                          EEG không phân biệt được nhồi máu vs xuất huyết nội sọ khi chưa chụp CT.
-                        </strong>
-                      </p>
                     </div>
                   )}
                 </div>
 
-                {/* (c) Clinical Context & Workflow Guidance */}
-                <div className="rounded-lg border border-[#DCE6DF] bg-white p-3 space-y-2">
+                {/* 3. Tình trạng xác thực & Độ tin cậy */}
+                <div className="pt-3 border-t border-[#EFF6F1] space-y-1">
                   <div className="font-bold text-[#141413]">
-                    (c) Bối cảnh lâm sàng &amp; Khuyến nghị quy trình
+                    3. Tình trạng xác thực &amp; Độ tin cậy
                   </div>
+                  <p className="text-[11px] text-[#575652] leading-relaxed">
+                    Thuật toán phân loại thực nghiệm 5 nhóm chưa qua thử nghiệm kiểm định lâm sàng đa trung tâm; 5 nhóm gộp nhiều phạm trù sinh lý/bệnh lý khác nhau.
+                    {derivedContext.isDemonstrationData !== false && (
+                      <>
+                        {' '}
+                        <strong className="text-amber-800">Dữ liệu mô phỏng</strong> — chỉ dùng minh họa quy trình.
+                      </>
+                    )}
+                  </p>
+                </div>
+
+                {/* 4. Giới hạn & Bối cảnh lâm sàng chưa có */}
+                <div className="pt-3 border-t border-[#EFF6F1] space-y-2">
+                  <div className="font-bold text-[#141413]">
+                    4. Giới hạn &amp; Bối cảnh lâm sàng chưa có
+                  </div>
+                  <p className="text-[11px] text-[#575652] leading-relaxed">
+                    Hệ 6 kênh không thể chẩn đoán phân biệt đột quỵ thiếu máu/xuất huyết, tắc mạch lớn (LVO) hay tự chỉ định tPA khi chưa thăm khám thần kinh và chụp CT/CTA sọ não.
+                  </p>
                   <div className="space-y-1">
                     <label htmlFor="lkw-manual-input" className="text-[11px] font-semibold text-[#262624] block">
                       Thời điểm khởi phát (Last Known Well):{' '}
@@ -3008,336 +3203,330 @@ export function QeegStudioPanel({
                           setReviewState(nextState);
                           persistReviewForCase(analysis.caseId, nextState);
                         }}
-                        placeholder="Nhập tay nếu có bệnh sử (vd: 10:30 hôm nay)"
+                        placeholder="Bác sĩ nhập tay nếu có (vd: 10:30 hôm nay)"
                         className="h-8 bg-white text-[11px]"
                       />
                     )}
-                    <span className="block text-[10px] text-[#6E6D68]">
-                      [Thông tin lâm sàng do bác sĩ nhập — Không tự động kết luận chỉ định tPA]
-                    </span>
                   </div>
-
-                  <div className="rounded-md border border-[#DCE6DF] bg-[#F5FAF7] p-2 text-[11px] text-[#262624] leading-snug">
-                    <strong className="text-[#141413]">Khuyến nghị quy trình (cần bác sĩ giám sát): </strong>
+                  <p className="text-[11px] text-[#262624] rounded-md bg-[#F5FAF7] px-2.5 py-1.5 border border-[#DCE6DF]">
+                    <strong>Khuyến nghị quy trình:</strong>{' '}
                     {derivedContext.aiSuppressedByQuality
-                      ? 'Kiểm tra lại tiếp xúc điện cực, trở kháng da đầu, nguồn nhiễu 50 Hz và ghi lại tối thiểu 4 kênh sạch >= 2 giây trước khi diễn giải điện não.'
+                      ? 'Kiểm tra lại điện cực, nguồn nhiễu 50 Hz và ghi lại tối thiểu 4 kênh sạch >= 2 giây trước khi diễn giải.'
                       : analysis.trafficLight === 'red' ||
                           analysis.trafficLight === 'purple' ||
                           fastScore >= 2
-                        ? 'Nếu có dấu hiệu thần kinh khu trú cấp tính trên lâm sàng, kích hoạt quy trình cấp cứu (gọi 115 / chuyển tuyến) và chỉ định CT sọ não không cản quang trước mọi quyết định điều trị tái tưới máu.'
-                        : 'Đối chiếu triệu chứng lâm sàng, thuốc đang dùng và chỉ định đo EEG chuẩn 10–20 (19 kênh) hoặc thăm khám chuyên khoa khi cần.'}
-                  </div>
+                        ? 'Nếu có dấu hiệu thần kinh khu trú cấp tính, kích hoạt quy trình cấp cứu dưới giám sát bác sĩ và chỉ định CT sọ não không cản quang.'
+                        : 'Đối chiếu triệu chứng lâm sàng, thuốc đang dùng và đo EEG chuẩn 10–20 (19 kênh) khi cần.'}
+                  </p>
                 </div>
               </div>
             </Card>
+          </section>
 
-            {/* Physician Clinical Review Workflow (Phase 7) */}
-            <div ref={reviewSectionRef} className="rounded-xl border border-[#DCE6DF] bg-white overflow-hidden">
-              <button
-                type="button"
-                aria-expanded={showReviewPanel}
-                onClick={() => setShowReviewPanel((v) => !v)}
-                className="w-full px-4 py-3 bg-[#F5FAF7] border-b border-[#DCE6DF] flex items-center justify-between gap-2 text-left"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <FileText className="size-4 text-[#15803D]" aria-hidden />
-                  <span className="text-xs sm:text-sm font-bold text-[#141413]">
-                    Quy trình Bác sĩ Đọc &amp; Ký Nhận định Lâm sàng (Clinical Review Workflow)
+          {/* ================================================================= */}
+          {/* KHU VỰC 5: Nhận định Bác sĩ & Báo cáo (Physician Review & Report) */}
+          {/* ================================================================= */}
+          <section
+            id="sec-review"
+            ref={reviewSectionRef}
+            className="scroll-mt-14 rounded-xl border border-[#DCE6DF] bg-white overflow-hidden"
+          >
+            <button
+              type="button"
+              aria-expanded={showReviewPanel}
+              onClick={() => setShowReviewPanel((v) => !v)}
+              className="w-full px-4 py-3 bg-[#F5FAF7] border-b border-[#DCE6DF] flex items-center justify-between gap-2 text-left cursor-pointer"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <FileText className="size-4 text-[#15803D]" aria-hidden />
+                <h2 className="text-sm font-bold text-[#141413]">
+                  5. Nhận định Bác sĩ &amp; Báo cáo
+                </h2>
+                {reviewState.confirmedAt ? (
+                  <span className="inline-flex items-center gap-1 rounded-md border border-[#BBF7D0] bg-[#ECFDF3] px-2 py-0.5 text-[10.5px] font-bold text-[#15803D]">
+                    <CheckCircle2 className="size-3" aria-hidden />
+                    Đã xác nhận lúc {new Date(reviewState.confirmedAt).toLocaleString('vi-VN')}
                   </span>
-                  {reviewState.confirmedAt ? (
-                    <span className="inline-flex items-center gap-1 rounded-md border border-[#BBF7D0] bg-[#ECFDF3] px-2 py-0.5 text-[10.5px] font-bold text-[#15803D]">
-                      <CheckCircle2 className="size-3" aria-hidden />
-                      Đã xác nhận
-                    </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10.5px] font-semibold text-amber-800">
+                    Bản nháp chưa xác nhận
+                  </span>
+                )}
+              </div>
+              {showReviewPanel ? (
+                <ChevronUp className="size-4 text-[#575652]" aria-hidden />
+              ) : (
+                <ChevronDown className="size-4 text-[#575652]" aria-hidden />
+              )}
+            </button>
+
+            {showReviewPanel && (
+              <div className="p-4 space-y-4 text-xs">
+                {reviewFeedback && <Alert tone={reviewFeedback.tone}>{reviewFeedback.text}</Alert>}
+
+                {/* Segment & Event Annotations Strip */}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="font-bold text-[#141413]">
+                      Đoạn sóng &amp; Sự kiện đánh dấu ({derivedContext.allAnnotations.length})
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddAnnForm(true);
+                        scrollToSection('sec-waveform');
+                      }}
+                      className="text-[11px] font-semibold text-[#15803D] hover:underline cursor-pointer"
+                    >
+                      + Thêm đánh dấu
+                    </button>
+                  </div>
+
+                  {derivedContext.allAnnotations.length === 0 ? (
+                    <p className="text-[11px] text-[#6E6D68]">
+                      Chưa có đoạn sóng nào được đánh dấu. Kéo chọn trên biểu đồ sóng ở mục 2 hoặc bấm &ldquo;+ Thêm đánh dấu&rdquo;.
+                    </p>
                   ) : (
-                    <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10.5px] font-semibold text-amber-800">
-                      Bản nháp chưa xác nhận
-                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {derivedContext.allAnnotations.map((ann) => {
+                        const isSelected =
+                          selectedInterval?.startSec === ann.startSec &&
+                          selectedInterval?.endSec === ann.endSec;
+                        return (
+                          <div
+                            key={ann.id}
+                            className={cn(
+                              'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-colors',
+                              isSelected
+                                ? 'border-[#16A34A] bg-[#ECFDF3] text-[#141413]'
+                                : 'border-[#DCE6DF] bg-[#F5FAF7] text-[#262624]',
+                            )}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedInterval({
+                                  startSec: ann.startSec,
+                                  endSec: ann.endSec,
+                                });
+                              }}
+                              className="text-left hover:underline cursor-pointer"
+                            >
+                              <span className="font-mono font-bold">
+                                {ann.startSec.toFixed(1)}–{ann.endSec.toFixed(1)}s
+                              </span>{' '}
+                              <span className="text-[#575652]">
+                                ({ann.channels?.join(', ') || 'Toàn bộ'})
+                              </span>
+                              : <span className="font-medium">{ann.label}</span>
+                            </button>
+                            {ann.source === 'physician' && (
+                              <button
+                                type="button"
+                                aria-label={`Xóa đánh dấu ${ann.label}`}
+                                onClick={() => handleDeletePhysicianAnnotation(ann.id)}
+                                className="text-[#6E6D68] hover:text-red-700 cursor-pointer"
+                              >
+                                <Trash2 className="size-3" aria-hidden />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
-                {showReviewPanel ? (
-                  <ChevronUp className="size-4 text-[#575652]" aria-hidden />
-                ) : (
-                  <ChevronDown className="size-4 text-[#575652]" aria-hidden />
-                )}
-              </button>
 
-              {showReviewPanel && (
-                <div className="p-4 space-y-4 text-xs">
-                  {reviewFeedback && <Alert tone={reviewFeedback.tone}>{reviewFeedback.text}</Alert>}
+                {/* Strict Separation: Read-only Automated Summary vs Physician Interpretation */}
+                <div className="grid gap-4 lg:grid-cols-12 items-start">
+                  {/* Left: Compact Read-Only Automated System Summary */}
+                  <div className="lg:col-span-5 rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-2">
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-1.5">
+                      <span className="font-bold text-slate-800">
+                        Tóm tắt tự động từ hệ thống (Chỉ đọc — Chưa xác thực)
+                      </span>
+                    </div>
+                    <ul className="space-y-1.5 text-[11.5px] text-slate-700 list-disc pl-4">
+                      <li>
+                        <strong>
+                          {derivedContext.aiSuppressedByQuality
+                            ? 'Lỗi chất lượng kỹ thuật:'
+                            : 'Quan sát mẫu:'}
+                        </strong>{' '}
+                        {derivedContext.patternPresentation.observation}
+                      </li>
+                      <li>
+                        <strong>QEEG:</strong>{' '}
+                        {derivedContext.aiSuppressedByQuality && !derivedContext.hasValidChannels ? (
+                          <span className="font-mono text-amber-800 font-semibold">
+                            N/A — Tín hiệu hỏng
+                          </span>
+                        ) : (
+                          <>
+                            DAR <span className="font-mono">{analysis.biomarkers.meanDar.toFixed(2)}</span> ·
+                            BSI <span className="font-mono">{analysis.biomarkers.meanBsi.toFixed(3)}</span> ·
+                            Alpha{' '}
+                            <span className="font-mono">
+                              {analysis.biomarkers.alphaPeakHz > 0
+                                ? `${analysis.biomarkers.alphaPeakHz.toFixed(1)} Hz`
+                                : 'N/A'}
+                            </span>
+                            {derivedContext.aiSuppressedByQuality && (
+                              <span className="ml-1 font-semibold text-amber-800">(Không tin cậy)</span>
+                            )}
+                          </>
+                        )}
+                      </li>
+                      <li className="text-slate-500">
+                        Chỉ số hỗ trợ tính toán — Không phải chẩn đoán y khoa và không thay thế đánh giá bác sĩ.
+                      </li>
+                    </ul>
+                  </div>
 
-                  {/* Selected EEG Segments & Annotations */}
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h4 className="font-bold text-[#141413]">
-                        Đoạn sóng &amp; Sự kiện đánh dấu ({derivedContext.allAnnotations.length})
-                      </h4>
+                  {/* Right: Physician-Confirmed Interpretation (Never pre-filled!) */}
+                  <div className="lg:col-span-7 rounded-xl border border-[#16A34A]/60 bg-white p-3.5 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#DCE6DF] pb-1.5">
+                      <span className="font-bold text-[#15803D]">
+                        Nhận định chuyên môn của Bác sĩ (Physician-Confirmed Interpretation)
+                      </span>
                       <button
                         type="button"
-                        onClick={() => setShowAddAnnForm(true)}
-                        className="text-[11px] font-semibold text-[#15803D] hover:underline"
+                        onClick={() => setShowAdditionalReviewFields((v) => !v)}
+                        className="text-[11px] font-semibold text-[#15803D] hover:underline cursor-pointer"
                       >
-                        + Thêm đánh dấu mới
+                        {showAdditionalReviewFields
+                          ? 'Thu gọn ghi chú phụ'
+                          : 'Thêm ghi chú nhiễu & Đề xuất theo dõi'}
                       </button>
                     </div>
 
-                    {derivedContext.allAnnotations.length === 0 ? (
-                      <p className="text-[11px] text-[#6E6D68] rounded-lg border border-dashed border-[#DCE6DF] px-3 py-2">
-                        Chưa có đoạn sóng nào được đánh dấu. Kéo chọn trên biểu đồ sóng hoặc bấm &ldquo;+ Đánh dấu đoạn sóng vào nhận định&rdquo;.
-                      </p>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {derivedContext.allAnnotations.map((ann) => {
-                          const isSelected =
-                            selectedInterval?.startSec === ann.startSec &&
-                            selectedInterval?.endSec === ann.endSec;
-                          return (
-                            <div
-                              key={ann.id}
-                              className={cn(
-                                'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] transition-colors',
-                                isSelected
-                                  ? 'border-[#16A34A] bg-[#ECFDF3] text-[#141413]'
-                                  : 'border-[#DCE6DF] bg-[#F5FAF7] text-[#262624]',
-                              )}
-                            >
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSelectedInterval({
-                                    startSec: ann.startSec,
-                                    endSec: ann.endSec,
-                                  })
-                                }
-                                className="text-left hover:underline"
-                              >
-                                <span className="font-mono font-bold">
-                                  {ann.startSec.toFixed(1)}–{ann.endSec.toFixed(1)}s
-                                </span>{' '}
-                                <span className="text-[#575652]">
-                                  ({ann.channels?.join(', ') || 'Toàn bộ'})
-                                </span>
-                                : <span className="font-medium">{ann.label}</span>
-                              </button>
-                              {ann.source === 'physician' && (
-                                <button
-                                  type="button"
-                                  aria-label={`Xóa đánh dấu ${ann.label}`}
-                                  onClick={() => handleDeletePhysicianAnnotation(ann.id)}
-                                  className="text-[#6E6D68] hover:text-red-700"
-                                >
-                                  <Trash2 className="size-3" aria-hidden />
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
+                    <div className="space-y-1">
+                      <label htmlFor="rev-bg-findings" className="font-semibold text-[#141413] block">
+                        Nhận định lâm sàng &amp; Mô tả điện não
+                      </label>
+                      <Textarea
+                        id="rev-bg-findings"
+                        rows={3}
+                        value={reviewState.backgroundAndFindings}
+                        onChange={(e) => {
+                          const next = {
+                            ...reviewState,
+                            backgroundAndFindings: e.target.value,
+                            confirmedAt: null,
+                          };
+                          setReviewState(next);
+                          persistReviewForCase(analysis.caseId, next);
+                        }}
+                        placeholder="Bác sĩ tự mô tả nhịp nền, đáp ứng Alpha, sóng chậm hoặc hoạt động bất thường..."
+                        className="bg-white text-xs"
+                      />
+                    </div>
+
+                    {showAdditionalReviewFields && (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <label htmlFor="rev-artifacts" className="font-semibold text-[#141413] block">
+                            Đánh giá nhiễu &amp; giới hạn kỹ thuật (6 kênh)
+                          </label>
+                          <Textarea
+                            id="rev-artifacts"
+                            rows={2}
+                            value={reviewState.artifactAndTechnicalLimits}
+                            onChange={(e) => {
+                              const next = {
+                                ...reviewState,
+                                artifactAndTechnicalLimits: e.target.value,
+                                confirmedAt: null,
+                              };
+                              setReviewState(next);
+                              persistReviewForCase(analysis.caseId, next);
+                            }}
+                            placeholder="Nhiễu EMG, 50 Hz, chớp mắt, thiếu kênh T3/T4/P3/P4..."
+                            className="bg-white text-xs"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label htmlFor="rev-conclusion" className="font-semibold text-[#141413] block">
+                            Kết luận &amp; Đề xuất theo dõi
+                          </label>
+                          <Textarea
+                            id="rev-conclusion"
+                            rows={2}
+                            value={reviewState.conclusionAndPlan}
+                            onChange={(e) => {
+                              const next = {
+                                ...reviewState,
+                                conclusionAndPlan: e.target.value,
+                                confirmedAt: null,
+                              };
+                              setReviewState(next);
+                              persistReviewForCase(analysis.caseId, next);
+                            }}
+                            placeholder="Đề xuất CT/MRI, EEG chuẩn 10–20 hoặc theo dõi tiếp theo..."
+                            className="bg-white text-xs"
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
+                </div>
 
-                  {/* Strict 2-Column Separation */}
-                  <div className="grid gap-4 lg:grid-cols-2 items-start">
-                    {/* Left Column: Read-only Automated System Observations */}
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-2.5">
-                      <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-2">
-                        <span className="font-bold text-slate-800">
-                          Quan sát tự động từ hệ thống (Chưa xác thực lâm sàng)
+                {/* Final Action & Signature Bar */}
+                <div className="pt-3 border-t border-[#DCE6DF] flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-[11px] text-[#575652]">
+                    <div>
+                      <strong className="text-[#141413]">
+                        {user?.displayName || 'BS. CKII Nguyễn Văn Minh'}
+                      </strong>
+                      {user?.username ? ` (@${user.username})` : ''}
+                      {(derivedContext.isVerifiedReviewer || isProfessional) && (
+                        <span className="ml-1.5 inline-flex items-center rounded bg-[#ECFDF3] border border-[#BBF7D0] px-1.5 py-0.5 text-[10px] font-semibold text-[#15803D]">
+                          Chuyên gia đã xác minh
                         </span>
-                        <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700">
-                          Chỉ đọc
-                        </span>
-                      </div>
-                      <ul className="space-y-1.5 text-[11.5px] text-slate-700 list-disc pl-4">
-                        <li>
-                          <strong>
-                            {derivedContext.aiSuppressedByQuality
-                              ? 'Cảnh báo chất lượng tín hiệu:'
-                              : 'Mẫu tín hiệu gợi ý:'}
-                          </strong>{' '}
-                          {derivedContext.patternPresentation.observation}
-                        </li>
-                        <li>
-                          <strong>Chỉ số QEEG:</strong>{' '}
-                          {derivedContext.aiSuppressedByQuality && !derivedContext.hasValidChannels ? (
-                            <span className="font-mono text-amber-800 font-semibold">
-                              N/A — Tín hiệu hỏng (Không có kênh sạch)
-                            </span>
-                          ) : (
-                            <>
-                              DAR{' '}
-                              <span className="font-mono">
-                                {analysis.biomarkers.meanDar.toFixed(2)}
-                              </span>{' '}
-                              · BSI{' '}
-                              <span className="font-mono">
-                                {analysis.biomarkers.meanBsi.toFixed(3)}
-                              </span>{' '}
-                              · Alpha Peak{' '}
-                              <span className="font-mono">
-                                {analysis.biomarkers.alphaPeakHz > 0
-                                  ? `${analysis.biomarkers.alphaPeakHz.toFixed(1)} Hz`
-                                  : 'N/A'}
-                              </span>{' '}
-                              · TAR{' '}
-                              <span className="font-mono">
-                                {analysis.biomarkers.meanTar.toFixed(2)}
-                              </span>
-                              {derivedContext.aiSuppressedByQuality && (
-                                <span className="ml-1 font-semibold text-amber-800">
-                                  (Không tin cậy — Lỗi tín hiệu)
-                                </span>
-                              )}
-                            </>
-                          )}
-                        </li>
-                        <li>
-                          <strong>Chất lượng dữ liệu:</strong>{' '}
-                          {derivedContext.aiSuppressedByQuality ? (
-                            <span className="text-amber-800 font-semibold">
-                              Không đạt chuẩn · Khả dụng{' '}
-                              {derivedContext.usableDurationSec.toFixed(1)}/
-                              {derivedContext.totalDurationSec.toFixed(1)} s ·{' '}
-                              {derivedContext.recordedChannels.length} kênh đo
-                            </span>
-                          ) : (
-                            <>
-                              Khả dụng {derivedContext.usableDurationSec.toFixed(1)}/
-                              {derivedContext.totalDurationSec.toFixed(1)} s ·{' '}
-                              {derivedContext.recordedChannels.length} kênh đo
-                            </>
-                          )}
-                        </li>
-                        <li className="text-slate-500">
-                          Đây là đầu ra hỗ trợ tính toán từ thuật toán thực nghiệm, không phải chẩn đoán y khoa và không thay thế đánh giá trực tiếp của bác sĩ.
-                        </li>
-                      </ul>
+                      )}
                     </div>
-
-                    {/* Right Column: Physician-Confirmed Interpretation */}
-                    <div className="rounded-xl border-2 border-[#16A34A]/60 bg-white p-3.5 space-y-3">
-                      <div className="flex items-center justify-between gap-2 border-b border-[#DCE6DF] pb-2">
-                        <span className="font-bold text-[#15803D]">
-                          Nhận định chuyên môn của Bác sĩ (Physician-Confirmed Interpretation)
-                        </span>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label htmlFor="rev-bg-findings" className="font-semibold text-[#141413] block">
-                          1. Mô tả nền &amp; hoạt động bất thường
-                        </label>
-                        <Textarea
-                          id="rev-bg-findings"
-                          rows={2}
-                          value={reviewState.backgroundAndFindings}
-                          onChange={(e) => {
-                            const next = {
-                              ...reviewState,
-                              backgroundAndFindings: e.target.value,
-                              confirmedAt: null,
-                            };
-                            setReviewState(next);
-                            persistReviewForCase(analysis.caseId, next);
-                          }}
-                          placeholder="Bác sĩ tự mô tả nhịp nền, đáp ứng Alpha, sóng chậm hoặc phức hợp bất thường..."
-                          className="bg-white text-xs"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label htmlFor="rev-artifacts" className="font-semibold text-[#141413] block">
-                          2. Đánh giá nhiễu &amp; giới hạn kỹ thuật (6 kênh)
-                        </label>
-                        <Textarea
-                          id="rev-artifacts"
-                          rows={2}
-                          value={reviewState.artifactAndTechnicalLimits}
-                          onChange={(e) => {
-                            const next = {
-                              ...reviewState,
-                              artifactAndTechnicalLimits: e.target.value,
-                              confirmedAt: null,
-                            };
-                            setReviewState(next);
-                            persistReviewForCase(analysis.caseId, next);
-                          }}
-                          placeholder="Ghi nhận nhiễu cơ EMG, 50 Hz, chớp mắt, điện cực lệch hoặc giới hạn thiếu kênh T3/T4/P3/P4..."
-                          className="bg-white text-xs"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label htmlFor="rev-conclusion" className="font-semibold text-[#141413] block">
-                          3. Kết luận &amp; Đề xuất lâm sàng (CT/MRI/EEG chuẩn 10–20/Theo dõi)
-                        </label>
-                        <Textarea
-                          id="rev-conclusion"
-                          rows={2}
-                          value={reviewState.conclusionAndPlan}
-                          onChange={(e) => {
-                            const next = {
-                              ...reviewState,
-                              conclusionAndPlan: e.target.value,
-                              confirmedAt: null,
-                            };
-                            setReviewState(next);
-                            persistReviewForCase(analysis.caseId, next);
-                          }}
-                          placeholder="Kết luận đọc điện não và đề xuất cận lâm sàng / theo dõi tiếp theo..."
-                          className="bg-white text-xs"
-                        />
-                      </div>
-
-                      {/* Reviewer Identity & Confirmation Footer */}
-                      <div className="pt-2 border-t border-[#DCE6DF] flex flex-wrap items-center justify-between gap-2">
-                        <div className="text-[11px] text-[#575652]">
-                          <div>
-                            Người đọc:{' '}
-                            <strong className="text-[#141413]">
-                              {user?.displayName || 'Bác sĩ đọc ca'}
-                            </strong>{' '}
-                            {user?.username ? `(@${user.username})` : ''}
-                            {derivedContext.isVerifiedReviewer && (
-                              <span className="ml-1.5 inline-flex items-center rounded bg-[#ECFDF3] border border-[#BBF7D0] px-1.5 py-0.5 text-[10px] font-semibold text-[#15803D]">
-                                Chuyên gia đã xác minh
-                              </span>
-                            )}
-                          </div>
-                          <div className="font-mono text-[10.5px] text-[#6E6D68]">
-                            {reviewState.confirmedAt
-                              ? `Xác nhận lúc: ${new Date(reviewState.confirmedAt).toLocaleString('vi-VN')}`
-                              : 'Chưa ký xác nhận'}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button
-                            type="button"
-                            size="xs"
-                            variant="outline"
-                            onClick={handleExportClinicalReport}
-                            className="border-[#DCE6DF]"
-                            icon={<FileDown className="size-3.5 text-[#15803D]" aria-hidden />}
-                          >
-                            Xuất báo cáo / In PDF
-                          </Button>
-                          <Button
-                            type="button"
-                            size="xs"
-                            variant="primary"
-                            onClick={handleConfirmPhysicianReview}
-                            icon={<CheckCircle2 className="size-3.5" aria-hidden />}
-                          >
-                            Xác nhận nhận định lâm sàng
-                          </Button>
-                        </div>
-                      </div>
+                    <div className="font-mono text-[10.5px] text-[#6E6D68]">
+                      {reviewState.confirmedAt
+                        ? `Đã xác nhận lúc: ${new Date(reviewState.confirmedAt).toLocaleString('vi-VN')}`
+                        : 'Chưa ký xác nhận'}
                     </div>
                   </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="primary"
+                      onClick={handleConfirmPhysicianReview}
+                      icon={<CheckCircle2 className="size-3.5" aria-hidden />}
+                    >
+                      Xác nhận nhận định
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleOpenSaveModal}
+                      className="border-[#DCE6DF]"
+                    >
+                      {savedDatasetId ? 'Đã lưu ✓' : 'Lưu bản ghi'}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleExportClinicalReport}
+                      className="border-[#DCE6DF]"
+                      icon={<FileDown className="size-3.5 text-[#15803D]" aria-hidden />}
+                    >
+                      Xuất báo cáo (In / PDF)
+                    </Button>
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            )}
+          </section>
         </div>
       )}
 

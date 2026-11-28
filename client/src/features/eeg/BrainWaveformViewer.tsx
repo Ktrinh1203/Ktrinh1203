@@ -57,6 +57,8 @@ export interface BrainWaveformViewerProps {
   selectedInterval?: BrainWaveformInterval | null;
   onSelectInterval?: (interval: BrainWaveformInterval | null) => void;
   onAddAnnotationFromSelection?: (interval: BrainWaveformInterval) => void;
+  onOpenRecordingSettings?: () => void;
+  hideInternalHeader?: boolean;
   svgRef?: React.RefObject<SVGSVGElement | null>;
 }
 
@@ -133,19 +135,16 @@ function findSampleIndexForTime(times: number[], targetSec: number): number {
 
 export function BrainWaveformViewer({
   waveforms,
-  samplingRateHz = 500,
   isProfessional = false,
   title = 'Biểu đồ Điện não Đa kênh',
-  subtitle,
-  montageLabel,
-  referenceLabel,
   filterDescription,
-  recordingPositionLabel,
   channelQuality,
   annotations,
   selectedInterval,
   onSelectInterval,
   onAddAnnotationFromSelection,
+  onOpenRecordingSettings,
+  hideInternalHeader = false,
   svgRef: externalSvgRef,
 }: BrainWaveformViewerProps) {
   const instanceId = useId().replace(/:/g, '');
@@ -589,11 +588,15 @@ export function BrainWaveformViewer({
   const traceStroke =
     signalMode === 'raw' ? '#b45309' : isProfessional ? '#1e3a5f' : '#0d9488';
 
-  const resolvedMontage = montageLabel?.trim() || `${channels.length} kênh 10–20`;
-  const resolvedFilterLine =
-    signalMode === 'raw'
-      ? 'Tín hiệu gốc trừ DC offset — Chưa áp dụng lọc băng thông / Notch'
-      : filterDescription?.trim() || 'Đã lọc chuẩn hóa phía máy chủ (chưa khai báo thông số chi tiết)';
+  const conciseFilterStatus = useMemo(() => {
+    if (signalMode === 'raw') return 'Tín hiệu gốc (Raw)';
+    const rawDesc = filterDescription?.trim();
+    if (!rawDesc || /^raw\b/i.test(rawDesc)) return '0.5–45 Hz · Notch 50 Hz';
+    return rawDesc
+      .replace(/^(Butterworth|Bandpass)\s+/i, '')
+      .replace(/\s+Bật\b/gi, '')
+      .trim();
+  }, [signalMode, filterDescription]);
 
   return (
     <div
@@ -602,20 +605,84 @@ export function BrainWaveformViewer({
         isProfessional ? 'border-slate-300' : 'border-slate-200/90',
       )}
     >
-      {/* Toolbar */}
-      <div className="px-3.5 py-2.5 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <Activity
-              className={cn('size-4 shrink-0', isProfessional ? 'text-[#1E3A5F]' : 'text-teal-700')}
-              aria-hidden
-            />
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">{title}</h3>
-          </div>
-          <p className="text-[11px] text-slate-500">
-            {subtitle ||
-              `${samplingRateHz} Hz · ${channels.length} đạo trình · ${totalDurationSec.toFixed(1)}s`}
-          </p>
+      {/* Optional minimal title when not suppressed by parent */}
+      {!hideInternalHeader && title && (
+        <div className="px-3.5 py-2 bg-white border-b border-slate-100 flex items-center gap-1.5">
+          <Activity
+            className={cn('size-4 shrink-0', isProfessional ? 'text-[#1E3A5F]' : 'text-teal-700')}
+            aria-hidden
+          />
+          <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug truncate">
+            {title}
+          </h3>
+        </div>
+      )}
+
+      {/* Single Compact Waveform Toolbar */}
+      <div className="px-3 py-2 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
+          {hasRaw ? (
+            <div
+              className="inline-flex rounded-md border border-slate-200 bg-white p-0.5 text-[11px] font-semibold"
+              role="group"
+              aria-label="Chọn chế độ lọc tín hiệu"
+            >
+              <button
+                type="button"
+                aria-pressed={signalMode === 'filtered'}
+                onClick={() => setSignalMode('filtered')}
+                className={cn(
+                  'rounded px-2 py-0.5 transition-colors',
+                  signalMode === 'filtered'
+                    ? 'bg-[#2C6865] text-white font-bold'
+                    : 'text-slate-600 hover:bg-slate-100',
+                )}
+              >
+                Đã lọc
+              </button>
+              <button
+                type="button"
+                aria-pressed={signalMode === 'raw'}
+                onClick={() => setSignalMode('raw')}
+                className={cn(
+                  'rounded px-2 py-0.5 transition-colors',
+                  signalMode === 'raw'
+                    ? 'bg-amber-600 text-white font-bold'
+                    : 'text-slate-600 hover:bg-slate-100',
+                )}
+              >
+                Tín hiệu gốc
+              </button>
+            </div>
+          ) : (
+            <span className="inline-flex items-center rounded border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+              Đã lọc
+            </span>
+          )}
+
+          <span
+            className={cn(
+              'text-[11px] font-mono tabular-nums truncate',
+              signalMode === 'raw' ? 'text-amber-800 font-medium' : 'text-slate-600',
+            )}
+          >
+            {conciseFilterStatus}
+          </span>
+
+          {onOpenRecordingSettings && (
+            <button
+              type="button"
+              onClick={onOpenRecordingSettings}
+              className={cn(
+                'text-[11px] font-medium underline underline-offset-2 transition-colors',
+                isProfessional
+                  ? 'text-[#1E3A5F] hover:text-slate-900'
+                  : 'text-teal-700 hover:text-teal-900',
+              )}
+            >
+              Cài đặt đọc
+            </button>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
@@ -625,10 +692,7 @@ export function BrainWaveformViewer({
             role="group"
             aria-label="Chọn độ nhạy biên độ EEG"
           >
-            <span className="px-2 text-slate-500 flex items-center gap-1">
-              <SlidersHorizontal className="size-3" aria-hidden />
-              Độ nhạy:
-            </span>
+            <SlidersHorizontal className="size-3 mx-1.5 text-slate-400" aria-hidden />
             {([25, 50, 100] as const).map((uv) => (
               <button
                 key={uv}
@@ -636,7 +700,7 @@ export function BrainWaveformViewer({
                 aria-pressed={gainUv === uv}
                 onClick={() => setGainUv(uv)}
                 className={cn(
-                  'rounded px-2 py-1 font-mono tabular-nums transition-colors',
+                  'rounded px-2 py-0.5 font-mono tabular-nums transition-colors',
                   gainUv === uv
                     ? isProfessional
                       ? 'bg-[#162B47] text-white font-bold'
@@ -644,7 +708,7 @@ export function BrainWaveformViewer({
                     : 'text-slate-600 hover:bg-slate-100',
                 )}
               >
-                {uv} µV
+                {uv === 100 ? '100 µV' : uv}
               </button>
             ))}
           </div>
@@ -655,10 +719,7 @@ export function BrainWaveformViewer({
             role="group"
             aria-label="Chọn cửa sổ thời gian hiển thị"
           >
-            <span className="px-1.5 text-slate-500 flex items-center gap-1">
-              <ZoomIn className="size-3" aria-hidden />
-              Khung:
-            </span>
+            <ZoomIn className="size-3 mx-1.5 text-slate-400" aria-hidden />
             {(['ALL', 5, 2.5] as const).map((opt) => {
               const disabled = opt !== 'ALL' && totalDurationSec <= opt + 0.05;
               return (
@@ -672,7 +733,7 @@ export function BrainWaveformViewer({
                     if (opt === 'ALL') setWindowStartOffsetSec(0);
                   }}
                   className={cn(
-                    'rounded px-2 py-1 font-mono tabular-nums transition-colors',
+                    'rounded px-2 py-0.5 font-mono tabular-nums transition-colors',
                     disabled && 'opacity-40 cursor-not-allowed',
                     timeScale === opt
                       ? isProfessional
@@ -687,49 +748,13 @@ export function BrainWaveformViewer({
             })}
           </div>
 
-          {/* Raw vs DSP toggle */}
-          {hasRaw && (
-            <div
-              className="inline-flex rounded-md border border-slate-200 bg-white p-0.5 text-[11px] font-semibold"
-              role="group"
-              aria-label="Chọn chế độ lọc tín hiệu"
-            >
-              <button
-                type="button"
-                aria-pressed={signalMode === 'filtered'}
-                onClick={() => setSignalMode('filtered')}
-                className={cn(
-                  'rounded px-2.5 py-1 transition-colors',
-                  signalMode === 'filtered'
-                    ? 'bg-[#2C6865] text-white font-bold'
-                    : 'text-slate-600 hover:bg-slate-100',
-                )}
-              >
-                Đã lọc nhiễu
-              </button>
-              <button
-                type="button"
-                aria-pressed={signalMode === 'raw'}
-                onClick={() => setSignalMode('raw')}
-                className={cn(
-                  'rounded px-2.5 py-1 transition-colors',
-                  signalMode === 'raw'
-                    ? 'bg-amber-600 text-white font-bold'
-                    : 'text-slate-600 hover:bg-slate-100',
-                )}
-              >
-                Tín hiệu gốc
-              </button>
-            </div>
-          )}
-
           {/* Play / Pause inspect */}
           <button
             type="button"
             aria-pressed={isPaused}
             onClick={togglePlay}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] font-bold transition-colors',
+              'inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[11px] font-bold transition-colors',
               isPaused
                 ? 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100'
                 : 'border-teal-600 bg-teal-50 text-teal-800 hover:bg-teal-100',
@@ -737,44 +762,16 @@ export function BrainWaveformViewer({
           >
             {isPaused ? (
               <>
-                <Play className="size-3.5" aria-hidden />
+                <Play className="size-3" aria-hidden />
                 <span>Chạy quét</span>
               </>
             ) : (
               <>
-                <Pause className="size-3.5" aria-hidden />
+                <Pause className="size-3" aria-hidden />
                 <span>Tạm dừng</span>
               </>
             )}
           </button>
-        </div>
-      </div>
-
-      {/* Technical Metadata Strip */}
-      <div className="px-3.5 py-1.5 bg-slate-50/50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[11px] text-slate-600">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span>
-            <strong className="text-slate-800">Tần số:</strong>{' '}
-            <span className="font-mono tabular-nums">{samplingRateHz} Hz</span>
-          </span>
-          <span aria-hidden className="text-slate-300">
-            |
-          </span>
-          <span>
-            <strong className="text-slate-800">Montage:</strong> {resolvedMontage}
-            {referenceLabel ? ` · Tham chiếu: ${referenceLabel}` : ''}
-          </span>
-          <span aria-hidden className="text-slate-300">
-            |
-          </span>
-          <span className={signalMode === 'raw' ? 'text-amber-800 font-medium' : 'text-slate-700'}>
-            <strong className="text-slate-800">Bộ lọc:</strong> {resolvedFilterLine}
-          </span>
-        </div>
-        <div className="font-mono tabular-nums text-slate-700 font-semibold">
-          {recordingPositionLabel
-            ? `${recordingPositionLabel} · Đang xem: ${viewStartSec.toFixed(1)}s – ${viewEndSec.toFixed(1)}s`
-            : `Vị trí đoạn ghi: ${viewStartSec.toFixed(1)}s – ${viewEndSec.toFixed(1)}s`}
         </div>
       </div>
 
@@ -855,7 +852,7 @@ export function BrainWaveformViewer({
               if (isPaused) handlePointerInspect(e.clientX, false);
             }}
             onMouseLeave={() => {
-              if (!dragStateRef.current.active && !isPaused) setInspectIdx(null);
+              if (!dragStateRef.current.active) setInspectIdx(null);
             }}
           >
             <defs>
@@ -904,6 +901,13 @@ export function BrainWaveformViewer({
             {/* Major vertical EEG grid */}
             {gridTicksSec.map((sec) => {
               const x = timeToX(sec);
+              const anchor =
+                x - labelWidth < 14
+                  ? 'start'
+                  : x > labelWidth + plotWidth - 14
+                    ? 'end'
+                    : 'middle';
+              const labelX = anchor === 'start' ? x + 3 : anchor === 'end' ? x - 2 : x;
               return (
                 <g key={`major-${sec}`}>
                   <line
@@ -915,9 +919,9 @@ export function BrainWaveformViewer({
                     strokeWidth={1}
                   />
                   <text
-                    x={x}
+                    x={labelX}
                     y={svgHeight - 9}
-                    textAnchor="middle"
+                    textAnchor={anchor}
                     fill="#475569"
                     fontSize={9.5}
                     fontWeight={600}
@@ -1399,49 +1403,54 @@ export function BrainWaveformViewer({
           </div>
         )}
 
-        {/* Live Sample Readout Strip */}
-        <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono tabular-nums">
-          <div className="flex items-center gap-2 text-slate-700 font-bold font-sans">
-            <span key={isSweepActive ? 'sweep-time' : 'static-time'} ref={readoutTimeRef}>
-              {activeInspectIndex !== null
-                ? `t = ${(times[activeInspectIndex] ?? 0).toFixed(2)}s`
-                : 'Nhấn để soi µV · Giữ và kéo chuột để chọn đoạn thời gian'}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {channels.map((ch, idx) => {
-              const meta = channelMeta[idx]!;
-              const sampleVal =
-                meta.isRecorded && activeInspectIndex !== null
-                  ? activeSignals[ch]?.[activeInspectIndex]
-                  : undefined;
-              return (
-                <span
-                  key={`readout-${ch}`}
-                  className="inline-flex items-center gap-1 rounded bg-white border border-slate-200 px-2 py-0.5 text-slate-700"
-                >
-                  <strong className="text-slate-900">{ch}:</strong>
-                  {!meta.isRecorded ? (
-                    <span className="text-slate-400">Không đo</span>
-                  ) : sampleVal !== undefined ? (
-                    <span className={sampleVal >= 0 ? 'text-teal-700' : 'text-sky-700'}>
-                      {sampleVal >= 0 ? `+${sampleVal.toFixed(1)}` : sampleVal.toFixed(1)} µV
+        {/* Slim Guidance / Live Cursor Readout Line */}
+        <div className="px-1 pt-0.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-slate-500">
+          {activeInspectIndex !== null || isSweepActive ? (
+            <>
+              <span
+                key={isSweepActive ? 'sweep-time' : 'static-time'}
+                ref={readoutTimeRef}
+                className="font-mono tabular-nums font-semibold text-slate-700 shrink-0"
+              >
+                {activeInspectIndex !== null
+                  ? `t = ${(times[activeInspectIndex] ?? 0).toFixed(2)}s`
+                  : 't = 0.00s'}
+              </span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 font-mono tabular-nums text-[11px]">
+                {channels.map((ch, idx) => {
+                  const meta = channelMeta[idx]!;
+                  const sampleVal =
+                    meta.isRecorded && activeInspectIndex !== null
+                      ? activeSignals[ch]?.[activeInspectIndex]
+                      : undefined;
+                  return (
+                    <span key={`readout-${ch}`} className="inline-flex items-center gap-1">
+                      <span className="font-semibold text-slate-700">{ch}:</span>
+                      {!meta.isRecorded ? (
+                        <span className="text-slate-400">Không đo</span>
+                      ) : sampleVal !== undefined ? (
+                        <span className={sampleVal >= 0 ? 'text-teal-700' : 'text-sky-700'}>
+                          {sampleVal >= 0 ? `+${sampleVal.toFixed(1)}` : sampleVal.toFixed(1)} µV
+                        </span>
+                      ) : (
+                        <span
+                          key={isSweepActive ? `sweep-${ch}` : `static-${ch}`}
+                          ref={(el) => {
+                            readoutValRefs.current[idx] = el;
+                          }}
+                          className="text-slate-500"
+                        >
+                          -- µV
+                        </span>
+                      )}
                     </span>
-                  ) : (
-                    <span
-                      key={isSweepActive ? `sweep-${ch}` : `static-${ch}`}
-                      ref={(el) => {
-                        readoutValRefs.current[idx] = el;
-                      }}
-                      className="text-slate-500"
-                    >
-                      RMS {meta.rmsUv.toFixed(1)} µV
-                    </span>
-                  )}
-                </span>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <span>Di chuột để soi µV · Kéo chọn đoạn để đánh dấu</span>
+          )}
         </div>
       </div>
     </div>
