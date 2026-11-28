@@ -917,7 +917,7 @@
         <div class="brand-divider" aria-hidden="true"></div>
         <div>
           <div class="station-title">Trạm Điện Não Định Lượng Lâm Sàng NeuroLink</div>
-          <div id="station-subtitle" class="station-subtitle">6 kênh chuẩn · Tái tạo vỏ não</div>
+          <div id="station-subtitle" class="station-subtitle">6 kênh chuẩn · Bản đồ phân bố EEG trên da đầu</div>
         </div>
       </div>
 
@@ -1158,36 +1158,36 @@
                 <div class="bar-track"><div id="bar-control" class="bar-fill" style="width:0%; background:#059669;"></div></div>
               </div>
               <div class="bar-row">
-                <div class="bar-row-head"><span>Thiếu máu cục bộ</span><span id="prob-ischemic" class="mono">0%</span></div>
+                <div class="bar-row-head"><span>Sóng chậm khu trú bất đối xứng</span><span id="prob-ischemic" class="mono">0%</span></div>
                 <div class="bar-track"><div id="bar-ischemic" class="bar-fill" style="width:0%; background:#dc2626;"></div></div>
               </div>
               <div class="bar-row">
-                <div class="bar-row-head"><span>Xuất huyết não</span><span id="prob-hemorrhagic" class="mono">0%</span></div>
+                <div class="bar-row-head"><span>Sóng chậm biên độ cao lan tỏa</span><span id="prob-hemorrhagic" class="mono">0%</span></div>
                 <div class="bar-track"><div id="bar-hemorrhagic" class="bar-fill" style="width:0%; background:#7e22ce;"></div></div>
               </div>
               <div class="bar-row">
-                <div class="bar-row-head"><span>Phóng điện động kinh</span><span id="prob-epileptiform" class="mono">0%</span></div>
+                <div class="bar-row-head"><span>Hoạt động dạng động kinh (F3–C3)</span><span id="prob-epileptiform" class="mono">0%</span></div>
                 <div class="bar-track"><div id="bar-epileptiform" class="bar-fill" style="width:0%; background:#d97706;"></div></div>
               </div>
               <div class="bar-row" style="margin-bottom:0;">
-                <div class="bar-row-head"><span>Ngủ sâu / Mệt mỏi</span><span id="prob-fatigue" class="mono">0%</span></div>
+                <div class="bar-row-head"><span>Buồn ngủ / Giảm cảnh tỉnh</span><span id="prob-fatigue" class="mono">0%</span></div>
                 <div class="bar-track"><div id="bar-fatigue" class="bar-fill" style="width:0%; background:#0284c7;"></div></div>
               </div>
             </div>
           </div>
 
-          <!-- 2D CORTICAL TOPOMAP -->
+          <!-- 2D SCALP TOPOMAP -->
           <div class="panel">
             <div class="panel-header">
               <div>
-                <div class="panel-title">Bản Đồ Vỏ Não 2D (19 Điện Cực)</div>
-                <div id="topomap-subtitle" class="panel-subtitle">Nội suy 19 vùng từ 6 kênh gốc</div>
+                <div class="panel-title">Bản đồ phân bố EEG trên da đầu (19 vị trí 10-20)</div>
+                <div id="topomap-subtitle" class="panel-subtitle">Nội suy 19 vị trí từ các kênh thực đo</div>
               </div>
               <span class="tech-caption mono">Hệ 10-20</span>
             </div>
 
             <div class="topomap-wrap">
-              <canvas id="topomap-canvas" width="240" height="240" style="display:block; cursor:crosshair;" aria-label="Bản đồ phân bố điện thế vỏ não 2D 19 điện cực"></canvas>
+              <canvas id="topomap-canvas" width="240" height="240" style="display:block; cursor:crosshair;" aria-label="Bản đồ phân bố EEG trên da đầu 19 vị trí 10-20"></canvas>
               <div style="width:100%;">
                 <div class="legend-bar"></div>
                 <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:4px;" class="mono">
@@ -1326,11 +1326,11 @@
     (function () {
       const MODE_COPY = {
         professional: {
-          stationSubtitle: '6 kênh chuẩn · Tái tạo vỏ não',
+          stationSubtitle: '6 kênh chuẩn · Bản đồ phân bố EEG trên da đầu',
           actionTitle: 'Phân tích Điện não Định lượng & Cổng An toàn Lâm sàng',
-          actionSubtitle: 'Phân tích nhanh 4 chỉ số sóng não & cảnh báo an toàn 115.',
+          actionSubtitle: 'Phân tích 4 chỉ số sóng não, kiểm tra chất lượng tín hiệu & cảnh báo an toàn.',
           waveformSubtitle: '6 đạo trình · 500 Hz',
-          topomapSubtitle: 'Nội suy 19 vùng từ 6 kênh gốc',
+          topomapSubtitle: 'Nội suy 19 vị trí da đầu từ các kênh thực đo',
           qrSubtitle: 'Thông số tóm tắt bàn giao',
           kpis: {
             darLabel: 'Tỷ số DAR',
@@ -1344,19 +1344,19 @@
           },
         },
         general: {
-          stationSubtitle: '6 kênh · Bản đồ não trực quan',
+          stationSubtitle: '6 kênh · Bản đồ EEG trên da đầu',
           actionTitle: 'Kiểm tra Sóng Não & Cảnh báo An toàn',
-          actionSubtitle: 'Phân tích nhanh 4 chỉ số sóng não & cảnh báo an toàn 115.',
+          actionSubtitle: 'Kiểm tra 4 chỉ số sóng não & khuyến nghị đối chiếu lâm sàng.',
           waveformSubtitle: '6 kênh · Nhịp sóng não',
-          topomapSubtitle: 'Phân bố sóng chậm 19 vùng não',
-          qrSubtitle: 'Mã quét nhanh 115',
+          topomapSubtitle: 'Phân bố sóng chậm 19 vị trí da đầu',
+          qrSubtitle: 'Mã tóm tắt thông số',
           kpis: {
             darLabel: 'Chỉ số sóng chậm',
             darSub: 'Mức sóng chậm (bình thường < 1.50)',
             bsiLabel: 'Cân bằng 2 bên',
             bsiSub: 'Chênh lệch 2 bán cầu (chuẩn ≤ 0.15)',
             tarLabel: 'Mức mệt mỏi',
-            tarSub: 'Dấu hiệu buồn ngủ / quá tải nhẹ',
+            tarSub: 'Dấu hiệu buồn ngủ / giảm cảnh tỉnh',
             alphaLabel: 'Nhịp thư thái',
             alphaSub: 'Nhịp nghỉ ngơi chuẩn 8.0 – 12.5 Hz',
           },
@@ -1364,29 +1364,33 @@
       };
 
       const CASE_SHORT_TITLES = {
-        case_ischemia_lvo: 'Ca Lâm sàng #01: Đột quỵ Thiếu máu Cục bộ Cấp',
-        case_ich_hemorrhage: 'Ca Lâm sàng #02: Xuất huyết Não Cấp',
-        case_epilepsy_temporal: 'Ca Lâm sàng #03: Phóng điện Nhọn - Sóng chậm Thái dương',
-        case_sleep_fatigue_n3: 'Ca Lâm sàng #04: Ngủ sâu N3 / Mệt mỏi Nhận thức',
-        case_healthy_alpha: 'Nhóm Chứng #05: Sóng Não Bình thường',
-        case_ads1299_hardware: 'Thực nghiệm #06: Luồng Phần cứng 24-bit 500Hz',
+        case_ischemia_lvo: 'Mẫu mô phỏng #01: Sóng chậm Delta khu trú & bất đối xứng (F3, C3)',
+        case_ich_hemorrhage: 'Mẫu mô phỏng #02: Sóng chậm Delta biên độ cao lan tỏa',
+        case_epilepsy_temporal: 'Mẫu mô phỏng #03: Hoạt động dạng động kinh (F3–C3)',
+        case_sleep_fatigue_n3: 'Mẫu mô phỏng #04: Mẫu EEG buồn ngủ / giảm cảnh tỉnh',
+        case_healthy_alpha: 'Mẫu tham chiếu #05: Nhịp Alpha chẩm sinh lý',
+        case_ads1299_hardware: 'Bản ghi phần cứng #06: Tín hiệu mẫu 24-bit 500Hz',
       };
 
       const CASE_CONTEXT_BADGES = {
-        case_ischemia_lvo: 'Thiếu máu',
-        case_ich_hemorrhage: 'Xuất huyết',
-        case_epilepsy_temporal: 'ICU',
-        case_sleep_fatigue_n3: 'Giấc ngủ',
+        case_ischemia_lvo: 'Chậm khu trú',
+        case_ich_hemorrhage: 'Chậm lan tỏa',
+        case_epilepsy_temporal: 'Nhọn–sóng chậm',
+        case_sleep_fatigue_n3: 'Giảm cảnh tỉnh',
         case_healthy_alpha: 'Chuẩn 10.2 Hz',
-        case_ads1299_hardware: 'Trực tiếp 6 kênh',
+        case_ads1299_hardware: 'Mẫu phần cứng',
       };
 
       const SAFETY_LABELS = {
-        HOLD_TPA_CT_REQUIRED: 'Chờ chụp CT trước tPA',
-        ICH_LOCKED_CT_REQUIRED: 'Khóa tPA · Chụp CT khẩn',
-        MONITORING_EPILEPSY: 'Theo dõi động kinh',
-        PASS_MIMIC_SUPPRESSED: 'An toàn (Giả đột quỵ)',
-        PASS: 'An toàn',
+        REQUIRES_CLINICAL_AND_CT_REVIEW: 'Cần khám lâm sàng & CT/CTA',
+        HOLD_TPA_CT_REQUIRED: 'Cần khám lâm sàng & CT/CTA',
+        ICH_LOCKED_CT_REQUIRED: 'Khóa gợi ý tái tưới máu · Cần NCCT',
+        MONITORING_EPILEPSY: 'Theo dõi điện não chuyên khoa',
+        EPILEPTIFORM_MONITORING: 'Theo dõi điện não chuyên khoa',
+        PASS_MIMIC_SUPPRESSED: 'Sóng chậm đối xứng · Đối chiếu lâm sàng',
+        MIMIC_SUPPRESSED_OBSERVE: 'Sóng chậm đối xứng · Đối chiếu lâm sàng',
+        SIGNAL_QUALITY_UNRELIABLE: 'Chất lượng tín hiệu không đạt chuẩn',
+        PASS: 'Ổn định trên đoạn ghi',
       };
 
       function formatCaseTitle(item) {
@@ -1714,11 +1718,13 @@
         document.getElementById('triage-title').textContent = data.classificationTitle || data.classificationLabel;
         document.getElementById('triage-reason').textContent = data.decisionReason || '';
         document.getElementById('tpa-badge').textContent = data.tpaBadge || '';
-        document.getElementById('tpa-countdown').textContent = bm.tpaLockoutTriggered
-          ? 'KHÓA tPA TUYỆT ĐỐI · GỌI 115 / CT KHẨN'
-          : (data.tpaCountdownMin > 0
-              ? `Gọi 115 / CT khẩn · Cửa sổ đánh giá tPA: ${data.tpaCountdownMin} phút`
-              : `Trạng thái: ${formatSafetyStatus(data.safetyStatus)}`);
+        document.getElementById('tpa-countdown').textContent = data.signalQuality && data.signalQuality.aiSuppressedByQuality
+          ? 'Chất lượng tín hiệu không đạt chuẩn — Kiểm tra điện cực & đo lại'
+          : bm.tpaLockoutTriggered
+            ? 'Khóa gợi ý tái tưới máu · Cần chụp NCCT loại trừ xuất huyết'
+            : (data.tpaCountdownMin != null && data.tpaCountdownMin > 0
+                ? `Trạng thái: ${formatSafetyStatus(data.safetyStatus)} (${data.tpaCountdownMin} phút)`
+                : `Trạng thái: ${formatSafetyStatus(data.safetyStatus)}`);
 
         // Probabilities
         const setProb = (idText, idBar, val) => {
@@ -1739,8 +1745,9 @@
         document.getElementById('band-beta').textContent = (Number(bp.beta || 0) * 100).toFixed(1) + '%';
 
         // Meta & QR (zero debug/fallback labels)
+        const recCount = data.recordedChannelCount ?? data.channelsCount;
         document.getElementById('waveform-meta').textContent =
-          `${data.samplingRateHz} Hz · ${data.channelsCount} kênh · Hệ thống phân tích đã sẵn sàng`;
+          `${data.samplingRateHz} Hz · ${recCount}/${data.channelsCount} kênh thực đo · Hệ thống phân tích đã sẵn sàng`;
         document.getElementById('cusum-flag').textContent = bm.cusumAlarm ? 'Cảnh báo biến động sớm' : 'Ổn định';
         document.getElementById('safety-code').textContent = formatSafetyStatus(data.safetyStatus);
 
@@ -1910,17 +1917,19 @@
           const x = cx0 + Number(node.x) * radius * 0.88;
           const y = cy0 - Number(node.y) * radius * 0.88;
           const isPhys = Boolean(node.isPhysical);
+          const isUnavail = Boolean(node.isUnavailable);
 
           state.topomapPlotNodes.push({
             name: node.name,
             x,
             y,
             isPhysical: isPhys,
+            isUnavailable: isUnavail,
             value: Number(node.value || 0),
             dar: Number(node.dar || 0),
           });
 
-          topomapCtx.fillStyle = isPhys ? '#2c6865' : '#94a3b8';
+          topomapCtx.fillStyle = isUnavail ? '#cbd5e1' : (isPhys ? '#2c6865' : '#94a3b8');
           topomapCtx.beginPath();
           topomapCtx.arc(x, y, isPhys ? 4.8 : 2.3, 0, Math.PI * 2);
           topomapCtx.fill();

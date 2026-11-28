@@ -4,6 +4,8 @@ import type {
   CommentItem,
   PaginatedPosts,
   PostItem,
+  QeegAnalysisResult,
+  QeegTopomapNode,
   SelfUser,
   UserProfile,
 } from './types';
@@ -432,6 +434,118 @@ export const communitiesApi = {
     ),
 };
 
+export type QeegDataOrigin = 'SYNTHETIC_DEMO' | 'HARDWARE_SAMPLE_CSV' | 'USER_UPLOADED_CSV';
+export type QeegSamplingRateSource = 'CSV_TIMESTAMP' | 'REQUEST_PARAM' | 'CASE_METADATA';
+
+export interface QeegFilterConfig {
+  highpassHz: number;
+  lowpassHz: number;
+  notchHz: number | null;
+  notchQ: number | null;
+  filterType: string;
+  filterOrder: number;
+  reference: string;
+  physicalReference: string | null;
+  edgeTrimSec: number;
+}
+
+export interface QeegChannelQuality {
+  channel: string;
+  isRecorded: boolean;
+  rmsUv: number;
+  ptpUv: number;
+  lineNoiseRatio: number;
+  emgRatio: number;
+  lowFreqDriftRatio: number;
+  flatlineRatio: number;
+  saturationRatio: number;
+  impedanceKOhm: number | null;
+  status: 'GOOD' | 'NOISY' | 'DROPOUT' | 'SATURATED' | 'UNAVAILABLE';
+}
+
+export interface QeegSignalSegment {
+  startSec: number;
+  endSec: number;
+  channels: string[];
+  type: string;
+  labelVi: string;
+}
+
+export interface QeegSignalQuality {
+  overallScore: number;
+  overallStatus: 'GOOD' | 'DEGRADED' | 'UNRELIABLE' | 'MISSING';
+  aiSuppressedByQuality: boolean;
+  suppressionReasons: string[];
+  usableDurationSec: number;
+  totalDurationSec: number;
+  channels: QeegChannelQuality[];
+  artifactSegments: QeegSignalSegment[];
+  abnormalSegments: QeegSignalSegment[];
+}
+
+export interface QeegPsdCurve {
+  freqsHz: number[];
+  meanPowerUv2Hz: number[];
+  leftHemispherePowerUv2Hz: number[];
+  rightHemispherePowerUv2Hz: number[];
+  gammaRelRatio: number;
+  bandNormalizationBasis: string;
+}
+
+export interface QeegBsiPair {
+  pair: string;
+  leftChannel: string;
+  rightChannel: string;
+  isAvailable: boolean;
+  bsi: number;
+  pdBsi1To25Hz: number;
+  leftPower: number;
+  rightPower: number;
+  dominantSide: 'LEFT' | 'RIGHT' | 'BALANCED';
+}
+
+export interface QeegModelMetadata {
+  outputType: 'EXPERIMENTAL_HEURISTIC_SCORE' | string;
+  isCalibratedProbability: boolean;
+  validationStatus: string;
+  disclaimerVi: string;
+  semanticGroupingNoteVi: string;
+}
+
+export interface QeegTopomapNodeResponse extends QeegTopomapNode {
+  isUnavailable?: boolean;
+  isRecorded?: boolean;
+}
+
+export interface QeegAnalysisResponse
+  extends Omit<QeegAnalysisResult, 'tpaCountdownMin' | 'topomap'> {
+  tpaCountdownMin: number | null;
+  topomap: QeegTopomapNodeResponse[];
+  caseName?: string;
+  badge?: string;
+  tpaStatus?: string;
+  predictedLabelVi?: string;
+  clinicalSummaryVi?: string;
+  clinicalRecommendationVi?: string;
+  confidence?: number;
+  dataOrigin?: QeegDataOrigin;
+  isDemonstrationData?: boolean;
+  samplingRateSource?: QeegSamplingRateSource;
+  detectedSamplingRateHz?: number | null;
+  durationSec?: number;
+  usableDurationSec?: number;
+  recordedChannelCount?: number;
+  recordedChannels?: string[];
+  unavailableChannels?: string[];
+  recordingTimestamp?: string | null;
+  filterConfig?: QeegFilterConfig;
+  signalQuality?: QeegSignalQuality;
+  psdCurve?: QeegPsdCurve;
+  bsiPairs?: QeegBsiPair[];
+  pdBsi1To25Hz?: number;
+  modelMetadata?: QeegModelMetadata;
+}
+
 export const qeegApi = {
   health: () =>
     api<{ status: string; engineSource: string; categories: import('./types').ClinicalCategory[] }>(
@@ -445,7 +559,7 @@ export const qeegApi = {
     notch50Hz?: boolean;
     fastScore?: number;
   }) =>
-    api<import('./types').QeegAnalysisResult>('/qeeg/analyze-case', {
+    api<QeegAnalysisResponse>('/qeeg/analyze-case', {
       method: 'POST',
       body,
     }),
@@ -453,12 +567,15 @@ export const qeegApi = {
     filename: string;
     csvText: string;
     samplingRateHz?: number;
+    forceSamplingRate?: boolean;
     clinicalCategory?: import('./types').ClinicalCategory;
   }) =>
-    api<import('./types').QeegAnalysisResult>('/qeeg/analyze-csv', {
+    api<QeegAnalysisResponse>('/qeeg/analyze-csv', {
       method: 'POST',
       body,
     }),
+  exportPdfSummaryUrl: (caseId: string) =>
+    `/api/qeeg/export-pdf-summary?caseId=${encodeURIComponent(caseId)}`,
   saveToPlatform: (body: {
     title: string;
     clinicalCategory: import('./types').ClinicalCategory;
@@ -467,7 +584,7 @@ export const qeegApi = {
     subjectCode?: string;
     clinicalNote?: string;
     deidentifiedConfirmed: boolean;
-    analysis: import('./types').QeegAnalysisResult;
+    analysis: import('./types').QeegAnalysisResult | QeegAnalysisResponse;
   }) =>
     api<{
       dataset: import('./types').EegDatasetRecord;

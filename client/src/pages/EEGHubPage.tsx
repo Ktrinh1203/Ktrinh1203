@@ -80,7 +80,7 @@ const FALLBACK_RECORDINGS: EegDatasetRecord[] = [
     ownerId: 'seed-owner-hoa',
     ownerUsername: 'hoa_health',
     patientCode: 'BN-****29 (Ẩn danh)',
-    title: 'Theo dõi giấc ngủ ban đêm',
+    title: 'Theo dõi sóng chậm ban đêm',
     date: '31/10/2026 22:40',
     duration: '45 phút',
     samplingRate: '500 Hz',
@@ -88,7 +88,8 @@ const FALLBACK_RECORDINGS: EegDatasetRecord[] = [
     montage: '10-20 lưỡng cực',
     filter: '0.1 - 100 Hz · Notch 50 Hz',
     status: 'REVIEW_PENDING',
-    clinicalNote: 'Nhọn - sóng chậm vùng thái dương trái trong pha ngủ sâu N3.',
+    clinicalNote:
+      'Ghi nhận biến động biên độ sóng chậm rải rác trong bản ghi ban đêm — cần bác sĩ đối chiếu lâm sàng.',
     consentedProfessionals: [
       {
         userId: 'seed-dr-minh',
@@ -107,7 +108,7 @@ const FALLBACK_RECORDINGS: EegDatasetRecord[] = [
         actorDisplayName: 'Nguyễn Thanh Hoa',
         targetProfessional: 'BS. CKII Nguyễn Văn Minh (@dr_minh)',
         timestamp: '2026-10-31T22:45:00.000Z',
-        note: 'Cấp quyền riêng cho BS. Nguyễn Văn Minh hội chẩn giấc ngủ N3',
+        note: 'Cấp quyền riêng cho BS. Nguyễn Văn Minh xem và đánh giá bản ghi ban đêm',
       },
     ],
   },
@@ -116,79 +117,55 @@ const FALLBACK_RECORDINGS: EegDatasetRecord[] = [
 const EEG_CHANNELS = [
   {
     name: 'F3',
-    region: 'Thùy trán trái',
-    freq: '13-18 Hz (Beta thấp)',
-    peakUv: '26.4 µV',
-    erdPercent: '-11.2% (ERD)',
-    impedance: '3.4 kΩ',
-    clinicalStatus: 'Ổn định',
+    region: 'Trán trái',
+    impedance: 'Chưa có dữ liệu trở kháng',
+    measurementStatus: 'Mở trên Trạm qEEG để tính phổ',
   },
   {
     name: 'F4',
-    region: 'Thùy trán phải',
-    freq: '13-18 Hz (Beta thấp)',
-    peakUv: '25.8 µV',
-    erdPercent: '-9.4% (ERD)',
-    impedance: '3.1 kΩ',
-    clinicalStatus: 'Ổn định',
+    region: 'Trán phải',
+    impedance: 'Chưa có dữ liệu trở kháng',
+    measurementStatus: 'Mở trên Trạm qEEG để tính phổ',
   },
   {
     name: 'C3',
-    region: 'Vỏ vận động sơ cấp trái',
-    freq: '18-22 Hz (Beta)',
-    peakUv: '42.8 µV',
-    erdPercent: '-38.4% (ERD)',
-    impedance: '3.2 kΩ',
-    clinicalStatus: 'Đáp ứng rõ rệt',
+    region: 'Trung tâm trái',
+    impedance: 'Chưa có dữ liệu trở kháng',
+    measurementStatus: 'Mở trên Trạm qEEG để tính phổ',
   },
   {
     name: 'C4',
-    region: 'Vỏ vận động sơ cấp phải',
-    freq: '10-12 Hz (Mu)',
-    peakUv: '28.5 µV',
-    erdPercent: '-6.2% (Baseline)',
-    impedance: '2.9 kΩ',
-    clinicalStatus: 'Nền ổn định',
+    region: 'Trung tâm phải',
+    impedance: 'Chưa có dữ liệu trở kháng',
+    measurementStatus: 'Mở trên Trạm qEEG để tính phổ',
   },
   {
     name: 'O1',
-    region: 'Thùy chẩm trái',
-    freq: '9.8 Hz (Alpha)',
-    peakUv: '46.2 µV',
-    erdPercent: '+11.8% (ERS)',
-    impedance: '3.8 kΩ',
-    clinicalStatus: 'Nhịp Alpha sinh lý',
+    region: 'Chẩm trái',
+    impedance: 'Chưa có dữ liệu trở kháng',
+    measurementStatus: 'Mở trên Trạm qEEG để tính phổ',
   },
   {
     name: 'O2',
-    region: 'Thùy chẩm phải',
-    freq: '10.1 Hz (Alpha)',
-    peakUv: '44.9 µV',
-    erdPercent: '+10.6% (ERS)',
-    impedance: '3.6 kΩ',
-    clinicalStatus: 'Nhịp Alpha sinh lý',
+    region: 'Chẩm phải',
+    impedance: 'Chưa có dữ liệu trở kháng',
+    measurementStatus: 'Mở trên Trạm qEEG để tính phổ',
   },
   {
     name: 'T3',
-    region: 'Thái dương trái',
-    freq: '9.6 Hz (Alpha/Theta)',
-    peakUv: '31.4 µV',
-    erdPercent: '-6.2% (ERD)',
-    impedance: '4.1 kΩ',
-    clinicalStatus: 'Nền ổn định',
+    region: 'Thái dương trái (tham chiếu mở rộng)',
+    impedance: 'Chưa có dữ liệu trở kháng',
+    measurementStatus: 'Không có trong cấu hình 6 kênh mặc định',
   },
   {
     name: 'T4',
-    region: 'Thái dương phải',
-    freq: '9.7 Hz (Alpha/Theta)',
-    peakUv: '32.0 µV',
-    erdPercent: '-5.8% (ERD)',
-    impedance: '4.0 kΩ',
-    clinicalStatus: 'Nền ổn định',
+    region: 'Thái dương phải (tham chiếu mở rộng)',
+    impedance: 'Chưa có dữ liệu trở kháng',
+    measurementStatus: 'Không có trong cấu hình 6 kênh mặc định',
   },
 ];
 
-/** Builds deterministic 8-channel multi-lead preview waveforms for a personal EEG record. */
+/** Builds deterministic 8-channel [Sóng xem trước minh họa] waveforms for a personal EEG record. */
 function buildPreviewWaveformForDataset(rec: EegDatasetRecord) {
   const nPts = 300; // 5 seconds at 60 Hz display
   const time = Array.from({ length: nPts }, (_, i) => Number(((i / (nPts - 1)) * 5).toFixed(3)));
@@ -392,14 +369,12 @@ export function EEGHubPage() {
         selectedRec.status,
       ],
       [],
-      ['Channel', 'Region', 'Frequency Band', 'Peak Amplitude', 'ERD/ERS', 'Impedance'],
+      ['Channel', 'Region', 'Impedance', 'Measurement Status'],
       ...EEG_CHANNELS.map((ch) => [
         ch.name,
         ch.region,
-        ch.freq,
-        ch.peakUv,
-        ch.erdPercent,
         ch.impedance,
+        ch.measurementStatus,
       ]),
     ];
     triggerCsvDownload(`neurolink-eeg-${selectedRec.id}.csv`, csvRows.map((r) => r.join(',')).join('\n'));
@@ -810,8 +785,8 @@ export function EEGHubPage() {
                 waveforms={previewWaveform}
                 samplingRateHz={parseInt(selectedRec.samplingRate, 10) || 250}
                 isProfessional={isProfessional}
-                title={selectedRec.patientCode}
-                subtitle={`${selectedRec.channelsCount} kênh · ${selectedRec.samplingRate}`}
+                title={`${selectedRec.patientCode} · [Sóng xem trước minh họa]`}
+                subtitle={`[Sóng xem trước minh họa] · ${selectedRec.channelsCount} kênh · ${selectedRec.samplingRate} · ${selectedRec.montage}`}
               />
 
               <div className="rounded-xl border border-[#DCE6DF] bg-[#F5FAF7] px-4 py-3 text-xs sm:text-sm text-[#262624]">
@@ -822,24 +797,21 @@ export function EEGHubPage() {
               {isProfessional && (
                 <details className="rounded-xl border border-[#DCE6DF] bg-white">
                   <summary className="cursor-pointer px-4 py-2.5 text-xs font-semibold text-[#141413]">
-                    Thông số 8 đạo trình ▾
+                    Thông tin đạo trình &amp; trở kháng ({selectedRec.channelsCount} kênh · {selectedRec.montage}) ▾
                   </summary>
                   <div
                     tabIndex={0}
                     role="region"
-                    aria-label="Bảng thông số định lượng các đạo trình điện não 10-20"
+                    aria-label="Bảng thông tin đạo trình và trạng thái trở kháng"
                     className="overflow-x-auto border-t border-[#DCE6DF] focus-visible:outline-2 focus-visible:outline-[#16A34A]"
                   >
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="border-b border-[#DCE6DF] bg-[#F5FAF7] text-[11px] font-semibold uppercase tracking-wider text-[#6E6D68]">
                           <th className="py-2 px-3">Đạo trình</th>
-                          <th className="py-2 px-3">Vùng</th>
-                          <th className="py-2 px-3">Dải tần</th>
-                          <th className="py-2 px-3 text-right">Biên độ</th>
-                          <th className="py-2 px-3 text-right">ERD/ERS</th>
-                          <th className="py-2 px-3 text-right">Trở kháng</th>
-                          <th className="py-2 px-3">Trạng thái</th>
+                          <th className="py-2 px-3">Vùng giải phẫu</th>
+                          <th className="py-2 px-3">Trở kháng</th>
+                          <th className="py-2 px-3">Trạng thái dữ liệu</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#DCE6DF]">
@@ -847,19 +819,8 @@ export function EEGHubPage() {
                           <tr key={ch.name} className="hover:bg-[#F5FAF7]">
                             <td className="py-2 px-3 font-mono font-semibold text-[#141413]">{ch.name}</td>
                             <td className="py-2 px-3 text-[#575652]">{ch.region}</td>
-                            <td className="py-2 px-3 font-mono text-[#575652]">{ch.freq}</td>
-                            <td className="py-2 px-3 text-right font-mono font-semibold text-[#141413] tabular-nums">
-                              {ch.peakUv}
-                            </td>
-                            <td className="py-2 px-3 text-right font-mono font-medium text-[#15803D] tabular-nums">
-                              {ch.erdPercent}
-                            </td>
-                            <td className="py-2 px-3 text-right font-mono text-[#575652] tabular-nums">
-                              {ch.impedance}
-                            </td>
-                            <td className="py-2 px-3 text-[#575652]">
-                              {ch.clinicalStatus}
-                            </td>
+                            <td className="py-2 px-3 text-[#6E6D68]">{ch.impedance}</td>
+                            <td className="py-2 px-3 text-[#575652]">{ch.measurementStatus}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -958,23 +919,17 @@ export function EEGHubPage() {
                   <span aria-hidden>▾</span>
                 </summary>
                 <div className="px-4 pb-4 pt-2 border-t border-[#DCE6DF] space-y-4">
-                  <div className="space-y-2 text-xs font-mono tabular-nums">
-                    {[
-                      { label: 'Delta (0.5–4 Hz)', pct: 14, bar: 'bg-[#8A8882]' },
-                      { label: 'Theta (4–8 Hz)', pct: 22, bar: 'bg-[#575652]' },
-                      { label: 'Alpha (8–13 Hz)', pct: 42, bar: 'bg-[#16A34A]' },
-                      { label: 'Beta (13–30 Hz)', pct: 22, bar: 'bg-[#141413]' },
-                    ].map((b) => (
-                      <div key={b.label}>
-                        <div className="flex justify-between text-[11px] font-medium text-[#575652] pb-1">
-                          <span className="font-sans">{b.label}</span>
-                          <span>{b.pct}%</span>
-                        </div>
-                        <div className="h-1.5 w-full rounded-full bg-[#EFF6F1] overflow-hidden">
-                          <div className={cn('h-full rounded-full', b.bar)} style={{ width: `${b.pct}%` }} />
-                        </div>
-                      </div>
-                    ))}
+                  <div className="rounded-lg border border-[#DCE6DF] bg-[#F5FAF7] p-3 text-xs text-[#575652] space-y-2">
+                    <p className="font-medium text-[#262624]">
+                      Chưa có dữ liệu phổ lưu trữ — Mở trên Trạm qEEG để phân tích
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => switchTab('qeeg')}
+                      className="inline-flex items-center gap-1 rounded-md border border-[#DCE6DF] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#15803D] hover:bg-[#ECFDF3] transition-colors"
+                    >
+                      Mở Trạm qEEG để phân tích phổ →
+                    </button>
                   </div>
 
                   <div className="space-y-1.5 border-t border-[#DCE6DF] pt-3">

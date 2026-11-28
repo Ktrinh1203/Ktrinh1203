@@ -22,21 +22,23 @@ export const CLINICAL_CATEGORY_META: Record<
   }
 > = {
   VASCULAR_STROKE: {
-    label: 'Đột quỵ & Mạch máu não',
+    label: 'Mạch máu não & Bất đối xứng',
     shortLabel: 'Mạch máu não',
-    description: 'Thiếu máu não cục bộ, xuất huyết não và sàng lọc khóa an toàn tPA.',
+    description:
+      'Sàng lọc sóng chậm khu trú và bất đối xứng bán cầu (hỗ trợ đối chiếu lâm sàng / CT sọ não).',
     badgeCls: 'bg-rose-50 text-rose-800 border-rose-200',
   },
   EPILEPSY_ICU: {
     label: 'Động kinh & Hồi sức (ICU)',
     shortLabel: 'Động kinh & ICU',
-    description: 'Phức hợp nhọn - sóng chậm kịch phát, theo dõi động kinh thùy thái dương.',
+    description:
+      'Ghi nhận phức hợp nhọn - sóng chậm kịch phát trên các kênh đo (montage 6 kênh không phủ trực tiếp thùy thái dương).',
     badgeCls: 'bg-amber-50 text-amber-800 border-amber-200',
   },
   SLEEP_COGNITIVE: {
     label: 'Giấc ngủ & Nhận thức',
     shortLabel: 'Giấc ngủ & Nhận thức',
-    description: 'Pha ngủ sâu N3, mệt mỏi nhận thức (TAR) và nhịp Alpha thư giãn.',
+    description: 'Pha ngủ sâu N3, mệt mỏi nhận thức (TAR) và nhịp Alpha vùng chẩm (O1/O2).',
     badgeCls: 'bg-sky-50 text-sky-800 border-sky-200',
   },
   HARDWARE_BCI: {
@@ -74,22 +76,22 @@ export const NEURAL_LABEL_META: Record<
   },
   ISCHEMIC_STROKE: {
     numericId: 1,
-    label: 'Thiếu máu não cục bộ (Ischemic)',
-    shortLabel: 'Thiếu máu não',
+    label: 'Sóng chậm khu trú (Định hướng thiếu máu)',
+    shortLabel: 'Chậm khu trú',
     badgeCls: 'bg-rose-50 text-rose-800 border-rose-200',
     barCls: 'bg-rose-600',
   },
   HEMORRHAGIC_STROKE: {
     numericId: 2,
-    label: 'Xuất huyết não (ICH)',
-    shortLabel: 'Xuất huyết não',
+    label: 'Sóng chậm biên độ cao / Cần đối chiếu CT (ICH)',
+    shortLabel: 'Cần đối chiếu CT',
     badgeCls: 'bg-red-900 text-white border-red-950',
     barCls: 'bg-red-800',
   },
   EPILEPTIFORM_SLOWING: {
     numericId: 3,
-    label: 'Sóng động kinh / Chậm cục bộ',
-    shortLabel: 'Động kinh / Chậm',
+    label: 'Sóng nhọn / Chậm kịch phát',
+    shortLabel: 'Nhọn / Chậm',
     badgeCls: 'bg-amber-50 text-amber-800 border-amber-200',
     barCls: 'bg-amber-600',
   },
@@ -187,6 +189,8 @@ export const WORK_BLOCK_META: Record<
   },
 };
 
+export const MEASURED_6CH_MONTAGE = ['F3', 'F4', 'C3', 'C4', 'O1', 'O2'] as const;
+
 export const CHANNEL_ANATOMY_MAP: Record<string, string> = {
   FP1: 'Cực trán trái',
   FP2: 'Cực trán phải',
@@ -196,9 +200,9 @@ export const CHANNEL_ANATOMY_MAP: Record<string, string> = {
   F4: 'Trán phải',
   F8: 'Trán dưới phải',
   T3: 'Thái dương giữa trái',
-  C3: 'Vận động trái',
+  C3: 'Trung tâm trái',
   CZ: 'Đỉnh trung tâm',
-  C4: 'Vận động phải',
+  C4: 'Trung tâm phải',
   T4: 'Thái dương giữa phải',
   T5: 'Thái dương sau trái',
   P3: 'Đỉnh trái',
@@ -224,7 +228,7 @@ export function formatEegAccessAction(action: string): string {
 export function sanitizeClinicalDisplayText(text: string | null | undefined): string {
   if (!text) return '';
   return text
-    .replace(/CM\s*\[\s*2\s*,\s*1\s*\]\s*=\s*0/gi, 'chuẩn an toàn xuất huyết')
+    .replace(/CM\s*\[\s*2\s*,\s*1\s*\]\s*=\s*0/gi, 'tiêu chuẩn đối chiếu an toàn')
     .trim();
 }
 
@@ -233,36 +237,38 @@ export function formatSafetyStatusLabel(
   isProfessional = false,
 ): string {
   const normalized = (status ?? '').trim().toUpperCase();
-  if (!normalized) return 'Đang theo dõi an toàn';
+  if (!normalized) return 'Đang theo dõi tín hiệu';
   switch (normalized) {
     case 'HOLD_TPA_CT_REQUIRED':
       return isProfessional
-        ? 'Chờ chụp CT trước tPA'
-        : 'Cần chụp CT loại trừ xuất huyết';
+        ? 'Cảnh báo sóng chậm nặng · Cần đối chiếu CT sọ não'
+        : 'Cảnh báo bất thường · Cần chụp CT kiểm tra';
     case 'ICH_LOCKED_CT_REQUIRED':
-      return 'Khóa tPA · Chụp CT khẩn';
+      return isProfessional
+        ? 'Cảnh báo mức độ cao · Đối chiếu CT loại trừ xuất huyết'
+        : 'Cảnh báo mức độ cao · Cần chụp CT kiểm tra';
     case 'MONITORING_EPILEPSY':
-      return 'Theo dõi sóng động kinh';
+      return 'Theo dõi hoạt động kịch phát / sóng chậm';
     case 'PASS_MIMIC_SUPPRESSED':
-      return 'Chưa ghi nhận nguy cơ cấp';
+      return 'Chưa ghi nhận bất thường cấp trên 6 kênh';
     case 'PASS':
-      return 'An toàn';
+      return 'Ổn định trong phạm vi theo dõi';
     default:
       if (normalized.includes('ICH') || normalized.includes('LOCK')) {
-        return 'Khóa an toàn · Cần chụp CT khẩn';
+        return 'Cảnh báo mức độ cao · Đối chiếu CT lâm sàng';
       }
       if (normalized.includes('HOLD') || normalized.includes('CT')) {
         return isProfessional
-          ? 'Chờ chụp CT đánh giá'
-          : 'Cần chụp CT kiểm tra';
+          ? 'Cần đối chiếu hình ảnh học (CT)'
+          : 'Cần kiểm tra lâm sàng / CT';
       }
       if (normalized.includes('MONITOR') || normalized.includes('EPILEP')) {
         return 'Cần theo dõi chuyên khoa';
       }
       if (normalized.includes('PASS')) {
-        return 'An toàn';
+        return 'Ổn định trong phạm vi theo dõi';
       }
-      return 'Đang theo dõi an toàn';
+      return 'Đang theo dõi tín hiệu';
   }
 }
 

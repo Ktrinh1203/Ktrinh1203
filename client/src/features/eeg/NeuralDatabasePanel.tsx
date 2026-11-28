@@ -36,10 +36,10 @@ export interface NeuralDatabasePanelProps {
 }
 
 const FEATURE_GROUPS = [
-  { start: 0, end: 20, title: 'Nhóm 1 · Năng lượng dải sóng theo từng kênh' },
-  { start: 20, end: 40, title: 'Nhóm 2 · Tỷ số lâm sàng (DAR, TAR) & nhịp Alpha' },
-  { start: 40, end: 60, title: 'Nhóm 3 · Cân bằng hai bán cầu (BSI) & liên kết vùng' },
-  { start: 60, end: 80, title: 'Nhóm 4 · Độ ổn định & chất lượng tín hiệu' },
+  { start: 0, end: 60, title: 'F01–F60 · Đặc trưng phổ, tỷ số & Hjorth trên 6 kênh' },
+  { start: 60, end: 66, title: 'F61–F66 · Bất đối xứng cặp kênh' },
+  { start: 66, end: 72, title: 'F67–F72 · Liên kết pha wPLI cặp kênh' },
+  { start: 72, end: 80, title: 'F73–F80 · Chỉ số tổng hợp toàn cục & chất lượng tín hiệu' },
 ];
 
 export function NeuralDatabasePanel({ isProfessional = false }: NeuralDatabasePanelProps) {

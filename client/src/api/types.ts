@@ -700,6 +700,10 @@ export interface QeegTopomapNode {
   x: number;
   y: number;
   isPhysical: boolean;
+  isUnavailable?: boolean;
+  isRecorded?: boolean;
+  qualityStatus?: 'GOOD' | 'NOISY' | 'DROPOUT' | 'SATURATED' | 'UNAVAILABLE';
+  isInvalidQuality?: boolean;
   value: number;
   dar: number;
 }

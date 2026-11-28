@@ -595,7 +595,9 @@ export function ConsultationsPage() {
       {isQueueView && (
         <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50/80 px-3.5 py-2 text-xs font-semibold text-red-900">
           <ShieldCheck className="size-4 text-red-700 shrink-0" aria-hidden />
-          <span>BSI ≥ 0.22 / DAR ≥ 3.2 → Gọi 115 / CT khẩn</span>
+          <span>
+            Cảnh báo quy trình: Ghi nhận triệu chứng cấp hoặc bất thường sóng chậm — Cần bác sĩ đánh giá khẩn (115 / CT sọ não theo chỉ định lâm sàng)
+          </span>
         </div>
       )}
 
@@ -936,7 +938,7 @@ export function ConsultationsPage() {
                     </span>
                     {(selectedSample.bsi >= 0.22 || selectedSample.dar >= 3.2) && (
                       <span className="font-sans font-semibold text-red-700">
-                        Cần khám khẩn · Gọi 115
+                        Bất thường sóng chậm/bất đối xứng — Nếu có triệu chứng cấp, gọi 115
                       </span>
                     )}
                   </div>

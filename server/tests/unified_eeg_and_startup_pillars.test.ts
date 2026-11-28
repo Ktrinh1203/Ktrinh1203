@@ -85,10 +85,15 @@ describe('Unified qEEG Workstation, Neural DB & 4 Startup Pillars', () => {
     expect(ichRes.body.status).toBe('SUCCESS');
     expect(ichRes.body.classificationLabel).toBe('HEMORRHAGIC_STROKE');
     expect(ichRes.body.trafficLight).toBe('purple');
+    expect(ichRes.body.tpaCountdownMin).toBeNull();
     expect(ichRes.body.biomarkers.tpaLockoutTriggered).toBe(true);
     expect(ichRes.body.featureVector80).toHaveLength(80);
     expect(ichRes.body.topomap).toHaveLength(19);
     expect(ichRes.body.waveforms.channels).toHaveLength(6);
+    expect(ichRes.body.filterConfig).toBeDefined();
+    expect(ichRes.body.signalQuality).toBeDefined();
+    expect(ichRes.body.psdCurve).toBeDefined();
+    expect(ichRes.body.modelMetadata?.isCalibratedProbability).toBe(false);
 
     const ischemiaRes = await request(app)
       .post('/api/qeeg/analyze-case')
@@ -96,6 +101,7 @@ describe('Unified qEEG Workstation, Neural DB & 4 Startup Pillars', () => {
       .expect(200);
     expect(ischemiaRes.body.classificationLabel).toBe('ISCHEMIC_STROKE');
     expect(ischemiaRes.body.trafficLight).toBe('red');
+    expect(ischemiaRes.body.tpaCountdownMin).toBeNull();
     expect(ischemiaRes.body.biomarkers.meanDar).toBeGreaterThanOrEqual(3.0);
     expect(ischemiaRes.body.biomarkers.meanBsi).toBeGreaterThanOrEqual(0.2);
 
@@ -108,7 +114,7 @@ describe('Unified qEEG Workstation, Neural DB & 4 Startup Pillars', () => {
     expect(healthyRes.body.biomarkers.alphaPeakHz).toBeGreaterThanOrEqual(8);
     expect(healthyRes.body.biomarkers.alphaPeakHz).toBeLessThanOrEqual(13);
 
-    // 4. Analyze uploaded CSV
+    // 4. Analyze uploaded CSV (plus dynamic timestamp sampling rate & quality suppression checks)
     const csvRes = await request(app)
       .post('/api/qeeg/analyze-csv')
       .send({
@@ -122,6 +128,74 @@ describe('Unified qEEG Workstation, Neural DB & 4 Startup Pillars', () => {
     expect(csvRes.body.featureVector80).toHaveLength(80);
     expect(csvRes.body.topomap).toHaveLength(19);
     expect(csvRes.body.biomarkers.alphaPeakHz).toBeGreaterThanOrEqual(8.5);
+    expect(csvRes.body.tpaCountdownMin).toBeNull();
+
+    // Dynamic sampling rate from `time` column when samplingRateHz omitted (200 Hz & 256 Hz)
+    const timedLines = ['time,F3,F4,C3,C4,O1,O2'];
+    for (let i = 0; i < 600; i++) {
+      const t = i / 200;
+      const a = (14 * Math.sin(2 * Math.PI * 10 * t)).toFixed(3);
+      timedLines.push(`${t.toFixed(5)},${a},${a},${a},${a},${a},${a}`);
+    }
+    const timedRes = await request(app)
+      .post('/api/qeeg/analyze-csv')
+      .send({
+        filename: 'timed_200hz.csv',
+        csvText: timedLines.join('\n'),
+        clinicalCategory: 'HARDWARE_BCI',
+      })
+      .expect(200);
+    expect(timedRes.body.samplingRateSource).toBe('CSV_TIMESTAMP');
+    expect(Math.abs(timedRes.body.samplingRateHz - 200)).toBeLessThan(1);
+
+    const timed256Lines = ['time,F3,F4,C3,C4'];
+    for (let i = 0; i < 1024; i++) {
+      const t = i / 256;
+      const f3 = (12 * Math.sin(2 * Math.PI * 10 * t)).toFixed(4);
+      const f4 = (14 * Math.sin(2 * Math.PI * 10 * t + 0.4)).toFixed(4);
+      const c3 = (18 * Math.sin(2 * Math.PI * 10 * t + 0.9)).toFixed(4);
+      const c4 = (20 * Math.sin(2 * Math.PI * 10 * t + 1.4)).toFixed(4);
+      timed256Lines.push(`${t.toFixed(6)},${f3},${f4},${c3},${c4}`);
+    }
+    const timed256Res = await request(app)
+      .post('/api/qeeg/analyze-csv')
+      .send({
+        filename: 'timed_256hz.csv',
+        csvText: timed256Lines.join('\n'),
+        clinicalCategory: 'HARDWARE_BCI',
+      })
+      .expect(200);
+    expect(timed256Res.body.samplingRateSource).toBe('CSV_TIMESTAMP');
+    expect(timed256Res.body.samplingRateHz).toBe(256);
+    expect(timed256Res.body.durationSec).toBeCloseTo(4.0, 2);
+    expect(Math.abs(timed256Res.body.biomarkers.alphaPeakHz - 10)).toBeLessThanOrEqual(0.6);
+
+    // Mixed 3 dropout + 3 saturated (±650 µV) triggers suppression and zeroed biomarkers (no garbage DAR)
+    const badLines = ['time,F3,F4,C3,C4,O1,O2'];
+    for (let i = 0; i < 1024; i++) {
+      const t = i / 256;
+      const sat = i % 40 < 20 ? 650 : -650;
+      badLines.push(`${t.toFixed(6)},0,0,0,${sat},${sat},${sat}`);
+    }
+    const badRes = await request(app)
+      .post('/api/qeeg/analyze-csv')
+      .send({ filename: 'bad_3drop_3sat.csv', csvText: badLines.join('\n') })
+      .expect(200);
+    expect(badRes.body.signalQuality.aiSuppressedByQuality).toBe(true);
+    expect(badRes.body.biomarkers.meanDar).toBe(0);
+    expect(badRes.body.biomarkers.meanTar).toBe(0);
+    expect(badRes.body.biomarkers.pri).toBe(0);
+    expect(badRes.body.biomarkers.meanBsi).toBe(0);
+    expect(badRes.body.bandPowers).toEqual({ delta: 0, theta: 0, alpha: 0, beta: 0 });
+
+    // Flatline trace triggers aiSuppressedByQuality = true & confidence <= 0.35
+    const flatLines = ['F3,F4,C3,C4,O1,O2', ...Array.from({ length: 500 }, () => '0,0,0,0,0,0')];
+    const flatRes = await request(app)
+      .post('/api/qeeg/analyze-csv')
+      .send({ filename: 'flat.csv', csvText: flatLines.join('\n'), samplingRateHz: 250 })
+      .expect(200);
+    expect(flatRes.body.signalQuality.aiSuppressedByQuality).toBe(true);
+    expect(flatRes.body.confidence).toBeLessThanOrEqual(0.35);
 
     // Reject too-short CSV
     await request(app)
@@ -129,7 +203,8 @@ describe('Unified qEEG Workstation, Neural DB & 4 Startup Pillars', () => {
       .send({ filename: 'bad.csv', csvText: 'F3,F4\n1,2\n3,4' })
       .expect(400);
 
-    // 5. PDF export fallback produces valid %PDF binary
+    // 5. PDF export fallback produces valid %PDF binary and rejects unknown/CSV caseId with 404
+    await request(app).get('/api/qeeg/export-pdf-summary?caseId=csv:unknown.csv').expect(404);
     const pdfRes = await request(app)
       .get('/api/qeeg/export-pdf-summary?caseId=case_ich_hemorrhage')
       .buffer(true)
@@ -354,7 +429,13 @@ describe('Unified qEEG Workstation, Neural DB & 4 Startup Pillars', () => {
         tar: strokeAnalysis.biomarkers.meanTar,
         spectralBands: strokeAnalysis.bandPowers,
         featureVector: strokeAnalysis.featureVector80,
-        waveformPreview: strokeAnalysis.waveforms,
+        waveformPreview: {
+          time: strokeAnalysis.waveforms.time.slice(0, 200),
+          channels: strokeAnalysis.waveforms.channels,
+          filtered: Object.fromEntries(
+            Object.entries(strokeAnalysis.waveforms.filtered).map(([k, v]) => [k, (v as number[]).slice(0, 200)]),
+          ),
+        },
         deidentifiedConfirmed: true,
       })
       .expect(201);
